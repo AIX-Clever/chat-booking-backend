@@ -1,0 +1,366 @@
+"""
+Unit tests for booking service
+"""
+
+import pytest
+from datetime import datetime, timedelta
+from unittest.mock import Mock
+from shared.domain.entities import (
+    TenantId,
+    Tenant,
+    TenantStatus,
+    TenantPlan,
+    Service,
+    Provider,
+    Booking,
+    BookingStatus,
+    PaymentStatus,
+    TimeSlot
+)
+from shared.domain.exceptions import (
+    EntityNotFoundError,
+    TenantNotActiveError,
+    ServiceNotAvailableError,
+    ProviderNotAvailableError,
+    SlotNotAvailableError,
+    ValidationError
+)
+from booking.service import BookingService
+
+
+class TestBookingService:
+    """Test BookingService"""
+    
+    @pytest.fixture
+    def tenant_id(self):
+        return TenantId("test123")
+    
+    @pytest.fixture
+    def active_tenant(self, tenant_id):
+        return Tenant(
+            tenant_id=tenant_id,
+            name="Test Tenant",
+            slug="test-tenant",
+            status=TenantStatus.ACTIVE,
+            plan=TenantPlan.PRO,
+            owner_user_id="user_123",
+            billing_email="billing@test.com"
+        )
+    
+    @pytest.fixture
+    def service(self, tenant_id):
+        return Service(
+            service_id="svc_123",
+            tenant_id=tenant_id,
+            name="Massage",
+            description="60 min massage",
+            category="wellness",
+            duration_minutes=60,
+            price=50.0,
+            available=True,
+            created_at=datetime.utcnow()
+        )
+    
+    @pytest.fixture
+    def provider(self, tenant_id):
+        return Provider(
+            provider_id="pro_123",
+            tenant_id=tenant_id,
+            name="John Doe",
+            bio="Expert therapist",
+            service_ids=["svc_123"],
+            timezone="UTC",
+            available=True,
+            created_at=datetime.utcnow()
+        )
+    
+    @pytest.fixture
+    def mock_repos(self):
+        return {
+            'booking': Mock(),
+            'service': Mock(),
+            'provider': Mock(),
+            'tenant': Mock()
+        }
+    
+    @pytest.fixture
+    def booking_service(self, mock_repos):
+        return BookingService(
+            mock_repos['booking'],
+            mock_repos['service'],
+            mock_repos['provider'],
+            mock_repos['tenant']
+        )
+    
+    def test_create_booking_success(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id,
+        active_tenant,
+        service,
+        provider
+    ):
+        """Test successful booking creation"""
+        # Setup
+        start = datetime.utcnow() + timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        mock_repos['tenant'].get_by_id.return_value = active_tenant
+        mock_repos['service'].get_by_id.return_value = service
+        mock_repos['provider'].get_by_id.return_value = provider
+        mock_repos['booking'].list_by_provider_and_dates.return_value = []
+        
+        # Execute
+        booking = booking_service.create_booking(
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            start=start,
+            end=end,
+            client_name="Jane Smith",
+            client_email="jane@example.com"
+        )
+        
+        # Assert
+        assert booking.status == BookingStatus.PENDING
+        assert booking.client_name == "Jane Smith"
+        assert booking.total_amount == 50.0
+        mock_repos['booking'].save.assert_called_once()
+    
+    def test_create_booking_tenant_not_active(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id
+    ):
+        """Test booking creation with suspended tenant"""
+        suspended_tenant = Tenant(
+            tenant_id=tenant_id,
+            name="Test Tenant",
+            slug="test-tenant",
+            status=TenantStatus.SUSPENDED,
+            plan=TenantPlan.PRO,
+            owner_user_id="user_123",
+            billing_email="billing@test.com"
+        )
+        
+        mock_repos['tenant'].get_by_id.return_value = suspended_tenant
+        
+        start = datetime.utcnow() + timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        with pytest.raises(TenantNotActiveError):
+            booking_service.create_booking(
+                tenant_id=tenant_id,
+                service_id="svc_123",
+                provider_id="pro_123",
+                start=start,
+                end=end,
+                client_name="Jane Smith",
+                client_email="jane@example.com"
+            )
+    
+    def test_create_booking_service_not_available(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id,
+        active_tenant
+    ):
+        """Test booking creation with unavailable service"""
+        unavailable_service = Service(
+            service_id="svc_123",
+            tenant_id=tenant_id,
+            name="Massage",
+            description="60 min massage",
+            category="wellness",
+            duration_minutes=60,
+            price=50.0,
+            available=False,
+            created_at=datetime.utcnow()
+        )
+        
+        mock_repos['tenant'].get_by_id.return_value = active_tenant
+        mock_repos['service'].get_by_id.return_value = unavailable_service
+        
+        start = datetime.utcnow() + timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        with pytest.raises(ServiceNotAvailableError):
+            booking_service.create_booking(
+                tenant_id=tenant_id,
+                service_id="svc_123",
+                provider_id="pro_123",
+                start=start,
+                end=end,
+                client_name="Jane Smith",
+                client_email="jane@example.com"
+            )
+    
+    def test_create_booking_provider_cannot_provide_service(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id,
+        active_tenant,
+        service
+    ):
+        """Test booking with provider who doesn't provide service"""
+        wrong_provider = Provider(
+            provider_id="pro_123",
+            tenant_id=tenant_id,
+            name="John Doe",
+            bio="Expert therapist",
+            service_ids=["svc_999"],  # Different service
+            timezone="UTC",
+            available=True,
+            created_at=datetime.utcnow()
+        )
+        
+        mock_repos['tenant'].get_by_id.return_value = active_tenant
+        mock_repos['service'].get_by_id.return_value = service
+        mock_repos['provider'].get_by_id.return_value = wrong_provider
+        
+        start = datetime.utcnow() + timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        with pytest.raises(ProviderNotAvailableError):
+            booking_service.create_booking(
+                tenant_id=tenant_id,
+                service_id="svc_123",
+                provider_id="pro_123",
+                start=start,
+                end=end,
+                client_name="Jane Smith",
+                client_email="jane@example.com"
+            )
+    
+    def test_create_booking_slot_conflict(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id,
+        active_tenant,
+        service,
+        provider
+    ):
+        """Test booking creation with slot conflict"""
+        start = datetime.utcnow() + timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        # Existing booking
+        existing_booking = Booking(
+            booking_id="bkg_existing",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            start=start,
+            end=end,
+            status=BookingStatus.CONFIRMED,
+            client_name="Someone Else",
+            client_email="other@example.com",
+            payment_status=PaymentStatus.PENDING,
+            total_amount=50.0,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        
+        mock_repos['tenant'].get_by_id.return_value = active_tenant
+        mock_repos['service'].get_by_id.return_value = service
+        mock_repos['provider'].get_by_id.return_value = provider
+        mock_repos['booking'].list_by_provider_and_dates.return_value = [existing_booking]
+        
+        with pytest.raises(SlotNotAvailableError):
+            booking_service.create_booking(
+                tenant_id=tenant_id,
+                service_id="svc_123",
+                provider_id="pro_123",
+                start=start,
+                end=end,
+                client_name="Jane Smith",
+                client_email="jane@example.com"
+            )
+    
+    def test_create_booking_in_past(
+        self,
+        booking_service,
+        mock_repos,
+        tenant_id,
+        active_tenant,
+        service,
+        provider
+    ):
+        """Test booking creation in the past"""
+        start = datetime.utcnow() - timedelta(days=1)
+        end = start + timedelta(minutes=60)
+        
+        mock_repos['tenant'].get_by_id.return_value = active_tenant
+        mock_repos['service'].get_by_id.return_value = service
+        mock_repos['provider'].get_by_id.return_value = provider
+        
+        with pytest.raises(ValidationError):
+            booking_service.create_booking(
+                tenant_id=tenant_id,
+                service_id="svc_123",
+                provider_id="pro_123",
+                start=start,
+                end=end,
+                client_name="Jane Smith",
+                client_email="jane@example.com"
+            )
+    
+    def test_confirm_booking(self, booking_service, mock_repos, tenant_id):
+        """Test booking confirmation"""
+        booking = Booking(
+            booking_id="bkg_123",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            start=datetime.utcnow() + timedelta(days=1),
+            end=datetime.utcnow() + timedelta(days=1, hours=1),
+            status=BookingStatus.PENDING,
+            client_name="Jane Smith",
+            client_email="jane@example.com",
+            payment_status=PaymentStatus.PENDING,
+            total_amount=50.0,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        
+        mock_repos['booking'].get_by_id.return_value = booking
+        
+        result = booking_service.confirm_booking(tenant_id, "bkg_123")
+        
+        assert result.status == BookingStatus.CONFIRMED
+        mock_repos['booking'].save.assert_called_once()
+    
+    def test_cancel_booking(self, booking_service, mock_repos, tenant_id):
+        """Test booking cancellation"""
+        booking = Booking(
+            booking_id="bkg_123",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            start=datetime.utcnow() + timedelta(days=1),
+            end=datetime.utcnow() + timedelta(days=1, hours=1),
+            status=BookingStatus.CONFIRMED,
+            client_name="Jane Smith",
+            client_email="jane@example.com",
+            payment_status=PaymentStatus.PENDING,
+            total_amount=50.0,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        
+        mock_repos['booking'].get_by_id.return_value = booking
+        
+        result = booking_service.cancel_booking(
+            tenant_id,
+            "bkg_123",
+            reason="Client requested"
+        )
+        
+        assert result.status == BookingStatus.CANCELLED
+        assert "CANCELLED" in result.notes
+        mock_repos['booking'].save.assert_called_once()
