@@ -9,7 +9,8 @@ from shared.domain.entities import TenantId, Tenant, TenantStatus, TenantPlan, A
 from shared.domain.exceptions import (
     InvalidApiKeyError,
     OriginNotAllowedError,
-    TenantNotActiveError
+    TenantNotActiveError,
+    EntityNotFoundError
 )
 from auth_resolver.service import AuthenticationService
 
@@ -26,8 +27,8 @@ class TestAuthenticationService:
         return Mock()
     
     @pytest.fixture
-    def auth_service(self, mock_tenant_repo, mock_api_key_repo):
-        return AuthenticationService(mock_tenant_repo, mock_api_key_repo)
+    def auth_service(self, mock_api_key_repo, mock_tenant_repo):
+        return AuthenticationService(mock_api_key_repo, mock_tenant_repo)
     
     def test_authenticate_valid_api_key(self, auth_service, mock_api_key_repo, mock_tenant_repo):
         """Test successful authentication"""
@@ -36,10 +37,10 @@ class TestAuthenticationService:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=tenant_id,
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="ACTIVE",
             allowed_origins=["https://example.com"],
-            is_active=True,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
@@ -53,7 +54,7 @@ class TestAuthenticationService:
             billing_email="billing@test.com"
         )
         
-        mock_api_key_repo.get_by_key_hash.return_value = api_key
+        mock_api_key_repo.find_by_hash.return_value = api_key
         mock_tenant_repo.get_by_id.return_value = tenant
         
         # Execute
@@ -68,7 +69,7 @@ class TestAuthenticationService:
     
     def test_authenticate_invalid_api_key(self, auth_service, mock_api_key_repo):
         """Test authentication with invalid API key"""
-        mock_api_key_repo.get_by_key_hash.return_value = None
+        mock_api_key_repo.find_by_hash.return_value = None
         
         with pytest.raises(InvalidApiKeyError):
             auth_service.authenticate_api_key("invalid_key", "https://example.com")
@@ -78,14 +79,14 @@ class TestAuthenticationService:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="REVOKED",
             allowed_origins=["https://example.com"],
-            is_active=False,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
-        mock_api_key_repo.get_by_key_hash.return_value = api_key
+        mock_api_key_repo.find_by_hash.return_value = api_key
         
         with pytest.raises(InvalidApiKeyError):
             auth_service.authenticate_api_key("test_key", "https://example.com")
@@ -95,14 +96,14 @@ class TestAuthenticationService:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="ACTIVE",
             allowed_origins=["https://allowed.com"],
-            is_active=True,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
-        mock_api_key_repo.get_by_key_hash.return_value = api_key
+        mock_api_key_repo.find_by_hash.return_value = api_key
         
         with pytest.raises(OriginNotAllowedError):
             auth_service.authenticate_api_key("test_key", "https://malicious.com")
@@ -113,10 +114,10 @@ class TestAuthenticationService:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=tenant_id,
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="ACTIVE",
             allowed_origins=["https://example.com"],
-            is_active=True,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
@@ -130,7 +131,7 @@ class TestAuthenticationService:
             billing_email="billing@test.com"
         )
         
-        mock_api_key_repo.get_by_key_hash.return_value = api_key
+        mock_api_key_repo.find_by_hash.return_value = api_key
         mock_tenant_repo.get_by_id.return_value = tenant
         
         with pytest.raises(TenantNotActiveError):
@@ -142,10 +143,10 @@ class TestAuthenticationService:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=tenant_id,
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="ACTIVE",
             allowed_origins=["*"],
-            is_active=True,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
@@ -159,7 +160,7 @@ class TestAuthenticationService:
             billing_email="billing@test.com"
         )
         
-        mock_api_key_repo.get_by_key_hash.return_value = api_key
+        mock_api_key_repo.find_by_hash.return_value = api_key
         mock_tenant_repo.get_by_id.return_value = tenant
         
         # Should accept any origin
