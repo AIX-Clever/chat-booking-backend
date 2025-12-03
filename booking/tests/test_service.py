@@ -368,3 +368,126 @@ class TestBookingService:
         
         assert result.status == BookingStatus.CANCELLED
         mock_repos['booking'].save.assert_called_once()
+
+
+class TestBookingQueryService:
+    """Test BookingQueryService"""
+    
+    @pytest.fixture
+    def tenant_id(self):
+        return TenantId("test123")
+    
+    @pytest.fixture
+    def mock_repos(self):
+        return {
+            'booking': Mock(),
+            'conversation': Mock()
+        }
+    
+    @pytest.fixture
+    def query_service(self, mock_repos):
+        from booking.service import BookingQueryService
+        return BookingQueryService(
+            mock_repos['booking'],
+            mock_repos['conversation']
+        )
+    
+    def test_get_booking_success(self, query_service, mock_repos, tenant_id):
+        """Test getting booking by ID"""
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Jane Smith",
+            email="jane@example.com",
+            phone=None
+        )
+        booking = Booking(
+            booking_id="bkg_123",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            customer_info=customer,
+            start_time=datetime.now(UTC) + timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1, hours=1),
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus.PENDING
+        )
+        
+        mock_repos['booking'].get_by_id.return_value = booking
+        
+        result = query_service.get_booking(tenant_id, "bkg_123")
+        
+        assert result.booking_id == "bkg_123"
+        mock_repos['booking'].get_by_id.assert_called_once_with(tenant_id, "bkg_123")
+    
+    def test_get_booking_not_found(self, query_service, mock_repos, tenant_id):
+        """Test getting non-existent booking"""
+        mock_repos['booking'].get_by_id.return_value = None
+        
+        with pytest.raises(EntityNotFoundError):
+            query_service.get_booking(tenant_id, "bkg_999")
+    
+    def test_list_by_provider(self, query_service, mock_repos, tenant_id):
+        """Test listing bookings by provider"""
+        start_date = datetime.now(UTC)
+        end_date = start_date + timedelta(days=7)
+        
+        bookings = []
+        mock_repos['booking'].list_by_provider_and_dates.return_value = bookings
+        
+        result = query_service.list_by_provider(
+            tenant_id,
+            "pro_123",
+            start_date,
+            end_date
+        )
+        
+        assert result == bookings
+        mock_repos['booking'].list_by_provider_and_dates.assert_called_once_with(
+            tenant_id,
+            "pro_123",
+            start_date,
+            end_date
+        )
+    
+    def test_list_by_client(self, query_service, mock_repos, tenant_id):
+        """Test listing bookings by client email"""
+        bookings = []
+        mock_repos['booking'].list_by_client.return_value = bookings
+        
+        result = query_service.list_by_client(tenant_id, "client@example.com")
+        
+        assert result == bookings
+        mock_repos['booking'].list_by_client.assert_called_once_with(
+            tenant_id,
+            "client@example.com"
+        )
+    
+    def test_get_booking_by_conversation(self, query_service, mock_repos, tenant_id):
+        """Test getting booking by conversation ID"""
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Jane Smith",
+            email="jane@example.com",
+            phone=None
+        )
+        booking = Booking(
+            booking_id="bkg_123",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            customer_info=customer,
+            start_time=datetime.now(UTC) + timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1, hours=1),
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus.PENDING
+        )
+        
+        mock_repos['booking'].get_by_conversation.return_value = booking
+        
+        result = query_service.get_booking_by_conversation(tenant_id, "conv_123")
+        
+        assert result == booking
+        mock_repos['booking'].get_by_conversation.assert_called_once_with(
+            tenant_id,
+            "conv_123"
+        )

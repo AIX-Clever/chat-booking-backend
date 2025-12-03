@@ -113,7 +113,7 @@ class BookingService:
         # Validate tenant
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
-            raise EntityNotFoundError(f"Tenant not found: {tenant_id.value}")
+            raise EntityNotFoundError("Tenant", tenant_id.value)
         
         if not tenant.can_create_booking():
             raise TenantNotActiveError(
@@ -124,7 +124,7 @@ class BookingService:
         # Validate service
         service = self._service_repo.get_by_id(tenant_id, service_id)
         if not service:
-            raise EntityNotFoundError(f"Service not found: {service_id}")
+            raise EntityNotFoundError("Service", service_id)
         
         if not service.is_available():
             raise ServiceNotAvailableError(f"Service {service_id} is not available")
@@ -132,7 +132,7 @@ class BookingService:
         # Validate provider
         provider = self._provider_repo.get_by_id(tenant_id, provider_id)
         if not provider:
-            raise EntityNotFoundError(f"Provider not found: {provider_id}")
+            raise EntityNotFoundError("Provider", provider_id)
         
         if not provider.can_provide_service(service_id):
             raise ProviderNotAvailableError(provider_id, service_id)
@@ -249,7 +249,7 @@ class BookingService:
         """
         booking = self._booking_repo.get_by_id(tenant_id, booking_id)
         if not booking:
-            raise EntityNotFoundError(f"Booking not found: {booking_id}")
+            raise EntityNotFoundError("Booking", booking_id)
         return booking
     
     def confirm_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
@@ -332,7 +332,7 @@ class BookingQueryService:
         """Get booking by ID"""
         booking = self._booking_repo.get_by_id(tenant_id, booking_id)
         if not booking:
-            raise EntityNotFoundError(f"Booking not found: {booking_id}")
+            raise EntityNotFoundError("Booking", booking_id)
         return booking
     
     def list_by_provider(
