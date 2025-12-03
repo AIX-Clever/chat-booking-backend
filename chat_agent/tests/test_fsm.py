@@ -25,13 +25,7 @@ class TestStateTransition:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.INIT,
-            context={},
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.INIT
         )
         
         can_transition, error = transition.can_transition(conversation)
@@ -50,12 +44,8 @@ class TestStateTransition:
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
             state=ConversationState.SERVICE_SELECTED,
-            context={'serviceId': 'svc_123'},
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            service_id='svc_123',
+            user_context={'serviceId': 'svc_123'}
         )
         
         can_transition, error = transition.can_transition(conversation)
@@ -73,13 +63,8 @@ class TestStateTransition:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.SERVICE_SELECTED,
-            context={},  # Missing serviceId
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.SERVICE_SELECTED
+            # Missing service_id
         )
         
         can_transition, error = transition.can_transition(conversation)
@@ -95,13 +80,7 @@ class TestChatFSM:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.INIT,
-            context={},
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.INIT
         )
         
         can_transition, error = ChatFSM.can_transition(
@@ -117,13 +96,7 @@ class TestChatFSM:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.INIT,
-            context={},
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.INIT
         )
         
         can_transition, error = ChatFSM.can_transition(

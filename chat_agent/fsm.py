@@ -41,8 +41,8 @@ class StateTransition:
         if conversation.state != self.from_state:
             return False, f"Cannot transition from {conversation.state.value} to {self.to_state.value}"
         
-        # Check required fields in context
-        context = conversation.context or {}
+        # Check required fields in user_context
+        context = conversation.user_context or {}
         missing = [f for f in self.required_fields if not context.get(f)]
         if missing:
             return False, f"Missing required fields: {', '.join(missing)}"
