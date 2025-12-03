@@ -2,7 +2,7 @@
 
 ## 📋 Estado Actual del Proyecto
 
-### ✅ Completado (87% de tests pasando)
+### ✅ Completado (100% de tests pasando - 70/70) 🎉
 
 #### Backend Implementado
 - ✅ 5 Lambda Functions con arquitectura hexagonal
@@ -33,13 +33,23 @@
   - Utilidades de fecha/hora
   - Logger estructurado
 
-- ❌ **0/6** tests de servicios (`auth_resolver/tests/test_service.py`)
-  - Fallan por configuración incorrecta de mocks
-  - Discrepancia entre métodos del servicio y tests
+- ✅ **6/6** tests de auth_resolver (`auth_resolver/tests/test_service.py`)
+  - Mocks corregidos
+  - Método `is_origin_allowed()` agregado
+  
+- ✅ **13/13** tests de booking (`booking/tests/test_service.py`)
+  - Tests de BookingService (8/8)
+  - Tests de BookingQueryService (5/5)
+  - Cobertura: 90%
+
+- ✅ **16/16** tests de chat_agent FSM (`chat_agent/tests/test_fsm.py`)
+  - StateTransition tests
+  - ChatFSM tests
+  - ResponseBuilder tests
 
 ---
 
-## 🔧 Problemas a Resolver
+## ✅ Problemas Resueltos
 
 ### 1. ✅ Tests de AuthenticationService (COMPLETADO)
 
@@ -64,13 +74,13 @@ api_key_entity = self.api_key_repo.find_by_hash(api_key_hash)
 def is_origin_allowed(self, origin: str) -> bool:
     """Check if origin is in allowed list"""
     if "*" in self.allowed_origins:
-        return True
-    return origin in self.allowed_origins
-```
+### 2. ✅ Tests y Código de BookingService (COMPLETADO)
 
-**Pasos para resolver:**
-1. Agregar método `is_origin_allowed()` a la entidad `ApiKey`
-2. Verificar que el repositorio tenga `find_by_hash()` o cambiar a `get_by_key_hash()`
+**Problema resuelto:** El código ya estaba actualizado correctamente.
+
+**Archivos corregidos:**
+- `booking/service.py` - EntityNotFoundError calls corregidas
+- `booking/tests/test_service.py` - Agregados 5 tests para BookingQueryService`get_by_key_hash()`
 3. Ajustar los mocks en los tests para usar los nombres correctos
 4. Re-ejecutar tests: `pytest auth_resolver/tests/ --no-cov -v`
 
@@ -135,15 +145,18 @@ def is_origin_allowed(self, origin: str) -> bool:
        is_available=True
    )
    ```
+### 3. ✅ Tests de ChatAgent FSM (COMPLETADO)
 
-3. **Tests en `booking/tests/test_service.py`:**
-   - ✅ Fixtures corregidos: `Service` usa `active`, `Provider` usa `active`
-   - ⚠️ Tests de `confirm_booking` y `cancel_booking` usan `Booking(start=...)`
-   - Necesitan corregirse después de actualizar el servicio
+**Archivo:** `chat_agent/tests/test_fsm.py` - Máquina de estados FSM
 
-**Estado actual:** 1/8 tests ejecutándose, falla por TimeSlot en código de producción
+**Cambios realizados:**
+- Corregidos tests para usar estructura correcta de Conversation
+- Actualizado `chat_agent/fsm.py` para usar `user_context`
+- 16/16 tests pasando
 
-**Próximo paso:** Actualizar `booking/service.py` para usar nombres correctos de entidades
+### 4. ✅ Deprecation Warnings (COMPLETADO)
+
+**Problema resuelto:** 26 instancias de `datetime.utcnow()` actualizadasctos de entidades
 
 ### 3. Tests de ChatAgent FSM (PENDIENTE)
 
@@ -167,14 +180,16 @@ datetime.utcnow()
 
 # Por:
 from datetime import datetime, UTC
-datetime.now(UTC)
-```
+### 5. ✅ Cobertura de Código (OBJETIVO ALCANZADO: 70%+)
 
-### 4. Cobertura de Código (OBJETIVO: 70%)
+**Estado actual:** ~70%+ en módulos core
 
-**Estado actual:** 53% (medido en primeras ejecuciones)
-
-**Acción requerida:**
+**Resultados:**
+- `booking/service.py`: 90% (↑ de 79%)
+- `auth_resolver/service.py`: 83%
+- `shared/domain/entities.py`: 89%
+- `shared/utils.py`: 83%
+- Agregados 5 tests para BookingQueryService
 1. Ejecutar tests con coverage: `pytest --cov=shared --cov=auth_resolver --cov=booking --cov=chat_agent --cov-report=html`
 2. Identificar código sin cubrir
 3. Agregar tests para aumentar cobertura a 70%+
@@ -247,49 +262,41 @@ flake8 shared/ auth_resolver/ booking/ chat_agent/
 mypy shared/ auth_resolver/
 
 # Formatear código
-black shared/ auth_resolver/ booking/ chat_agent/
-```
-
----
-
 ## 📊 Métricas del Proyecto
 
 | Componente | Estado | Tests | Cobertura |
 |------------|--------|-------|-----------|
-| Domain Entities | ✅ Completo | 20/20 | ~80%+ |
+| Domain Entities | ✅ Completo | 35/35 | 89% |
+| Auth Service | ✅ Completo | 6/6 | 83% |
+| Booking Service | ✅ Completo | 13/13 | 90% |
+| Chat Agent FSM | ✅ Completo | 16/16 | ~75% |
+| **TOTAL** | **✅ Completo** | **70/70** | **~70%+** |
 | Utils | ✅ Completo | 15/15 | ~90%+ |
 | Auth Service | ✅ Completo | 6/6 | ~70%+ |
 | Booking Service | ⚠️ Bloqueado | 0/8 | ~40% |
 | Chat Agent | ❓ No probado | ?/? | ? |
-| **TOTAL** | **⚠️ En progreso** | **41/49+** | **~60%** |
-
----
-
 ## 🎯 Próximos Pasos Recomendados
 
-1. ✅ **Corregir tests de AuthenticationService** ~~(1-2 horas)~~ **COMPLETADO**
-   - ✅ Agregado `is_origin_allowed()` a ApiKey con soporte wildcard
-   - ✅ Corregidos mocks para usar `find_by_hash()`
-   - ✅ Todos los tests pasando (6/6)
+### ✅ Completados
 
-2. ⚠️ **Actualizar BookingService** (2-3 horas) **EN PROGRESO**
-   - Actualizar creación de `Booking` para usar `customer_info` y `start_time`/`end_time`
-   - Actualizar creación de `TimeSlot` para incluir `provider_id` y `service_id`
-   - Corregir tests de `confirm_booking` y `cancel_booking`
-   - **IMPORTANTE:** Esto afecta código de producción, no solo tests
+1. ✅ **Corregir tests de AuthenticationService** (COMPLETADO)
+2. ✅ **Actualizar BookingService** (COMPLETADO)
+3. ✅ **Ejecutar tests de ChatAgent** (COMPLETADO)
+4. ✅ **Aumentar cobertura a 70%** (COMPLETADO)
+5. ✅ **Reemplazar datetime.utcnow()** (COMPLETADO)
 
-3. **Ejecutar tests de ChatAgent** (30 min)
-   - Validar tests de FSM
-   - Corregir si hay problemas similares
+### 🔄 Pendientes
 
-4. **Aumentar cobertura a 70%** (2-3 horas)
-   - Identificar código sin cubrir
-   - Agregar tests faltantes
+6. **Revisar principios SOLID** (1-2 horas) **← EN PROGRESO**
+   - Documentar hallazgos arquitecturales
+   - Validar cumplimiento de principios SOLID
+   - Identificar posibles mejoras
 
-5. **Revisar principios SOLID** (1-2 horas)
-   - Documentar hallazgos
-   - Refactorizar si es necesario
-
+7. **Deployment inicial** (variable)
+   - Completar parámetros de CloudFormation
+   - `cdk deploy --all`
+   - Configurar variables de entorno
+   - Pruebas de integración
 6. **Deployment inicial** (variable)
    - `cdk deploy --all`
    - Configurar variables de entorno
@@ -304,3 +311,4 @@ black shared/ auth_resolver/ booking/ chat_agent/
 - `requirements-dev.txt` - Dependencias de desarrollo
 
 **Última actualización:** 2 de diciembre de 2025
+**Última actualización:** 3 de diciembre de 2025
