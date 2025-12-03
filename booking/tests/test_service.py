@@ -3,7 +3,7 @@ Unit tests for booking service
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from unittest.mock import Mock
 from shared.domain.entities import (
     TenantId,
@@ -102,7 +102,7 @@ class TestBookingService:
     ):
         """Test successful booking creation"""
         # Setup
-        start = datetime.utcnow() + timedelta(days=1)
+        start = datetime.now(UTC) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         mock_repos['tenant'].get_by_id.return_value = active_tenant
@@ -148,7 +148,7 @@ class TestBookingService:
         
         mock_repos['tenant'].get_by_id.return_value = suspended_tenant
         
-        start = datetime.utcnow() + timedelta(days=1)
+        start = datetime.now(UTC) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         with pytest.raises(TenantNotActiveError):
@@ -184,7 +184,7 @@ class TestBookingService:
         mock_repos['tenant'].get_by_id.return_value = active_tenant
         mock_repos['service'].get_by_id.return_value = unavailable_service
         
-        start = datetime.utcnow() + timedelta(days=1)
+        start = datetime.now(UTC) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         with pytest.raises(ServiceNotAvailableError):
@@ -221,7 +221,7 @@ class TestBookingService:
         mock_repos['service'].get_by_id.return_value = service
         mock_repos['provider'].get_by_id.return_value = wrong_provider
         
-        start = datetime.utcnow() + timedelta(days=1)
+        start = datetime.now(UTC) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         with pytest.raises(ProviderNotAvailableError):
@@ -245,7 +245,7 @@ class TestBookingService:
         provider
     ):
         """Test booking creation with slot conflict"""
-        start = datetime.utcnow() + timedelta(days=1)
+        start = datetime.now(UTC) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         # Existing booking
@@ -293,7 +293,7 @@ class TestBookingService:
         provider
     ):
         """Test booking creation in the past"""
-        start = datetime.utcnow() - timedelta(days=1)
+        start = datetime.now(UTC) - timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         mock_repos['tenant'].get_by_id.return_value = active_tenant
@@ -325,8 +325,8 @@ class TestBookingService:
             service_id="svc_123",
             provider_id="pro_123",
             customer_info=customer,
-            start_time=datetime.utcnow() + timedelta(days=1),
-            end_time=datetime.utcnow() + timedelta(days=1, hours=1),
+            start_time=datetime.now(UTC) + timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1, hours=1),
             status=BookingStatus.PENDING,
             payment_status=PaymentStatus.PENDING
         )
@@ -352,8 +352,8 @@ class TestBookingService:
             service_id="svc_123",
             provider_id="pro_123",
             customer_info=customer,
-            start_time=datetime.utcnow() + timedelta(days=1),
-            end_time=datetime.utcnow() + timedelta(days=1, hours=1),
+            start_time=datetime.now(UTC) + timedelta(days=1),
+            end_time=datetime.now(UTC) + timedelta(days=1, hours=1),
             status=BookingStatus.CONFIRMED,
             payment_status=PaymentStatus.PENDING
         )

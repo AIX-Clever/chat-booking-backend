@@ -110,8 +110,8 @@ class AuthenticationService:
             raise TenantNotActiveError(str(tenant.tenant_id))
 
         # Update last used timestamp (fire and forget)
-        from datetime import datetime
-        api_key_entity.last_used_at = datetime.utcnow()
+        from datetime import datetime, UTC
+        api_key_entity.last_used_at = datetime.now(UTC)
         try:
             self.api_key_repo.save(api_key_entity)
         except Exception as e:

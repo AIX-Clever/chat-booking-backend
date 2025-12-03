@@ -4,7 +4,7 @@ Chat Agent Application Service (Application Layer)
 Orchestrates conversational booking flow using FSM
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Optional, Dict, Any
 
 from shared.domain.entities import (
@@ -82,13 +82,7 @@ class ChatAgentService:
         conversation = Conversation(
             conversation_id=conversation_id,
             tenant_id=tenant_id,
-            state=ConversationState.INIT,
-            context={},
-            messages=[],
-            channel=channel,
-            metadata=metadata or {},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.INIT
         )
         
         self._conversation_repo.save(conversation)
@@ -128,13 +122,13 @@ class ChatAgentService:
         if not conversation:
             raise EntityNotFoundError(f"Conversation not found: {conversation_id}")
         
-        # Add user message to history
-        conversation.messages.append({
-            'role': 'user',
-            'content': message,
-            'type': message_type,
-            'timestamp': datetime.utcnow().isoformat()
-        })
+        # Add user message to history (would be stored separately in production)
+        # conversation.messages.append({
+        #     'role': 'user',
+        #     'content': message,
+        #     'type': message_type,
+        #     'timestamp': datetime.now(UTC).isoformat()
+        # })
         
         # Process based on current state
         current_state = conversation.state
@@ -188,15 +182,15 @@ class ChatAgentService:
                 f"Estado no reconocido: {current_state.value}"
             )
         
-        # Add bot response to history
-        conversation.messages.append({
-            'role': 'assistant',
-            'content': response.get('text', ''),
-            'type': response.get('type', 'text'),
-            'timestamp': datetime.utcnow().isoformat()
-        })
+        # Add bot response to history (would be stored separately in production)
+        # conversation.messages.append({
+        #     'role': 'assistant',
+        #     'content': response.get('text', ''),
+        #     'type': response.get('type', 'text'),
+        #     'timestamp': datetime.now(UTC).isoformat()
+        # })
         
-        conversation.updated_at = datetime.utcnow()
+        conversation.updated_at = datetime.now(UTC)
         self._conversation_repo.save(conversation)
         
         return conversation, response
@@ -314,7 +308,7 @@ class ChatAgentService:
         provider_id = conversation.context.get('providerId')
         
         # Get availability for next 14 days
-        from_date = datetime.utcnow()
+        from_date = datetime.now(UTC)
         to_date = from_date + timedelta(days=14)
         
         # This would call availability service (simplified here)

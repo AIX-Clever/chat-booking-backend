@@ -4,7 +4,7 @@ Booking Application Services (Application Layer)
 Use cases for booking management with overbooking prevention
 """
 
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional
 from shared.domain.entities import (
     TenantId,
@@ -146,7 +146,7 @@ class BookingService:
             )
         
         # Validate time slot is not in the past
-        if start < datetime.utcnow():
+        if start < datetime.now(UTC):
             raise ValidationError("Cannot create booking in the past")
         
         # Check slot availability (prevent overbooking)

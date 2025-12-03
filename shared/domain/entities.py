@@ -8,7 +8,7 @@ Following Hexagonal Architecture principles:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -255,7 +255,7 @@ class Conversation:
     def transition_to(self, new_state: ConversationState):
         """Transition to new state"""
         self.state = new_state
-        self.updated_at = datetime.utcnow()
+        self.updated_at = datetime.now(UTC)
 
     def set_service(self, service_id: str):
         """Set selected service"""

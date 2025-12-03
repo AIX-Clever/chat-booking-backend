@@ -3,7 +3,7 @@ Unit tests for domain entities
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, UTC, timedelta
 from shared.domain.entities import (
     TenantId,
     Tenant,
@@ -332,7 +332,7 @@ class TestApiKey:
             status="ACTIVE",
             allowed_origins=["https://example.com"],
             rate_limit=1000,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(UTC)
         )
         
         assert api_key.is_valid()
@@ -345,7 +345,7 @@ class TestApiKey:
             status="REVOKED",
             allowed_origins=["https://example.com"],
             rate_limit=1000,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(UTC)
         )
         
         assert not api_key.is_valid()
