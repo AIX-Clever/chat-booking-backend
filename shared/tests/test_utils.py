@@ -53,19 +53,22 @@ class TestApiKeyUtilities:
         assert hash1 != hash2
     
     def test_generate_api_key(self):
-        key1 = generate_api_key()
-        key2 = generate_api_key()
+        public_key1, hash1 = generate_api_key()
+        public_key2, hash2 = generate_api_key()
         
-        assert len(key1) >= 32
-        assert len(key2) >= 32
-        assert key1 != key2
+        assert public_key1.startswith("sk_")
+        assert public_key2.startswith("sk_")
+        assert len(hash1) == 64  # SHA256 hash
+        assert len(hash2) == 64
+        assert public_key1 != public_key2
+        assert hash1 != hash2
 
 
 class TestLambdaResponses:
     """Test Lambda response builders"""
     
     def test_lambda_response_structure(self):
-        response = lambda_response({"test": "data"}, 200)
+        response = lambda_response(200, {"test": "data"})
         
         assert response["statusCode"] == 200
         assert "body" in response
@@ -132,21 +135,15 @@ class TestDateTimeUtilities:
 class TestLogger:
     """Test Logger utility"""
     
-    def test_logger_initialization(self):
-        logger = Logger(service_name="test_service")
-        assert logger.service_name == "test_service"
-    
     def test_logger_info(self, capsys):
-        logger = Logger()
-        logger.info("Test message", user_id="123", action="test")
+        Logger.info("Test message", user_id="123", action="test")
         
         captured = capsys.readouterr()
         assert "Test message" in captured.out
         assert "INFO" in captured.out
     
     def test_logger_error(self, capsys):
-        logger = Logger()
-        logger.error("Error occurred", error_code="ERR_001")
+        Logger.error("Error occurred", error_code="ERR_001")
         
         captured = capsys.readouterr()
         assert "Error occurred" in captured.out

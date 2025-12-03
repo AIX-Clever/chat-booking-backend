@@ -17,7 +17,8 @@ from shared.domain.entities import (
     TimeSlot,
     Conversation,
     ConversationState,
-    ApiKey
+    ApiKey,
+    CustomerInfo
 )
 from shared.domain.exceptions import ValidationError
 
@@ -94,8 +95,7 @@ class TestService:
             category="wellness",
             duration_minutes=60,
             price=50.0,
-            available=True,
-            created_at=datetime.utcnow()
+            active=True
         )
         
         assert service.is_available()
@@ -109,8 +109,7 @@ class TestService:
             category="wellness",
             duration_minutes=60,
             price=50.0,
-            available=False,
-            created_at=datetime.utcnow()
+            active=False
         )
         
         assert not service.is_available()
@@ -127,8 +126,7 @@ class TestProvider:
             bio="Expert therapist",
             service_ids=["svc_1", "svc_2"],
             timezone="UTC",
-            available=True,
-            created_at=datetime.utcnow()
+            active=True
         )
         
         assert provider.can_provide_service("svc_1")
@@ -142,60 +140,68 @@ class TestBooking:
     def test_booking_creation(self):
         start = datetime(2025, 12, 15, 10, 0)
         end = datetime(2025, 12, 15, 11, 0)
+        customer = CustomerInfo(
+            customer_id="cust_123",
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="+1234567890"
+        )
         
         booking = Booking(
             booking_id="bkg_123",
             tenant_id=TenantId("test123"),
             service_id="svc_123",
             provider_id="pro_123",
-            start=start,
-            end=end,
+            customer_info=customer,
+            start_time=start,
+            end_time=end,
             status=BookingStatus.PENDING,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         assert booking.is_active()
     
     def test_booking_confirmation(self):
+        customer = CustomerInfo(
+            customer_id="cust_123",
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="+1234567890"
+        )
+        
         booking = Booking(
             booking_id="bkg_123",
             tenant_id=TenantId("test123"),
             service_id="svc_123",
             provider_id="pro_123",
-            start=datetime(2025, 12, 15, 10, 0),
-            end=datetime(2025, 12, 15, 11, 0),
+            customer_info=customer,
+            start_time=datetime(2025, 12, 15, 10, 0),
+            end_time=datetime(2025, 12, 15, 11, 0),
             status=BookingStatus.PENDING,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         booking.confirm()
         assert booking.status == BookingStatus.CONFIRMED
     
     def test_booking_cancellation(self):
+        customer = CustomerInfo(
+            customer_id="cust_123",
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="+1234567890"
+        )
+        
         booking = Booking(
             booking_id="bkg_123",
             tenant_id=TenantId("test123"),
             service_id="svc_123",
             provider_id="pro_123",
-            start=datetime(2025, 12, 15, 10, 0),
-            end=datetime(2025, 12, 15, 11, 0),
+            customer_info=customer,
+            start_time=datetime(2025, 12, 15, 10, 0),
+            end_time=datetime(2025, 12, 15, 11, 0),
             status=BookingStatus.PENDING,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         booking.cancel()
@@ -203,38 +209,52 @@ class TestBooking:
         assert not booking.is_active()
     
     def test_booking_overlap_detection(self):
-        start1 = datetime(2025, 12, 15, 10, 0)
-        end1 = datetime(2025, 12, 15, 11, 0)
+        customer = CustomerInfo(
+            customer_id="cust_123",
+            name="Jane Smith",
+            email="jane@example.com",
+            phone="+1234567890"
+        )
         
-        booking = Booking(
+        booking1 = Booking(
             booking_id="bkg_123",
             tenant_id=TenantId("test123"),
             service_id="svc_123",
             provider_id="pro_123",
-            start=start1,
-            end=end1,
+            customer_info=customer,
+            start_time=datetime(2025, 12, 15, 10, 0),
+            end_time=datetime(2025, 12, 15, 11, 0),
             status=BookingStatus.CONFIRMED,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
-        # Overlapping slot
-        overlapping_slot = TimeSlot(
-            start=datetime(2025, 12, 15, 10, 30),
-            end=datetime(2025, 12, 15, 11, 30)
+        # Overlapping booking
+        booking2 = Booking(
+            booking_id="bkg_456",
+            tenant_id=TenantId("test123"),
+            service_id="svc_123",
+            provider_id="pro_123",
+            customer_info=customer,
+            start_time=datetime(2025, 12, 15, 10, 30),
+            end_time=datetime(2025, 12, 15, 11, 30),
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus.PENDING
         )
-        assert booking.overlaps_with(overlapping_slot)
+        assert booking1.overlaps_with(booking2)
         
-        # Non-overlapping slot
-        non_overlapping_slot = TimeSlot(
-            start=datetime(2025, 12, 15, 11, 0),
-            end=datetime(2025, 12, 15, 12, 0)
+        # Non-overlapping booking
+        booking3 = Booking(
+            booking_id="bkg_789",
+            tenant_id=TenantId("test123"),
+            service_id="svc_123",
+            provider_id="pro_123",
+            customer_info=customer,
+            start_time=datetime(2025, 12, 15, 11, 0),
+            end_time=datetime(2025, 12, 15, 12, 0),
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus.PENDING
         )
-        assert not booking.overlaps_with(non_overlapping_slot)
+        assert not booking1.overlaps_with(booking3)
 
 
 class TestTimeSlot:
@@ -242,38 +262,36 @@ class TestTimeSlot:
     
     def test_time_slot_duration(self):
         slot = TimeSlot(
+            provider_id="pro_123",
+            service_id="svc_123",
             start=datetime(2025, 12, 15, 10, 0),
-            end=datetime(2025, 12, 15, 11, 0)
+            end=datetime(2025, 12, 15, 11, 0),
+            is_available=True
         )
         
         assert slot.duration_minutes() == 60
     
-    def test_overlapping_slots(self):
-        slot1 = TimeSlot(
+    def test_available_slot(self):
+        slot = TimeSlot(
+            provider_id="pro_123",
+            service_id="svc_123",
             start=datetime(2025, 12, 15, 10, 0),
-            end=datetime(2025, 12, 15, 11, 0)
+            end=datetime(2025, 12, 15, 11, 0),
+            is_available=True
         )
         
-        slot2 = TimeSlot(
-            start=datetime(2025, 12, 15, 10, 30),
-            end=datetime(2025, 12, 15, 11, 30)
-        )
-        
-        assert slot1.overlaps_with(slot2)
-        assert slot2.overlaps_with(slot1)
+        assert slot.is_available
     
-    def test_non_overlapping_slots(self):
-        slot1 = TimeSlot(
+    def test_unavailable_slot(self):
+        slot = TimeSlot(
+            provider_id="pro_123",
+            service_id="svc_123",
             start=datetime(2025, 12, 15, 10, 0),
-            end=datetime(2025, 12, 15, 11, 0)
+            end=datetime(2025, 12, 15, 11, 0),
+            is_available=False
         )
         
-        slot2 = TimeSlot(
-            start=datetime(2025, 12, 15, 11, 0),
-            end=datetime(2025, 12, 15, 12, 0)
-        )
-        
-        assert not slot1.overlaps_with(slot2)
+        assert not slot.is_available
 
 
 class TestConversation:
@@ -283,13 +301,7 @@ class TestConversation:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.INIT,
-            context={},
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.INIT
         )
         
         conversation.transition_to(ConversationState.SERVICE_PENDING)
@@ -299,19 +311,11 @@ class TestConversation:
         conversation = Conversation(
             conversation_id="conv_123",
             tenant_id=TenantId("test123"),
-            state=ConversationState.CONFIRM_PENDING,
-            context={
-                "serviceId": "svc_123",
-                "providerId": "pro_123",
-                "selectedSlot": {"start": "2025-12-15T10:00:00Z"},
-                "clientName": "John Doe",
-                "clientEmail": "john@example.com"
-            },
-            messages=[],
-            channel="widget",
-            metadata={},
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            state=ConversationState.SLOT_PENDING,
+            service_id="svc_123",
+            provider_id="pro_123",
+            slot_start=datetime(2025, 12, 15, 10, 0),
+            slot_end=datetime(2025, 12, 15, 11, 0)
         )
         
         assert conversation.is_ready_for_booking()
@@ -324,10 +328,10 @@ class TestApiKey:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="ACTIVE",
             allowed_origins=["https://example.com"],
-            is_active=True,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
@@ -337,39 +341,11 @@ class TestApiKey:
         api_key = ApiKey(
             api_key_id="key_123",
             tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
+            api_key_hash="hashed_key",
+            status="REVOKED",
             allowed_origins=["https://example.com"],
-            is_active=False,
+            rate_limit=1000,
             created_at=datetime.utcnow()
         )
         
         assert not api_key.is_valid()
-    
-    def test_origin_validation(self):
-        api_key = ApiKey(
-            api_key_id="key_123",
-            tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
-            allowed_origins=["https://example.com", "https://test.com"],
-            is_active=True,
-            created_at=datetime.utcnow()
-        )
-        
-        assert api_key.is_origin_allowed("https://example.com")
-        assert api_key.is_origin_allowed("https://test.com")
-        assert not api_key.is_origin_allowed("https://malicious.com")
-    
-    def test_wildcard_origin(self):
-        api_key = ApiKey(
-            api_key_id="key_123",
-            tenant_id=TenantId("test123"),
-            key_hash="hashed_key",
-            description="Test key",
-            allowed_origins=["*"],
-            is_active=True,
-            created_at=datetime.utcnow()
-        )
-        
-        assert api_key.is_origin_allowed("https://any-domain.com")

@@ -301,4 +301,6 @@ class ApiKey:
 
     def is_origin_allowed(self, origin: str) -> bool:
         """Check if origin is in allowed list"""
+        if "*" in self.allowed_origins:
+            return True
         return origin in self.allowed_origins
