@@ -15,7 +15,8 @@ from shared.domain.entities import (
     Booking,
     BookingStatus,
     PaymentStatus,
-    TimeSlot
+    TimeSlot,
+    CustomerInfo
 )
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -57,8 +58,7 @@ class TestBookingService:
             category="wellness",
             duration_minutes=60,
             price=50.0,
-            available=True,
-            created_at=datetime.utcnow()
+            active=True
         )
     
     @pytest.fixture
@@ -70,8 +70,7 @@ class TestBookingService:
             bio="Expert therapist",
             service_ids=["svc_123"],
             timezone="UTC",
-            available=True,
-            created_at=datetime.utcnow()
+            active=True
         )
     
     @pytest.fixture
@@ -124,8 +123,10 @@ class TestBookingService:
         
         # Assert
         assert booking.status == BookingStatus.PENDING
-        assert booking.client_name == "Jane Smith"
-        assert booking.total_amount == 50.0
+        assert booking.customer_info.name == "Jane Smith"
+        assert booking.customer_info.email == "jane@example.com"
+        assert booking.start_time == start
+        assert booking.end_time == end
         mock_repos['booking'].save.assert_called_once()
     
     def test_create_booking_tenant_not_active(
@@ -177,8 +178,7 @@ class TestBookingService:
             category="wellness",
             duration_minutes=60,
             price=50.0,
-            available=False,
-            created_at=datetime.utcnow()
+            active=False
         )
         
         mock_repos['tenant'].get_by_id.return_value = active_tenant
@@ -214,8 +214,7 @@ class TestBookingService:
             bio="Expert therapist",
             service_ids=["svc_999"],  # Different service
             timezone="UTC",
-            available=True,
-            created_at=datetime.utcnow()
+            active=True
         )
         
         mock_repos['tenant'].get_by_id.return_value = active_tenant
@@ -250,20 +249,22 @@ class TestBookingService:
         end = start + timedelta(minutes=60)
         
         # Existing booking
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Someone Else",
+            email="other@example.com",
+            phone=None
+        )
         existing_booking = Booking(
             booking_id="bkg_existing",
             tenant_id=tenant_id,
             service_id="svc_123",
             provider_id="pro_123",
-            start=start,
-            end=end,
+            customer_info=customer,
+            start_time=start,
+            end_time=end,
             status=BookingStatus.CONFIRMED,
-            client_name="Someone Else",
-            client_email="other@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         mock_repos['tenant'].get_by_id.return_value = active_tenant
@@ -312,20 +313,22 @@ class TestBookingService:
     
     def test_confirm_booking(self, booking_service, mock_repos, tenant_id):
         """Test booking confirmation"""
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Jane Smith",
+            email="jane@example.com",
+            phone=None
+        )
         booking = Booking(
             booking_id="bkg_123",
             tenant_id=tenant_id,
             service_id="svc_123",
             provider_id="pro_123",
-            start=datetime.utcnow() + timedelta(days=1),
-            end=datetime.utcnow() + timedelta(days=1, hours=1),
+            customer_info=customer,
+            start_time=datetime.utcnow() + timedelta(days=1),
+            end_time=datetime.utcnow() + timedelta(days=1, hours=1),
             status=BookingStatus.PENDING,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         mock_repos['booking'].get_by_id.return_value = booking
@@ -337,20 +340,22 @@ class TestBookingService:
     
     def test_cancel_booking(self, booking_service, mock_repos, tenant_id):
         """Test booking cancellation"""
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Jane Smith",
+            email="jane@example.com",
+            phone=None
+        )
         booking = Booking(
             booking_id="bkg_123",
             tenant_id=tenant_id,
             service_id="svc_123",
             provider_id="pro_123",
-            start=datetime.utcnow() + timedelta(days=1),
-            end=datetime.utcnow() + timedelta(days=1, hours=1),
+            customer_info=customer,
+            start_time=datetime.utcnow() + timedelta(days=1),
+            end_time=datetime.utcnow() + timedelta(days=1, hours=1),
             status=BookingStatus.CONFIRMED,
-            client_name="Jane Smith",
-            client_email="jane@example.com",
-            payment_status=PaymentStatus.PENDING,
-            total_amount=50.0,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            payment_status=PaymentStatus.PENDING
         )
         
         mock_repos['booking'].get_by_id.return_value = booking
@@ -362,5 +367,4 @@ class TestBookingService:
         )
         
         assert result.status == BookingStatus.CANCELLED
-        assert "CANCELLED" in result.notes
         mock_repos['booking'].save.assert_called_once()

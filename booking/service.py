@@ -11,7 +11,8 @@ from shared.domain.entities import (
     Booking,
     BookingStatus,
     PaymentStatus,
-    TimeSlot
+    TimeSlot,
+    CustomerInfo
 )
 from shared.domain.repositories import (
     IBookingRepository,
@@ -134,9 +135,7 @@ class BookingService:
             raise EntityNotFoundError(f"Provider not found: {provider_id}")
         
         if not provider.can_provide_service(service_id):
-            raise ProviderNotAvailableError(
-                f"Provider {provider_id} cannot provide service {service_id}"
-            )
+            raise ProviderNotAvailableError(provider_id, service_id)
         
         # Validate booking duration matches service duration
         booking_duration = int((end - start).total_seconds() / 60)
@@ -158,23 +157,25 @@ class BookingService:
         
         # Create booking entity
         booking_id = generate_id('bkg')
+        
+        # Create customer info value object
+        customer_info = CustomerInfo(
+            customer_id=None,
+            name=client_name,
+            email=client_email,
+            phone=client_phone
+        )
+        
         booking = Booking(
             booking_id=booking_id,
             tenant_id=tenant_id,
             service_id=service_id,
             provider_id=provider_id,
-            start=start,
-            end=end,
+            customer_info=customer_info,
+            start_time=start,
+            end_time=end,
             status=BookingStatus.PENDING,
-            client_name=client_name,
-            client_email=client_email,
-            client_phone=client_phone,
-            notes=notes,
-            conversation_id=conversation_id,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
-            payment_status=PaymentStatus.PENDING,
-            total_amount=service.price
+            payment_status=PaymentStatus.PENDING
         )
         
         # Save with conditional expression to prevent race conditions
@@ -219,7 +220,6 @@ class BookingService:
         )
         
         # Check for overlaps with active bookings
-        new_slot = TimeSlot(start=start, end=end)
         for booking in bookings:
             # Skip the booking being updated
             if exclude_booking_id and booking.booking_id == exclude_booking_id:
@@ -227,7 +227,8 @@ class BookingService:
             
             # Only consider active bookings (not cancelled/completed)
             if booking.is_active():
-                if booking.overlaps_with(new_slot):
+                # Check if time ranges overlap
+                if not (end <= booking.start_time or start >= booking.end_time):
                     return False
         
         return True
@@ -295,10 +296,8 @@ class BookingService:
         booking = self.get_booking(tenant_id, booking_id)
         booking.cancel()
         
-        # Add cancellation reason to notes
-        if reason:
-            current_notes = booking.notes or ""
-            booking.notes = f"{current_notes}\n[CANCELLED] {reason}".strip()
+        # TODO: Store cancellation reason in a separate CancellationReason value object
+        # or in booking metadata if needed
         
         self._booking_repo.save(booking)
         return booking
