@@ -243,6 +243,10 @@ class ChatAgentService:
         conversation.context['serviceName'] = service.name
         conversation.context['servicePrice'] = service.price
         conversation.context['serviceDuration'] = service.duration_minutes
+        
+        # Sync with entity attributes
+        conversation.service_id = service_id
+        
         conversation.transition_to(ConversationState.SERVICE_SELECTED)
         
         return {
@@ -301,6 +305,10 @@ class ChatAgentService:
         # Update context and transition
         conversation.context['providerId'] = provider_id
         conversation.context['providerName'] = provider.name
+        
+        # Sync with entity attributes
+        conversation.provider_id = provider_id
+        
         conversation.transition_to(ConversationState.PROVIDER_SELECTED)
         
         return {
@@ -368,6 +376,10 @@ class ChatAgentService:
         
         # Update context
         conversation.context['selectedSlot'] = selected_slot
+        
+        # Sync with entity attributes
+        conversation.slot_start = start_time
+        conversation.slot_end = end_time
         
         # Ask for contact info
         return ResponseBuilder.contact_info_message()
