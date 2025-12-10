@@ -1,0 +1,575 @@
+import * as cdk from 'aws-cdk-lib';
+import * as appsync from 'aws-cdk-lib/aws-appsync';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { Construct } from 'constructs';
+import * as path from 'path';
+import * as fs from 'fs';
+
+/**
+ * AppSync API Stack
+ * 
+ * Creates GraphQL API with:
+ * - Complete schema for booking system
+ * - API Key authorization for widget
+ * - Cognito authorization for admin (placeholder)
+ * - Lambda resolvers for all operations
+ */
+
+interface AppSyncApiStackProps extends cdk.StackProps {
+  authResolverFunction: lambda.IFunction;
+  catalogFunction: lambda.IFunction;
+  availabilityFunction: lambda.IFunction;
+  bookingFunction: lambda.IFunction;
+  chatAgentFunction: lambda.IFunction;
+}
+
+export class AppSyncApiStack extends cdk.Stack {
+  public readonly api: appsync.GraphqlApi;
+  public readonly apiKey: string;
+
+  constructor(scope: Construct, id: string, props: AppSyncApiStackProps) {
+    super(scope, id, props);
+
+    // GraphQL Schema
+    const schema = this.buildSchema();
+
+    // Create AppSync API
+    this.api = new appsync.GraphqlApi(this, 'ChatBookingApi', {
+      name: 'ChatBookingGraphQLApi',
+      schema: appsync.SchemaFile.fromAsset(this.createSchemaFile(schema)),
+      authorizationConfig: {
+        defaultAuthorization: {
+          authorizationType: appsync.AuthorizationType.API_KEY,
+          apiKeyConfig: {
+            expires: cdk.Expiration.after(cdk.Duration.days(365)),
+            description: 'API Key for widget authentication',
+          },
+        },
+        additionalAuthorizationModes: [
+          {
+            authorizationType: appsync.AuthorizationType.LAMBDA,
+            lambdaAuthorizerConfig: {
+              handler: props.authResolverFunction,
+              resultsCacheTtl: cdk.Duration.minutes(5),
+            },
+          },
+        ],
+      },
+      xrayEnabled: true,
+      logConfig: {
+        fieldLogLevel: appsync.FieldLogLevel.ERROR,
+        excludeVerboseContent: false,
+      },
+    });
+
+    // Create Lambda data sources
+    const catalogDataSource = this.api.addLambdaDataSource(
+      'CatalogDataSource',
+      props.catalogFunction
+    );
+
+    const availabilityDataSource = this.api.addLambdaDataSource(
+      'AvailabilityDataSource',
+      props.availabilityFunction
+    );
+
+    const bookingDataSource = this.api.addLambdaDataSource(
+      'BookingDataSource',
+      props.bookingFunction
+    );
+
+    const chatAgentDataSource = this.api.addLambdaDataSource(
+      'ChatAgentDataSource',
+      props.chatAgentFunction
+    );
+
+    // Create resolvers
+    this.createResolvers(
+      catalogDataSource,
+      availabilityDataSource,
+      bookingDataSource,
+      chatAgentDataSource
+    );
+
+    // Outputs
+    new cdk.CfnOutput(this, 'GraphQLApiUrl', {
+      value: this.api.graphqlUrl,
+      description: 'GraphQL API endpoint',
+    });
+
+    new cdk.CfnOutput(this, 'GraphQLApiId', {
+      value: this.api.apiId,
+      description: 'GraphQL API ID',
+    });
+
+    new cdk.CfnOutput(this, 'GraphQLApiKey', {
+      value: this.api.apiKey || 'N/A',
+      description: 'GraphQL API Key (for testing)',
+    });
+  }
+
+  private buildSchema(): string {
+    return `
+# Scalars
+scalar AWSDateTime
+scalar AWSJSON
+
+# Enums
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  NONE
+  PENDING
+  PAID
+  FAILED
+}
+
+enum ConversationState {
+  INIT
+  SERVICE_PENDING
+  SERVICE_SELECTED
+  PROVIDER_PENDING
+  PROVIDER_SELECTED
+  SLOT_PENDING
+  CONFIRM_PENDING
+  BOOKING_CONFIRMED
+}
+
+# Types - Catalog
+type Service {
+  serviceId: ID!
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+  available: Boolean!
+}
+
+type Provider {
+  providerId: ID!
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  available: Boolean!
+}
+
+# Types - Availability
+type TimeSlot {
+  providerId: ID!
+  serviceId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  isAvailable: Boolean!
+}
+
+type TimeRange {
+  startTime: String!
+  endTime: String!
+}
+
+type ProviderAvailability {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRange!]!
+  breaks: [TimeRange!]
+}
+
+# Types - Bookings
+type Booking {
+  bookingId: ID!
+  tenantId: ID!
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  status: BookingStatus!
+  clientName: String!
+  clientEmail: String!
+  clientPhone: String
+  notes: String
+  conversationId: ID
+  paymentStatus: PaymentStatus!
+  totalAmount: Float!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Types - Chat
+type Message {
+  role: String!
+  content: String!
+  type: String!
+  timestamp: String!
+}
+
+type Conversation {
+  conversationId: ID!
+  tenantId: ID!
+  state: ConversationState!
+  context: AWSJSON
+  messages: [Message!]!
+  channel: String!
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ChatResponse {
+  conversation: Conversation!
+  response: AWSJSON!
+}
+
+# Inputs - Catalog
+input CreateServiceInput {
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+}
+
+input UpdateServiceInput {
+  serviceId: ID!
+  name: String
+  description: String
+  category: String
+  durationMinutes: Int
+  price: Float
+  available: Boolean
+}
+
+input CreateProviderInput {
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+}
+
+input UpdateProviderInput {
+  providerId: ID!
+  name: String
+  bio: String
+  serviceIds: [ID!]
+  timezone: String
+  available: Boolean
+}
+
+# Inputs - Availability
+input GetAvailableSlotsInput {
+  serviceId: ID!
+  providerId: ID!
+  from: AWSDateTime!
+  to: AWSDateTime!
+}
+
+input TimeRangeInput {
+  startTime: String!
+  endTime: String!
+}
+
+input SetAvailabilityInput {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRangeInput!]!
+  breaks: [TimeRangeInput!]
+}
+
+# Inputs - Bookings
+input CreateBookingInput {
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  clientName: String!
+  clientEmail: String!
+  clientPhone: String
+  notes: String
+  conversationId: ID
+}
+
+input ConfirmBookingInput {
+  bookingId: ID!
+}
+
+input CancelBookingInput {
+  bookingId: ID!
+  reason: String
+}
+
+input GetBookingInput {
+  bookingId: ID!
+}
+
+input ListBookingsByProviderInput {
+  providerId: ID!
+  startDate: AWSDateTime!
+  endDate: AWSDateTime!
+}
+
+input ListBookingsByClientInput {
+  clientEmail: String!
+}
+
+input GetBookingByConversationInput {
+  conversationId: ID!
+}
+
+# Inputs - Chat
+input StartConversationInput {
+  channel: String
+  metadata: AWSJSON
+}
+
+input SendMessageInput {
+  conversationId: ID!
+  message: String!
+  messageType: String
+  userData: AWSJSON
+}
+
+input ConfirmBookingFromConversationInput {
+  conversationId: ID!
+}
+
+input GetConversationInput {
+  conversationId: ID!
+}
+
+# Queries
+type Query {
+  # Catalog
+  searchServices(text: String, availableOnly: Boolean): [Service!]!
+  getService(serviceId: ID!): Service
+  listProviders: [Provider!]!
+  listProvidersByService(serviceId: ID!): [Provider!]!
+  
+  # Availability
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!
+  
+  # Bookings
+  getBooking(input: GetBookingInput!): Booking
+  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]!
+  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]!
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking
+  
+  # Chat
+  getConversation(input: GetConversationInput!): Conversation
+}
+
+# Mutations
+type Mutation {
+  # Catalog (Admin)
+  createService(input: CreateServiceInput!): Service!
+  updateService(input: UpdateServiceInput!): Service!
+  deleteService(serviceId: ID!): Service!
+  
+  createProvider(input: CreateProviderInput!): Provider!
+  updateProvider(input: UpdateProviderInput!): Provider!
+  deleteProvider(providerId: ID!): Provider!
+  
+  # Availability (Admin)
+  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability!
+  
+  # Bookings
+  createBooking(input: CreateBookingInput!): Booking!
+  confirmBooking(input: ConfirmBookingInput!): Booking!
+  cancelBooking(input: CancelBookingInput!): Booking!
+  
+  # Chat
+  startConversation(input: StartConversationInput!): ChatResponse!
+  sendMessage(input: SendMessageInput!): ChatResponse!
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+`;
+  }
+
+  private createSchemaFile(schema: string): string {
+    const schemaPath = path.join(__dirname, '../schema.graphql');
+    fs.writeFileSync(schemaPath, schema);
+    return schemaPath;
+  }
+
+  private createResolvers(
+    catalogDataSource: appsync.LambdaDataSource,
+    availabilityDataSource: appsync.LambdaDataSource,
+    bookingDataSource: appsync.LambdaDataSource,
+    chatAgentDataSource: appsync.LambdaDataSource
+  ): void {
+    // Catalog resolvers
+    catalogDataSource.createResolver('SearchServicesResolver', {
+      typeName: 'Query',
+      fieldName: 'searchServices',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('GetServiceResolver', {
+      typeName: 'Query',
+      fieldName: 'getService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('ListProvidersResolver', {
+      typeName: 'Query',
+      fieldName: 'listProviders',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('ListProvidersByServiceResolver', {
+      typeName: 'Query',
+      fieldName: 'listProvidersByService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('CreateServiceResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('UpdateServiceResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('DeleteServiceResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('CreateProviderResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createProvider',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('UpdateProviderResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateProvider',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('DeleteProviderResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteProvider',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Availability resolvers
+    availabilityDataSource.createResolver('GetAvailableSlotsResolver', {
+      typeName: 'Query',
+      fieldName: 'getAvailableSlots',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    availabilityDataSource.createResolver('SetProviderAvailabilityResolver', {
+      typeName: 'Mutation',
+      fieldName: 'setProviderAvailability',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Booking resolvers
+    bookingDataSource.createResolver('GetBookingResolver', {
+      typeName: 'Query',
+      fieldName: 'getBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('ListBookingsByProviderResolver', {
+      typeName: 'Query',
+      fieldName: 'listBookingsByProvider',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('ListBookingsByClientResolver', {
+      typeName: 'Query',
+      fieldName: 'listBookingsByClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('GetBookingByConversationResolver', {
+      typeName: 'Query',
+      fieldName: 'getBookingByConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('CreateBookingResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('ConfirmBookingResolver', {
+      typeName: 'Mutation',
+      fieldName: 'confirmBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('CancelBookingResolver', {
+      typeName: 'Mutation',
+      fieldName: 'cancelBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Chat Agent resolvers
+    chatAgentDataSource.createResolver('StartConversationResolver', {
+      typeName: 'Mutation',
+      fieldName: 'startConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    chatAgentDataSource.createResolver('SendMessageResolver', {
+      typeName: 'Mutation',
+      fieldName: 'sendMessage',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    chatAgentDataSource.createResolver('ConfirmBookingFromConversationResolver', {
+      typeName: 'Mutation',
+      fieldName: 'confirmBookingFromConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    chatAgentDataSource.createResolver('GetConversationResolver', {
+      typeName: 'Query',
+      fieldName: 'getConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+  }
+}

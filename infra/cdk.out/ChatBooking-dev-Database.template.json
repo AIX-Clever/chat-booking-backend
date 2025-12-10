@@ -1,0 +1,643 @@
+{
+ "Description": "DynamoDB tables for Chat Booking SaaS",
+ "Resources": {
+  "TenantsTableB701DC57": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "slug",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "slug-index",
+      "KeySchema": [
+       {
+        "AttributeName": "slug",
+        "KeyType": "HASH"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Tenants"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/TenantsTable/Resource"
+   }
+  },
+  "ApiKeysTable9F4DC7E7": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "apiKeyHash",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "tenantId-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "apiKeyHash",
+      "KeyType": "HASH"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-ApiKeys"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/ApiKeysTable/Resource"
+   }
+  },
+  "ServicesTableF56E8DC5": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "serviceId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "category",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "category-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "category",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "serviceId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Services"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/ServicesTable/Resource"
+   }
+  },
+  "ProvidersTable1BBEDB6D": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "providerId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "serviceIds",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "serviceId-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "serviceIds",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "providerId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Providers"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/ProvidersTable/Resource"
+   }
+  },
+  "AvailabilityTable497A1E6E": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId_providerId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "dayOfWeek",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId_providerId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "dayOfWeek",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-ProviderAvailability"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/AvailabilityTable/Resource"
+   }
+  },
+  "BookingsTableB2628485": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "bookingId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "tenantId_providerId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "start",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "clientEmail",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "conversationId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "providerId-start-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId_providerId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "start",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     },
+     {
+      "IndexName": "clientEmail-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "clientEmail",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     },
+     {
+      "IndexName": "conversationId-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "conversationId",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "bookingId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Bookings"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/BookingsTable/Resource"
+   }
+  },
+  "ConversationsTableCD91EB96": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "conversationId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "state",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "GlobalSecondaryIndexes": [
+     {
+      "IndexName": "state-index",
+      "KeySchema": [
+       {
+        "AttributeName": "tenantId",
+        "KeyType": "HASH"
+       },
+       {
+        "AttributeName": "state",
+        "KeyType": "RANGE"
+       }
+      ],
+      "Projection": {
+       "ProjectionType": "ALL"
+      }
+     }
+    ],
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "conversationId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Conversations"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/ConversationsTable/Resource"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/yXISw5AMBRA0bWYtw/tyNgCJJjL60dSn1a8lojYu4TRPbkChBRQZngS12bmi1NwdxH1zPCkwVwe12AU3D2qxbJ69B8e1loKadffalLcUnyYD8bCRPkhCigrkNlEzvE9+ehWC+3fF9YLJ7RyAAAA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "TenantsTableName": {
+   "Description": "Tenants table name",
+   "Value": {
+    "Ref": "TenantsTableB701DC57"
+   }
+  },
+  "ApiKeysTableName": {
+   "Description": "API Keys table name",
+   "Value": {
+    "Ref": "ApiKeysTable9F4DC7E7"
+   }
+  },
+  "ServicesTableName": {
+   "Description": "Services table name",
+   "Value": {
+    "Ref": "ServicesTableF56E8DC5"
+   }
+  },
+  "ProvidersTableName": {
+   "Description": "Providers table name",
+   "Value": {
+    "Ref": "ProvidersTable1BBEDB6D"
+   }
+  },
+  "AvailabilityTableName": {
+   "Description": "Provider Availability table name",
+   "Value": {
+    "Ref": "AvailabilityTable497A1E6E"
+   }
+  },
+  "BookingsTableName": {
+   "Description": "Bookings table name",
+   "Value": {
+    "Ref": "BookingsTableB2628485"
+   }
+  },
+  "ConversationsTableName": {
+   "Description": "Conversations table name",
+   "Value": {
+    "Ref": "ConversationsTableCD91EB96"
+   }
+  },
+  "ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087": {
+   "Value": {
+    "Fn::GetAtt": [
+     "TenantsTableB701DC57",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+   }
+  },
+  "ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ApiKeysTable9F4DC7E7",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0"
+   }
+  },
+  "ExportsOutputRefTenantsTableB701DC57BE8E768B": {
+   "Value": {
+    "Ref": "TenantsTableB701DC57"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+   }
+  },
+  "ExportsOutputRefApiKeysTable9F4DC7E79648F444": {
+   "Value": {
+    "Ref": "ApiKeysTable9F4DC7E7"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+   }
+  },
+  "ExportsOutputRefServicesTableF56E8DC54FC0C84D": {
+   "Value": {
+    "Ref": "ServicesTableF56E8DC5"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+   }
+  },
+  "ExportsOutputRefProvidersTable1BBEDB6D429B9BF2": {
+   "Value": {
+    "Ref": "ProvidersTable1BBEDB6D"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+   }
+  },
+  "ExportsOutputRefAvailabilityTable497A1E6E14D99412": {
+   "Value": {
+    "Ref": "AvailabilityTable497A1E6E"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+   }
+  },
+  "ExportsOutputRefBookingsTableB262848587A36CBD": {
+   "Value": {
+    "Ref": "BookingsTableB2628485"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+   }
+  },
+  "ExportsOutputRefConversationsTableCD91EB96EE2E4585": {
+   "Value": {
+    "Ref": "ConversationsTableCD91EB96"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+   }
+  },
+  "ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ServicesTableF56E8DC5",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6"
+   }
+  },
+  "ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ProvidersTable1BBEDB6D",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B"
+   }
+  },
+  "ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385": {
+   "Value": {
+    "Fn::GetAtt": [
+     "AvailabilityTable497A1E6E",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385"
+   }
+  },
+  "ExportsOutputFnGetAttBookingsTableB2628485Arn4FAB36A9": {
+   "Value": {
+    "Fn::GetAtt": [
+     "BookingsTableB2628485",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttBookingsTableB2628485Arn4FAB36A9"
+   }
+  },
+  "ExportsOutputFnGetAttConversationsTableCD91EB96Arn4A2B28C6": {
+   "Value": {
+    "Fn::GetAtt": [
+     "ConversationsTableCD91EB96",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttConversationsTableCD91EB96Arn4A2B28C6"
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}
