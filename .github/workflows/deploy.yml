@@ -7,6 +7,7 @@ on:
       - qa
       - stg
       - prod
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -15,29 +16,41 @@ permissions:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      ENV: ${{ github.ref_name }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install Lambda Dependencies
+        run: |
+          # Find all requirements.txt files and install dependencies to their directory
+          find . -name "requirements.txt" -not -path "*/node_modules/*" -not -path "*/.venv/*" | while read req_file; do
+            echo "Installing dependencies for $req_file"
+            dir=$(dirname "$req_file")
+            pip install -r "$req_file" -t "$dir"
+          done
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
           aws-region: us-east-1
 
       - name: Install CDK dependencies
-        run: |
-          cd infra
-          npm ci
+        working-directory: infra
+        run: npm ci
 
       - name: Deploy with CDK
-        run: |
-          cd infra
-          npx cdk deploy --all --require-approval never
+        working-directory: infra
+        run: npx cdk deploy --all --require-approval never
+        env:
+          ENV: ${{ github.ref_name }} # Uses branch name as environment (dev, qa, stg, prod)
