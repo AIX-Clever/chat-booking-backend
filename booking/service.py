@@ -220,7 +220,7 @@ class BookingService:
             True if slot is available, False otherwise
         """
         # Get existing bookings for provider in date range
-        bookings = self._booking_repo.list_by_provider_and_dates(
+        bookings = self._booking_repo.list_by_provider(
             tenant_id,
             provider_id,
             start,
@@ -362,7 +362,7 @@ class BookingQueryService:
         Returns:
             List of bookings
         """
-        return self._booking_repo.list_by_provider_and_dates(
+        return self._booking_repo.list_by_provider(
             tenant_id,
             provider_id,
             start_date,
