@@ -381,7 +381,10 @@ class ChatAgentService:
         conversation.slot_start = start_time
         conversation.slot_end = end_time
         
-        # Ask for contact info
+        conversation.transition_to(ConversationState.CONFIRM_PENDING)
+        
+        # Ask for contact info (or check if we already have it to skip to confirmation)
+        # For simplicity, we always ask/verify contact info next, via the form or context chcek
         return ResponseBuilder.contact_info_message()
     
     def _handle_confirmation(
