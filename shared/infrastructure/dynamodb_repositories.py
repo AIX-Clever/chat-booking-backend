@@ -474,7 +474,7 @@ class DynamoDBConversationRepository(IConversationRepository):
             'SK': conversation.conversation_id,
             'state': conversation.state.value,
             'updatedAt': conversation.updated_at.isoformat(),
-            'userContext': conversation.user_context
+            'context': conversation.context
         }
         
         if conversation.service_id:
@@ -503,6 +503,6 @@ class DynamoDBConversationRepository(IConversationRepository):
             slot_start=datetime.fromisoformat(item['slotStart']) if item.get('slotStart') else None,
             slot_end=datetime.fromisoformat(item['slotEnd']) if item.get('slotEnd') else None,
             booking_id=item.get('bookingId'),
-            user_context=item.get('userContext', {}),
+            context=item.get('context', {}),
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )

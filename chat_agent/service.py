@@ -10,7 +10,10 @@ from typing import Optional, Dict, Any
 from shared.domain.entities import (
     TenantId,
     Conversation,
-    ConversationState
+    ConversationState,
+    Booking,
+    BookingStatus,
+    CustomerInfo
 )
 from shared.domain.repositories import (
     IConversationRepository,
@@ -446,9 +449,32 @@ class ChatAgentService:
         start = parse_iso_datetime(selected_slot['start'])
         end = parse_iso_datetime(selected_slot['end'])
         
-        # Create booking (this would call BookingService)
-        # For now, we'll create a booking ID
+        # Create booking entity
         booking_id = generate_id('bkg')
+        booking = Booking(
+            booking_id=booking_id,
+            tenant_id=tenant_id,
+            service_id=service_id,
+            provider_id=provider_id,
+            customer_info=CustomerInfo(
+                customer_id=None,
+                name=client_name,
+                email=client_email,
+                phone=client_phone
+            ),
+            start_time=start,
+            end_time=end,
+            status=BookingStatus.CONFIRMED,
+            conversation_id=conversation_id
+        )
+
+        # Save booking using repository (handles collision checks)
+        try:
+            self._booking_repo.save(booking)
+        except Exception as e:
+            # If booking fails (e.g. collision), revert state or error
+            # For now, simplistic error handling
+            raise ValidationError(f"Could not create booking: {str(e)}")
         
         # Update context
         conversation.context['bookingId'] = booking_id
@@ -456,7 +482,7 @@ class ChatAgentService:
         self._conversation_repo.save(conversation)
         
         # Generate success response
-        booking = {
+        booking_dict = {
             'bookingId': booking_id,
             'serviceId': service_id,
             'providerId': provider_id,
@@ -468,7 +494,7 @@ class ChatAgentService:
             'notes': notes
         }
         
-        response = ResponseBuilder.success_message(booking)
+        response = ResponseBuilder.success_message(booking_dict)
         
         return conversation, response
 

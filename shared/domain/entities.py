@@ -251,7 +251,7 @@ class Conversation:
     slot_start: Optional[datetime] = None
     slot_end: Optional[datetime] = None
     booking_id: Optional[str] = None
-    user_context: Dict[str, Any] = field(default_factory=dict)
+    context: Dict[str, Any] = field(default_factory=dict)
     updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def transition_to(self, new_state: ConversationState):
