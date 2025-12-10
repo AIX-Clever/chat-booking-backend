@@ -21,6 +21,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   availabilityFunction: lambda.IFunction;
   bookingFunction: lambda.IFunction;
   chatAgentFunction: lambda.IFunction;
+  userPool: cdk.aws_cognito.IUserPool;
 }
 
 export class AppSyncApiStack extends cdk.Stack {
@@ -51,6 +52,12 @@ export class AppSyncApiStack extends cdk.Stack {
             lambdaAuthorizerConfig: {
               handler: props.authResolverFunction,
               resultsCacheTtl: cdk.Duration.minutes(5),
+            },
+          },
+          {
+            authorizationType: appsync.AuthorizationType.USER_POOL,
+            userPoolConfig: {
+              userPool: props.userPool,
             },
           },
         ],

@@ -60,7 +60,14 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
 });
 lambdaStack.addDependency(databaseStack);
 
-// 3. AppSync API Stack - GraphQL Gateway
+// 3. Auth Stack - Cognito for Admin Panel (Must be before AppSync)
+const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
+  env: { account, region },
+  description: 'Cognito User Pool for Chat Booking Admin',
+  tags,
+});
+
+// 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   env: { account, region },
   description: 'GraphQL API for Chat Booking SaaS',
@@ -70,16 +77,10 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   availabilityFunction: lambdaStack.availabilityFunction,
   bookingFunction: lambdaStack.bookingFunction,
   chatAgentFunction: lambdaStack.chatAgentFunction,
+  userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);
-
-// 4. Auth Stack - Cognito for Admin Panel
-const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
-  env: { account, region },
-  description: 'Cognito User Pool for Chat Booking Admin',
-  tags,
-});
-// Auth stack is independent
+appSyncApiStack.addDependency(authStack);
 
 // Add stack outputs summary
 new cdk.CfnOutput(appSyncApiStack, 'DeploymentSummary', {
