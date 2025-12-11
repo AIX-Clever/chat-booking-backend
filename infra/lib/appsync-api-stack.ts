@@ -161,6 +161,42 @@ enum ConversationState {
   BOOKING_CONFIRMED
 }
 
+
+# Types - Tenant
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum TenantPlan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+type Tenant {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  status: TenantStatus!
+  plan: TenantPlan!
+  ownerUserId: String!
+  billingEmail: String!
+  settings: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ApiKey {
+  apiKey: String!
+  tenantId: ID!
+  status: String!
+  createdAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+}
+
 # Types - Catalog
 type Service {
   serviceId: ID!
@@ -245,6 +281,20 @@ type Conversation {
 type ChatResponse {
   conversation: Conversation!
   response: AWSJSON!
+}
+
+
+# Inputs - Tenant
+input RegisterTenantInput {
+  companyName: String!
+  email: String!
+  password: String!
+}
+
+input UpdateTenantInput {
+  name: String
+  billingEmail: String
+  settings: AWSJSON
 }
 
 # Inputs - Catalog
@@ -386,6 +436,10 @@ type Query {
 
 # Mutations
 type Mutation {
+  # Tenant (Public/Auth)
+  registerTenant(input: RegisterTenantInput!): Tenant!
+  updateTenant(input: UpdateTenantInput!): Tenant!
+
   # Catalog (Admin)
   createService(input: CreateServiceInput!): Service!
   updateService(input: UpdateServiceInput!): Service!
