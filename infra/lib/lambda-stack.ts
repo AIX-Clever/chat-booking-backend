@@ -24,6 +24,7 @@ interface LambdaStackProps extends cdk.StackProps {
   availabilityTable: dynamodb.ITable;
   bookingsTable: dynamodb.ITable;
   conversationsTable: dynamodb.ITable;
+  userPool: cdk.aws_cognito.IUserPool;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -32,6 +33,8 @@ export class LambdaStack extends cdk.Stack {
   public readonly availabilityFunction: lambda.Function;
   public readonly bookingFunction: lambda.Function;
   public readonly chatAgentFunction: lambda.Function;
+  public readonly registerTenantFunction: lambda.Function;
+  public readonly updateTenantFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -152,6 +155,39 @@ export class LambdaStack extends cdk.Stack {
     props.availabilityTable.grantReadData(this.chatAgentFunction);
     props.bookingsTable.grantReadWriteData(this.chatAgentFunction);
 
+    // 6. Register Tenant Lambda
+    this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-RegisterTenant',
+      description: 'Public tenant registration endpoint',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'register_tenant')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        USER_POOL_ID: props.userPool.userPoolId,
+      },
+      timeout: cdk.Duration.seconds(15),
+    });
+
+    // Grant permissions
+    props.tenantsTable.grantReadWriteData(this.registerTenantFunction);
+    props.apiKeysTable.grantReadWriteData(this.registerTenantFunction);
+    props.userPool.grant(this.registerTenantFunction, 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminSetUserPassword');
+
+    // 7. Update Tenant Lambda
+    this.updateTenantFunction = new lambda.Function(this, 'UpdateTenantFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-UpdateTenant',
+      description: 'Tenant settings update',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'update_tenant')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.tenantsTable.grantReadWriteData(this.updateTenantFunction);
+
     // CloudWatch alarms for critical functions
     this.createAlarms();
 
@@ -188,6 +224,7 @@ export class LambdaStack extends cdk.Stack {
       { name: 'AuthResolver', fn: this.authResolverFunction },
       { name: 'Booking', fn: this.bookingFunction },
       { name: 'ChatAgent', fn: this.chatAgentFunction },
+      { name: 'RegisterTenant', fn: this.registerTenantFunction },
     ];
 
     functions.forEach(({ name, fn }) => {

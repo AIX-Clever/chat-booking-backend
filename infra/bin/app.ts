@@ -45,7 +45,16 @@ const databaseStack = new DatabaseStack(app, `${stackPrefix}-Database`, {
   tags,
 });
 
-// 2. Lambda Stack - Business Logic
+
+
+// 2. Auth Stack - Cognito for Admin Panel (Must be before Lambda)
+const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
+  env: { account, region },
+  description: 'Cognito User Pool for Chat Booking Admin',
+  tags,
+});
+
+// 3. Lambda Stack - Business Logic
 const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking SaaS',
@@ -57,15 +66,10 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
   availabilityTable: databaseStack.availabilityTable,
   bookingsTable: databaseStack.bookingsTable,
   conversationsTable: databaseStack.conversationsTable,
+  userPool: authStack.userPool,
 });
 lambdaStack.addDependency(databaseStack);
-
-// 3. Auth Stack - Cognito for Admin Panel (Must be before AppSync)
-const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
-  env: { account, region },
-  description: 'Cognito User Pool for Chat Booking Admin',
-  tags,
-});
+lambdaStack.addDependency(authStack);
 
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
@@ -77,6 +81,8 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   availabilityFunction: lambdaStack.availabilityFunction,
   bookingFunction: lambdaStack.bookingFunction,
   chatAgentFunction: lambdaStack.chatAgentFunction,
+  registerTenantFunction: lambdaStack.registerTenantFunction,
+  updateTenantFunction: lambdaStack.updateTenantFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);

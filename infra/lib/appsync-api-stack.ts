@@ -21,6 +21,8 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   availabilityFunction: lambda.IFunction;
   bookingFunction: lambda.IFunction;
   chatAgentFunction: lambda.IFunction;
+  registerTenantFunction: lambda.IFunction;
+  updateTenantFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -40,24 +42,24 @@ export class AppSyncApiStack extends cdk.Stack {
       schema: appsync.SchemaFile.fromAsset(this.createSchemaFile(schema)),
       authorizationConfig: {
         defaultAuthorization: {
-          authorizationType: appsync.AuthorizationType.API_KEY,
-          apiKeyConfig: {
-            expires: cdk.Expiration.after(cdk.Duration.days(365)),
-            description: 'API Key for widget authentication',
+          authorizationType: appsync.AuthorizationType.LAMBDA,
+          lambdaAuthorizerConfig: {
+            handler: props.authResolverFunction,
+            resultsCacheTtl: cdk.Duration.minutes(5),
           },
         },
         additionalAuthorizationModes: [
           {
-            authorizationType: appsync.AuthorizationType.LAMBDA,
-            lambdaAuthorizerConfig: {
-              handler: props.authResolverFunction,
-              resultsCacheTtl: cdk.Duration.minutes(5),
-            },
-          },
-          {
             authorizationType: appsync.AuthorizationType.USER_POOL,
             userPoolConfig: {
               userPool: props.userPool,
+            },
+          },
+          {
+            authorizationType: appsync.AuthorizationType.API_KEY,
+            apiKeyConfig: {
+              expires: cdk.Expiration.after(cdk.Duration.days(365)),
+              description: 'API Key for internal/testing',
             },
           },
         ],
@@ -90,12 +92,24 @@ export class AppSyncApiStack extends cdk.Stack {
       props.chatAgentFunction
     );
 
+    const registerTenantDataSource = this.api.addLambdaDataSource(
+      'RegisterTenantDataSource',
+      props.registerTenantFunction
+    );
+
+    const updateTenantDataSource = this.api.addLambdaDataSource(
+      'UpdateTenantDataSource',
+      props.updateTenantFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
       availabilityDataSource,
       bookingDataSource,
-      chatAgentDataSource
+      chatAgentDataSource,
+      registerTenantDataSource,
+      updateTenantDataSource
     );
 
     // Outputs
@@ -412,8 +426,26 @@ schema {
     catalogDataSource: appsync.LambdaDataSource,
     availabilityDataSource: appsync.LambdaDataSource,
     bookingDataSource: appsync.LambdaDataSource,
-    chatAgentDataSource: appsync.LambdaDataSource
+    chatAgentDataSource: appsync.LambdaDataSource,
+    registerTenantDataSource: appsync.LambdaDataSource,
+    updateTenantDataSource: appsync.LambdaDataSource
   ): void {
+    // Register Tenant Resolver
+    registerTenantDataSource.createResolver('RegisterTenantResolver', {
+      typeName: 'Mutation',
+      fieldName: 'registerTenant',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Update Tenant Resolver
+    updateTenantDataSource.createResolver('UpdateTenantResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateTenant',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     // Catalog resolvers
     catalogDataSource.createResolver('SearchServicesResolver', {
       typeName: 'Query',
