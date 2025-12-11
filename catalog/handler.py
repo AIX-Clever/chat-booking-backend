@@ -6,11 +6,6 @@ Handles both public widget queries and admin panel operations
 """
 
 import json
-import sys
-import os
-
-# Add parent directory to path for shared imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,

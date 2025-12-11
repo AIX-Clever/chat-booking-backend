@@ -4,11 +4,6 @@ Slot Calculation Service (Application Layer)
 Generates available time slots based on provider availability and existing bookings
 """
 
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from typing import List, Dict
 from datetime import datetime, timedelta, time
 from shared.domain.entities import TenantId, TimeSlot, ProviderAvailability, Booking

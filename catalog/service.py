@@ -5,12 +5,6 @@ Use Cases for managing services and providers catalog
 Following Clean Architecture / Hexagonal Architecture
 """
 
-import sys
-import os
-
-# Add parent directory to path for shared imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from typing import List, Optional
 from shared.domain.entities import TenantId, Service, Provider
 from shared.domain.repositories import IServiceRepository, IProviderRepository

@@ -5,13 +5,8 @@ AWS Lambda function for booking operations
 """
 
 import json
-import sys
-import os
-
-# Add parent directory to path for shared imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from datetime import datetime
+
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBBookingRepository,
     DynamoDBServiceRepository,

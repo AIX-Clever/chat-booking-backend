@@ -5,12 +5,6 @@ Use Case: Resolve tenant from API Key and validate authorization
 Following Clean Architecture / Hexagonal Architecture
 """
 
-import sys
-import os
-
-# Add parent directory to path for shared imports
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 from shared.domain.entities import TenantId, ApiKey
 from shared.domain.repositories import IApiKeyRepository, ITenantRepository
 from shared.domain.exceptions import (

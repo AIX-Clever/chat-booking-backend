@@ -39,6 +39,17 @@ jobs:
             pip install -r "$req_file" -t "$dir"
           done
 
+      - name: Prepare Lambda Layer for Shared Module
+        run: |
+          # AWS Lambda Python layers require packages under python/ directory
+          # Create the correct structure: shared/ -> shared_layer/python/shared/
+          mkdir -p shared_layer/python
+          cp -r shared shared_layer/python/
+          rm -rf shared_layer/python/shared/__pycache__
+          rm -rf shared_layer/python/shared/tests
+          echo "Lambda layer structure created at shared_layer/python/shared/"
+          ls -la shared_layer/python/shared/
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

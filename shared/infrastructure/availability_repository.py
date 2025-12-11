@@ -4,11 +4,7 @@ Availability Repository Implementation (Infrastructure)
 Missing implementation for ProviderAvailability repository
 """
 
-import sys
 import os
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
 import boto3
 from typing import List, Optional
 from boto3.dynamodb.conditions import Key
