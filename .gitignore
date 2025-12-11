@@ -45,3 +45,6 @@ htmlcov/
 # AWS
 .aws-sam/
 samconfig.toml
+
+# Generated Lambda Layer
+shared_layer/

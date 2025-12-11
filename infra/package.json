@@ -6,8 +6,8 @@
     "build": "tsc",
     "watch": "tsc -w",
     "cdk": "cdk",
-    "deploy:dev": "cdk deploy --all --context env=dev",
-    "deploy:prod": "cdk deploy --all --context env=prod",
+    "deploy:dev": "../prepare_layer.sh && cdk deploy --all --context env=dev",
+    "deploy:prod": "../prepare_layer.sh && cdk deploy --all --context env=prod",
     "diff": "cdk diff",
     "synth": "cdk synth"
   },
