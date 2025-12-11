@@ -58,9 +58,9 @@ export class LambdaStack extends cdk.Stack {
     };
 
     // Lambda Layer for shared code
-    // Note: CI/CD creates shared_layer/python/shared/ structure for proper Lambda layer import
+    // Structure layer/python/shared aligns with AWS Lambda requirement
     const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
-      code: lambda.Code.fromAsset(path.join(backendPath, 'shared_layer')),
+      code: lambda.Code.fromAsset(path.join(backendPath, 'layer')),
       compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
       description: 'Shared domain entities, repositories, and utilities',
     });
