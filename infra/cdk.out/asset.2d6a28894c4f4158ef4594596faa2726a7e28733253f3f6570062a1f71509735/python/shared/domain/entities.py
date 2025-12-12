@@ -8,7 +8,7 @@ Following Hexagonal Architecture principles:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -88,7 +88,7 @@ class Tenant:
     owner_user_id: str
     billing_email: str
     settings: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def is_active(self) -> bool:
         """Check if tenant can use the service"""
@@ -204,7 +204,7 @@ class Booking:
     status: BookingStatus
     payment_status: PaymentStatus = PaymentStatus.NONE
     conversation_id: Optional[str] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def confirm(self):
         """Confirm booking"""
@@ -236,7 +236,7 @@ class Message:
     message_id: str
     sender: str  # USER, AGENT, SYSTEM
     text: str
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -252,12 +252,12 @@ class Conversation:
     slot_end: Optional[datetime] = None
     booking_id: Optional[str] = None
     context: Dict[str, Any] = field(default_factory=dict)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def transition_to(self, new_state: ConversationState):
         """Transition to new state"""
         self.state = new_state
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def set_service(self, service_id: str):
         """Set selected service"""

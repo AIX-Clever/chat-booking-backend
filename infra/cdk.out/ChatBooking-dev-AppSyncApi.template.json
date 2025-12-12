@@ -40,16 +40,25 @@
    "Properties": {
     "AdditionalAuthenticationProviders": [
      {
-      "AuthenticationType": "AWS_LAMBDA",
-      "LambdaAuthorizerConfig": {
-       "AuthorizerResultTtlInSeconds": 300,
-       "AuthorizerUri": {
-        "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAuthResolverFunction9D28D29BArn5A0DACA2"
+      "AuthenticationType": "AMAZON_COGNITO_USER_POOLS",
+      "UserPoolConfig": {
+       "AwsRegion": "us-east-1",
+       "UserPoolId": {
+        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
        }
       }
+     },
+     {
+      "AuthenticationType": "API_KEY"
      }
     ],
-    "AuthenticationType": "API_KEY",
+    "AuthenticationType": "AWS_LAMBDA",
+    "LambdaAuthorizerConfig": {
+     "AuthorizerResultTtlInSeconds": 300,
+     "AuthorizerUri": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAuthResolverFunction9D28D29BArn5A0DACA2"
+     }
+    },
     "LogConfig": {
      "CloudWatchLogsRoleArn": {
       "Fn::GetAtt": [
@@ -91,8 +100,8 @@
       "ApiId"
      ]
     },
-    "Description": "API Key for widget authentication",
-    "Expires": 1796868256
+    "Description": "API Key for internal/testing",
+    "Expires": 1796958227
    },
    "DependsOn": [
     "ChatBookingApiSchemaA2D62F25"
@@ -471,6 +480,226 @@
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ChatAgentDataSource/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSourceServiceRoleDefaultPolicy6324DBF6": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiRegisterTenantDataSourceServiceRoleDefaultPolicy6324DBF6",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSource21D0731E": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+     }
+    },
+    "Name": "RegisterTenantDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSourceServiceRoleDefaultPolicy8172B00E": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiUpdateTenantDataSourceServiceRoleDefaultPolicy8172B00E",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSource2CB81F8C": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+     }
+    },
+    "Name": "UpdateTenantDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantResolver91D7F94A": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "RegisterTenantDataSource",
+    "FieldName": "registerTenant",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiRegisterTenantDataSource21D0731E",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantResolver/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantResolver88334CA1": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "UpdateTenantDataSource",
+    "FieldName": "updateTenant",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiSchemaA2D62F25",
+    "ChatBookingApiUpdateTenantDataSource2CB81F8C"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantResolver/Resource"
    }
   },
   "ChatBookingApiSearchServicesResolverC5D54D6F": {

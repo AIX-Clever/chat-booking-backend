@@ -303,6 +303,162 @@
       },
       "displayName": "ChatBooking-dev-Database"
     },
+    "ChatBooking-dev-Auth.assets": {
+      "type": "cdk:asset-manifest",
+      "properties": {
+        "file": "ChatBooking-dev-Auth.assets.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+      }
+    },
+    "ChatBooking-dev-Auth": {
+      "type": "aws:cloudformation:stack",
+      "environment": "aws://unknown-account/us-east-1",
+      "properties": {
+        "templateFile": "ChatBooking-dev-Auth.template.json",
+        "terminationProtection": false,
+        "tags": {
+          "Environment": "dev",
+          "ManagedBy": "CDK",
+          "Project": "ChatBooking"
+        },
+        "validateOnSynth": false,
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/65a488cbf5faf9732ac339465284f7f2876df3be5fa4f8c1b61b2b7c5a64bf26.json",
+        "requiresBootstrapStackVersion": 6,
+        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
+        "additionalDependencies": [
+          "ChatBooking-dev-Auth.assets"
+        ],
+        "lookupRole": {
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
+          "requiresBootstrapStackVersion": 8,
+          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
+        }
+      },
+      "dependencies": [
+        "ChatBooking-dev-Auth.assets"
+      ],
+      "metadata": {
+        "/ChatBooking-dev-Auth": [
+          {
+            "type": "aws:cdk:stack-tags",
+            "data": [
+              {
+                "Key": "Environment",
+                "Value": "dev"
+              },
+              {
+                "Key": "ManagedBy",
+                "Value": "CDK"
+              },
+              {
+                "Key": "Project",
+                "Value": "ChatBooking"
+              }
+            ]
+          }
+        ],
+        "/ChatBooking-dev-Auth/AdminUserPool/smsRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminUserPoolsmsRoleCD595696"
+          }
+        ],
+        "/ChatBooking-dev-Auth/AdminUserPool/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminUserPoolD0AF18CF"
+          }
+        ],
+        "/ChatBooking-dev-Auth/AdminUserPool/AdminWebClient/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminUserPoolAdminWebClient41BC0049"
+          }
+        ],
+        "/ChatBooking-dev-Auth/AdminUserPool/AdminDomain/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminUserPoolAdminDomain119AB3F9"
+          }
+        ],
+        "/ChatBooking-dev-Auth/AdminGroup": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "AdminGroup"
+          }
+        ],
+        "/ChatBooking-dev-Auth/StaffGroup": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "StaffGroup"
+          }
+        ],
+        "/ChatBooking-dev-Auth/UserPoolId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolId"
+          }
+        ],
+        "/ChatBooking-dev-Auth/UserPoolArn": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolArn"
+          }
+        ],
+        "/ChatBooking-dev-Auth/UserPoolClientId": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolClientId"
+          }
+        ],
+        "/ChatBooking-dev-Auth/UserPoolDomain": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolDomain"
+          }
+        ],
+        "/ChatBooking-dev-Auth/UserPoolLoginUrl": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UserPoolLoginUrl"
+          }
+        ],
+        "/ChatBooking-dev-Auth/CDKMetadata/Default": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CDKMetadata"
+          }
+        ],
+        "/ChatBooking-dev-Auth/Exports/Output{\"Fn::GetAtt\":[\"AdminUserPoolD0AF18CF\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57"
+          }
+        ],
+        "/ChatBooking-dev-Auth/Exports/Output{\"Ref\":\"AdminUserPoolD0AF18CF\"}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
+          }
+        ],
+        "/ChatBooking-dev-Auth/BootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "BootstrapVersion"
+          }
+        ],
+        "/ChatBooking-dev-Auth/CheckBootstrapVersion": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CheckBootstrapVersion"
+          }
+        ]
+      },
+      "displayName": "ChatBooking-dev-Auth"
+    },
     "ChatBooking-dev-Lambda.assets": {
       "type": "cdk:asset-manifest",
       "properties": {
@@ -325,7 +481,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/e474d5891ff0e931aaf5f6960db47236ac521b760db7f04fe2132f7cd6a34612.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/52a55f7915a9dfc17b7ff1cfe3740a1a32c13854139c9510055a7de1f72ef918.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -339,6 +495,7 @@
       },
       "dependencies": [
         "ChatBooking-dev-Database",
+        "ChatBooking-dev-Auth",
         "ChatBooking-dev-Lambda.assets"
       ],
       "metadata": {
@@ -511,6 +668,54 @@
             "data": "ChatAgentFunctionLogRetentionFACDBF94"
           }
         ],
+        "/ChatBooking-dev-Lambda/RegisterTenantFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantFunctionServiceRoleDE02E8D9"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantFunctionServiceRoleDefaultPolicy86737BB7"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantFunctionBE8E1377"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantFunction/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantFunctionLogRetentionD141423A"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/UpdateTenantFunction/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UpdateTenantFunctionServiceRole61716895"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/UpdateTenantFunction/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UpdateTenantFunctionServiceRoleDefaultPolicy299FDD14"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/UpdateTenantFunction/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UpdateTenantFunction76E0A2E1"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/UpdateTenantFunction/LogRetention/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "UpdateTenantFunctionLogRetentionA321097A"
+          }
+        ],
         "/ChatBooking-dev-Lambda/AuthResolverErrorAlarm/Resource": [
           {
             "type": "aws:cdk:logicalId",
@@ -563,6 +768,24 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ChatAgentDurationAlarm606C1E59"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantErrorAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantErrorAlarm27D2E1E8"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantThrottleAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantThrottleAlarmC32D63BD"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/RegisterTenantDurationAlarm/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "RegisterTenantDurationAlarmDBA70416"
           }
         ],
         "/ChatBooking-dev-Lambda/AuthResolverFunctionArn": [
@@ -631,6 +854,18 @@
             "data": "ExportsOutputFnGetAttChatAgentFunction2B92A177Arn6BACA9D2"
           }
         ],
+        "/ChatBooking-dev-Lambda/Exports/Output{\"Fn::GetAtt\":[\"RegisterTenantFunctionBE8E1377\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+          }
+        ],
+        "/ChatBooking-dev-Lambda/Exports/Output{\"Fn::GetAtt\":[\"UpdateTenantFunction76E0A2E1\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+          }
+        ],
         "/ChatBooking-dev-Lambda/BootstrapVersion": [
           {
             "type": "aws:cdk:logicalId",
@@ -668,7 +903,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/db9fa50d6ce55a09e414ca649a4f61766e9a119d6ca10413aec53704929a34e8.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/ae80431e3b34ad1a67bc96dafdd8d683e50cfbd436066e3ab9cf130da7fb4f9b.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -805,6 +1040,54 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ChatBookingApiChatAgentDataSourceF01792AD"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiRegisterTenantDataSourceServiceRoleDefaultPolicy6324DBF6"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiRegisterTenantDataSource21D0731E"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/DefaultPolicy/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiUpdateTenantDataSourceServiceRoleDefaultPolicy8172B00E"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiUpdateTenantDataSource2CB81F8C"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiRegisterTenantResolver91D7F94A"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiUpdateTenantResolver88334CA1"
           }
         ],
         "/ChatBooking-dev-AppSyncApi/ChatBookingApi/SearchServicesResolver/Resource": [
@@ -1007,156 +1290,6 @@
         ]
       },
       "displayName": "ChatBooking-dev-AppSyncApi"
-    },
-    "ChatBooking-dev-Auth.assets": {
-      "type": "cdk:asset-manifest",
-      "properties": {
-        "file": "ChatBooking-dev-Auth.assets.json",
-        "requiresBootstrapStackVersion": 6,
-        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
-      }
-    },
-    "ChatBooking-dev-Auth": {
-      "type": "aws:cloudformation:stack",
-      "environment": "aws://unknown-account/us-east-1",
-      "properties": {
-        "templateFile": "ChatBooking-dev-Auth.template.json",
-        "terminationProtection": false,
-        "tags": {
-          "Environment": "dev",
-          "ManagedBy": "CDK",
-          "Project": "ChatBooking"
-        },
-        "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/d53dd8f5690ccde4eeaa8df710670a1656a2212b294598061153431ae0d67c58.json",
-        "requiresBootstrapStackVersion": 6,
-        "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
-        "additionalDependencies": [
-          "ChatBooking-dev-Auth.assets"
-        ],
-        "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
-          "requiresBootstrapStackVersion": 8,
-          "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
-        }
-      },
-      "dependencies": [
-        "ChatBooking-dev-Auth.assets"
-      ],
-      "metadata": {
-        "/ChatBooking-dev-Auth": [
-          {
-            "type": "aws:cdk:stack-tags",
-            "data": [
-              {
-                "Key": "Environment",
-                "Value": "dev"
-              },
-              {
-                "Key": "ManagedBy",
-                "Value": "CDK"
-              },
-              {
-                "Key": "Project",
-                "Value": "ChatBooking"
-              }
-            ]
-          }
-        ],
-        "/ChatBooking-dev-Auth/AdminUserPool/smsRole/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "AdminUserPoolsmsRoleCD595696"
-          }
-        ],
-        "/ChatBooking-dev-Auth/AdminUserPool/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "AdminUserPoolD0AF18CF"
-          }
-        ],
-        "/ChatBooking-dev-Auth/AdminUserPool/AdminWebClient/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "AdminUserPoolAdminWebClient41BC0049"
-          }
-        ],
-        "/ChatBooking-dev-Auth/AdminUserPool/AdminDomain/Resource": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "AdminUserPoolAdminDomain119AB3F9"
-          }
-        ],
-        "/ChatBooking-dev-Auth/AdminGroup": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "AdminGroup"
-          }
-        ],
-        "/ChatBooking-dev-Auth/StaffGroup": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "StaffGroup"
-          }
-        ],
-        "/ChatBooking-dev-Auth/UserPoolId": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "UserPoolId"
-          }
-        ],
-        "/ChatBooking-dev-Auth/UserPoolArn": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "UserPoolArn"
-          }
-        ],
-        "/ChatBooking-dev-Auth/UserPoolClientId": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "UserPoolClientId"
-          }
-        ],
-        "/ChatBooking-dev-Auth/UserPoolDomain": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "UserPoolDomain"
-          }
-        ],
-        "/ChatBooking-dev-Auth/UserPoolLoginUrl": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "UserPoolLoginUrl"
-          }
-        ],
-        "/ChatBooking-dev-Auth/CDKMetadata/Default": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "CDKMetadata"
-          }
-        ],
-        "/ChatBooking-dev-Auth/Exports/Output{\"Ref\":\"AdminUserPoolD0AF18CF\"}": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
-          }
-        ],
-        "/ChatBooking-dev-Auth/BootstrapVersion": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "BootstrapVersion"
-          }
-        ],
-        "/ChatBooking-dev-Auth/CheckBootstrapVersion": [
-          {
-            "type": "aws:cdk:logicalId",
-            "data": "CheckBootstrapVersion"
-          }
-        ]
-      },
-      "displayName": "ChatBooking-dev-Auth"
     },
     "Tree": {
       "type": "cdk:tree",

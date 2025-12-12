@@ -1,16 +1,16 @@
 {
   "version": "48.0.0",
   "files": {
-    "d53dd8f5690ccde4eeaa8df710670a1656a2212b294598061153431ae0d67c58": {
+    "65a488cbf5faf9732ac339465284f7f2876df3be5fa4f8c1b61b2b7c5a64bf26": {
       "displayName": "ChatBooking-dev-Auth Template",
       "source": {
         "path": "ChatBooking-dev-Auth.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "current_account-us-east-1-33c94900": {
+        "current_account-us-east-1-bb3d8870": {
           "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
-          "objectKey": "d53dd8f5690ccde4eeaa8df710670a1656a2212b294598061153431ae0d67c58.json",
+          "objectKey": "65a488cbf5faf9732ac339465284f7f2876df3be5fa4f8c1b61b2b7c5a64bf26.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
         }

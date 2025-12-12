@@ -280,6 +280,17 @@
     ]
    }
   },
+  "ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57": {
+   "Value": {
+    "Fn::GetAtt": [
+     "AdminUserPoolD0AF18CF",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Auth:ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57"
+   }
+  },
   "ExportsOutputRefAdminUserPoolD0AF18CF79276EF5": {
    "Value": {
     "Ref": "AdminUserPoolD0AF18CF"

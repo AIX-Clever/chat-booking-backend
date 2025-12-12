@@ -11,13 +11,13 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "1535134e8ce6f182b879e2c8ebcf3cc2d6a979b01b9f046af7a4b1c95101d157.zip"
+     "S3Key": "2d6a28894c4f4158ef4594596faa2726a7e28733253f3f6570062a1f71509735.zip"
     },
     "Description": "Shared domain entities, repositories, and utilities"
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/SharedLayer/Resource",
-    "aws:asset:path": "asset.1535134e8ce6f182b879e2c8ebcf3cc2d6a979b01b9f046af7a4b1c95101d157",
+    "aws:asset:path": "asset.2d6a28894c4f4158ef4594596faa2726a7e28733253f3f6570062a1f71509735",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Content"
    }
@@ -144,7 +144,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "018a6cd7e107b791f7092ce6b674be65a26f54bef6703e634aa75c408498f324.zip"
+     "S3Key": "4b6d9710e767f6a0b5b5e752e2bfccfddc7d2e9ddfb7017b299a4ecf1142d6ae.zip"
     },
     "Description": "AppSync authorizer - validates API keys and returns tenant context",
     "Environment": {
@@ -196,7 +196,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AuthResolverFunction/Resource",
-    "aws:asset:path": "asset.018a6cd7e107b791f7092ce6b674be65a26f54bef6703e634aa75c408498f324",
+    "aws:asset:path": "asset.4b6d9710e767f6a0b5b5e752e2bfccfddc7d2e9ddfb7017b299a4ecf1142d6ae",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -441,7 +441,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "d5b340263f49178b655ebd0662e54f475424c81c4892ea9bbb12696e0a7d059c.zip"
+     "S3Key": "829718855669b9c7073961c7eb4acd3d9e1d145d715a316b9fa2d3f79aa363ea.zip"
     },
     "Description": "Service and provider catalog management",
     "Environment": {
@@ -493,7 +493,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/CatalogFunction/Resource",
-    "aws:asset:path": "asset.d5b340263f49178b655ebd0662e54f475424c81c4892ea9bbb12696e0a7d059c",
+    "aws:asset:path": "asset.829718855669b9c7073961c7eb4acd3d9e1d145d715a316b9fa2d3f79aa363ea",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -661,7 +661,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "9b756d13699689c46f920ea21a7406f20c3f613c2a838d88c944305b8902c889.zip"
+     "S3Key": "824096e7c719b0cbdd6bdc494b3a446183ca05a96cd8d6142b83c7bda148c17f.zip"
     },
     "Description": "Calculate available time slots for bookings",
     "Environment": {
@@ -714,7 +714,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AvailabilityFunction/Resource",
-    "aws:asset:path": "asset.9b756d13699689c46f920ea21a7406f20c3f613c2a838d88c944305b8902c889",
+    "aws:asset:path": "asset.824096e7c719b0cbdd6bdc494b3a446183ca05a96cd8d6142b83c7bda148c17f",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -909,7 +909,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "5573b94afb6353760884209dc5df3ebd51a451c78850024169cb2b144240e386.zip"
+     "S3Key": "9fb759a14573a93bda1c22f8f5954ed2762255568639e29949d7fd72b86acde3.zip"
     },
     "Description": "Booking creation, confirmation, and cancellation",
     "Environment": {
@@ -961,7 +961,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/BookingFunction/Resource",
-    "aws:asset:path": "asset.5573b94afb6353760884209dc5df3ebd51a451c78850024169cb2b144240e386",
+    "aws:asset:path": "asset.9fb759a14573a93bda1c22f8f5954ed2762255568639e29949d7fd72b86acde3",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1145,7 +1145,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "bce007a23aba971b25d08f02441e87f7b80aa7dec904cb517bb575adc7ed05af.zip"
+     "S3Key": "acd01e8d9d5b9642e0ee87f1c53059babeb369f1cf0304a64482dd54842d1156.zip"
     },
     "Description": "Conversational FSM agent for booking flow",
     "Environment": {
@@ -1197,7 +1197,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/ChatAgentFunction/Resource",
-    "aws:asset:path": "asset.bce007a23aba971b25d08f02441e87f7b80aa7dec904cb517bb575adc7ed05af",
+    "aws:asset:path": "asset.acd01e8d9d5b9642e0ee87f1c53059babeb369f1cf0304a64482dd54842d1156",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1226,6 +1226,385 @@
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/ChatAgentFunction/LogRetention/Resource"
+   }
+  },
+  "RegisterTenantFunctionServiceRoleDE02E8D9": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/ServiceRole/Resource"
+   }
+  },
+  "RegisterTenantFunctionServiceRoleDefaultPolicy86737BB7": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0"
+        },
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0"
+           },
+           "/index/*"
+          ]
+         ]
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      },
+      {
+       "Action": [
+        "cognito-idp:AdminCreateUser",
+        "cognito-idp:AdminSetUserPassword"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "RegisterTenantFunctionServiceRoleDefaultPolicy86737BB7",
+    "Roles": [
+     {
+      "Ref": "RegisterTenantFunctionServiceRoleDE02E8D9"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "RegisterTenantFunctionBE8E1377": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "dbceab83fe4794c9a901b622ac589cef2d4df70276f83546e2b3e9cfd99ae376.zip"
+    },
+    "Description": "Public tenant registration endpoint",
+    "Environment": {
+     "Variables": {
+      "TENANTS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+      },
+      "API_KEYS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+      },
+      "SERVICES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+      },
+      "PROVIDERS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+      },
+      "AVAILABILITY_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+      },
+      "BOOKINGS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+      },
+      "LOG_LEVEL": "INFO",
+      "USER_POOL_ID": {
+       "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
+      }
+     }
+    },
+    "FunctionName": "ChatBooking-RegisterTenant",
+    "Handler": "handler.lambda_handler",
+    "Layers": [
+     {
+      "Ref": "SharedLayer27DFABF0"
+     }
+    ],
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "RegisterTenantFunctionServiceRoleDE02E8D9",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 15
+   },
+   "DependsOn": [
+    "RegisterTenantFunctionServiceRoleDefaultPolicy86737BB7",
+    "RegisterTenantFunctionServiceRoleDE02E8D9"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/Resource",
+    "aws:asset:path": "asset.dbceab83fe4794c9a901b622ac589cef2d4df70276f83546e2b3e9cfd99ae376",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "RegisterTenantFunctionLogRetentionD141423A": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "RegisterTenantFunctionBE8E1377"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/LogRetention/Resource"
+   }
+  },
+  "UpdateTenantFunctionServiceRole61716895": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/ServiceRole/Resource"
+   }
+  },
+  "UpdateTenantFunctionServiceRoleDefaultPolicy299FDD14": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "UpdateTenantFunctionServiceRoleDefaultPolicy299FDD14",
+    "Roles": [
+     {
+      "Ref": "UpdateTenantFunctionServiceRole61716895"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "UpdateTenantFunction76E0A2E1": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "584c9386dd2b50eaab36496d704fc0e1491f9b2abee94a82aae94d0fb29f53ed.zip"
+    },
+    "Description": "Tenant settings update",
+    "Environment": {
+     "Variables": {
+      "TENANTS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+      },
+      "API_KEYS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+      },
+      "SERVICES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+      },
+      "PROVIDERS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+      },
+      "AVAILABILITY_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+      },
+      "BOOKINGS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+      },
+      "LOG_LEVEL": "INFO"
+     }
+    },
+    "FunctionName": "ChatBooking-UpdateTenant",
+    "Handler": "handler.lambda_handler",
+    "Layers": [
+     {
+      "Ref": "SharedLayer27DFABF0"
+     }
+    ],
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "UpdateTenantFunctionServiceRole61716895",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.9",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "UpdateTenantFunctionServiceRoleDefaultPolicy299FDD14",
+    "UpdateTenantFunctionServiceRole61716895"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/Resource",
+    "aws:asset:path": "asset.584c9386dd2b50eaab36496d704fc0e1491f9b2abee94a82aae94d0fb29f53ed",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "UpdateTenantFunctionLogRetentionA321097A": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "UpdateTenantFunction76E0A2E1"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/LogRetention/Resource"
    }
   },
   "AuthResolverErrorAlarm73C8A7D0": {
@@ -1462,6 +1841,84 @@
     "aws:cdk:path": "ChatBooking-dev-Lambda/ChatAgentDurationAlarm/Resource"
    }
   },
+  "RegisterTenantErrorAlarm27D2E1E8": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "RegisterTenant Lambda errors exceed threshold",
+    "AlarmName": "ChatBooking-RegisterTenant-Errors",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "RegisterTenantFunctionBE8E1377"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "Errors",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 10,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantErrorAlarm/Resource"
+   }
+  },
+  "RegisterTenantThrottleAlarmC32D63BD": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "RegisterTenant Lambda throttles exceed threshold",
+    "AlarmName": "ChatBooking-RegisterTenant-Throttles",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "RegisterTenantFunctionBE8E1377"
+      }
+     }
+    ],
+    "EvaluationPeriods": 1,
+    "MetricName": "Throttles",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Statistic": "Sum",
+    "Threshold": 5,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantThrottleAlarm/Resource"
+   }
+  },
+  "RegisterTenantDurationAlarmDBA70416": {
+   "Type": "AWS::CloudWatch::Alarm",
+   "Properties": {
+    "AlarmDescription": "RegisterTenant Lambda duration high (P99)",
+    "AlarmName": "ChatBooking-RegisterTenant-Duration",
+    "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+    "Dimensions": [
+     {
+      "Name": "FunctionName",
+      "Value": {
+       "Ref": "RegisterTenantFunctionBE8E1377"
+      }
+     }
+    ],
+    "EvaluationPeriods": 2,
+    "ExtendedStatistic": "p99",
+    "MetricName": "Duration",
+    "Namespace": "AWS/Lambda",
+    "Period": 300,
+    "Threshold": 12000,
+    "TreatMissingData": "notBreaching"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantDurationAlarm/Resource"
+   }
+  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
@@ -1571,6 +2028,28 @@
    },
    "Export": {
     "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttChatAgentFunction2B92A177Arn6BACA9D2"
+   }
+  },
+  "ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647": {
+   "Value": {
+    "Fn::GetAtt": [
+     "RegisterTenantFunctionBE8E1377",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+   }
+  },
+  "ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814": {
+   "Value": {
+    "Fn::GetAtt": [
+     "UpdateTenantFunction76E0A2E1",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
    }
   }
  },
