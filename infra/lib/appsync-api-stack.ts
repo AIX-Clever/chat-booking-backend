@@ -416,22 +416,22 @@ input GetConversationInput {
 # Queries
 type Query {
   # Catalog
-  searchServices(text: String, availableOnly: Boolean): [Service!]!
-  getService(serviceId: ID!): Service
-  listProviders: [Provider!]!
-  listProvidersByService(serviceId: ID!): [Provider!]!
+  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key
+  getService(serviceId: ID!): Service @aws_api_key
+  listProviders: [Provider!]! @aws_api_key
+  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key
   
   # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key
   
   # Bookings
-  getBooking(input: GetBookingInput!): Booking
+  getBooking(input: GetBookingInput!): Booking @aws_api_key
   listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]!
   listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]!
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key
   
   # Chat
-  getConversation(input: GetConversationInput!): Conversation
+  getConversation(input: GetConversationInput!): Conversation @aws_api_key
 }
 
 # Mutations
@@ -454,14 +454,14 @@ type Mutation {
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability!
   
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking!
+  createBooking(input: CreateBookingInput!): Booking! @aws_api_key
   confirmBooking(input: ConfirmBookingInput!): Booking!
   cancelBooking(input: CancelBookingInput!): Booking!
   
   # Chat
-  startConversation(input: StartConversationInput!): ChatResponse!
-  sendMessage(input: SendMessageInput!): ChatResponse!
-  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse!
+  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
+  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
 }
 
 schema {

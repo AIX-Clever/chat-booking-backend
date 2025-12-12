@@ -1,9 +1,10 @@
+```
 """
 Unit tests for auth_resolver service
 """
 
 import pytest
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from unittest.mock import Mock, MagicMock
 from shared.domain.entities import TenantId, Tenant, TenantStatus, TenantPlan, ApiKey
 from shared.domain.exceptions import (
@@ -41,7 +42,7 @@ class TestAuthenticationService:
             status="ACTIVE",
             allowed_origins=["https://example.com"],
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         tenant = Tenant(
@@ -83,7 +84,7 @@ class TestAuthenticationService:
             status="REVOKED",
             allowed_origins=["https://example.com"],
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         mock_api_key_repo.find_by_hash.return_value = api_key
@@ -100,7 +101,7 @@ class TestAuthenticationService:
             status="ACTIVE",
             allowed_origins=["https://allowed.com"],
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         mock_api_key_repo.find_by_hash.return_value = api_key
@@ -118,7 +119,7 @@ class TestAuthenticationService:
             status="ACTIVE",
             allowed_origins=["https://example.com"],
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         tenant = Tenant(
@@ -147,7 +148,7 @@ class TestAuthenticationService:
             status="ACTIVE",
             allowed_origins=["*"],
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         tenant = Tenant(
