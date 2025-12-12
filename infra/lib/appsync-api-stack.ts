@@ -195,7 +195,7 @@ type ApiKey {
   status: String!
   createdAt: AWSDateTime!
   expiresAt: AWSDateTime!
-} @aws_api_key
+}
 
 # Types - Catalog
 type Service {
@@ -229,14 +229,14 @@ type TimeSlot {
 type TimeRange {
   startTime: String!
   endTime: String!
-} @aws_api_key
+}
 
 type ProviderAvailability {
   providerId: ID!
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
-} @aws_api_key
+}
 
 # Types - Bookings
 type Booking {
