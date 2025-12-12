@@ -139,4 +139,4 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         raise Exception(str(ve))
     except Exception as e:
         logger.error("Internal error", error=e)
-        raise Exception("Internal server error")
+        raise Exception(f"Internal error: {str(e)}")
