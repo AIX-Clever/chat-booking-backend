@@ -176,7 +176,7 @@ enum TenantPlan {
   ENTERPRISE
 }
 
-type Tenant {
+type Tenant @aws_api_key {
   tenantId: ID!
   name: String!
   slug: String!
@@ -187,7 +187,7 @@ type Tenant {
   settings: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-} @aws_api_key
+}
 
 type ApiKey {
   apiKey: String!
@@ -198,7 +198,7 @@ type ApiKey {
 }
 
 # Types - Catalog
-type Service {
+type Service @aws_api_key {
   serviceId: ID!
   name: String!
   description: String
@@ -206,25 +206,25 @@ type Service {
   durationMinutes: Int!
   price: Float
   available: Boolean!
-} @aws_api_key
+}
 
-type Provider {
+type Provider @aws_api_key {
   providerId: ID!
   name: String!
   bio: String
   serviceIds: [ID!]!
   timezone: String!
   available: Boolean!
-} @aws_api_key
+}
 
 # Types - Availability
-type TimeSlot {
+type TimeSlot @aws_api_key {
   providerId: ID!
   serviceId: ID!
   start: AWSDateTime!
   end: AWSDateTime!
   isAvailable: Boolean!
-} @aws_api_key
+}
 
 type TimeRange {
   startTime: String!
@@ -239,7 +239,7 @@ type ProviderAvailability {
 }
 
 # Types - Bookings
-type Booking {
+type Booking @aws_api_key {
   bookingId: ID!
   tenantId: ID!
   serviceId: ID!
@@ -256,17 +256,17 @@ type Booking {
   totalAmount: Float!
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-} @aws_api_key
+}
 
 # Types - Chat
-type Message {
+type Message @aws_api_key {
   role: String!
   content: String!
   type: String!
   timestamp: String!
-} @aws_api_key
+}
 
-type Conversation {
+type Conversation @aws_api_key {
   conversationId: ID!
   tenantId: ID!
   state: ConversationState!
@@ -276,12 +276,12 @@ type Conversation {
   metadata: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-} @aws_api_key
+}
 
-type ChatResponse {
+type ChatResponse @aws_api_key {
   conversation: Conversation!
   response: AWSJSON!
-} @aws_api_key
+}
 
 
 # Inputs - Tenant
