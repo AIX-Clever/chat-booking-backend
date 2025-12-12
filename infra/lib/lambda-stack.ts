@@ -44,7 +44,7 @@ export class LambdaStack extends cdk.Stack {
 
     // Common Lambda configuration
     const commonProps = {
-      runtime: lambda.Runtime.PYTHON_3_9,
+      runtime: lambda.Runtime.PYTHON_3_11,
       timeout: cdk.Duration.seconds(30),
       memorySize: 512,
       logRetention: logs.RetentionDays.ONE_WEEK,
@@ -64,7 +64,7 @@ export class LambdaStack extends cdk.Stack {
     // Structure layer/python/shared aligns with AWS Lambda requirement
     const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
       code: lambda.Code.fromAsset(path.join(backendPath, 'layer')),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_9],
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
       description: 'Shared domain entities, repositories, and utilities',
     });
 
