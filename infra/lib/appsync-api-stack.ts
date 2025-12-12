@@ -206,7 +206,7 @@ type Service {
   durationMinutes: Int!
   price: Float
   available: Boolean!
-}
+} @aws_api_key
 
 type Provider {
   providerId: ID!
@@ -215,7 +215,7 @@ type Provider {
   serviceIds: [ID!]!
   timezone: String!
   available: Boolean!
-}
+} @aws_api_key
 
 # Types - Availability
 type TimeSlot {
@@ -224,19 +224,19 @@ type TimeSlot {
   start: AWSDateTime!
   end: AWSDateTime!
   isAvailable: Boolean!
-}
+} @aws_api_key
 
 type TimeRange {
   startTime: String!
   endTime: String!
-}
+} @aws_api_key
 
 type ProviderAvailability {
   providerId: ID!
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
-}
+} @aws_api_key
 
 # Types - Bookings
 type Booking {
@@ -256,7 +256,7 @@ type Booking {
   totalAmount: Float!
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-}
+} @aws_api_key
 
 # Types - Chat
 type Message {
@@ -264,7 +264,7 @@ type Message {
   content: String!
   type: String!
   timestamp: String!
-}
+} @aws_api_key
 
 type Conversation {
   conversationId: ID!
@@ -276,12 +276,12 @@ type Conversation {
   metadata: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-}
+} @aws_api_key
 
 type ChatResponse {
   conversation: Conversation!
   response: AWSJSON!
-}
+} @aws_api_key
 
 
 # Inputs - Tenant
