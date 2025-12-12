@@ -187,7 +187,7 @@ type Tenant {
   settings: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
-}
+} @aws_api_key
 
 type ApiKey {
   apiKey: String!
@@ -195,7 +195,7 @@ type ApiKey {
   status: String!
   createdAt: AWSDateTime!
   expiresAt: AWSDateTime!
-}
+} @aws_api_key
 
 # Types - Catalog
 type Service {
