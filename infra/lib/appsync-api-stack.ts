@@ -437,7 +437,8 @@ type Query {
 # Mutations
 type Mutation {
   # Tenant (Public/Auth)
-  registerTenant(input: RegisterTenantInput!): Tenant!
+  # Tenant (Public/Auth)
+  registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
   updateTenant(input: UpdateTenantInput!): Tenant!
 
   # Catalog (Admin)
