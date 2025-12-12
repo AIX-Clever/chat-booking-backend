@@ -3,7 +3,7 @@ import os
 import boto3
 import uuid
 import secrets
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from shared.domain.entities import Tenant, TenantId, TenantStatus, TenantPlan, ApiKey
@@ -53,7 +53,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             plan=TenantPlan.FREE,       # Start on Free plan
             owner_user_id=email,        # Temporary, will be linked to Cognito Sub if needed
             billing_email=email,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         
         # 4. Create Cognito User
@@ -110,7 +110,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             status="ACTIVE",
             allowed_origins=["*"], # Allow all for onboarding
             rate_limit=1000,
-            created_at=datetime.now(UTC)
+            created_at=datetime.now(timezone.utc)
         )
         # Note: The Entity definition for ApiKey uses 'api_key_hash'.
         # But we might want to return the PUBLIC key to the user or save it somewhere? 
