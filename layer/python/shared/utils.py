@@ -108,6 +108,32 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     # 4. Direct property (Direct invocation / Test)
     if 'tenantId' in event:
         return event['tenantId']
+        
+    # 5. Fallback: Fetch from Cognito using Access Token from headers
+    # (Required when Access Token is used but attribute is not in claims, e.g. standard attrs like website)
+    if 'request' in event and 'headers' in event['request']:
+        auth_header = event['request']['headers'].get('authorization')
+        if auth_header:
+            # Handle "Bearer <token>" or just "<token>"
+            token = auth_header.replace('Bearer ', '') if auth_header.startswith('Bearer ') else auth_header
+            try:
+                import boto3
+                client = boto3.client('cognito-idp')
+                user = client.get_user(AccessToken=token)
+                # Convert list of dicts to dict
+                attributes = {attr['Name']: attr['Value'] for attr in user['UserAttributes']}
+                
+                # Check for tenantId in fetched attributes
+                if 'custom:tenantId' in attributes:
+                    return attributes['custom:tenantId']
+                if 'tenantId' in attributes:
+                    return attributes['tenantId']
+                if 'website' in attributes:
+                    return attributes['website']
+                    
+            except Exception as e:
+                # Log error but don't crash - allow returning None to fail functionally later
+                print(f"Error fetching user attributes from Cognito: {str(e)}")
     
     return None
 
