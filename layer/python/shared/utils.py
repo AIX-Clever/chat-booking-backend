@@ -75,13 +75,14 @@ def lambda_response(
 
 
 def success_response(data: Any) -> Dict[str, Any]:
-    """Success response (200)"""
-    return lambda_response(200, data)
+    """Success response (200) - Adapted for AppSync Direct Resolver"""
+    return data
 
 
 def error_response(message: str, status_code: int = 400) -> Dict[str, Any]:
-    """Error response"""
-    return lambda_response(status_code, {'error': message})
+    """Error response - Adapted for AppSync Direct Resolver"""
+    # Raising exception for AppSync to capture
+    raise Exception(message)
 
 
 def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
