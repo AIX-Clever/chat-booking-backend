@@ -198,7 +198,7 @@ type ApiKey {
 }
 
 # Types - Catalog
-type Category @aws_api_key {
+type Category @aws_api_key @aws_cognito_user_pools {
   categoryId: ID!
   tenantId: ID!
   name: String!
@@ -210,7 +210,7 @@ type Category @aws_api_key {
   updatedAt: AWSDateTime!
 }
 
-type Service @aws_api_key {
+type Service @aws_api_key @aws_cognito_user_pools {
   serviceId: ID!
   name: String!
   description: String
@@ -220,7 +220,7 @@ type Service @aws_api_key {
   available: Boolean!
 }
 
-type Provider @aws_api_key {
+type Provider @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   name: String!
   bio: String
@@ -230,7 +230,7 @@ type Provider @aws_api_key {
 }
 
 # Types - Availability
-type TimeSlot @aws_api_key {
+type TimeSlot @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   serviceId: ID!
   start: AWSDateTime!
@@ -243,7 +243,7 @@ type TimeRange {
   endTime: String!
 }
 
-type ProviderAvailability {
+type ProviderAvailability @aws_cognito_user_pools {
   providerId: ID!
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
@@ -251,7 +251,7 @@ type ProviderAvailability {
 }
 
 # Types - Bookings
-type Booking @aws_api_key {
+type Booking @aws_api_key @aws_cognito_user_pools {
   bookingId: ID!
   tenantId: ID!
   serviceId: ID!
