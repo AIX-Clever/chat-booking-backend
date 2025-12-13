@@ -5,6 +5,7 @@ AWS Lambda function for availability operations
 """
 
 import json
+import os
 from datetime import datetime
 
 from shared.infrastructure.dynamodb_repositories import (
