@@ -419,6 +419,44 @@
     "aws:cdk:path": "ChatBooking-dev-Database/ConversationsTable/Resource"
    }
   },
+  "CategoriesTable9FFF5A67": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "categoryId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "categoryId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Categories"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/CategoriesTable/Resource"
+   }
+  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
@@ -470,6 +508,12 @@
    "Description": "Conversations table name",
    "Value": {
     "Ref": "ConversationsTableCD91EB96"
+   }
+  },
+  "CategoriesTableName": {
+   "Description": "Categories table name",
+   "Value": {
+    "Ref": "CategoriesTable9FFF5A67"
    }
   },
   "ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087": {
@@ -550,6 +594,14 @@
     "Name": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
    }
   },
+  "ExportsOutputRefCategoriesTable9FFF5A678A053E38": {
+   "Value": {
+    "Ref": "CategoriesTable9FFF5A67"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+   }
+  },
   "ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6": {
    "Value": {
     "Fn::GetAtt": [
@@ -570,6 +622,17 @@
    },
    "Export": {
     "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B"
+   }
+  },
+  "ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E": {
+   "Value": {
+    "Fn::GetAtt": [
+     "CategoriesTable9FFF5A67",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E"
    }
   },
   "ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385": {

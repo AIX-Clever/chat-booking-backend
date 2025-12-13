@@ -5,19 +5,19 @@
    "Type": "AWS::Lambda::LayerVersion",
    "Properties": {
     "CompatibleRuntimes": [
-     "python3.9"
+     "python3.11"
     ],
     "Content": {
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "2d6a28894c4f4158ef4594596faa2726a7e28733253f3f6570062a1f71509735.zip"
+     "S3Key": "23e348f157ce38ad17ba4a1156bf28b778af2bd53891f9748f9d24283361301f.zip"
     },
     "Description": "Shared domain entities, repositories, and utilities"
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/SharedLayer/Resource",
-    "aws:asset:path": "asset.2d6a28894c4f4158ef4594596faa2726a7e28733253f3f6570062a1f71509735",
+    "aws:asset:path": "asset.23e348f157ce38ad17ba4a1156bf28b778af2bd53891f9748f9d24283361301f",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Content"
    }
@@ -144,7 +144,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "4b6d9710e767f6a0b5b5e752e2bfccfddc7d2e9ddfb7017b299a4ecf1142d6ae.zip"
+     "S3Key": "98e4e50395f53359ce127b4085446d99dde8127a187678fb7be4304d99720cdd.zip"
     },
     "Description": "AppSync authorizer - validates API keys and returns tenant context",
     "Environment": {
@@ -170,6 +170,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -187,7 +190,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 10
    },
    "DependsOn": [
@@ -196,7 +199,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AuthResolverFunction/Resource",
-    "aws:asset:path": "asset.4b6d9710e767f6a0b5b5e752e2bfccfddc7d2e9ddfb7017b299a4ecf1142d6ae",
+    "aws:asset:path": "asset.98e4e50395f53359ce127b4085446d99dde8127a187678fb7be4304d99720cdd",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -391,6 +394,9 @@
        "Effect": "Allow",
        "Resource": [
         {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E"
+        },
+        {
          "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B"
         },
         {
@@ -441,7 +447,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "829718855669b9c7073961c7eb4acd3d9e1d145d715a316b9fa2d3f79aa363ea.zip"
+     "S3Key": "f0f452e7e3f267bb20a92bfafe9a528c6a785e9a43aa8ca65e883f41e04067fd.zip"
     },
     "Description": "Service and provider catalog management",
     "Environment": {
@@ -467,6 +473,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -484,7 +493,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 30
    },
    "DependsOn": [
@@ -493,7 +502,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/CatalogFunction/Resource",
-    "aws:asset:path": "asset.829718855669b9c7073961c7eb4acd3d9e1d145d715a316b9fa2d3f79aa363ea",
+    "aws:asset:path": "asset.f0f452e7e3f267bb20a92bfafe9a528c6a785e9a43aa8ca65e883f41e04067fd",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -661,7 +670,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "824096e7c719b0cbdd6bdc494b3a446183ca05a96cd8d6142b83c7bda148c17f.zip"
+     "S3Key": "a5c952bca3a920eddcaea8dfb04394986c1d993e6e41a09b4804dfbc1b5f9543.zip"
     },
     "Description": "Calculate available time slots for bookings",
     "Environment": {
@@ -687,6 +696,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO",
       "SLOT_INTERVAL_MINUTES": "15"
      }
@@ -705,7 +717,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 30
    },
    "DependsOn": [
@@ -714,7 +726,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AvailabilityFunction/Resource",
-    "aws:asset:path": "asset.824096e7c719b0cbdd6bdc494b3a446183ca05a96cd8d6142b83c7bda148c17f",
+    "aws:asset:path": "asset.a5c952bca3a920eddcaea8dfb04394986c1d993e6e41a09b4804dfbc1b5f9543",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -909,7 +921,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "9fb759a14573a93bda1c22f8f5954ed2762255568639e29949d7fd72b86acde3.zip"
+     "S3Key": "291a834d06b18284467743483a885a270026a9adb3e432a73ee7017a5b209f52.zip"
     },
     "Description": "Booking creation, confirmation, and cancellation",
     "Environment": {
@@ -935,6 +947,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -952,7 +967,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 60
    },
    "DependsOn": [
@@ -961,7 +976,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/BookingFunction/Resource",
-    "aws:asset:path": "asset.9fb759a14573a93bda1c22f8f5954ed2762255568639e29949d7fd72b86acde3",
+    "aws:asset:path": "asset.291a834d06b18284467743483a885a270026a9adb3e432a73ee7017a5b209f52",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1171,6 +1186,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -1188,7 +1206,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 60
    },
    "DependsOn": [
@@ -1345,7 +1363,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "dbceab83fe4794c9a901b622ac589cef2d4df70276f83546e2b3e9cfd99ae376.zip"
+     "S3Key": "00b5e29bd63892271ed1ee9ba508690e5820d6b9467a1d5b33cb89c9e14b2abc.zip"
     },
     "Description": "Public tenant registration endpoint",
     "Environment": {
@@ -1371,6 +1389,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO",
       "USER_POOL_ID": {
        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
@@ -1391,7 +1412,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 15
    },
    "DependsOn": [
@@ -1400,7 +1421,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/Resource",
-    "aws:asset:path": "asset.dbceab83fe4794c9a901b622ac589cef2d4df70276f83546e2b3e9cfd99ae376",
+    "aws:asset:path": "asset.00b5e29bd63892271ed1ee9ba508690e5820d6b9467a1d5b33cb89c9e14b2abc",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1550,6 +1571,9 @@
       "CONVERSATIONS_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
       },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -1567,7 +1591,7 @@
       "Arn"
      ]
     },
-    "Runtime": "python3.9",
+    "Runtime": "python3.11",
     "Timeout": 30
    },
    "DependsOn": [

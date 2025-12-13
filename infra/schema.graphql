@@ -29,8 +29,56 @@ enum ConversationState {
   BOOKING_CONFIRMED
 }
 
+
+# Types - Tenant
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum TenantPlan {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+type Tenant @aws_api_key {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  status: TenantStatus!
+  plan: TenantPlan!
+  ownerUserId: String!
+  billingEmail: String!
+  settings: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ApiKey {
+  apiKey: String!
+  tenantId: ID!
+  status: String!
+  createdAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+}
+
 # Types - Catalog
-type Service {
+type Category @aws_api_key @aws_cognito_user_pools {
+  categoryId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  displayOrder: Int
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Service @aws_api_key @aws_cognito_user_pools {
   serviceId: ID!
   name: String!
   description: String
@@ -40,7 +88,7 @@ type Service {
   available: Boolean!
 }
 
-type Provider {
+type Provider @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   name: String!
   bio: String
@@ -50,7 +98,7 @@ type Provider {
 }
 
 # Types - Availability
-type TimeSlot {
+type TimeSlot @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   serviceId: ID!
   start: AWSDateTime!
@@ -63,7 +111,7 @@ type TimeRange {
   endTime: String!
 }
 
-type ProviderAvailability {
+type ProviderAvailability @aws_cognito_user_pools {
   providerId: ID!
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
@@ -71,7 +119,7 @@ type ProviderAvailability {
 }
 
 # Types - Bookings
-type Booking {
+type Booking @aws_api_key @aws_cognito_user_pools {
   bookingId: ID!
   tenantId: ID!
   serviceId: ID!
@@ -91,14 +139,14 @@ type Booking {
 }
 
 # Types - Chat
-type Message {
+type Message @aws_api_key {
   role: String!
   content: String!
   type: String!
   timestamp: String!
 }
 
-type Conversation {
+type Conversation @aws_api_key {
   conversationId: ID!
   tenantId: ID!
   state: ConversationState!
@@ -110,12 +158,43 @@ type Conversation {
   updatedAt: AWSDateTime!
 }
 
-type ChatResponse {
+type ChatResponse @aws_api_key {
   conversation: Conversation!
   response: AWSJSON!
 }
 
+
+# Inputs - Tenant
+input RegisterTenantInput {
+  companyName: String!
+  email: String!
+  password: String!
+}
+
+input UpdateTenantInput {
+  name: String
+  billingEmail: String
+  settings: AWSJSON
+}
+
 # Inputs - Catalog
+input CreateCategoryInput {
+  name: String!
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input UpdateCategoryInput {
+  categoryId: ID!
+  name: String
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
 input CreateServiceInput {
   name: String!
   description: String
@@ -234,48 +313,57 @@ input GetConversationInput {
 # Queries
 type Query {
   # Catalog
-  searchServices(text: String, availableOnly: Boolean): [Service!]!
-  getService(serviceId: ID!): Service
-  listProviders: [Provider!]!
-  listProvidersByService(serviceId: ID!): [Provider!]!
+  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key
+  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key
+  getService(serviceId: ID!): Service @aws_api_key
+  listProviders: [Provider!]! @aws_api_key
+  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key
   
   # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!
-  getProviderAvailability(providerId: ID!): [ProviderAvailability!]!
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key
   
   # Bookings
-  getBooking(input: GetBookingInput!): Booking
+  getBooking(input: GetBookingInput!): Booking @aws_api_key
   listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]!
   listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]!
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key
   
   # Chat
-  getConversation(input: GetConversationInput!): Conversation
+  getConversation(input: GetConversationInput!): Conversation @aws_api_key
 }
 
 # Mutations
 type Mutation {
+  # Tenant (Public/Auth)
+  # Tenant (Public/Auth)
+  registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
+  updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
+
   # Catalog (Admin)
-  createService(input: CreateServiceInput!): Service!
-  updateService(input: UpdateServiceInput!): Service!
-  deleteService(serviceId: ID!): Service!
+  createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools
+  updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
+  deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
+
+  createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
+  updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
+  deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
   
-  createProvider(input: CreateProviderInput!): Provider!
-  updateProvider(input: UpdateProviderInput!): Provider!
-  deleteProvider(providerId: ID!): Provider!
+  createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
+  updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
+  deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
   
   # Availability (Admin)
-  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability!
+  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
   
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking!
-  confirmBooking(input: ConfirmBookingInput!): Booking!
-  cancelBooking(input: CancelBookingInput!): Booking!
+  createBooking(input: CreateBookingInput!): Booking! @aws_api_key
+  confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
+  cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   
   # Chat
-  startConversation(input: StartConversationInput!): ChatResponse!
-  sendMessage(input: SendMessageInput!): ChatResponse!
-  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse!
+  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
+  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
 }
 
 schema {

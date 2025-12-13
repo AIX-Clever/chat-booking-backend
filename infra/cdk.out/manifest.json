@@ -23,7 +23,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/72d44a6910aa0a9eb331314fce20e5f7a592bc97b04c366aaba5596af5c44362.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/77e66038ddf1affe7694f24f77fd7c6236dee813ff145c122e859e41e6e744b3.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -156,6 +156,20 @@
             "data": "ConversationsTableCD91EB96"
           }
         ],
+        "/ChatBooking-dev-Database/CategoriesTable": [
+          {
+            "type": "aws:cdk:hasPhysicalName",
+            "data": {
+              "Ref": "CategoriesTable9FFF5A67"
+            }
+          }
+        ],
+        "/ChatBooking-dev-Database/CategoriesTable/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CategoriesTable9FFF5A67"
+          }
+        ],
         "/ChatBooking-dev-Database/TenantsTableName": [
           {
             "type": "aws:cdk:logicalId",
@@ -196,6 +210,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ConversationsTableName"
+          }
+        ],
+        "/ChatBooking-dev-Database/CategoriesTableName": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "CategoriesTableName"
           }
         ],
         "/ChatBooking-dev-Database/CDKMetadata/Default": [
@@ -258,6 +278,12 @@
             "data": "ExportsOutputRefConversationsTableCD91EB96EE2E4585"
           }
         ],
+        "/ChatBooking-dev-Database/Exports/Output{\"Ref\":\"CategoriesTable9FFF5A67\"}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+          }
+        ],
         "/ChatBooking-dev-Database/Exports/Output{\"Fn::GetAtt\":[\"ServicesTableF56E8DC5\",\"Arn\"]}": [
           {
             "type": "aws:cdk:logicalId",
@@ -268,6 +294,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B"
+          }
+        ],
+        "/ChatBooking-dev-Database/Exports/Output{\"Fn::GetAtt\":[\"CategoriesTable9FFF5A67\",\"Arn\"]}": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E"
           }
         ],
         "/ChatBooking-dev-Database/Exports/Output{\"Fn::GetAtt\":[\"AvailabilityTable497A1E6E\",\"Arn\"]}": [
@@ -481,7 +513,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/52a55f7915a9dfc17b7ff1cfe3740a1a32c13854139c9510055a7de1f72ef918.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/9beb3952e2c1b07e381c02e2897e2d64e1d5383efa798eb64139a9d0b1ed6605.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -903,7 +935,7 @@
         "validateOnSynth": false,
         "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
         "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/ae80431e3b34ad1a67bc96dafdd8d683e50cfbd436066e3ab9cf130da7fb4f9b.json",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/4c9c08aa6ac16d335ae5c379b36beeacd2b967a084817845dfc19f8bc6c35075.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
@@ -1130,6 +1162,30 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ChatBookingApiDeleteServiceResolver023ECF22"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/ListCategoriesResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiListCategoriesResolver51408130"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateCategoryResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiCreateCategoryResolver41BA9DC8"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateCategoryResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiUpdateCategoryResolverBE8B5FEE"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/DeleteCategoryResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiDeleteCategoryResolver7073F048"
           }
         ],
         "/ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateProviderResolver/Resource": [
