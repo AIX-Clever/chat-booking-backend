@@ -8,26 +8,26 @@
         "packaging": "zip"
       },
       "destinations": {
-        "current_account-us-east-1-213451c5": {
-          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
+        "607250385528-us-east-1-045d34ab": {
+          "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
           "objectKey": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
           "region": "us-east-1",
-          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
         }
       }
     },
-    "4c9c08aa6ac16d335ae5c379b36beeacd2b967a084817845dfc19f8bc6c35075": {
+    "dc154ab727e24ffa955f52a1c8dc0a376a4df9923b16fcae94298d9327eea634": {
       "displayName": "ChatBooking-dev-AppSyncApi Template",
       "source": {
         "path": "ChatBooking-dev-AppSyncApi.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "current_account-us-east-1-d7597e32": {
-          "bucketName": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1",
-          "objectKey": "4c9c08aa6ac16d335ae5c379b36beeacd2b967a084817845dfc19f8bc6c35075.json",
+        "607250385528-us-east-1-54fb9005": {
+          "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
+          "objectKey": "dc154ab727e24ffa955f52a1c8dc0a376a4df9923b16fcae94298d9327eea634.json",
           "region": "us-east-1",
-          "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-file-publishing-role-${AWS::AccountId}-us-east-1"
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
         }
       }
     }

@@ -445,23 +445,23 @@ input GetConversationInput {
 # Queries
 type Query {
   # Catalog
-  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key
-  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key
-  getService(serviceId: ID!): Service @aws_api_key
-  listProviders: [Provider!]! @aws_api_key
-  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key
+  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools
+  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools
+  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools
+  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools
+  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools
   
   # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
   
   # Bookings
-  getBooking(input: GetBookingInput!): Booking @aws_api_key
-  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]!
-  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]!
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key
+  getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
+  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! @aws_cognito_user_pools
+  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! @aws_cognito_user_pools
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools
   
   # Chat
-  getConversation(input: GetConversationInput!): Conversation @aws_api_key
+  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
 }
 
 # Mutations

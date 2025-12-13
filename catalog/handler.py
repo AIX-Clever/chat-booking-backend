@@ -135,8 +135,10 @@ def lambda_handler(event: dict, context) -> dict:
         return error_response(str(e), 400)
 
     except Exception as e:
-        logger.error("Unexpected error", error=e)
-        return error_response("Internal server error", 500)
+        logger.error("Unexpected error", error=str(e))
+        import traceback
+        traceback.print_exc()
+        return error_response(f"Internal error: {str(e)}", 500)
 
 
 # Query handlers
@@ -380,25 +382,25 @@ def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
 def service_to_dict(service) -> dict:
     """Convert Service entity to dict"""
     return {
-        'id': service.service_id,
+        'serviceId': service.service_id,
         'name': service.name,
         'description': service.description,
         'category': service.category,
         'durationMinutes': service.duration_minutes,
         'price': service.price,
-        'active': service.active
+        'available': service.active
     }
 
 
 def provider_to_dict(provider) -> dict:
     """Convert Provider entity to dict"""
     return {
-        'id': provider.provider_id,
+        'providerId': provider.provider_id,
         'name': provider.name,
         'bio': provider.bio,
         'serviceIds': provider.service_ids,
         'timezone': provider.timezone,
-        'active': provider.active
+        'available': provider.active
     }
 
 
