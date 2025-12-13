@@ -98,6 +98,8 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
             return claims['custom:tenantId']
         if 'tenantId' in claims:
             return claims['tenantId']
+        if 'website' in claims:
+            return claims['website']
             
     # 3. From stash (Lambda Auth / Pipeline)
     if 'stash' in event and 'tenantId' in event['stash']:

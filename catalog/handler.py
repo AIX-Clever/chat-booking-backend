@@ -37,57 +37,7 @@ category_mgmt_service = CategoryManagementService(category_repo)
 logger = Logger()
 
 
-def extract_appsync_event_debug(event: dict):
-    """Local debug version of extract_appsync_event"""
-    print(f"DEBUG_RAW_EVENT: {json.dumps(event)}")
-    
-    # Field
-    field = None
-    if 'info' in event and 'fieldName' in event['info']:
-        field = event['info']['fieldName']
-    elif 'field' in event:
-        field = event['field']
-    print(f"DEBUG_FIELD: {field}")
 
-    # TenantId extraction
-    tenant_id = None
-    if 'arguments' in event and 'tenantId' in event['arguments']:
-        tenant_id = event['arguments']['tenantId']
-        print(f"DEBUG_TENANT_ID_ARG: {tenant_id}")
-    
-    if not tenant_id and 'identity' in event:
-        identity = event.get('identity', {})
-        print(f"DEBUG_IDENTITY: {json.dumps(identity)}")
-        if 'claims' in identity:
-            claims = identity['claims']
-            if 'custom:tenantId' in claims:
-                tenant_id = claims['custom:tenantId']
-            elif 'tenantId' in claims:
-                tenant_id = claims['tenantId']
-    print(f"DEBUG_TENANT_ID_FOUND: {tenant_id}")
-
-    if not tenant_id and 'tenantId' in event:
-        tenant_id = event['tenantId']
-
-    if not tenant_id:
-        # Fallback for API Key (maybe default tenant?)
-        # For now just log failure
-        print("DEBUG_FAIL: TenantId not found")
-        raise ValueError("Missing tenantId in request context")
-
-    # Input extraction
-    input_data = {}
-    if 'arguments' in event:
-        args = event['arguments']
-        if 'input' in args:
-            input_data = args['input']
-        else:
-            input_data = args
-    elif 'input' in event:
-        input_data = event['input']
-    print(f"DEBUG_INPUT: {json.dumps(input_data)}")
-    
-    return field, tenant_id, input_data
 
 
 def lambda_handler(event: dict, context) -> dict:
@@ -109,8 +59,7 @@ def lambda_handler(event: dict, context) -> dict:
     - deleteProvider (admin)
     """
     try:
-        # logger.info("Raw event received", event=event)
-        field, tenant_id_str, input_data = extract_appsync_event_debug(event)
+        field, tenant_id_str, input_data = extract_appsync_event(event)
 
         tenant_id = TenantId(tenant_id_str)
 
