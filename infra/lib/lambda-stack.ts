@@ -24,6 +24,7 @@ interface LambdaStackProps extends cdk.StackProps {
   availabilityTable: dynamodb.ITable;
   bookingsTable: dynamodb.ITable;
   conversationsTable: dynamodb.ITable;
+  categoriesTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -56,6 +57,7 @@ export class LambdaStack extends cdk.Stack {
         AVAILABILITY_TABLE: props.availabilityTable.tableName,
         BOOKINGS_TABLE: props.bookingsTable.tableName,
         CONVERSATIONS_TABLE: props.conversationsTable.tableName,
+        CATEGORIES_TABLE: props.categoriesTable.tableName,
         LOG_LEVEL: 'INFO',
       },
     };
@@ -97,6 +99,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.servicesTable.grantReadWriteData(this.catalogFunction);
     props.providersTable.grantReadWriteData(this.catalogFunction);
+    props.categoriesTable.grantReadWriteData(this.catalogFunction);
 
     // 3. Availability Lambda
     this.availabilityFunction = new lambda.Function(this, 'AvailabilityFunction', {

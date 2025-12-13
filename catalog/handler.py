@@ -11,6 +11,7 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository
 )
+from shared.infrastructure.category_repository import DynamoDBCategoryRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, generate_id
@@ -18,17 +19,20 @@ from shared.utils import Logger, success_response, error_response, generate_id
 from service import (
     CatalogService,
     ServiceManagementService,
-    ProviderManagementService
+    ProviderManagementService,
+    CategoryManagementService
 )
 
 
 # Initialize dependencies (singleton pattern)
 service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
+category_repo = DynamoDBCategoryRepository()
 
-catalog_service = CatalogService(service_repo, provider_repo)
+catalog_service = CatalogService(service_repo, provider_repo, category_repo)
 service_mgmt_service = ServiceManagementService(service_repo)
 provider_mgmt_service = ProviderManagementService(provider_repo)
+category_mgmt_service = CategoryManagementService(category_repo)
 
 logger = Logger()
 
@@ -85,6 +89,18 @@ def lambda_handler(event: dict, context) -> dict:
         
         elif field == 'listProviders':
             return handle_list_providers(tenant_id)
+
+        elif field == 'listCategories':
+            return handle_list_categories(tenant_id, input_data)
+        
+        elif field == 'createCategory':
+            return handle_create_category(tenant_id, input_data)
+        
+        elif field == 'updateCategory':
+            return handle_update_category(tenant_id, input_data)
+        
+        elif field == 'deleteCategory':
+            return handle_delete_category(tenant_id, input_data)
         
         # Admin operations
         elif field == 'createService':
@@ -176,7 +192,58 @@ def handle_list_providers(tenant_id: TenantId) -> dict:
     return success_response([provider_to_dict(p) for p in providers])
 
 
+
+def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
+    """List categories"""
+    active_only = input_data.get('activeOnly', False)
+    categories = catalog_service.list_categories(tenant_id, active_only)
+    return success_response([category_to_dict(c) for c in categories])
+
+
 # Admin operation handlers
+
+def handle_create_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Create new category"""
+    category = category_mgmt_service.create_category(
+        tenant_id=tenant_id,
+        category_id=generate_id('cat'),
+        name=input_data['name'],
+        description=input_data.get('description'),
+        is_active=input_data.get('isActive', True),
+        display_order=input_data.get('displayOrder', 0),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(category_to_dict(category))
+
+
+def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Update existing category"""
+    category = category_mgmt_service.update_category(
+        tenant_id=tenant_id,
+        category_id=input_data['categoryId'],
+        name=input_data.get('name'),
+        description=input_data.get('description'),
+        is_active=input_data.get('isActive'),
+        display_order=input_data.get('displayOrder'),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(category_to_dict(category))
+
+
+def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Delete category"""
+    category_id = input_data.get('categoryId')
+    if not category_id:
+        return error_response("Missing categoryId", 400)
+    
+    # Get category before deleting
+    category = category_repo.get_by_id(tenant_id, category_id)
+    if not category:
+        return error_response("Category not found", 404)
+
+    category_mgmt_service.delete_category(tenant_id, category_id)
+    return success_response(category_to_dict(category))
+
 
 def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
     """Create new service"""
@@ -260,6 +327,56 @@ def handle_delete_provider(tenant_id: TenantId, input_data: dict) -> dict:
     return success_response(provider_to_dict(provider))
 
 
+def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
+    """List categories"""
+    active_only = input_data.get('activeOnly', False)
+    categories = catalog_service.list_categories(tenant_id, active_only)
+    return success_response([category_to_dict(c) for c in categories])
+
+
+def handle_create_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Create new category"""
+    category = category_mgmt_service.create_category(
+        tenant_id=tenant_id,
+        category_id=generate_id('cat'),
+        name=input_data['name'],
+        description=input_data.get('description'),
+        is_active=input_data.get('isActive', True),
+        display_order=input_data.get('displayOrder', 0),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(category_to_dict(category))
+
+
+def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Update existing category"""
+    category = category_mgmt_service.update_category(
+        tenant_id=tenant_id,
+        category_id=input_data['categoryId'],
+        name=input_data.get('name'),
+        description=input_data.get('description'),
+        is_active=input_data.get('isActive'),
+        display_order=input_data.get('displayOrder'),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(category_to_dict(category))
+
+
+def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
+    """Delete category"""
+    category_id = input_data.get('categoryId')
+    if not category_id:
+        return error_response("Missing categoryId", 400)
+    
+    # Get category before deleting
+    category = category_repo.get_by_id(tenant_id, category_id)
+    if not category:
+        return error_response("Category not found", 404)
+
+    category_mgmt_service.delete_category(tenant_id, category_id)
+    return success_response(category_to_dict(category))
+
+
 # Serialization helpers
 
 def service_to_dict(service) -> dict:
@@ -284,4 +401,19 @@ def provider_to_dict(provider) -> dict:
         'serviceIds': provider.service_ids,
         'timezone': provider.timezone,
         'active': provider.active
+    }
+
+
+def category_to_dict(category) -> dict:
+    """Convert Category entity to dict"""
+    return {
+        'categoryId': category.category_id,
+        'tenantId': str(category.tenant_id),
+        'name': category.name,
+        'description': category.description,
+        'isActive': category.is_active,
+        'displayOrder': category.display_order,
+        'metadata': category.metadata,
+        'createdAt': category.created_at.isoformat(),
+        'updatedAt': category.updated_at.isoformat()
     }

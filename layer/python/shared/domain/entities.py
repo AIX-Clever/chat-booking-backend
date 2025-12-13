@@ -99,6 +99,21 @@ class Tenant:
         return self.is_active()
 
 
+
+@dataclass
+class Category:
+    """Category entity"""
+    category_id: str
+    tenant_id: TenantId
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+    display_order: int = 0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 @dataclass
 class Service:
     """Service entity"""

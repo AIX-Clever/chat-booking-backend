@@ -12,7 +12,7 @@ from datetime import datetime
 
 from .entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
-    Booking, Conversation, ApiKey, TimeSlot
+    Booking, Conversation, ApiKey, TimeSlot, Category
 )
 
 
@@ -77,6 +77,29 @@ class IServiceRepository(ABC):
         """Delete service"""
         pass
 
+
+class ICategoryRepository(ABC):
+    """Port for Category operations"""
+
+    @abstractmethod
+    def get_by_id(self, tenant_id: TenantId, category_id: str) -> Optional[Category]:
+        """Retrieve category by ID"""
+        pass
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: TenantId, active_only: bool = False) -> List[Category]:
+        """List all categories for tenant"""
+        pass
+
+    @abstractmethod
+    def save(self, category: Category) -> None:
+        """Persist category"""
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, category_id: str) -> None:
+        """Delete category"""
+        pass
 
 class IProviderRepository(ABC):
     """Port for Provider operations"""

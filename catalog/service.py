@@ -5,9 +5,9 @@ Use Cases for managing services and providers catalog
 Following Clean Architecture / Hexagonal Architecture
 """
 
-from typing import List, Optional
-from shared.domain.entities import TenantId, Service, Provider
-from shared.domain.repositories import IServiceRepository, IProviderRepository
+from typing import List, Optional, Dict, Any
+from shared.domain.entities import TenantId, Service, Provider, Category
+from shared.domain.repositories import IServiceRepository, IProviderRepository, ICategoryRepository
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger
 
@@ -21,13 +21,15 @@ class CatalogService:
     def __init__(
         self,
         service_repository: IServiceRepository,
-        provider_repository: IProviderRepository
+        provider_repository: IProviderRepository,
+        category_repository: ICategoryRepository
     ):
         """
         Dependency Injection: depends on abstractions
         """
         self.service_repo = service_repository
         self.provider_repo = provider_repository
+        self.category_repo = category_repository
         self.logger = Logger()
 
     def search_services(
@@ -193,6 +195,22 @@ class CatalogService:
         providers = self.provider_repo.list_by_tenant(tenant_id)
 
         return providers
+
+    def list_categories(
+        self,
+        tenant_id: TenantId,
+        active_only: bool = False
+    ) -> List[Category]:
+        """
+        List categories for tenant
+        """
+        self.logger.info(
+            "Listing categories",
+            tenant_id=str(tenant_id),
+            active_only=active_only
+        )
+        
+        return self.category_repo.list_by_tenant(tenant_id, active_only)
 
 
 class ServiceManagementService:
@@ -469,4 +487,121 @@ class ProviderManagementService:
             "Provider deleted",
             tenant_id=str(tenant_id),
             provider_id=provider_id
+        )
+
+
+class CategoryManagementService:
+    """
+    Service for managing categories (admin operations)
+    """
+
+    def __init__(self, category_repository: ICategoryRepository):
+        self.category_repo = category_repository
+        self.logger = Logger()
+
+    def create_category(
+        self,
+        tenant_id: TenantId,
+        category_id: str,
+        name: str,
+        description: Optional[str] = None,
+        is_active: bool = True,
+        display_order: int = 0,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Category:
+        """Create new category"""
+        self.logger.info(
+            "Creating category",
+            tenant_id=str(tenant_id),
+            name=name
+        )
+
+        category = Category(
+            category_id=category_id,
+            tenant_id=tenant_id,
+            name=name,
+            description=description,
+            is_active=is_active,
+            display_order=display_order,
+            metadata=metadata or {}
+        )
+
+        self.category_repo.save(category)
+
+        self.logger.info(
+            "Category created",
+            tenant_id=str(tenant_id),
+            category_id=category_id
+        )
+
+        return category
+
+    def update_category(
+        self,
+        tenant_id: TenantId,
+        category_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        is_active: Optional[bool] = None,
+        display_order: Optional[int] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Category:
+        """Update existing category"""
+        self.logger.info(
+            "Updating category",
+            tenant_id=str(tenant_id),
+            category_id=category_id
+        )
+
+        category = self.category_repo.get_by_id(tenant_id, category_id)
+        if not category:
+            raise EntityNotFoundError("Category", category_id)
+
+        if name is not None:
+            category.name = name
+        if description is not None:
+            category.description = description
+        if is_active is not None:
+            category.is_active = is_active
+        if display_order is not None:
+            category.display_order = display_order
+        if metadata is not None:
+            category.metadata = metadata
+
+        # Update timestamp
+        from datetime import datetime, timezone
+        category.updated_at = datetime.now(timezone.utc)
+
+        self.category_repo.save(category)
+
+        self.logger.info(
+            "Category updated",
+            tenant_id=str(tenant_id),
+            category_id=category_id
+        )
+
+        return category
+
+    def delete_category(
+        self,
+        tenant_id: TenantId,
+        category_id: str
+    ) -> None:
+        """Delete category"""
+        self.logger.info(
+            "Deleting category",
+            tenant_id=str(tenant_id),
+            category_id=category_id
+        )
+
+        category = self.category_repo.get_by_id(tenant_id, category_id)
+        if not category:
+            raise EntityNotFoundError("Category", category_id)
+
+        self.category_repo.delete(tenant_id, category_id)
+
+        self.logger.info(
+            "Category deleted",
+            tenant_id=str(tenant_id),
+            category_id=category_id
         )

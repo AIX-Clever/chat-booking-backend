@@ -198,6 +198,18 @@ type ApiKey {
 }
 
 # Types - Catalog
+type Category @aws_api_key {
+  categoryId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  displayOrder: Int
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 type Service @aws_api_key {
   serviceId: ID!
   name: String!
@@ -298,6 +310,23 @@ input UpdateTenantInput {
 }
 
 # Inputs - Catalog
+input CreateCategoryInput {
+  name: String!
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input UpdateCategoryInput {
+  categoryId: ID!
+  name: String
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
 input CreateServiceInput {
   name: String!
   description: String
@@ -416,6 +445,7 @@ input GetConversationInput {
 # Queries
 type Query {
   # Catalog
+  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key
   searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key
   getService(serviceId: ID!): Service @aws_api_key
   listProviders: [Provider!]! @aws_api_key
@@ -442,6 +472,10 @@ type Mutation {
   updateTenant(input: UpdateTenantInput!): Tenant!
 
   # Catalog (Admin)
+  createCategory(input: CreateCategoryInput!): Category!
+  updateCategory(input: UpdateCategoryInput!): Category!
+  deleteCategory(categoryId: ID!): Category!
+
   createService(input: CreateServiceInput!): Service!
   updateService(input: UpdateServiceInput!): Service!
   deleteService(serviceId: ID!): Service!
@@ -547,6 +581,34 @@ schema {
     catalogDataSource.createResolver('DeleteServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteService',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('ListCategoriesResolver', {
+      typeName: 'Query',
+      fieldName: 'listCategories',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('CreateCategoryResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createCategory',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('UpdateCategoryResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateCategory',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    catalogDataSource.createResolver('DeleteCategoryResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteCategory',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

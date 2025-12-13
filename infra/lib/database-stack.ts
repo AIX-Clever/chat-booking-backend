@@ -24,6 +24,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly availabilityTable: dynamodb.Table;
   public readonly bookingsTable: dynamodb.Table;
   public readonly conversationsTable: dynamodb.Table;
+  public readonly categoriesTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -243,6 +244,23 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // 8. Categories Table
+    this.categoriesTable = new dynamodb.Table(this, 'CategoriesTable', {
+      tableName: 'ChatBooking-Categories',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'categoryId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
     // Output table names and ARNs
     new cdk.CfnOutput(this, 'TenantsTableName', {
       value: this.tenantsTable.tableName,
@@ -277,6 +295,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ConversationsTableName', {
       value: this.conversationsTable.tableName,
       description: 'Conversations table name',
+    });
+
+    new cdk.CfnOutput(this, 'CategoriesTableName', {
+      value: this.categoriesTable.tableName,
+      description: 'Categories table name',
     });
   }
 }
