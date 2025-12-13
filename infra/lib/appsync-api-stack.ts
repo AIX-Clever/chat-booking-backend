@@ -469,28 +469,28 @@ type Mutation {
   # Tenant (Public/Auth)
   # Tenant (Public/Auth)
   registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
-  updateTenant(input: UpdateTenantInput!): Tenant!
+  updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
 
   # Catalog (Admin)
-  createCategory(input: CreateCategoryInput!): Category!
-  updateCategory(input: UpdateCategoryInput!): Category!
-  deleteCategory(categoryId: ID!): Category!
+  createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools
+  updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
+  deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
 
-  createService(input: CreateServiceInput!): Service!
-  updateService(input: UpdateServiceInput!): Service!
-  deleteService(serviceId: ID!): Service!
+  createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
+  updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
+  deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
   
-  createProvider(input: CreateProviderInput!): Provider!
-  updateProvider(input: UpdateProviderInput!): Provider!
-  deleteProvider(providerId: ID!): Provider!
+  createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
+  updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
+  deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
   
   # Availability (Admin)
-  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability!
+  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
   
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key
-  confirmBooking(input: ConfirmBookingInput!): Booking!
-  cancelBooking(input: CancelBookingInput!): Booking!
+  confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
+  cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
