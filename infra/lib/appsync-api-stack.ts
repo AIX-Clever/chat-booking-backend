@@ -226,6 +226,7 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   bio: String
   serviceIds: [ID!]!
   timezone: String!
+  metadata: AWSJSON
   available: Boolean!
 }
 
@@ -350,6 +351,7 @@ input CreateProviderInput {
   bio: String
   serviceIds: [ID!]!
   timezone: String!
+  metadata: AWSJSON
 }
 
 input UpdateProviderInput {
@@ -358,6 +360,7 @@ input UpdateProviderInput {
   bio: String
   serviceIds: [ID!]
   timezone: String
+  metadata: AWSJSON
   available: Boolean
 }
 

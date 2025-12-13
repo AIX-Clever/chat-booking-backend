@@ -16,16 +16,16 @@
         }
       }
     },
-    "dc154ab727e24ffa955f52a1c8dc0a376a4df9923b16fcae94298d9327eea634": {
+    "2ff139850f15289b0a5a33965661fbcfd62c3afb22d12fe44d1e53496b3e1680": {
       "displayName": "ChatBooking-dev-AppSyncApi Template",
       "source": {
         "path": "ChatBooking-dev-AppSyncApi.template.json",
         "packaging": "file"
       },
       "destinations": {
-        "607250385528-us-east-1-54fb9005": {
+        "607250385528-us-east-1-e7268def": {
           "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
-          "objectKey": "dc154ab727e24ffa955f52a1c8dc0a376a4df9923b16fcae94298d9327eea634.json",
+          "objectKey": "2ff139850f15289b0a5a33965661fbcfd62c3afb22d12fe44d1e53496b3e1680.json",
           "region": "us-east-1",
           "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
         }
