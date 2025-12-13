@@ -241,6 +241,7 @@ type Query {
   
   # Availability
   getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]!
   
   # Bookings
   getBooking(input: GetBookingInput!): Booking

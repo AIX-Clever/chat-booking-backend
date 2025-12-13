@@ -77,6 +77,9 @@ def lambda_handler(event: dict, context) -> dict:
         
         elif field == 'setProviderAvailability':
             return handle_set_availability(tenant_id, input_data)
+
+        elif field == 'getProviderAvailability':
+            return handle_get_provider_availability(tenant_id, input_data)
         
         else:
             return error_response(f"Unknown operation: {field}", 400)
@@ -212,3 +215,40 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
     }
 
     return success_response(response_data)
+
+
+def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> dict:
+    """
+    Get provider availability schedule
+    
+    Input:
+    {
+        "providerId": "pro_456"
+    }
+    """
+    provider_id = input_data.get('providerId')
+    
+    if not provider_id:
+        return error_response("Missing required field: providerId", 400)
+
+    # Get availability from repository
+    schedule = availability_repo.get_provider_availability(tenant_id, provider_id)
+    
+    # Convert to response format
+    response_data = []
+    for avail in schedule:
+        response_data.append({
+            'providerId': avail.provider_id,
+            'dayOfWeek': avail.day_of_week,
+            'timeRanges': [
+                {'startTime': tr.start_time, 'endTime': tr.end_time}
+                for tr in avail.time_ranges
+            ],
+            'breaks': [
+                {'startTime': br.start_time, 'endTime': br.end_time}
+                for br in avail.breaks
+            ]
+        })
+        
+    return success_response(response_data)
+
