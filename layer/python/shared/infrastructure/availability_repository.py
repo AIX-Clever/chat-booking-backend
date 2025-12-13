@@ -20,7 +20,7 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_PROVIDER_AVAILABILITY_TABLE', 'ProviderAvailability')
+            table_name or os.environ.get('AVAILABILITY_TABLE', 'ChatBooking-Availability')
         )
 
     def get_provider_availability(
