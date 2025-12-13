@@ -46,6 +46,7 @@ availability_service = AvailabilityService(
 availability_mgmt_service = AvailabilityManagementService(availability_repo)
 
 logger = Logger()
+logger.info("Availability Lambda initialized", version="1.1")
 
 
 def lambda_handler(event: dict, context) -> dict:
