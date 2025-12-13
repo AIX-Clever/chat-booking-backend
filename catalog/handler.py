@@ -14,7 +14,7 @@ from shared.infrastructure.dynamodb_repositories import (
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
-from shared.utils import Logger, success_response, error_response, generate_id
+from shared.utils import Logger, success_response, error_response, generate_id, extract_appsync_event
 
 from service import (
     CatalogService,
@@ -56,12 +56,7 @@ def lambda_handler(event: dict, context) -> dict:
     - deleteProvider (admin)
     """
     try:
-        field = event.get('field')
-        tenant_id_str = event.get('tenantId')
-        input_data = event.get('input', {})
-
-        if not tenant_id_str:
-            return error_response("Missing tenantId", 400)
+        field, tenant_id_str, input_data = extract_appsync_event(event)
 
         tenant_id = TenantId(tenant_id_str)
 

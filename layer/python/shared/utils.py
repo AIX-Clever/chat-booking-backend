@@ -86,16 +86,68 @@ def error_response(message: str, status_code: int = 400) -> Dict[str, Any]:
 
 
 def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
-    """Extract tenantId from Lambda event"""
-    # From AppSync context
+    """Extract tenantId from Lambda event (AppSync context)"""
+    # 1. From args (if passed explicitly)
+    if 'arguments' in event and 'tenantId' in event['arguments']:
+        return event['arguments']['tenantId']
+
+    # 2. From identity (User Pools)
+    if 'identity' in event and 'claims' in event['identity']:
+        claims = event['identity']['claims']
+        if 'custom:tenantId' in claims:
+            return claims['custom:tenantId']
+        if 'tenantId' in claims:
+            return claims['tenantId']
+            
+    # 3. From stash (Lambda Auth / Pipeline)
+    if 'stash' in event and 'tenantId' in event['stash']:
+        return event['stash']['tenantId']
+        
+    # 4. Direct property (Direct invocation / Test)
     if 'tenantId' in event:
         return event['tenantId']
     
-    # From stash (set by auth resolver)
-    if 'stash' in event.get('context', {}):
-        return event['context']['stash'].get('tenantId')
-    
     return None
+
+
+def extract_appsync_event(event: Dict[str, Any]) -> tuple[str, str, Dict[str, Any]]:
+    """
+    Extract field, tenant_id, and input from AppSync event
+    
+    Returns:
+        (field, tenant_id, input_data)
+    
+    Raises:
+        ValueError: If required data is missing
+    """
+    # Extract field name
+    field = None
+    if 'info' in event and 'fieldName' in event['info']:
+        field = event['info']['fieldName']
+    elif 'field' in event:
+        field = event['field']
+        
+    if not field:
+        raise ValueError("Could not determine operation field name")
+
+    # Extract tenant_id
+    tenant_id = extract_tenant_id(event)
+    if not tenant_id:
+        raise ValueError("Missing tenantId in request context")
+
+    # Extract input arguments
+    input_data = {}
+    if 'arguments' in event:
+        args = event['arguments']
+        # If 'input' wrapper is used (common pattern)
+        if 'input' in args:
+            input_data = args['input']
+        else:
+            input_data = args
+    elif 'input' in event:
+        input_data = event['input']
+
+    return field, tenant_id, input_data
 
 
 class Logger:
