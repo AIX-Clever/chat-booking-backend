@@ -56,6 +56,7 @@ def lambda_handler(event: dict, context) -> dict:
     - deleteProvider (admin)
     """
     try:
+        logger.info("Raw event received", event=event)
         field, tenant_id_str, input_data = extract_appsync_event(event)
 
         tenant_id = TenantId(tenant_id_str)
