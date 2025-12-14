@@ -66,7 +66,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     {'Name': 'email', 'Value': email},
                     {'Name': 'email_verified', 'Value': 'true'}, # Auto-verify for friction-less
                     {'Name': 'custom:tenantId', 'Value': str(tenant_id)},
-                    {'Name': 'fullname', 'Value': company_name}
+                    {'Name': 'name', 'Value': company_name}
                 ],
                 MessageAction='SUPPRESS' # Don't send default email
             )
