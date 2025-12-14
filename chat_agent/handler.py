@@ -220,7 +220,7 @@ def conversation_to_dict(conversation) -> dict:
         'context': conversation.context,
         'messages': getattr(conversation, 'messages', []),
         'channel': getattr(conversation, 'channel', 'widget'),
-        'metadata': conversation.metadata,
+        'metadata': getattr(conversation, 'metadata', {}),
         'createdAt': conversation.created_at.isoformat() + 'Z',
         'updatedAt': conversation.updated_at.isoformat() + 'Z'
     }
