@@ -238,7 +238,12 @@ class ChatAgentService:
                 }
                 for s in services
             ]
-            return ResponseBuilder.service_selection_message(services_list)
+            
+            # If we are here, it means the user sent a message (this is process_message)
+            # but it didn't match a service.
+            feedback_text = f"Disculpa, no encontré un servicio relacionado con '{message}'.\nPor favor selecciona una de las opciones:"
+            
+            return ResponseBuilder.service_selection_message(services_list, text=feedback_text)
         
         # Validate service exists
         service = self._service_repo.get_by_id(tenant_id, service_id)
@@ -313,9 +318,21 @@ class ChatAgentService:
                         break
 
         if not provider_id:
-            # Re-fetch providers to show valid options again if needed, or just error
-            # For better UX, we could re-send the options. For now, strict error but at least text matching is attempted.
-            return ResponseBuilder.error_message("Debes seleccionar un profesional de la lista.")
+            # Re-fetch providers to show valid options again
+            service_id = conversation.context.get('serviceId')
+            providers = self._provider_repo.list_by_service(tenant_id, service_id)
+            
+            providers_list = [
+                {
+                    'providerId': p.provider_id,
+                    'name': p.name,
+                    'bio': p.bio
+                }
+                for p in providers
+            ]
+            
+            feedback_text = f"No encontré un profesional llamado '{message}'. Por favor selecciona uno de la lista:"
+            return ResponseBuilder.provider_selection_message(providers_list, text=feedback_text)
         
         # Validate provider
         provider = self._provider_repo.get_by_id(tenant_id, provider_id)

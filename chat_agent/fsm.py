@@ -283,11 +283,11 @@ class ResponseBuilder:
         }
     
     @staticmethod
-    def service_selection_message(services: list[dict]) -> dict:
+    def service_selection_message(services: list[dict], text: str = None) -> dict:
         """Ask user to select service"""
         return {
             'type': MessageType.OPTIONS.value,
-            'text': 'Perfecto. ¿Qué servicio específico deseas?',
+            'text': text or 'Perfecto. ¿Qué servicio específico deseas?',
             'options': [
                 {
                     'label': f"{s['name']} - ${s['price']} ({s['duration']} min)",
@@ -299,11 +299,11 @@ class ResponseBuilder:
         }
     
     @staticmethod
-    def provider_selection_message(providers: list[dict]) -> dict:
+    def provider_selection_message(providers: list[dict], text: str = None) -> dict:
         """Ask user to select provider"""
         return {
             'type': MessageType.OPTIONS.value,
-            'text': '¿Con qué profesional te gustaría agendar?',
+            'text': text or '¿Con qué profesional te gustaría agendar?',
             'options': [
                 {
                     'label': p['name'],
