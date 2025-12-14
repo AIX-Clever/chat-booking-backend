@@ -660,7 +660,7 @@
    "Properties": {
     "Code": {
      "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "cbcd128f5ce983f874197bc748bc84abd0c1a9f7664b7e21dee01a92d998b844.zip"
+     "S3Key": "b7f3c044d582035a3db19fcfc625e0ed6c70405024a888752433d5e45e3cda5e.zip"
     },
     "Description": "Calculate available time slots for bookings",
     "Environment": {
@@ -716,7 +716,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AvailabilityFunction/Resource",
-    "aws:asset:path": "asset.cbcd128f5ce983f874197bc748bc84abd0c1a9f7664b7e21dee01a92d998b844",
+    "aws:asset:path": "asset.b7f3c044d582035a3db19fcfc625e0ed6c70405024a888752433d5e45e3cda5e",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }

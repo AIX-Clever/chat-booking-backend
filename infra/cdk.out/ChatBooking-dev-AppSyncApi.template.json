@@ -101,7 +101,7 @@
      ]
     },
     "Description": "API Key for internal/testing",
-    "Expires": 1797205087
+    "Expires": 1797205958
    },
    "DependsOn": [
     "ChatBookingApiSchemaA2D62F25"

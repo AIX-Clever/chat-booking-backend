@@ -1,0 +1,46 @@
+{
+    "events": [
+        {
+            "timestamp": 1765671633491,
+            "message": "INIT_START Runtime Version: python:3.11.v109\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:49f733259c7ce7e0deee75ff91c6afe35c7d58b04ed300f32701216263b4590c\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634417,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability Lambda initialized\", \"version\": \"1.1\"}\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634422,
+            "message": "START RequestId: aae5b21a-2586-45ef-ac53-c77e4779a1ce Version: $LATEST\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634784,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634784,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"Missing required fields: providerId, dayOfWeek, timeRanges\"}\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634785,
+            "message": "[ERROR] Exception: Internal server error\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    return error_response(\"Internal server error\", 500)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634787,
+            "message": "END RequestId: aae5b21a-2586-45ef-ac53-c77e4779a1ce\n",
+            "ingestionTime": 1765671637750
+        },
+        {
+            "timestamp": 1765671634787,
+            "message": "REPORT RequestId: aae5b21a-2586-45ef-ac53-c77e4779a1ce\tDuration: 364.88 ms\tBilled Duration: 1292 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\tInit Duration: 927.05 ms\t\nXRAY TraceId: 1-693e02d1-37d4be8d3da70d992299d023\tSampled: true\t\n",
+            "ingestionTime": 1765671637750
+        }
+    ],
+    "nextForwardToken": "f/39375793231657906234731751396056732070218706047149998087/s",
+    "nextBackwardToken": "b/39375793202756140457436063804626441188866429535399378944/s"
+}

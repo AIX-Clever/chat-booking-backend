@@ -1,0 +1,51 @@
+{
+    "events": [
+        {
+            "timestamp": 1765672075909,
+            "message": "INIT_START Runtime Version: python:3.11.v109\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:49f733259c7ce7e0deee75ff91c6afe35c7d58b04ed300f32701216263b4590c\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672076824,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability Lambda initialized\", \"version\": \"1.1\"}\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672076829,
+            "message": "START RequestId: 98daf6dd-e0cd-42b0-bd53-5b53a7b52ba5 Version: $LATEST\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077357,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077357,
+            "message": "{\"level\": \"INFO\", \"message\": \"handle_set_availability input\", \"input_data\": {\"providerId\": \"pro_1a373b56\", \"dayOfWeek\": \"SUN\", \"timeRanges\": [], \"breaks\": []}}\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077357,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"Missing required fields: providerId, dayOfWeek, timeRanges\"}\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077359,
+            "message": "[ERROR] Exception: Missing required fields: providerId, dayOfWeek, timeRanges\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    raise e  # Re-raise to let AppSync handle it (or show the original error)\n  File \"/var/task/handler.py\", line 76, in lambda_handler\n    return handle_set_availability(tenant_id, input_data)\n  File \"/var/task/handler.py\", line 186, in handle_set_availability\n    return error_response(\"Missing required fields: providerId, dayOfWeek, timeRanges\", 400)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077361,
+            "message": "END RequestId: 98daf6dd-e0cd-42b0-bd53-5b53a7b52ba5\n",
+            "ingestionTime": 1765672082825
+        },
+        {
+            "timestamp": 1765672077361,
+            "message": "REPORT RequestId: 98daf6dd-e0cd-42b0-bd53-5b53a7b52ba5\tDuration: 531.65 ms\tBilled Duration: 1448 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\tInit Duration: 916.30 ms\t\nXRAY TraceId: 1-693e048b-00ff1305647dba3e05cb2152\tSampled: true\t\n",
+            "ingestionTime": 1765672082825
+        }
+    ],
+    "nextForwardToken": "f/39375803101387911729223758176148372763127513241669992456/s",
+    "nextBackwardToken": "b/39375803069007229700957293374638509831242092334986428416/s"
+}

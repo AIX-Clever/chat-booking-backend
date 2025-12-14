@@ -1,0 +1,51 @@
+{
+    "events": [
+        {
+            "timestamp": 1765672075865,
+            "message": "INIT_START Runtime Version: python:3.11.v109\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:49f733259c7ce7e0deee75ff91c6afe35c7d58b04ed300f32701216263b4590c\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672076782,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability Lambda initialized\", \"version\": \"1.1\"}\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672076787,
+            "message": "START RequestId: e0e74a15-acba-4931-9cb0-dbb705362559 Version: $LATEST\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077301,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077301,
+            "message": "{\"level\": \"INFO\", \"message\": \"handle_set_availability input\", \"input_data\": {\"providerId\": \"pro_1a373b56\", \"dayOfWeek\": \"TUE\", \"timeRanges\": [{\"startTime\": \"09:00\", \"endTime\": \"17:00\"}], \"breaks\": []}}\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077301,
+            "message": "{\"level\": \"INFO\", \"message\": \"Setting provider availability\", \"tenant_id\": \"tenant-04f8e4b8\", \"provider_id\": \"pro_1a373b56\", \"day_of_week\": \"TUE\"}\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077365,
+            "message": "{\"level\": \"INFO\", \"message\": \"Provider availability set\", \"tenant_id\": \"tenant-04f8e4b8\", \"provider_id\": \"pro_1a373b56\", \"day_of_week\": \"TUE\"}\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077367,
+            "message": "END RequestId: e0e74a15-acba-4931-9cb0-dbb705362559\n",
+            "ingestionTime": 1765672081235
+        },
+        {
+            "timestamp": 1765672077367,
+            "message": "REPORT RequestId: e0e74a15-acba-4931-9cb0-dbb705362559\tDuration: 579.04 ms\tBilled Duration: 1498 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\tInit Duration: 918.26 ms\t\nXRAY TraceId: 1-693e048b-38a201782c41666e74c0be30\tSampled: true\t\n",
+            "ingestionTime": 1765672081235
+        }
+    ],
+    "nextForwardToken": "f/39375803101521716200414941913075391239331369173888139272/s",
+    "nextBackwardToken": "b/39375803068025996912221945954488742393813530191905554432/s"
+}

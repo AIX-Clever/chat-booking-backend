@@ -123,8 +123,10 @@ def lambda_handler(event: dict, context) -> dict:
         return error_response(str(e), 400)
 
     except Exception as e:
-        logger.error("Unexpected error", error=e)
-        return error_response("Internal server error", 500)
+        logger.error("Unexpected error", error=str(e))
+        import traceback
+        traceback.print_exc()
+        return error_response(f"Internal server error: {str(e)}", 500)
 
 
 def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:

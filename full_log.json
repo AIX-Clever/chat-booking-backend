@@ -1,0 +1,141 @@
+{
+    "events": [
+        {
+            "timestamp": 1765670650038,
+            "message": "INIT_START Runtime Version: python:3.11.v109\tRuntime Version ARN: arn:aws:lambda:us-east-1::runtime:49f733259c7ce7e0deee75ff91c6afe35c7d58b04ed300f32701216263b4590c\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651127,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability Lambda initialized\", \"version\": \"1.1\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651143,
+            "message": "START RequestId: 77a2c81b-2042-407c-a0b4-3b212c56ff3b Version: $LATEST\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651504,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651504,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"Missing required fields: providerId, dayOfWeek, timeRanges\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651505,
+            "message": "[ERROR] Exception: Internal server error\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    return error_response(\"Internal server error\", 500)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651507,
+            "message": "END RequestId: 77a2c81b-2042-407c-a0b4-3b212c56ff3b\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670651508,
+            "message": "REPORT RequestId: 77a2c81b-2042-407c-a0b4-3b212c56ff3b\tDuration: 363.46 ms\tBilled Duration: 1454 ms\tMemory Size: 512 MB\tMax Memory Used: 88 MB\tInit Duration: 1090.41 ms\t\nXRAY TraceId: 1-693dfef9-2ff38643047f995105054054\tSampled: true\t\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654593,
+            "message": "START RequestId: 7f70b37f-12f7-4f22-b34f-660fed962772 Version: $LATEST\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654880,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654880,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"Missing required fields: providerId, dayOfWeek, timeRanges\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654880,
+            "message": "[ERROR] Exception: Internal server error\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    return error_response(\"Internal server error\", 500)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654883,
+            "message": "END RequestId: 7f70b37f-12f7-4f22-b34f-660fed962772\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654883,
+            "message": "REPORT RequestId: 7f70b37f-12f7-4f22-b34f-660fed962772\tDuration: 288.80 ms\tBilled Duration: 289 ms\tMemory Size: 512 MB\tMax Memory Used: 89 MB\t\nXRAY TraceId: 1-693dfefe-1a72081770543c92330ec611\tSampled: true\t\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670654971,
+            "message": "START RequestId: 139dd9fe-88da-4251-a0e4-464d91ce3074 Version: $LATEST\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670655248,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670655248,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"Missing required fields: providerId, dayOfWeek, timeRanges\"}\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670655249,
+            "message": "[ERROR] Exception: Internal server error\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    return error_response(\"Internal server error\", 500)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670655251,
+            "message": "END RequestId: 139dd9fe-88da-4251-a0e4-464d91ce3074\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670655251,
+            "message": "REPORT RequestId: 139dd9fe-88da-4251-a0e4-464d91ce3074\tDuration: 279.42 ms\tBilled Duration: 280 ms\tMemory Size: 512 MB\tMax Memory Used: 89 MB\t\nXRAY TraceId: 1-693dfefe-726cc3c2231c43221a0ff460\tSampled: true\t\n",
+            "ingestionTime": 1765670658600
+        },
+        {
+            "timestamp": 1765670706421,
+            "message": "START RequestId: 90a2fb8e-cf9b-48d1-a520-75d375c43fea Version: $LATEST\n",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706738,
+            "message": "{\"level\": \"INFO\", \"message\": \"Availability operation\", \"field\": \"setProviderAvailability\", \"tenant_id\": \"tenant-04f8e4b8\"}\n",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706738,
+            "message": "{\"level\": \"INFO\", \"message\": \"Setting provider availability\", \"tenant_id\": \"tenant-04f8e4b8\", \"provider_id\": \"pro_1a373b56\", \"day_of_week\": \"TUE\"}\n",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706788,
+            "message": "{\"level\": \"ERROR\", \"message\": \"Unexpected error\", \"error\": \"An error occurred (ValidationException) when calling the PutItem operation: One or more parameter values were invalid: Missing the key tenantId_providerId in the item\"}\n",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706789,
+            "message": "[ERROR] Exception: Internal server error\nTraceback (most recent call last):\n  File \"/var/task/handler.py\", line 102, in lambda_handler\n    return error_response(\"Internal server error\", 500)\n  File \"/opt/python/shared/utils.py\", line 85, in error_response\n    raise Exception(message)",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706791,
+            "message": "END RequestId: 90a2fb8e-cf9b-48d1-a520-75d375c43fea\n",
+            "ingestionTime": 1765670715441
+        },
+        {
+            "timestamp": 1765670706791,
+            "message": "REPORT RequestId: 90a2fb8e-cf9b-48d1-a520-75d375c43fea\tDuration: 369.44 ms\tBilled Duration: 370 ms\tMemory Size: 512 MB\tMax Memory Used: 89 MB\t\nXRAY TraceId: 1-693dff32-1c63895e6eac83894ba3b3fe\tSampled: true\t\n",
+            "ingestionTime": 1765670715441
+        }
+    ],
+    "nextForwardToken": "f/39375772536655564979107597428473092248906183896591630342/s",
+    "nextBackwardToken": "b/39375771271021372726899142208180229446719350300100853760/s"
+}
