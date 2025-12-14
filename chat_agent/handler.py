@@ -219,7 +219,7 @@ def conversation_to_dict(conversation) -> dict:
         'state': conversation.state.value,
         'context': conversation.context,
         'messages': getattr(conversation, 'messages', []),
-        'channel': conversation.channel,
+        'channel': getattr(conversation, 'channel', 'widget'),
         'metadata': conversation.metadata,
         'createdAt': conversation.created_at.isoformat() + 'Z',
         'updatedAt': conversation.updated_at.isoformat() + 'Z'
