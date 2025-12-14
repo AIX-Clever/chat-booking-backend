@@ -456,6 +456,7 @@ type Query {
   
   # Availability
   getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_cognito_user_pools
   
   # Bookings
   getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
@@ -648,6 +649,13 @@ schema {
     availabilityDataSource.createResolver('SetProviderAvailabilityResolver', {
       typeName: 'Mutation',
       fieldName: 'setProviderAvailability',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    availabilityDataSource.createResolver('GetProviderAvailabilityResolver', {
+      typeName: 'Query',
+      fieldName: 'getProviderAvailability',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
