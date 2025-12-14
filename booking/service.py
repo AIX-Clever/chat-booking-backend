@@ -188,7 +188,9 @@ class BookingService:
             end_time=end,
             status=BookingStatus.PENDING,
             payment_status=PaymentStatus.PENDING,
-            conversation_id=conversation_id
+            conversation_id=conversation_id,
+            notes=notes,
+            total_amount=service.price
         )
         
         # Save with conditional expression to prevent race conditions

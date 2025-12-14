@@ -310,16 +310,16 @@ def booking_to_dict(booking) -> dict:
         'tenantId': booking.tenant_id.value,
         'serviceId': booking.service_id,
         'providerId': booking.provider_id,
-        'start': booking.start.isoformat() + 'Z',
-        'end': booking.end.isoformat() + 'Z',
+        'start': booking.start_time.isoformat() + 'Z',
+        'end': booking.end_time.isoformat() + 'Z',
         'status': booking.status.value,
-        'clientName': booking.client_name,
-        'clientEmail': booking.client_email,
-        'clientPhone': booking.client_phone,
+        'clientName': booking.customer_info.name,
+        'clientEmail': booking.customer_info.email,
+        'clientPhone': booking.customer_info.phone,
         'notes': booking.notes,
         'conversationId': booking.conversation_id,
         'paymentStatus': booking.payment_status.value,
         'totalAmount': booking.total_amount,
         'createdAt': booking.created_at.isoformat() + 'Z',
-        'updatedAt': booking.updated_at.isoformat() + 'Z'
+        'updatedAt': booking.updated_at.isoformat() + 'Z' if booking.updated_at else None
     }

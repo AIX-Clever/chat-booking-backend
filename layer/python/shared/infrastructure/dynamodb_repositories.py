@@ -398,6 +398,13 @@ class DynamoDBBookingRepository(IBookingRepository):
         if booking.customer_info.phone:
             item['customerPhone'] = booking.customer_info.phone
 
+        if booking.notes:
+            item['notes'] = booking.notes
+        if booking.total_amount is not None:
+             item['totalAmount'] = str(booking.total_amount)
+        if booking.updated_at:
+             item['updatedAt'] = booking.updated_at.isoformat()
+
         try:
             self.table.put_item(
                 Item=item,
@@ -442,7 +449,10 @@ class DynamoDBBookingRepository(IBookingRepository):
             status=BookingStatus(item['status']),
             payment_status=PaymentStatus(item['paymentStatus']),
             conversation_id=item.get('conversationId'),
-            created_at=datetime.fromisoformat(item['createdAt'])
+            notes=item.get('notes'),
+            total_amount=float(item['totalAmount']) if item.get('totalAmount') else None,
+            created_at=datetime.fromisoformat(item['createdAt']),
+            updated_at=datetime.fromisoformat(item['updatedAt']) if item.get('updatedAt') else None
         )
 
 
