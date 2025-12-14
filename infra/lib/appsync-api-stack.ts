@@ -176,7 +176,7 @@ enum TenantPlan {
   ENTERPRISE
 }
 
-type Tenant @aws_api_key {
+type Tenant @aws_api_key @aws_cognito_user_pools {
   tenantId: ID!
   name: String!
   slug: String!
