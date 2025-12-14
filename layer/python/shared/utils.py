@@ -88,11 +88,11 @@ def error_response(message: str, status_code: int = 400) -> Dict[str, Any]:
 def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     """Extract tenantId from Lambda event (AppSync context)"""
     # 1. From args (if passed explicitly)
-    if 'arguments' in event and 'tenantId' in event['arguments']:
+    if event.get('arguments') and 'tenantId' in event['arguments']:
         return event['arguments']['tenantId']
 
     # 2. From identity (User Pools)
-    if 'identity' in event and 'claims' in event['identity']:
+    if event.get('identity') and event['identity'].get('claims'):
         claims = event['identity']['claims']
         if 'custom:tenantId' in claims:
             return claims['custom:tenantId']
@@ -102,7 +102,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
             return claims['website']
             
     # 3. From stash (Lambda Auth / Pipeline)
-    if 'stash' in event and 'tenantId' in event['stash']:
+    if event.get('stash') and 'tenantId' in event['stash']:
         return event['stash']['tenantId']
         
     # 4. Direct property (Direct invocation / Test)
@@ -110,7 +110,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
         return event['tenantId']
     
     # 5. From headers (API Key / Custom Auth)
-    if 'request' in event and event['request'].get('headers'):
+    if event.get('request') and event['request'].get('headers'):
         headers = event['request']['headers']
         # Check standard custom header
         if 'x-tenant-id' in headers:
@@ -120,7 +120,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
         
     # 5. Fallback: Fetch from Cognito using Access Token from headers
     # (Required when Access Token is used but attribute is not in claims, e.g. standard attrs like website)
-    if 'request' in event and event['request'].get('headers'):
+    if event.get('request') and event['request'].get('headers'):
         headers = event['request']['headers']
         auth_header = headers.get('authorization')
         if auth_header:
