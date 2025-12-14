@@ -218,8 +218,7 @@ class ChatAgentService:
         if not service_id:
             # Show available services
             services = self._service_repo.search(
-                tenant_id,
-                available_only=True
+                tenant_id
             )
             services_list = [
                 {
