@@ -26,7 +26,32 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             tenant_id_str = event.get('identity', {}).get('claims', {}).get('tenantId')
 
         if not tenant_id_str:
-            logger.error("No tenantId in claims", claims=claims)
+            # Fallback for Access Tokens (which lack custom attributes)
+            # Fetch attributes directly from Cognito using the username/sub from claims
+            username = claims.get('username') or claims.get('cognito:username') or claims.get('sub')
+            user_pool_id = os.environ.get('USER_POOL_ID')
+            
+            if username and user_pool_id:
+                try:
+                    logger.info("Fetching attributes from Cognito", username=username)
+                    cognito = boto3.client('cognito-idp')
+                    user = cognito.admin_get_user(
+                        UserPoolId=user_pool_id,
+                        Username=username
+                    )
+                    # Extract tenantId from UserAttributes
+                    for attr in user.get('UserAttributes', []):
+                        if attr['Name'] == 'custom:tenantId':
+                            tenant_id_str = attr['Value']
+                            break
+                            
+                    if tenant_id_str:
+                         logger.info("Retrieved tenantId from Cognito", tenant_id=tenant_id_str)
+                except Exception as e:
+                    logger.warning("Failed to fetch user attributes", error=e)
+
+        if not tenant_id_str:
+            logger.error("No tenantId in claims or Cognito", claims=claims)
             raise ValueError("Unauthorized: Missing tenant context")
 
         tenant_id = TenantId(tenant_id_str)

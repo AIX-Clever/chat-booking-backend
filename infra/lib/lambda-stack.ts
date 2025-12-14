@@ -186,10 +186,15 @@ export class LambdaStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(backendPath, 'update_tenant')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        USER_POOL_ID: props.userPool.userPoolId,
+      },
     });
 
     // Grant permissions
     props.tenantsTable.grantReadWriteData(this.updateTenantFunction);
+    props.userPool.grant(this.updateTenantFunction, 'cognito-idp:AdminGetUser');
 
     // CloudWatch alarms for critical functions
     this.createAlarms();
