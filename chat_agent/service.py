@@ -215,11 +215,19 @@ class ChatAgentService:
         """Handle service selection"""
         service_id = user_data.get('serviceId') if user_data else None
         
+        # Try to find service by name if not explicitly selected
+        services = self._service_repo.search(tenant_id)
+
+        if not service_id:
+            # Check if message matches any service name
+            normalized_msg = message.lower().strip()
+            for service in services:
+                if service.name.lower() in normalized_msg:
+                    service_id = service.service_id
+                    break
+        
         if not service_id:
             # Show available services
-            services = self._service_repo.search(
-                tenant_id
-            )
             services_list = [
                 {
                     'serviceId': s.service_id,
@@ -294,7 +302,20 @@ class ChatAgentService:
         provider_id = user_data.get('providerId') if user_data else None
         
         if not provider_id:
-            return ResponseBuilder.error_message("Debes seleccionar un profesional")
+            # Try to match provider name from message
+            service_id = conversation.context.get('serviceId')
+            if service_id:
+                providers = self._provider_repo.list_by_service(tenant_id, service_id)
+                normalized_msg = message.lower().strip()
+                for provider in providers:
+                    if provider.name.lower() in normalized_msg:
+                        provider_id = provider.provider_id
+                        break
+
+        if not provider_id:
+            # Re-fetch providers to show valid options again if needed, or just error
+            # For better UX, we could re-send the options. For now, strict error but at least text matching is attempted.
+            return ResponseBuilder.error_message("Debes seleccionar un profesional de la lista.")
         
         # Validate provider
         provider = self._provider_repo.get_by_id(tenant_id, provider_id)
