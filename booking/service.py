@@ -4,7 +4,12 @@ Booking Application Services (Application Layer)
 Use cases for booking management with overbooking prevention
 """
 
-from datetime import datetime, UTC
+from datetime import datetime
+try:
+    from datetime import UTC
+except ImportError:
+    from datetime import timezone
+    UTC = timezone.utc
 import hashlib
 from typing import Optional
 from shared.domain.entities import (
