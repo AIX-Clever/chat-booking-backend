@@ -1,6 +1,12 @@
 name: Deploy Backend
 
 on:
+  pull_request:
+    branches:
+      - dev
+      - qa
+      - stg
+      - prod
   workflow_dispatch:
 
 permissions:
@@ -44,8 +50,18 @@ jobs:
         working-directory: infra
         run: npm ci
 
+      - name: Sanitize Environment Name
+        id: sanitize_env
+        run: |
+          # Get branch name (head_ref for PRs, ref_name for dispatch)
+          RAW_BRANCH=${{ github.head_ref || github.ref_name }}
+          # Replace slashes with hyphens
+          SANITIZED_BRANCH=${RAW_BRANCH//\//-}
+          echo "ENV_NAME=${SANITIZED_BRANCH}" >> $GITHUB_ENV
+
       - name: Deploy with CDK
         working-directory: infra
         run: npx cdk deploy --all --require-approval never
         env:
-          ENV: ${{ github.ref_name }} # Uses branch name as environment (dev, qa, stg, prod)
+          ENV: ${{ env.ENV_NAME }} # Uses sanitized branch name
+
