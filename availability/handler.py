@@ -182,8 +182,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
     
     logger.info("handle_set_availability input", input_data=input_data)
 
-    if not all([provider_id, day_of_week, time_ranges]):
-        return error_response("Missing required fields: providerId, dayOfWeek, timeRanges", 400)
+    if not all([provider_id, day_of_week]): # time_ranges can be empty (e.g. day off)
+        return error_response("Missing required fields: providerId, dayOfWeek", 400)
 
     # Validate day of week
     valid_days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
