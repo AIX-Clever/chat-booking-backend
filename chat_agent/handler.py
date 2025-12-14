@@ -93,7 +93,8 @@ def lambda_handler(event: dict, context) -> dict:
 
     except Exception as e:
         logger.error("Unexpected error", error=e)
-        return error_response("Internal server error", 500)
+        # DEBUG: Expose error to client
+        return error_response(f"Internal error: {str(e)}", 500)
 
 
 def handle_start_conversation(tenant_id: TenantId, input_data: dict) -> dict:
