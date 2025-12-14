@@ -256,14 +256,20 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
     except ValueError as e:
         return error_response(f"Invalid date format: {e}", 400)
 
-    bookings = booking_query_service.list_by_provider(
-        tenant_id,
-        provider_id,
-        start_date,
-        end_date
-    )
+    # DEBUG: Return query params to verify Tenant/Provider/Dates
+    pk = f"{tenant_id}#{provider_id}"
+    debug_msg = f"DEBUG: PK={pk}, Start={start_date.isoformat()}, End={end_date.isoformat()}, Tenant={tenant_id.value}, Provider={provider_id}"
+    # Remove after debugging
+    return error_response(debug_msg, 400)
 
-    return success_response([booking_to_dict(b) for b in bookings])
+    # bookings = booking_query_service.list_by_provider(
+    #     tenant_id,
+    #     provider_id,
+    #     start_date,
+    #     end_date
+    # )
+
+    # return success_response([booking_to_dict(b) for b in bookings])
 
 
 def handle_list_by_client(tenant_id: TenantId, input_data: dict) -> dict:
