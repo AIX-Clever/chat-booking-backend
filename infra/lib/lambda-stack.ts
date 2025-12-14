@@ -63,12 +63,10 @@ export class LambdaStack extends cdk.Stack {
     };
 
     // Lambda Layer for shared code
-    // Structure layer/python/shared aligns with AWS Lambda requirement
-    const sharedLayer = new lambda.LayerVersion(this, 'SharedLayer', {
-      code: lambda.Code.fromAsset(path.join(backendPath, 'layer')),
-      compatibleRuntimes: [lambda.Runtime.PYTHON_3_11],
-      description: 'Shared domain entities, repositories, and utilities',
-    });
+    // Imported from chat-booking-layers stack
+    const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer',
+      cdk.Fn.importValue('ChatBookingPythonLayerArn')
+    );
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
