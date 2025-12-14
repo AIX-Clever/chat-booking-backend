@@ -32,7 +32,7 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
         try:
             pk = f"{tenant_id}#{provider_id}"
             response = self.table.query(
-                KeyConditionExpression=Key('PK').eq(pk)
+                KeyConditionExpression=Key('tenantId_providerId').eq(pk)
             )
             
             return [self._item_to_entity(item) for item in response.get('Items', [])]
@@ -45,8 +45,8 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
         pk = f"{availability.tenant_id}#{availability.provider_id}"
         
         item = {
-            'PK': pk,
-            'SK': availability.day_of_week,
+            'tenantId_providerId': pk,
+            'dayOfWeek': availability.day_of_week,
             'timeRanges': [
                 {'startTime': tr.start_time, 'endTime': tr.end_time}
                 for tr in availability.time_ranges
@@ -62,7 +62,7 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
 
     def _item_to_entity(self, item: dict) -> ProviderAvailability:
         """Convert DynamoDB item to entity"""
-        pk_parts = item['PK'].split('#')
+        pk_parts = item['tenantId_providerId'].split('#')
         tenant_id = TenantId(pk_parts[0])
         provider_id = pk_parts[1]
         
@@ -79,7 +79,7 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
         return ProviderAvailability(
             tenant_id=tenant_id,
             provider_id=provider_id,
-            day_of_week=item['SK'],
+            day_of_week=item['dayOfWeek'],
             time_ranges=time_ranges,
             breaks=breaks,
             exceptions=item.get('exceptions', [])
