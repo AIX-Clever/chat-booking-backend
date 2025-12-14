@@ -110,7 +110,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
         return event['tenantId']
     
     # 5. From headers (API Key / Custom Auth)
-    if 'request' in event and 'headers' in event['request']:
+    if 'request' in event and event['request'].get('headers'):
         headers = event['request']['headers']
         # Check standard custom header
         if 'x-tenant-id' in headers:
@@ -120,8 +120,9 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
         
     # 5. Fallback: Fetch from Cognito using Access Token from headers
     # (Required when Access Token is used but attribute is not in claims, e.g. standard attrs like website)
-    if 'request' in event and 'headers' in event['request']:
-        auth_header = event['request']['headers'].get('authorization')
+    if 'request' in event and event['request'].get('headers'):
+        headers = event['request']['headers']
+        auth_header = headers.get('authorization')
         if auth_header:
             # Handle "Bearer <token>" or just "<token>"
             token = auth_header.replace('Bearer ', '') if auth_header.startswith('Bearer ') else auth_header
