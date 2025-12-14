@@ -338,15 +338,16 @@ class DynamoDBBookingRepository(IBookingRepository):
         try:
             pk = f"{tenant_id}#{provider_id}"
             response = self.table.query(
+                IndexName='providerId-start-index',
                 KeyConditionExpression=
-                    Key('PK').eq(pk) &
-                    Key('SK').between(from_date.isoformat(), to_date.isoformat())
+                    Key('tenantId_providerId').eq(pk) &
+                    Key('start').between(from_date.isoformat(), to_date.isoformat())
             )
             
             return [self._item_to_entity(item) for item in response.get('Items', [])]
         except ClientError as e:
             print(f"Error listing bookings: {e}")
-            return []
+            raise e
 
     def list_by_customer_email(self, tenant_id: TenantId, customer_email: str) -> List[Booking]:
         try:
