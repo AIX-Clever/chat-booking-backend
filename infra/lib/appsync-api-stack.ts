@@ -239,7 +239,7 @@ type TimeSlot @aws_api_key @aws_cognito_user_pools {
   isAvailable: Boolean!
 }
 
-type TimeRange {
+type TimeRange @aws_api_key @aws_cognito_user_pools {
   startTime: String!
   endTime: String!
 }
