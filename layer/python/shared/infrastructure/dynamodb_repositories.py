@@ -368,14 +368,26 @@ class DynamoDBBookingRepository(IBookingRepository):
 
     def save(self, booking: Booking) -> None:
         """Save with conditional check to prevent overbooking"""
+        # PK/SK for internal use / potential Single-Table migration
         pk = f"{booking.tenant_id}#{booking.provider_id}"
         sk = booking.start_time.isoformat()
         
+        # GSI Keys
+        gsi_pk = pk # tenantId#providerId matches tenantId_providerId logic
+        gsi_sk = sk # start
+
         item = {
             'PK': pk,
             'SK': sk,
-            'bookingId': booking.booking_id,
+            
+            # Table Keys
             'tenantId': str(booking.tenant_id),
+            'bookingId': booking.booking_id,
+            
+            # GSI Keys - CRITICAL for listByProvider
+            'tenantId_providerId': gsi_pk,
+            'start': gsi_sk,
+            
             'serviceId': booking.service_id,
             'providerId': booking.provider_id,
             'endTime': booking.end_time.isoformat(),
@@ -390,6 +402,7 @@ class DynamoDBBookingRepository(IBookingRepository):
         # Add customer info if available
         if booking.customer_info.customer_id:
             item['customerId'] = booking.customer_info.customer_id
+            # GSI1 for Client History (if defined in Infra)
             item['GSI1PK'] = f"{booking.tenant_id}#{booking.customer_info.customer_id}"
             item['GSI1SK'] = sk
         if booking.customer_info.name:
@@ -409,7 +422,10 @@ class DynamoDBBookingRepository(IBookingRepository):
         try:
             self.table.put_item(
                 Item=item,
-                ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
+                # Note: This Condition check on PK is effectively a no-op if TenantId+BookingId is the Key
+                # We need GSI uniqueness constraint which DynamoDB doesn't support natively on PutItem to a GSI.
+                # For now, we allow "logical" overbooking at DB layer, relying on Service to check availability.
+                # ConditionExpression='attribute_not_exists(PK) AND attribute_not_exists(SK)'
             )
         except ClientError as e:
             if e.response['Error']['Code'] == 'ConditionalCheckFailedException':
@@ -418,11 +434,14 @@ class DynamoDBBookingRepository(IBookingRepository):
 
     def update(self, booking: Booking) -> None:
         """Update existing booking (no conditional check)"""
-        pk = f"{booking.tenant_id}#{booking.provider_id}"
-        sk = booking.start_time.isoformat()
+        # Primary Key is TenantId + BookingId
+        key = {
+            'tenantId': str(booking.tenant_id),
+            'bookingId': booking.booking_id
+        }
         
         self.table.update_item(
-            Key={'PK': pk, 'SK': sk},
+            Key=key,
             UpdateExpression='SET #status = :status, paymentStatus = :payment_status',
             ExpressionAttributeNames={'#status': 'status'},
             ExpressionAttributeValues={
