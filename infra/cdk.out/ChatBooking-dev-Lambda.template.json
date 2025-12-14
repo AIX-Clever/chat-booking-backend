@@ -8,14 +8,16 @@
      "python3.11"
     ],
     "Content": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "6fc10bb992ffda18d790031ee5d509395a786714a138c573a19231c6d5cb3723.zip"
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "e40aba1462960b7e08844d42366710fd51b0c36f6529b1c4215eaa5b119cd3e9.zip"
     },
     "Description": "Shared domain entities, repositories, and utilities"
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/SharedLayer/Resource",
-    "aws:asset:path": "asset.6fc10bb992ffda18d790031ee5d509395a786714a138c573a19231c6d5cb3723",
+    "aws:asset:path": "asset.e40aba1462960b7e08844d42366710fd51b0c36f6529b1c4215eaa5b119cd3e9",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Content"
    }
@@ -139,7 +141,9 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
      "S3Key": "98e4e50395f53359ce127b4085446d99dde8127a187678fb7be4304d99720cdd.zip"
     },
     "Description": "AppSync authorizer - validates API keys and returns tenant context",
@@ -310,7 +314,9 @@
     "Runtime": "nodejs22.x",
     "Timeout": 900,
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
      "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
     },
     "Role": {
@@ -438,7 +444,9 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
      "S3Key": "06d8e0b5f674cb26f596a91b6751b6dd0dcfa3cbcc137ed45beb351210cb212c.zip"
     },
     "Description": "Service and provider catalog management",
@@ -659,8 +667,10 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "b7f3c044d582035a3db19fcfc625e0ed6c70405024a888752433d5e45e3cda5e.zip"
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "08a3c357e7595d476bc30a8abcaca4be774d7334cf01ab7607be4609302ca00b.zip"
     },
     "Description": "Calculate available time slots for bookings",
     "Environment": {
@@ -716,7 +726,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AvailabilityFunction/Resource",
-    "aws:asset:path": "asset.b7f3c044d582035a3db19fcfc625e0ed6c70405024a888752433d5e45e3cda5e",
+    "aws:asset:path": "asset.08a3c357e7595d476bc30a8abcaca4be774d7334cf01ab7607be4609302ca00b",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -908,8 +918,10 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "ad471244feee5d9ac41485d1cb5c796090211cd5984b90a640bb0eef93f9810c.zip"
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "0103a436f788201fb5505201ff75da5d317b97a604272701ea8edd6dcc3ee617.zip"
     },
     "Description": "Booking creation, confirmation, and cancellation",
     "Environment": {
@@ -964,7 +976,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/BookingFunction/Resource",
-    "aws:asset:path": "asset.ad471244feee5d9ac41485d1cb5c796090211cd5984b90a640bb0eef93f9810c",
+    "aws:asset:path": "asset.0103a436f788201fb5505201ff75da5d317b97a604272701ea8edd6dcc3ee617",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1145,7 +1157,9 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
      "S3Key": "dd0e74b07b6c3211e942183ab9355477997994585e87c323a471947984c4030d.zip"
     },
     "Description": "Conversational FSM agent for booking flow",
@@ -1346,8 +1360,10 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "00b5e29bd63892271ed1ee9ba508690e5820d6b9467a1d5b33cb89c9e14b2abc.zip"
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "a908de25eb75b720f1f9292f5b959d974f791e0f7aee839989f2a3f6255da03e.zip"
     },
     "Description": "Public tenant registration endpoint",
     "Environment": {
@@ -1405,7 +1421,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/Resource",
-    "aws:asset:path": "asset.00b5e29bd63892271ed1ee9ba508690e5820d6b9467a1d5b33cb89c9e14b2abc",
+    "aws:asset:path": "asset.a908de25eb75b720f1f9292f5b959d974f791e0f7aee839989f2a3f6255da03e",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1507,6 +1523,13 @@
          ]
         }
        ]
+      },
+      {
+       "Action": "cognito-idp:AdminGetUser",
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57"
+       }
       }
      ],
      "Version": "2012-10-17"
@@ -1526,8 +1549,10 @@
    "Type": "AWS::Lambda::Function",
    "Properties": {
     "Code": {
-     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
-     "S3Key": "584c9386dd2b50eaab36496d704fc0e1491f9b2abee94a82aae94d0fb29f53ed.zip"
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "44da60d5a0ef4ba81442c60754c6fe39e8dd3bc0133b7350443b4aa863cf5342.zip"
     },
     "Description": "Tenant settings update",
     "Environment": {
@@ -1556,7 +1581,10 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
-      "LOG_LEVEL": "INFO"
+      "LOG_LEVEL": "INFO",
+      "USER_POOL_ID": {
+       "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
+      }
      }
     },
     "FunctionName": "ChatBooking-UpdateTenant",
@@ -1582,7 +1610,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/Resource",
-    "aws:asset:path": "asset.584c9386dd2b50eaab36496d704fc0e1491f9b2abee94a82aae94d0fb29f53ed",
+    "aws:asset:path": "asset.44da60d5a0ef4ba81442c60754c6fe39e8dd3bc0133b7350443b4aa863cf5342",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }

@@ -44,7 +44,7 @@ enum TenantPlan {
   ENTERPRISE
 }
 
-type Tenant @aws_api_key {
+type Tenant @aws_api_key @aws_cognito_user_pools {
   tenantId: ID!
   name: String!
   slug: String!
@@ -107,7 +107,7 @@ type TimeSlot @aws_api_key @aws_cognito_user_pools {
   isAvailable: Boolean!
 }
 
-type TimeRange {
+type TimeRange @aws_api_key @aws_cognito_user_pools {
   startTime: String!
   endTime: String!
 }
@@ -324,6 +324,7 @@ type Query {
   
   # Availability
   getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_cognito_user_pools
   
   # Bookings
   getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
@@ -359,7 +360,7 @@ type Mutation {
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
   
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking! @aws_api_key
+  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   

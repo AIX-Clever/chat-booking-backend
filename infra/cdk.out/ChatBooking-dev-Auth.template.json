@@ -176,7 +176,17 @@
   "AdminUserPoolAdminDomain119AB3F9": {
    "Type": "AWS::Cognito::UserPoolDomain",
    "Properties": {
-    "Domain": "chatbooking-admin-607250385528",
+    "Domain": {
+     "Fn::Join": [
+      "",
+      [
+       "chatbooking-admin-",
+       {
+        "Ref": "AWS::AccountId"
+       }
+      ]
+     ]
+    },
     "UserPoolId": {
      "Ref": "AdminUserPoolD0AF18CF"
     }

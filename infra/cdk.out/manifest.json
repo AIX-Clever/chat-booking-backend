@@ -11,7 +11,7 @@
     },
     "ChatBooking-dev-Database": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://607250385528/us-east-1",
+      "environment": "aws://unknown-account/us-east-1",
       "properties": {
         "templateFile": "ChatBooking-dev-Database.template.json",
         "terminationProtection": false,
@@ -21,16 +21,16 @@
           "Project": "ChatBooking"
         },
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-cfn-exec-role-607250385528-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-607250385528-us-east-1/77e66038ddf1affe7694f24f77fd7c6236dee813ff145c122e859e41e6e744b3.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/77e66038ddf1affe7694f24f77fd7c6236dee813ff145c122e859e41e6e744b3.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "ChatBooking-dev-Database.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -345,7 +345,7 @@
     },
     "ChatBooking-dev-Auth": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://607250385528/us-east-1",
+      "environment": "aws://unknown-account/us-east-1",
       "properties": {
         "templateFile": "ChatBooking-dev-Auth.template.json",
         "terminationProtection": false,
@@ -355,16 +355,16 @@
           "Project": "ChatBooking"
         },
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-cfn-exec-role-607250385528-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-607250385528-us-east-1/3d57a76860e0a733f56322cb47a564a68794ca4f72e475aff3f6bdd6d9f16e52.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/65a488cbf5faf9732ac339465284f7f2876df3be5fa4f8c1b61b2b7c5a64bf26.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "ChatBooking-dev-Auth.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -501,7 +501,7 @@
     },
     "ChatBooking-dev-Lambda": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://607250385528/us-east-1",
+      "environment": "aws://unknown-account/us-east-1",
       "properties": {
         "templateFile": "ChatBooking-dev-Lambda.template.json",
         "terminationProtection": false,
@@ -511,16 +511,16 @@
           "Project": "ChatBooking"
         },
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-cfn-exec-role-607250385528-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-607250385528-us-east-1/eb5dc675a18231364bf097f06e0d31ed2c375604cd922c9b400b572397f98bc1.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/6bfbd95992b6fa610f1bf564a0dbb061a0f60cbfb0525733f7d342b172c109a9.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "ChatBooking-dev-Lambda.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -923,7 +923,7 @@
     },
     "ChatBooking-dev-AppSyncApi": {
       "type": "aws:cloudformation:stack",
-      "environment": "aws://607250385528/us-east-1",
+      "environment": "aws://unknown-account/us-east-1",
       "properties": {
         "templateFile": "ChatBooking-dev-AppSyncApi.template.json",
         "terminationProtection": false,
@@ -933,16 +933,16 @@
           "Project": "ChatBooking"
         },
         "validateOnSynth": false,
-        "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1",
-        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-cfn-exec-role-607250385528-us-east-1",
-        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-607250385528-us-east-1/2b2acbbb1917cac9c615ef5c7389a7b95770d98fd0c7f743695e86d9c5fd1ec2.json",
+        "assumeRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-deploy-role-${AWS::AccountId}-us-east-1",
+        "cloudFormationExecutionRoleArn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-cfn-exec-role-${AWS::AccountId}-us-east-1",
+        "stackTemplateAssetObjectUrl": "s3://cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1/d4aa1cb2e7cd7e0b91212044caae9bdf9113669db5d87a640884b6ed4adf0590.json",
         "requiresBootstrapStackVersion": 6,
         "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version",
         "additionalDependencies": [
           "ChatBooking-dev-AppSyncApi.assets"
         ],
         "lookupRole": {
-          "arn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1",
+          "arn": "arn:${AWS::Partition}:iam::${AWS::AccountId}:role/cdk-hnb659fds-lookup-role-${AWS::AccountId}-us-east-1",
           "requiresBootstrapStackVersion": 8,
           "bootstrapStackVersionSsmParameter": "/cdk-bootstrap/hnb659fds/version"
         }
@@ -1216,6 +1216,12 @@
           {
             "type": "aws:cdk:logicalId",
             "data": "ChatBookingApiSetProviderAvailabilityResolver8ABE3F14"
+          }
+        ],
+        "/ChatBooking-dev-AppSyncApi/ChatBookingApi/GetProviderAvailabilityResolver/Resource": [
+          {
+            "type": "aws:cdk:logicalId",
+            "data": "ChatBookingApiGetProviderAvailabilityResolver0A54B9AC"
           }
         ],
         "/ChatBooking-dev-AppSyncApi/ChatBookingApi/GetBookingResolver/Resource": [
