@@ -108,6 +108,15 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     # 4. Direct property (Direct invocation / Test)
     if 'tenantId' in event:
         return event['tenantId']
+    
+    # 5. From headers (API Key / Custom Auth)
+    if 'request' in event and 'headers' in event['request']:
+        headers = event['request']['headers']
+        # Check standard custom header
+        if 'x-tenant-id' in headers:
+            return headers['x-tenant-id']
+        if 'X-Tenant-Id' in headers:
+            return headers['X-Tenant-Id']
         
     # 5. Fallback: Fetch from Cognito using Access Token from headers
     # (Required when Access Token is used but attribute is not in claims, e.g. standard attrs like website)
