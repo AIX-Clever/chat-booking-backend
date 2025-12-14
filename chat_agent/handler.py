@@ -218,7 +218,7 @@ def conversation_to_dict(conversation) -> dict:
         'tenantId': conversation.tenant_id.value,
         'state': conversation.state.value,
         'context': conversation.context,
-        'messages': conversation.messages,
+        'messages': getattr(conversation, 'messages', []),
         'channel': conversation.channel,
         'metadata': conversation.metadata,
         'createdAt': conversation.created_at.isoformat() + 'Z',
