@@ -488,7 +488,7 @@ class DynamoDBConversationRepository(IConversationRepository):
     def get_by_id(self, tenant_id: TenantId, conversation_id: str) -> Optional[Conversation]:
         try:
             response = self.table.get_item(
-                Key={'PK': str(tenant_id), 'SK': conversation_id}
+                Key={'tenantId': str(tenant_id), 'conversationId': conversation_id}
             )
             item = response.get('Item')
             
@@ -502,8 +502,8 @@ class DynamoDBConversationRepository(IConversationRepository):
 
     def save(self, conversation: Conversation) -> None:
         item = {
-            'PK': str(conversation.tenant_id),
-            'SK': conversation.conversation_id,
+            'tenantId': str(conversation.tenant_id),
+            'conversationId': conversation.conversation_id,
             'state': conversation.state.value,
             'updatedAt': conversation.updated_at.isoformat(),
             'context': conversation.context
