@@ -99,7 +99,7 @@ def lambda_handler(event: dict, context) -> dict:
 
     except Exception as e:
         logger.error("Unexpected error", error=e)
-        return error_response("Internal server error", 500)
+        raise e  # Re-raise to let AppSync handle it (or show the original error)
 
 
 def handle_get_available_slots(tenant_id: TenantId, input_data: dict) -> dict:
@@ -179,6 +179,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
     day_of_week = input_data.get('dayOfWeek')
     time_ranges = input_data.get('timeRanges', [])
     breaks = input_data.get('breaks', [])
+    
+    logger.info("handle_set_availability input", input_data=input_data)
 
     if not all([provider_id, day_of_week, time_ranges]):
         return error_response("Missing required fields: providerId, dayOfWeek, timeRanges", 400)
