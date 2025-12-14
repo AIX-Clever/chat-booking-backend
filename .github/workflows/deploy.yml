@@ -1,12 +1,6 @@
 name: Deploy Backend
 
 on:
-  push:
-    branches:
-      - dev
-      - qa
-      - stg
-      - prod
   workflow_dispatch:
 
 permissions:
