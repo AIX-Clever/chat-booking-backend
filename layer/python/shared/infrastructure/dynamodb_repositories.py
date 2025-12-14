@@ -506,6 +506,7 @@ class DynamoDBConversationRepository(IConversationRepository):
             'conversationId': conversation.conversation_id,
             'state': conversation.state.value,
             'updatedAt': conversation.updated_at.isoformat(),
+            'createdAt': conversation.created_at.isoformat(),
             'context': conversation.context
         }
         
@@ -527,8 +528,8 @@ class DynamoDBConversationRepository(IConversationRepository):
 
     def _item_to_entity(self, item: dict) -> Conversation:
         return Conversation(
-            conversation_id=item['SK'],
-            tenant_id=TenantId(item['PK']),
+            conversation_id=item['conversationId'],
+            tenant_id=TenantId(item['tenantId']),
             state=ConversationState(item['state']),
             service_id=item.get('serviceId'),
             provider_id=item.get('providerId'),
@@ -536,5 +537,6 @@ class DynamoDBConversationRepository(IConversationRepository):
             slot_end=datetime.fromisoformat(item['slotEnd']) if item.get('slotEnd') else None,
             booking_id=item.get('bookingId'),
             context=item.get('context', {}),
+            created_at=datetime.fromisoformat(item['createdAt']) if item.get('createdAt') else datetime.fromisoformat(item['updatedAt']),
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
