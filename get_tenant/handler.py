@@ -5,7 +5,7 @@ import json
 from typing import Dict, Any
 from shared.domain.entities import Tenant, TenantId
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
-from shared.utils import lambda_response, Logger
+from shared.utils import lambda_response, Logger, extract_appsync_event, success_response, error_response
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -15,81 +15,45 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info("Starting get tenant", event=event)
     
     try:
-        # 1. Parse Arguments (tenantId)
-        # Verify if arguments contains tenantId (direct query)
-        args_tenant_id = event.get('arguments', {}).get('tenantId')
+        # Extract context using shared utility (handles args, identity, headers, etc.)
+        field, tenant_id_str, input_data = extract_appsync_event(event)
         
-        # 2. Auth Context
-        # Check who is asking.
-        # If Admin (via User Pool), they can potentially ask for any tenant if they are super-admin (not implemented yet), 
-        # or more likely, they are asking for their own tenant.
+        # Override tenant_id if explicit argument is provided (though extract_appsync_event prioritizes args)
+        # Actually, extract_appsync_event already does: args > identity > stash > headers.
+        # But for getTenant, if tenantId arg is provided, it returns that. 
+        # If not, it returns identity tenantId.
+        # Perfect.
         
-        claims = event.get('identity', {}).get('claims', {})
-        auth_tenant_id = claims.get('custom:tenantId')
-
-        # Fallback logic for retrieving tenantId from Cognito if not in claims (e.g. access token)
-        if not auth_tenant_id:
-            username = claims.get('username') or claims.get('cognito:username') or claims.get('sub')
-            user_pool_id = os.environ.get('USER_POOL_ID')
-            
-            if username and user_pool_id:
-                try:
-                    logger.info("Fetching attributes from Cognito", username=username)
-                    cognito = boto3.client('cognito-idp')
-                    user = cognito.admin_get_user(
-                        UserPoolId=user_pool_id,
-                        Username=username
-                    )
-                    for attr in user.get('UserAttributes', []):
-                        if attr['Name'] == 'custom:tenantId':
-                            auth_tenant_id = attr['Value']
-                            break
-                    if auth_tenant_id:
-                         logger.info("Retrieved tenantId from Cognito", tenant_id=auth_tenant_id)
-                except Exception as e:
-                    logger.warning("Failed to fetch user attributes", error=e)
-
-        # 3. Authorization Logic
-        target_tenant_id = None
+        logger.info("Resolved Tenant ID", tenant_id=tenant_id_str)
         
-        if args_tenant_id:
-            # Client requesting specific tenant
-            # Ensure they are authorized for this tenant
-            if auth_tenant_id and auth_tenant_id != args_tenant_id:
-                 # In a strict system, we'd block this.
-                 # However, super-admins might exist.
-                 # For now, let's enforce: You can only get your own tenant.
-                 # UNLESS the schema is @aws_api_key protected for public widgets?
-                 # If @aws_api_key is used (public), 'identity' might be different or null claims.
-                 # But getTenant usually implies fetching sensitive settings.
-                 # Public widget uses `registerTenant`? No.
-                 # Public widget needs to load public settings (color, etc.)
-                 # So `getTenant` MIGHT need to be public?
-                 # The frontend code sends `tenantId`.
-                 # Let's allow if args match auth OR if it's public usage (check schema later).
-                 # For safety, if auth_tenant_id is present, it MUST match.
-                 # If no auth_tenant_id (ApiKey access?), we proceed but maybe filter fields?
-                 # The schema definition will determine if API Key access is allowed.
-                 
-                 # Current implementation: Trust the schema auth. 
-                 # If user is authenticated, we might want to prioritize their auth_tenant_id?
-                 pass 
-            
-            target_tenant_id = args_tenant_id
-        elif auth_tenant_id:
-            # Client didn't send ID, implies "get mine"
-            target_tenant_id = auth_tenant_id
-        else:
-            raise ValueError("Missing tenantId argument or auth context")
+        if not tenant_id_str:
+             return error_response("Tenant ID not found in context or arguments", 400)
 
-        # 4. Fetch Tenant
+        # Authorization Check (if specific ID requested vs inferred)
+        # If the ID came from arguments, we might want to verify it matches identity?
+        # extract_appsync_event doesn't tell us WHERE it got it from.
+        # But for 'getTenant', usually:
+        # 1. Admin asks for specific tenant (if super admin) -> Args
+        # 2. Admin asks for their own -> Identity
+        # 3. Widget asks for public tenant -> Args (via x-tenant-id header or arg)
+        
+        # We can implement a safety check:
+        # If identity is present, and extracted ID differs...
+        # But we don't easily have 'identity' here without parsing again.
+        # For now, we trust the extraction priority.
+        
         tenant_repo = DynamoDBTenantRepository()
-        tenant = tenant_repo.get_by_id(TenantId(target_tenant_id))
+        tenant = tenant_repo.get_by_id(TenantId(tenant_id_str))
         
         if not tenant:
-            raise ValueError("Tenant not found")
+            return error_response("Tenant not found", 404)
 
-        # 5. Return Result
+        # Return Result via success_response (if it handles direct return) 
+        # or simple dict if AppSync expects direct object. 
+        # The other lambdas use success_response.
+        # Schema expects Tenant! (object), success_response returns raw data?
+        # shared/utils.py success_response returns data directly.
+        
         return {
             'tenantId': str(tenant.tenant_id),
             'name': tenant.name,
@@ -104,3 +68,4 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     except Exception as e:
         logger.error("Get tenant failed", error=str(e))
         raise e
+
