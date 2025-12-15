@@ -1,0 +1,21 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "77e66038ddf1affe7694f24f77fd7c6236dee813ff145c122e859e41e6e744b3": {
+      "displayName": "ChatBooking-dev-Database Template",
+      "source": {
+        "path": "ChatBooking-dev-Database.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "607250385528-us-east-1-6f1ab289": {
+          "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
+          "objectKey": "77e66038ddf1affe7694f24f77fd7c6236dee813ff145c122e859e41e6e744b3.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}

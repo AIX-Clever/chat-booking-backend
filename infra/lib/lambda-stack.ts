@@ -63,9 +63,10 @@ export class LambdaStack extends cdk.Stack {
     };
 
     // Lambda Layer for shared code
-    // Imported from chat-booking-layers stack
+    // TEMPORARILY HARDCODED - should use Fn.importValue('ChatBookingPythonLayerArn') 
+    // once the layers stack export issue is resolved
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer',
-      cdk.Fn.importValue('ChatBookingPythonLayerArn')
+      'arn:aws:lambda:us-east-1:607250385528:layer:chat-booking-shared-python:4'
     );
 
     // 1. Auth Resolver Lambda

@@ -1,0 +1,1561 @@
+{
+ "Description": "GraphQL API for Chat Booking SaaS",
+ "Resources": {
+  "ChatBookingApiApiLogsRole9BE29727": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSAppSyncPushToCloudWatchLogs"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ApiLogsRole/Resource"
+   }
+  },
+  "ChatBookingApi7E340B40": {
+   "Type": "AWS::AppSync::GraphQLApi",
+   "Properties": {
+    "AdditionalAuthenticationProviders": [
+     {
+      "AuthenticationType": "AMAZON_COGNITO_USER_POOLS",
+      "UserPoolConfig": {
+       "AwsRegion": "us-east-1",
+       "UserPoolId": {
+        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
+       }
+      }
+     },
+     {
+      "AuthenticationType": "API_KEY"
+     }
+    ],
+    "AuthenticationType": "AWS_LAMBDA",
+    "LambdaAuthorizerConfig": {
+     "AuthorizerResultTtlInSeconds": 300,
+     "AuthorizerUri": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAuthResolverFunction9D28D29BArn5A0DACA2"
+     }
+    },
+    "LogConfig": {
+     "CloudWatchLogsRoleArn": {
+      "Fn::GetAtt": [
+       "ChatBookingApiApiLogsRole9BE29727",
+       "Arn"
+      ]
+     },
+     "ExcludeVerboseContent": false,
+     "FieldLogLevel": "ERROR"
+    },
+    "Name": "ChatBookingGraphQLApi",
+    "XrayEnabled": true
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/Resource"
+   }
+  },
+  "ChatBookingApiSchemaA2D62F25": {
+   "Type": "AWS::AppSync::GraphQLSchema",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "Definition": "\n# Scalars\nscalar AWSDateTime\nscalar AWSJSON\n\n# Enums\nenum BookingStatus {\n  PENDING\n  CONFIRMED\n  CANCELLED\n  NO_SHOW\n}\n\nenum PaymentStatus {\n  NONE\n  PENDING\n  PAID\n  FAILED\n}\n\nenum ConversationState {\n  INIT\n  SERVICE_PENDING\n  SERVICE_SELECTED\n  PROVIDER_PENDING\n  PROVIDER_SELECTED\n  SLOT_PENDING\n  CONFIRM_PENDING\n  BOOKING_CONFIRMED\n}\n\n\n# Types - Tenant\nenum TenantStatus {\n  ACTIVE\n  SUSPENDED\n  CANCELLED\n}\n\nenum TenantPlan {\n  FREE\n  PRO\n  BUSINESS\n  ENTERPRISE\n}\n\ntype Tenant @aws_api_key @aws_cognito_user_pools {\n  tenantId: ID!\n  name: String!\n  slug: String!\n  status: TenantStatus!\n  plan: TenantPlan!\n  ownerUserId: String!\n  billingEmail: String!\n  settings: AWSJSON\n  createdAt: AWSDateTime!\n  updatedAt: AWSDateTime!\n}\n\ntype ApiKey {\n  apiKey: String!\n  tenantId: ID!\n  status: String!\n  createdAt: AWSDateTime!\n  expiresAt: AWSDateTime!\n}\n\n# Types - Catalog\ntype Category @aws_api_key @aws_cognito_user_pools {\n  categoryId: ID!\n  tenantId: ID!\n  name: String!\n  description: String\n  isActive: Boolean!\n  displayOrder: Int\n  metadata: AWSJSON\n  createdAt: AWSDateTime!\n  updatedAt: AWSDateTime!\n}\n\ntype Service @aws_api_key @aws_cognito_user_pools {\n  serviceId: ID!\n  name: String!\n  description: String\n  category: String!\n  durationMinutes: Int!\n  price: Float\n  available: Boolean!\n}\n\ntype Provider @aws_api_key @aws_cognito_user_pools {\n  providerId: ID!\n  name: String!\n  bio: String\n  serviceIds: [ID!]!\n  timezone: String!\n  metadata: AWSJSON\n  available: Boolean!\n}\n\n# Types - Availability\ntype TimeSlot @aws_api_key @aws_cognito_user_pools {\n  providerId: ID!\n  serviceId: ID!\n  start: AWSDateTime!\n  end: AWSDateTime!\n  isAvailable: Boolean!\n}\n\ntype TimeRange @aws_api_key @aws_cognito_user_pools {\n  startTime: String!\n  endTime: String!\n}\n\ntype ProviderAvailability @aws_cognito_user_pools {\n  providerId: ID!\n  dayOfWeek: String!\n  timeRanges: [TimeRange!]!\n  breaks: [TimeRange!]\n}\n\n# Types - Bookings\ntype Booking @aws_api_key @aws_cognito_user_pools {\n  bookingId: ID!\n  tenantId: ID!\n  serviceId: ID!\n  providerId: ID!\n  start: AWSDateTime!\n  end: AWSDateTime!\n  status: BookingStatus!\n  clientName: String!\n  clientEmail: String!\n  clientPhone: String\n  notes: String\n  conversationId: ID\n  paymentStatus: PaymentStatus!\n  totalAmount: Float!\n  createdAt: AWSDateTime!\n  updatedAt: AWSDateTime!\n}\n\n# Types - Chat\ntype Message @aws_api_key {\n  role: String!\n  content: String!\n  type: String!\n  timestamp: String!\n}\n\ntype Conversation @aws_api_key {\n  conversationId: ID!\n  tenantId: ID!\n  state: ConversationState!\n  context: AWSJSON\n  messages: [Message!]!\n  channel: String!\n  metadata: AWSJSON\n  createdAt: AWSDateTime!\n  updatedAt: AWSDateTime!\n}\n\ntype ChatResponse @aws_api_key {\n  conversation: Conversation!\n  response: AWSJSON!\n}\n\n\n# Inputs - Tenant\ninput RegisterTenantInput {\n  companyName: String!\n  email: String!\n  password: String!\n}\n\ninput UpdateTenantInput {\n  name: String\n  billingEmail: String\n  settings: AWSJSON\n}\n\n# Inputs - Catalog\ninput CreateCategoryInput {\n  name: String!\n  description: String\n  isActive: Boolean\n  displayOrder: Int\n  metadata: AWSJSON\n}\n\ninput UpdateCategoryInput {\n  categoryId: ID!\n  name: String\n  description: String\n  isActive: Boolean\n  displayOrder: Int\n  metadata: AWSJSON\n}\n\ninput CreateServiceInput {\n  name: String!\n  description: String\n  category: String!\n  durationMinutes: Int!\n  price: Float\n}\n\ninput UpdateServiceInput {\n  serviceId: ID!\n  name: String\n  description: String\n  category: String\n  durationMinutes: Int\n  price: Float\n  available: Boolean\n}\n\ninput CreateProviderInput {\n  name: String!\n  bio: String\n  serviceIds: [ID!]!\n  timezone: String!\n  metadata: AWSJSON\n}\n\ninput UpdateProviderInput {\n  providerId: ID!\n  name: String\n  bio: String\n  serviceIds: [ID!]\n  timezone: String\n  metadata: AWSJSON\n  available: Boolean\n}\n\n# Inputs - Availability\ninput GetAvailableSlotsInput {\n  serviceId: ID!\n  providerId: ID!\n  from: AWSDateTime!\n  to: AWSDateTime!\n}\n\ninput TimeRangeInput {\n  startTime: String!\n  endTime: String!\n}\n\ninput SetAvailabilityInput {\n  providerId: ID!\n  dayOfWeek: String!\n  timeRanges: [TimeRangeInput!]!\n  breaks: [TimeRangeInput!]\n}\n\n# Inputs - Bookings\ninput CreateBookingInput {\n  serviceId: ID!\n  providerId: ID!\n  start: AWSDateTime!\n  end: AWSDateTime!\n  clientName: String!\n  clientEmail: String!\n  clientPhone: String\n  notes: String\n  conversationId: ID\n}\n\ninput ConfirmBookingInput {\n  bookingId: ID!\n}\n\ninput CancelBookingInput {\n  bookingId: ID!\n  reason: String\n}\n\ninput GetBookingInput {\n  bookingId: ID!\n}\n\ninput ListBookingsByProviderInput {\n  providerId: ID!\n  startDate: AWSDateTime!\n  endDate: AWSDateTime!\n}\n\ninput ListBookingsByClientInput {\n  clientEmail: String!\n}\n\ninput GetBookingByConversationInput {\n  conversationId: ID!\n}\n\n# Inputs - Chat\ninput StartConversationInput {\n  channel: String\n  metadata: AWSJSON\n}\n\ninput SendMessageInput {\n  conversationId: ID!\n  message: String!\n  messageType: String\n  userData: AWSJSON\n}\n\ninput ConfirmBookingFromConversationInput {\n  conversationId: ID!\n}\n\ninput GetConversationInput {\n  conversationId: ID!\n}\n\n# Queries\ntype Query {\n  # Catalog\n  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools\n  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools\n  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools\n  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools\n  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools\n  \n  # Availability\n  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools\n  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_cognito_user_pools\n  \n  # Bookings\n  getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools\n  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! @aws_cognito_user_pools\n  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! @aws_cognito_user_pools\n  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools\n  \n  # Chat\n  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools\n}\n\n# Mutations\ntype Mutation {\n  # Tenant (Public/Auth)\n  # Tenant (Public/Auth)\n  registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key\n  updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools\n\n  # Catalog (Admin)\n  createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools\n  updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools\n  deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools\n\n  createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools\n  updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools\n  deleteService(serviceId: ID!): Service! @aws_cognito_user_pools\n  \n  createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools\n  updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools\n  deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools\n  \n  # Availability (Admin)\n  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools\n  \n  # Bookings\n  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools\n  confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools\n  cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools\n  \n  # Chat\n  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key\n  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key\n  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key\n}\n\nschema {\n  query: Query\n  mutation: Mutation\n}\n"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/Schema"
+   }
+  },
+  "ChatBookingApiDefaultApiKeyE71EDFF8": {
+   "Type": "AWS::AppSync::ApiKey",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "Description": "API Key for internal/testing",
+    "Expires": 1797289908
+   },
+   "DependsOn": [
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/DefaultApiKey"
+   }
+  },
+  "ChatBookingApiLogRetentionF3933474": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/appsync/apis/",
+       {
+        "Fn::GetAtt": [
+         "ChatBookingApi7E340B40",
+         "ApiId"
+        ]
+       }
+      ]
+     ]
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/LogRetention/Resource"
+   }
+  },
+  "ChatBookingApiCatalogDataSourceServiceRoleEACED706": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CatalogDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiCatalogDataSourceServiceRoleDefaultPolicyABFCA79A": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttCatalogFunctionCE342920Arn76EDCCB9"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttCatalogFunctionCE342920Arn76EDCCB9"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiCatalogDataSourceServiceRoleDefaultPolicyABFCA79A",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiCatalogDataSourceServiceRoleEACED706"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CatalogDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiCatalogDataSource8F531050": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttCatalogFunctionCE342920Arn76EDCCB9"
+     }
+    },
+    "Name": "CatalogDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiCatalogDataSourceServiceRoleEACED706",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CatalogDataSource/Resource"
+   }
+  },
+  "ChatBookingApiAvailabilityDataSourceServiceRole138161D5": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/AvailabilityDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiAvailabilityDataSourceServiceRoleDefaultPolicy80515F07": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAvailabilityFunction6B970752ArnA8773C46"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAvailabilityFunction6B970752ArnA8773C46"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiAvailabilityDataSourceServiceRoleDefaultPolicy80515F07",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiAvailabilityDataSourceServiceRole138161D5"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/AvailabilityDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiAvailabilityDataSource77FE9BDD": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttAvailabilityFunction6B970752ArnA8773C46"
+     }
+    },
+    "Name": "AvailabilityDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiAvailabilityDataSourceServiceRole138161D5",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/AvailabilityDataSource/Resource"
+   }
+  },
+  "ChatBookingApiBookingDataSourceServiceRoleD3BD9C80": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/BookingDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiBookingDataSourceServiceRoleDefaultPolicyB171CE8E": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttBookingFunctionBDD6B8BCArn85D621FD"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttBookingFunctionBDD6B8BCArn85D621FD"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiBookingDataSourceServiceRoleDefaultPolicyB171CE8E",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiBookingDataSourceServiceRoleD3BD9C80"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/BookingDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiBookingDataSource84B45F86": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttBookingFunctionBDD6B8BCArn85D621FD"
+     }
+    },
+    "Name": "BookingDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiBookingDataSourceServiceRoleD3BD9C80",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/BookingDataSource/Resource"
+   }
+  },
+  "ChatBookingApiChatAgentDataSourceServiceRoleCAACE196": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ChatAgentDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiChatAgentDataSourceServiceRoleDefaultPolicy7EA2C595": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttChatAgentFunction2B92A177Arn6BACA9D2"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttChatAgentFunction2B92A177Arn6BACA9D2"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiChatAgentDataSourceServiceRoleDefaultPolicy7EA2C595",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiChatAgentDataSourceServiceRoleCAACE196"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ChatAgentDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiChatAgentDataSourceF01792AD": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttChatAgentFunction2B92A177Arn6BACA9D2"
+     }
+    },
+    "Name": "ChatAgentDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiChatAgentDataSourceServiceRoleCAACE196",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ChatAgentDataSource/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSourceServiceRoleDefaultPolicy6324DBF6": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiRegisterTenantDataSourceServiceRoleDefaultPolicy6324DBF6",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantDataSource21D0731E": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttRegisterTenantFunctionBE8E1377Arn1F9CA647"
+     }
+    },
+    "Name": "RegisterTenantDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiRegisterTenantDataSourceServiceRole52CAFFCA",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantDataSource/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "appsync.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    }
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSourceServiceRoleDefaultPolicy8172B00E": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": "lambda:InvokeFunction",
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+           },
+           ":*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "ChatBookingApiUpdateTenantDataSourceServiceRoleDefaultPolicy8172B00E",
+    "Roles": [
+     {
+      "Ref": "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantDataSource2CB81F8C": {
+   "Type": "AWS::AppSync::DataSource",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "LambdaConfig": {
+     "LambdaFunctionArn": {
+      "Fn::ImportValue": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttUpdateTenantFunction76E0A2E1Arn298E3814"
+     }
+    },
+    "Name": "UpdateTenantDataSource",
+    "ServiceRoleArn": {
+     "Fn::GetAtt": [
+      "ChatBookingApiUpdateTenantDataSourceServiceRole25BAE893",
+      "Arn"
+     ]
+    },
+    "Type": "AWS_LAMBDA"
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantDataSource/Resource"
+   }
+  },
+  "ChatBookingApiRegisterTenantResolver91D7F94A": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "RegisterTenantDataSource",
+    "FieldName": "registerTenant",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiRegisterTenantDataSource21D0731E",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/RegisterTenantResolver/Resource"
+   }
+  },
+  "ChatBookingApiUpdateTenantResolver88334CA1": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "UpdateTenantDataSource",
+    "FieldName": "updateTenant",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiSchemaA2D62F25",
+    "ChatBookingApiUpdateTenantDataSource2CB81F8C"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateTenantResolver/Resource"
+   }
+  },
+  "ChatBookingApiSearchServicesResolverC5D54D6F": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "searchServices",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/SearchServicesResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetServiceResolver1DFB5971": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "getService",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetServiceResolver/Resource"
+   }
+  },
+  "ChatBookingApiListProvidersResolver494A9F97": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "listProviders",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ListProvidersResolver/Resource"
+   }
+  },
+  "ChatBookingApiListProvidersByServiceResolver5CC517E9": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "listProvidersByService",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ListProvidersByServiceResolver/Resource"
+   }
+  },
+  "ChatBookingApiCreateServiceResolver18272C5D": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "createService",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateServiceResolver/Resource"
+   }
+  },
+  "ChatBookingApiUpdateServiceResolver84E66C31": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "updateService",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateServiceResolver/Resource"
+   }
+  },
+  "ChatBookingApiDeleteServiceResolver023ECF22": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "deleteService",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/DeleteServiceResolver/Resource"
+   }
+  },
+  "ChatBookingApiListCategoriesResolver51408130": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "listCategories",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ListCategoriesResolver/Resource"
+   }
+  },
+  "ChatBookingApiCreateCategoryResolver41BA9DC8": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "createCategory",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateCategoryResolver/Resource"
+   }
+  },
+  "ChatBookingApiUpdateCategoryResolverBE8B5FEE": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "updateCategory",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateCategoryResolver/Resource"
+   }
+  },
+  "ChatBookingApiDeleteCategoryResolver7073F048": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "deleteCategory",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/DeleteCategoryResolver/Resource"
+   }
+  },
+  "ChatBookingApiCreateProviderResolver7844C441": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "createProvider",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateProviderResolver/Resource"
+   }
+  },
+  "ChatBookingApiUpdateProviderResolver7B2F166F": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "updateProvider",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/UpdateProviderResolver/Resource"
+   }
+  },
+  "ChatBookingApiDeleteProviderResolver29E57550": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "CatalogDataSource",
+    "FieldName": "deleteProvider",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiCatalogDataSource8F531050",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/DeleteProviderResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetAvailableSlotsResolver6310540C": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "AvailabilityDataSource",
+    "FieldName": "getAvailableSlots",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiAvailabilityDataSource77FE9BDD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetAvailableSlotsResolver/Resource"
+   }
+  },
+  "ChatBookingApiSetProviderAvailabilityResolver8ABE3F14": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "AvailabilityDataSource",
+    "FieldName": "setProviderAvailability",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiAvailabilityDataSource77FE9BDD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/SetProviderAvailabilityResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetProviderAvailabilityResolver0A54B9AC": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "AvailabilityDataSource",
+    "FieldName": "getProviderAvailability",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiAvailabilityDataSource77FE9BDD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetProviderAvailabilityResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetBookingResolver01192CC9": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "getBooking",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetBookingResolver/Resource"
+   }
+  },
+  "ChatBookingApiListBookingsByProviderResolverB6B6F601": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "listBookingsByProvider",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ListBookingsByProviderResolver/Resource"
+   }
+  },
+  "ChatBookingApiListBookingsByClientResolver2AA179CE": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "listBookingsByClient",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ListBookingsByClientResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetBookingByConversationResolverB73ABC78": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "getBookingByConversation",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetBookingByConversationResolver/Resource"
+   }
+  },
+  "ChatBookingApiCreateBookingResolver49B0741A": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "createBooking",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CreateBookingResolver/Resource"
+   }
+  },
+  "ChatBookingApiConfirmBookingResolverB63DE95B": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "confirmBooking",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ConfirmBookingResolver/Resource"
+   }
+  },
+  "ChatBookingApiCancelBookingResolver26B16036": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "BookingDataSource",
+    "FieldName": "cancelBooking",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiBookingDataSource84B45F86",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/CancelBookingResolver/Resource"
+   }
+  },
+  "ChatBookingApiStartConversationResolver517F6271": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "ChatAgentDataSource",
+    "FieldName": "startConversation",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiChatAgentDataSourceF01792AD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/StartConversationResolver/Resource"
+   }
+  },
+  "ChatBookingApiSendMessageResolver45FC1BB3": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "ChatAgentDataSource",
+    "FieldName": "sendMessage",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiChatAgentDataSourceF01792AD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/SendMessageResolver/Resource"
+   }
+  },
+  "ChatBookingApiConfirmBookingFromConversationResolver3074B4FE": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "ChatAgentDataSource",
+    "FieldName": "confirmBookingFromConversation",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Mutation"
+   },
+   "DependsOn": [
+    "ChatBookingApiChatAgentDataSourceF01792AD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/ConfirmBookingFromConversationResolver/Resource"
+   }
+  },
+  "ChatBookingApiGetConversationResolverF100E94A": {
+   "Type": "AWS::AppSync::Resolver",
+   "Properties": {
+    "ApiId": {
+     "Fn::GetAtt": [
+      "ChatBookingApi7E340B40",
+      "ApiId"
+     ]
+    },
+    "DataSourceName": "ChatAgentDataSource",
+    "FieldName": "getConversation",
+    "Kind": "UNIT",
+    "RequestMappingTemplate": "{\"version\": \"2017-02-28\", \"operation\": \"Invoke\", \"payload\": $util.toJson($ctx)}",
+    "ResponseMappingTemplate": "$util.toJson($ctx.result)",
+    "TypeName": "Query"
+   },
+   "DependsOn": [
+    "ChatBookingApiChatAgentDataSourceF01792AD",
+    "ChatBookingApiSchemaA2D62F25"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/ChatBookingApi/GetConversationResolver/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "logs:DeleteRetentionPolicy",
+        "logs:PutRetentionPolicy"
+       ],
+       "Effect": "Allow",
+       "Resource": "*"
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "Roles": [
+     {
+      "Ref": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Handler": "index.handler",
+    "Runtime": "nodejs22.x",
+    "Timeout": 900,
+    "Code": {
+     "S3Bucket": "cdk-hnb659fds-assets-607250385528-us-east-1",
+     "S3Key": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip"
+    },
+    "Role": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB",
+      "Arn"
+     ]
+    }
+   },
+   "DependsOn": [
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRoleDefaultPolicyADDA7DEB",
+    "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aServiceRole9741ECFB"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Resource",
+    "aws:asset:path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "CDKMetadata": {
+   "Type": "AWS::CDK::Metadata",
+   "Properties": {
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/1WOwW6DMBBEvyV3s23g1CNppR6K1BQ+INqYLdlgbIc1iRDi3ys7StWeZt7MSLs55EUO2w3eJNNtnxk+wtIE1L3CmxwW9F5mq2F5H9GfLqb0rF6/baKv6j81+kQDxqD0/EGzqnA4tviGARs3jZpi9YdqEmeuNMb44VfFOMBSO5PWSffOsJ4j3t2qjOsEKtfVFMgGdlZJcUARCgJlFCUF7CbdU9ih0JpOPT749WnZBOzYdrH4nIKfwqqsawnO8nTNn2H7AsXmLMzZONnAA0F91x8P5CnMOQEAAA=="
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-AppSyncApi/CDKMetadata/Default"
+   }
+  }
+ },
+ "Outputs": {
+  "GraphQLApiUrl": {
+   "Description": "GraphQL API endpoint",
+   "Value": {
+    "Fn::GetAtt": [
+     "ChatBookingApi7E340B40",
+     "GraphQLUrl"
+    ]
+   }
+  },
+  "GraphQLApiId": {
+   "Description": "GraphQL API ID",
+   "Value": {
+    "Fn::GetAtt": [
+     "ChatBookingApi7E340B40",
+     "ApiId"
+    ]
+   }
+  },
+  "GraphQLApiKey": {
+   "Description": "GraphQL API Key (for testing)",
+   "Value": {
+    "Fn::GetAtt": [
+     "ChatBookingApiDefaultApiKeyE71EDFF8",
+     "ApiKey"
+    ]
+   }
+  },
+  "DeploymentSummary": {
+   "Description": "Deployment summary",
+   "Value": {
+    "Fn::Join": [
+     "",
+     [
+      "{\"environment\":\"dev\",\"region\":\"us-east-1\",\"graphqlEndpoint\":\"",
+      {
+       "Fn::GetAtt": [
+        "ChatBookingApi7E340B40",
+        "GraphQLUrl"
+       ]
+      },
+      "\",\"userPoolId\":\"",
+      {
+       "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
+      },
+      "\"}"
+     ]
+    ]
+   }
+  }
+ },
+ "Parameters": {
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
+ "Rules": {
+  "CheckBootstrapVersion": {
+   "Assertions": [
+    {
+     "Assert": {
+      "Fn::Not": [
+       {
+        "Fn::Contains": [
+         [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5"
+         ],
+         {
+          "Ref": "BootstrapVersion"
+         }
+        ]
+       }
+      ]
+     },
+     "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI."
+    }
+   ]
+  }
+ }
+}

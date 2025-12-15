@@ -1,0 +1,36 @@
+{
+  "version": "48.0.0",
+  "files": {
+    "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d": {
+      "displayName": "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8a/Code",
+      "source": {
+        "path": "asset.2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d",
+        "packaging": "zip"
+      },
+      "destinations": {
+        "607250385528-us-east-1-045d34ab": {
+          "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
+          "objectKey": "2819175352ad1ce0dae768e83fc328fb70fb5f10b4a8ff0ccbcb791f02b0716d.zip",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
+        }
+      }
+    },
+    "086c0f3599f774e2fd338f1a1037e5f2be93595096bfd0edca40fa0f5d418052": {
+      "displayName": "ChatBooking-dev-AppSyncApi Template",
+      "source": {
+        "path": "ChatBooking-dev-AppSyncApi.template.json",
+        "packaging": "file"
+      },
+      "destinations": {
+        "607250385528-us-east-1-b834f86d": {
+          "bucketName": "cdk-hnb659fds-assets-607250385528-us-east-1",
+          "objectKey": "086c0f3599f774e2fd338f1a1037e5f2be93595096bfd0edca40fa0f5d418052.json",
+          "region": "us-east-1",
+          "assumeRoleArn": "arn:${AWS::Partition}:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1"
+        }
+      }
+    }
+  },
+  "dockerImages": {}
+}
