@@ -256,6 +256,7 @@ type ProviderAvailability @aws_cognito_user_pools {
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
+  exceptions: [String!]
 }
 
 # Types - Bookings
@@ -389,6 +390,7 @@ input SetAvailabilityInput {
   dayOfWeek: String!
   timeRanges: [TimeRangeInput!]!
   breaks: [TimeRangeInput!]
+  exceptions: [String!]
 }
 
 # Inputs - Bookings
