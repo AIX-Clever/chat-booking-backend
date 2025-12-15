@@ -233,7 +233,7 @@ class ChatAgentService:
                     'serviceId': s.service_id,
                     'name': s.name,
                     'description': s.description,
-                    'price': s.price,
+                    'price': float(s.price) if s.price else 0,
                     'duration': s.duration_minutes
                 }
                 for s in services
@@ -253,7 +253,7 @@ class ChatAgentService:
         # Update context and transition
         conversation.context['serviceId'] = service_id
         conversation.context['serviceName'] = service.name
-        conversation.context['servicePrice'] = service.price
+        conversation.context['servicePrice'] = float(service.price) if service.price else 0
         conversation.context['serviceDuration'] = service.duration_minutes
         
         # Sync with entity attributes
