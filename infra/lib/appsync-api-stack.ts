@@ -473,7 +473,7 @@ type Query {
   
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
-  getTenant(tenantId: ID!): Tenant @aws_api_key @aws_cognito_user_pools
+  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
 }
 
 # Mutations
