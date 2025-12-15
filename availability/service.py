@@ -288,7 +288,8 @@ class AvailabilityManagementService:
         provider_id: str,
         day_of_week: str,
         time_ranges: List[Dict[str, str]],
-        breaks: List[Dict[str, str]] = None
+        breaks: List[Dict[str, str]] = None,
+        exceptions: List[str] = None
     ) -> ProviderAvailability:
         """
         Set availability schedule for a specific day
@@ -299,12 +300,14 @@ class AvailabilityManagementService:
             day_of_week: Day name (MON, TUE, WED, THU, FRI, SAT, SUN)
             time_ranges: List of {startTime, endTime} dicts
             breaks: Optional list of break periods
+            exceptions: Optional list of exception dates (ISO format)
         """
         self.logger.info(
             "Setting provider availability",
             tenant_id=str(tenant_id),
             provider_id=provider_id,
-            day_of_week=day_of_week
+            day_of_week=day_of_week,
+            exceptions_count=len(exceptions) if exceptions else 0
         )
 
         from shared.domain.entities import TimeRange
@@ -329,7 +332,7 @@ class AvailabilityManagementService:
             day_of_week=day_of_week.upper(),
             time_ranges=time_range_objects,
             breaks=break_objects,
-            exceptions=[]
+            exceptions=exceptions or []
         )
 
         # Persist

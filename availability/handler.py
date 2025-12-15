@@ -179,6 +179,7 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
     day_of_week = input_data.get('dayOfWeek')
     time_ranges = input_data.get('timeRanges', [])
     breaks = input_data.get('breaks', [])
+    exceptions = input_data.get('exceptions', [])
     
     logger.info("handle_set_availability input", input_data=input_data)
 
@@ -196,7 +197,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
         provider_id,
         day_of_week,
         time_ranges,
-        breaks
+        breaks,
+        exceptions
     )
 
     # Convert to response format
@@ -210,7 +212,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
         'breaks': [
             {'startTime': br.start_time, 'endTime': br.end_time}
             for br in availability.breaks
-        ]
+        ],
+        'exceptions': availability.exceptions
     }
 
     return success_response(response_data)
@@ -246,7 +249,8 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
             'breaks': [
                 {'startTime': br.start_time, 'endTime': br.end_time}
                 for br in avail.breaks
-            ]
+            ],
+            'exceptions': avail.exceptions
         })
         
     return success_response(response_data)
