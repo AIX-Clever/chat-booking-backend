@@ -23,6 +23,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   chatAgentFunction: lambda.IFunction;
   registerTenantFunction: lambda.IFunction;
   updateTenantFunction: lambda.IFunction;
+  getTenantFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -102,6 +103,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.updateTenantFunction
     );
 
+    const getTenantDataSource = this.api.addLambdaDataSource(
+      'GetTenantDataSource',
+      props.getTenantFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -109,7 +115,8 @@ export class AppSyncApiStack extends cdk.Stack {
       bookingDataSource,
       chatAgentDataSource,
       registerTenantDataSource,
-      updateTenantDataSource
+      updateTenantDataSource,
+      getTenantDataSource
     );
 
     // Outputs
@@ -521,7 +528,8 @@ schema {
     bookingDataSource: appsync.LambdaDataSource,
     chatAgentDataSource: appsync.LambdaDataSource,
     registerTenantDataSource: appsync.LambdaDataSource,
-    updateTenantDataSource: appsync.LambdaDataSource
+    updateTenantDataSource: appsync.LambdaDataSource,
+    getTenantDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -535,6 +543,14 @@ schema {
     updateTenantDataSource.createResolver('UpdateTenantResolver', {
       typeName: 'Mutation',
       fieldName: 'updateTenant',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Get Tenant Resolver
+    getTenantDataSource.createResolver('GetTenantResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenant',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

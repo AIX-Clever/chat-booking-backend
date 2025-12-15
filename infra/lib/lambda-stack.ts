@@ -36,6 +36,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly chatAgentFunction: lambda.Function;
   public readonly registerTenantFunction: lambda.Function;
   public readonly updateTenantFunction: lambda.Function;
+  public readonly getTenantFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -193,6 +194,24 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadWriteData(this.updateTenantFunction);
     props.userPool.grant(this.updateTenantFunction, 'cognito-idp:AdminGetUser');
+
+    // 8. Get Tenant Lambda
+    this.getTenantFunction = new lambda.Function(this, 'GetTenantFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-GetTenant',
+      description: 'Get tenant details',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'get_tenant')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        USER_POOL_ID: props.userPool.userPoolId,
+      },
+    });
+
+    // Grant permissions
+    props.tenantsTable.grantReadData(this.getTenantFunction);
+    props.userPool.grant(this.getTenantFunction, 'cognito-idp:AdminGetUser');
 
     // CloudWatch alarms for critical functions
     this.createAlarms();

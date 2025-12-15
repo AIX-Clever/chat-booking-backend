@@ -84,6 +84,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   chatAgentFunction: lambdaStack.chatAgentFunction,
   registerTenantFunction: lambdaStack.registerTenantFunction,
   updateTenantFunction: lambdaStack.updateTenantFunction,
+  getTenantFunction: lambdaStack.getTenantFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);
