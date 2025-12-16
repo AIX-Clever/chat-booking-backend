@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
+import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 import * as path from 'path';
@@ -67,10 +68,11 @@ export class LambdaStack extends cdk.Stack {
     };
 
     // Lambda Layer for shared code
-    // Imported from chat-booking-layers stack via CloudFormation export
-    const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer',
-      cdk.Fn.importValue('ChatBookingPythonLayerArn')
+    // Imported from SSM Parameter (updated by chat-booking-layers stack)
+    const layerArn = ssm.StringParameter.valueForStringParameter(
+      this, '/chatbooking/layers/python-layer-arn'
     );
+    const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
