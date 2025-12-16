@@ -77,7 +77,7 @@ export class LambdaStack extends cdk.Stack {
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(
       this,
       'SharedLayer',
-      'arn:aws:lambda:us-east-1:607250385528:layer:chat-booking-shared-python:19' // TODO: restore SSM
+      'arn:aws:lambda:us-east-1:607250385528:layer:chat-booking-shared-python:5' // Current exported version
     );
 
     // 1. Auth Resolver Lambda
