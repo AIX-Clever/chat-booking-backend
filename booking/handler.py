@@ -25,6 +25,7 @@ from shared.domain.exceptions import (
     ConflictError
 )
 from shared.utils import Logger, success_response, error_response, parse_iso_datetime, extract_appsync_event
+from shared.metrics import MetricsService
 
 from service import BookingService, BookingQueryService
 
@@ -35,6 +36,7 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 tenant_repo = DynamoDBTenantRepository()
 conversation_repo = DynamoDBConversationRepository()
+metrics_service = MetricsService()
 
 booking_service = BookingService(
     booking_repo,
@@ -172,6 +174,18 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
         notes=input_data.get('notes'),
         conversation_id=input_data.get('conversationId')
     )
+    
+    # Track booking metrics
+    try:
+        metrics_service.increment_booking(
+            tenant_id=tenant_id.value,
+            service_id=input_data['serviceId'],
+            provider_id=input_data['providerId'],
+            amount=booking.total_amount or 0
+        )
+        metrics_service.update_booking_status(tenant_id.value, None, booking.status.value)
+    except Exception as e:
+        logger.warning("Failed to track booking metrics", error=str(e))
 
     return success_response(booking_to_dict(booking))
 
@@ -189,7 +203,18 @@ def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
+    # Get old status before confirming
+    old_booking = booking_query_service.get_booking(tenant_id, booking_id)
+    old_status = old_booking.status.value if old_booking else None
+
     booking = booking_service.confirm_booking(tenant_id, booking_id)
+    
+    # Track status change
+    try:
+        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+    except Exception as e:
+        logger.warning("Failed to track booking status change", error=str(e))
+    
     return success_response(booking_to_dict(booking))
 
 
@@ -207,11 +232,22 @@ def handle_cancel_booking(tenant_id: TenantId, input_data: dict) -> dict:
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
+    # Get old status before cancelling
+    old_booking = booking_query_service.get_booking(tenant_id, booking_id)
+    old_status = old_booking.status.value if old_booking else None
+
     booking = booking_service.cancel_booking(
         tenant_id,
         booking_id,
         input_data.get('reason')
     )
+    
+    # Track status change (old_status -> CANCELLED)
+    try:
+        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+    except Exception as e:
+        logger.warning("Failed to track booking cancellation", error=str(e))
+    
     return success_response(booking_to_dict(booking))
 
 

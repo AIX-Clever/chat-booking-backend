@@ -24,6 +24,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   registerTenantFunction: lambda.IFunction;
   updateTenantFunction: lambda.IFunction;
   getTenantFunction: lambda.IFunction;
+  metricsFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -108,6 +109,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.getTenantFunction
     );
 
+    const metricsDataSource = this.api.addLambdaDataSource(
+      'MetricsDataSource',
+      props.metricsFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -116,7 +122,8 @@ export class AppSyncApiStack extends cdk.Stack {
       chatAgentDataSource,
       registerTenantDataSource,
       updateTenantDataSource,
-      getTenantDataSource
+      getTenantDataSource,
+      metricsDataSource
     );
 
     // Outputs
@@ -202,6 +209,65 @@ type ApiKey {
   status: String!
   createdAt: AWSDateTime!
   expiresAt: AWSDateTime!
+}
+
+# Types - Dashboard Metrics
+type DashboardSummary @aws_cognito_user_pools {
+  revenue: Float!
+  bookings: Int!
+  messages: Int!
+  tokensIA: Int!
+  conversionsChat: Int!
+  aiResponses: Int!
+  conversionRate: Float!
+  autoAttendanceRate: Float!
+}
+
+type DailyMetric @aws_cognito_user_pools {
+  date: String!
+  bookings: Int!
+  messages: Int!
+}
+
+type TopService @aws_cognito_user_pools {
+  serviceId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type TopProvider @aws_cognito_user_pools {
+  providerId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type BookingStatusCounts @aws_cognito_user_pools {
+  CONFIRMED: Int!
+  PENDING: Int!
+  CANCELLED: Int!
+  NO_SHOW: Int!
+}
+
+type MetricError @aws_cognito_user_pools {
+  type: String!
+  count: Int!
+  lastOccurred: String
+}
+
+type DashboardMetrics @aws_cognito_user_pools {
+  period: String!
+  summary: DashboardSummary!
+  daily: [DailyMetric!]!
+  topServices: [TopService!]!
+  topProviders: [TopProvider!]!
+  bookingStatus: BookingStatusCounts!
+  errors: [MetricError!]!
+}
+
+type PlanUsage @aws_cognito_user_pools {
+  messages: Int!
+  bookings: Int!
+  tokensIA: Int!
 }
 
 # Types - Catalog
@@ -476,6 +542,10 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  
+  # Dashboard Metrics (Admin)
+  getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
+  getPlanUsage: PlanUsage @aws_cognito_user_pools
 }
 
 # Mutations
@@ -532,7 +602,8 @@ schema {
     chatAgentDataSource: appsync.LambdaDataSource,
     registerTenantDataSource: appsync.LambdaDataSource,
     updateTenantDataSource: appsync.LambdaDataSource,
-    getTenantDataSource: appsync.LambdaDataSource
+    getTenantDataSource: appsync.LambdaDataSource,
+    metricsDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -754,6 +825,21 @@ schema {
     chatAgentDataSource.createResolver('GetConversationResolver', {
       typeName: 'Query',
       fieldName: 'getConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Metrics resolvers
+    metricsDataSource.createResolver('GetDashboardMetricsResolver', {
+      typeName: 'Query',
+      fieldName: 'getDashboardMetrics',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    metricsDataSource.createResolver('GetPlanUsageResolver', {
+      typeName: 'Query',
+      fieldName: 'getPlanUsage',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
