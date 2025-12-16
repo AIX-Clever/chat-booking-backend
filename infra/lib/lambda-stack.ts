@@ -25,6 +25,7 @@ interface LambdaStackProps extends cdk.StackProps {
   bookingsTable: dynamodb.ITable;
   conversationsTable: dynamodb.ITable;
   categoriesTable: dynamodb.ITable;
+  tenantUsageTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -37,6 +38,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly registerTenantFunction: lambda.Function;
   public readonly updateTenantFunction: lambda.Function;
   public readonly getTenantFunction: lambda.Function;
+  public readonly metricsFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -59,6 +61,7 @@ export class LambdaStack extends cdk.Stack {
         BOOKINGS_TABLE: props.bookingsTable.tableName,
         CONVERSATIONS_TABLE: props.conversationsTable.tableName,
         CATEGORIES_TABLE: props.categoriesTable.tableName,
+        TENANT_USAGE_TABLE: props.tenantUsageTable.tableName,
         LOG_LEVEL: 'INFO',
       },
     };
@@ -137,6 +140,7 @@ export class LambdaStack extends cdk.Stack {
     props.providersTable.grantReadData(this.bookingFunction);
     props.tenantsTable.grantReadData(this.bookingFunction);
     props.conversationsTable.grantReadData(this.bookingFunction);
+    props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
 
     // 5. Chat Agent Lambda
     this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
@@ -156,6 +160,7 @@ export class LambdaStack extends cdk.Stack {
     props.providersTable.grantReadData(this.chatAgentFunction);
     props.availabilityTable.grantReadData(this.chatAgentFunction);
     props.bookingsTable.grantReadWriteData(this.chatAgentFunction);
+    props.tenantUsageTable.grantWriteData(this.chatAgentFunction); // For metrics tracking
 
     // 6. Register Tenant Lambda
     this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
@@ -212,6 +217,21 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadData(this.getTenantFunction);
     props.userPool.grant(this.getTenantFunction, 'cognito-idp:AdminGetUser');
+
+    // 9. Metrics Lambda
+    this.metricsFunction = new lambda.Function(this, 'MetricsFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-Metrics',
+      description: 'Dashboard metrics and usage analytics',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'metrics')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(15),
+      memorySize: 256,
+    });
+
+    // Grant permissions - read/write for metrics, read for related data
+    props.tenantUsageTable.grantReadWriteData(this.metricsFunction);
 
     // CloudWatch alarms for critical functions
     this.createAlarms();
