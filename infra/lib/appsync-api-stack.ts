@@ -463,7 +463,7 @@ input SetExceptionsInput {
   exceptions: [String!]!
 }
 
-type ProviderExceptions {
+type ProviderExceptions @aws_cognito_user_pools {
   providerId: ID!
   exceptions: [String!]!
 }
