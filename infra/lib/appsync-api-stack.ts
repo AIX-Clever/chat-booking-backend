@@ -456,7 +456,16 @@ input SetAvailabilityInput {
   dayOfWeek: String!
   timeRanges: [TimeRangeInput!]!
   breaks: [TimeRangeInput!]
-  exceptions: [String!]
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
+type ProviderExceptions {
+  providerId: ID!
+  exceptions: [String!]!
 }
 
 # Inputs - Bookings
@@ -570,6 +579,7 @@ type Mutation {
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
+  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
   
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
@@ -746,6 +756,13 @@ schema {
     availabilityDataSource.createResolver('GetProviderAvailabilityResolver', {
       typeName: 'Query',
       fieldName: 'getProviderAvailability',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    availabilityDataSource.createResolver('SetProviderExceptionsResolver', {
+      typeName: 'Mutation',
+      fieldName: 'setProviderExceptions',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
