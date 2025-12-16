@@ -68,17 +68,11 @@ export class LambdaStack extends cdk.Stack {
     };
 
     // Lambda Layer for shared code
-    // TEMPORARY: Hardcoded ARN to break CF export dependency cycle
-    // TODO: Restore SSM lookup after layers stack deploys successfully
-    // Previous code:
-    // const layerArn = ssm.StringParameter.valueForStringParameter(
-    //   this, '/chatbooking/layers/python-layer-arn'
-    // );
-    const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(
-      this,
-      'SharedLayer',
-      'arn:aws:lambda:us-east-1:607250385528:layer:chat-booking-shared-python:5' // Current exported version
+    // Imported from SSM Parameter (updated by chat-booking-layers stack)
+    const layerArn = ssm.StringParameter.valueForStringParameter(
+      this, '/chatbooking/layers/python-layer-arn'
     );
+    const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
