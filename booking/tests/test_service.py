@@ -108,7 +108,7 @@ class TestBookingService:
         mock_repos['tenant'].get_by_id.return_value = active_tenant
         mock_repos['service'].get_by_id.return_value = service
         mock_repos['provider'].get_by_id.return_value = provider
-        mock_repos['booking'].list_by_provider_and_dates.return_value = []
+        mock_repos['booking'].list_by_provider.return_value = []
         
         # Execute
         booking = booking_service.create_booking(
@@ -270,7 +270,7 @@ class TestBookingService:
         mock_repos['tenant'].get_by_id.return_value = active_tenant
         mock_repos['service'].get_by_id.return_value = service
         mock_repos['provider'].get_by_id.return_value = provider
-        mock_repos['booking'].list_by_provider_and_dates.return_value = [existing_booking]
+        mock_repos['booking'].list_by_provider.return_value = [existing_booking]
         
         with pytest.raises(SlotNotAvailableError):
             booking_service.create_booking(
@@ -432,7 +432,7 @@ class TestBookingQueryService:
         end_date = start_date + timedelta(days=7)
         
         bookings = []
-        mock_repos['booking'].list_by_provider_and_dates.return_value = bookings
+        mock_repos['booking'].list_by_provider.return_value = bookings
         
         result = query_service.list_by_provider(
             tenant_id,
@@ -442,7 +442,7 @@ class TestBookingQueryService:
         )
         
         assert result == bookings
-        mock_repos['booking'].list_by_provider_and_dates.assert_called_once_with(
+        mock_repos['booking'].list_by_provider.assert_called_once_with(
             tenant_id,
             "pro_123",
             start_date,

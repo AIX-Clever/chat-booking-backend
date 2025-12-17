@@ -165,6 +165,24 @@ type ChatResponse @aws_api_key {
   response: AWSJSON!
 }
 
+# Types - Workflows
+enum WorkflowStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+type Workflow @aws_cognito_user_pools {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  definition: AWSJSON!
+  status: WorkflowStatus!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 
 # Inputs - Tenant
 input RegisterTenantInput {
@@ -315,6 +333,22 @@ input GetConversationInput {
   conversationId: ID!
 }
 
+# Inputs - Workflows
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  definition: AWSJSON!
+  status: WorkflowStatus
+}
+
+input UpdateWorkflowInput {
+  workflowId: ID!
+  name: String
+  description: String
+  definition: AWSJSON
+  status: WorkflowStatus
+}
+
 # Queries
 type Query {
   # Catalog
@@ -337,6 +371,10 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  
+  # Workflows
+  listWorkflows: [Workflow!]! @aws_cognito_user_pools
+  getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
 }
 
 # Mutations
@@ -368,9 +406,13 @@ type Mutation {
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   
   # Chat
-  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
   sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
   confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
+  
+  # Workflows
+  createWorkflow(input: CreateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
 }
 
 schema {

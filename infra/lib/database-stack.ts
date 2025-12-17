@@ -26,6 +26,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly conversationsTable: dynamodb.Table;
   public readonly categoriesTable: dynamodb.Table;
   public readonly tenantUsageTable: dynamodb.Table;
+  public readonly workflowsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -280,6 +281,23 @@ export class DatabaseStack extends cdk.Stack {
       timeToLiveAttribute: 'ttl', // Auto-cleanup old metrics
     });
 
+    // 10. Workflows Table
+    this.workflowsTable = new dynamodb.Table(this, 'WorkflowsTable', {
+      tableName: 'ChatBooking-Workflows',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'workflowId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
     // Output table names and ARNs
     new cdk.CfnOutput(this, 'TenantsTableName', {
       value: this.tenantsTable.tableName,
@@ -324,6 +342,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'TenantUsageTableName', {
       value: this.tenantUsageTable.tableName,
       description: 'Tenant Usage (metrics) table name',
+    });
+
+    new cdk.CfnOutput(this, 'WorkflowsTableName', {
+      value: this.workflowsTable.tableName,
+      description: 'Workflows table name',
     });
   }
 }

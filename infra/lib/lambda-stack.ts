@@ -27,6 +27,7 @@ interface LambdaStackProps extends cdk.StackProps {
   conversationsTable: dynamodb.ITable;
   categoriesTable: dynamodb.ITable;
   tenantUsageTable: dynamodb.ITable;
+  workflowsTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -40,6 +41,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly updateTenantFunction: lambda.Function;
   public readonly getTenantFunction: lambda.Function;
   public readonly metricsFunction: lambda.Function;
+  public readonly workflowManagerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -234,6 +236,20 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions - read/write for metrics, read for related data
     props.tenantUsageTable.grantReadWriteData(this.metricsFunction);
+
+    // 10. Workflow Manager Lambda
+    this.workflowManagerFunction = new lambda.Function(this, 'WorkflowManagerFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-WorkflowManager',
+      description: 'Workflow CRUD operations',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'workflow_manager')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.workflowsTable.grantReadWriteData(this.workflowManagerFunction);
+    props.tenantsTable.grantReadData(this.workflowManagerFunction);
 
     // CloudWatch alarms for critical functions
     this.createAlarms();
