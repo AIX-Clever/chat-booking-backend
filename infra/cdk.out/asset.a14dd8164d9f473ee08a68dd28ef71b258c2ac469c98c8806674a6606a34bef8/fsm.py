@@ -84,10 +84,6 @@ class ChatFSM:
                 ConversationState.SERVICE_PENDING,
                 ConversationState.SERVICE_SELECTED,
                 required_fields=['serviceId']
-            ),
-            StateTransition(
-                ConversationState.SERVICE_PENDING,
-                ConversationState.PROVIDER_PENDING
             )
         ],
         ConversationState.SERVICE_SELECTED: [
@@ -221,15 +217,9 @@ class ChatFSM:
             ConversationState.INIT: [],
             ConversationState.SERVICE_PENDING: [],
             ConversationState.SERVICE_SELECTED: ['serviceId'],
-            ConversationState.SERVICE_SELECTED: ['serviceId'],
-            ConversationState.PROVIDER_PENDING: [], # serviceId is optional if browsing by provider
-            ConversationState.PROVIDER_SELECTED: ['providerId'], # serviceId might still be missing if inferred later
-            ConversationState.PROVIDER_SELECTED: ['providerId'],
-            ConversationState.SLOT_PENDING: ['providerId'], # Service ID might be determined by slot or provider
-<<<<<<< HEAD
-            ConversationState.CONFIRM_PENDING: [
-=======
->>>>>>> 2a6df10 (feat: implement provider-first flow logic in FSM and Service)
+            ConversationState.PROVIDER_PENDING: ['serviceId'],
+            ConversationState.PROVIDER_SELECTED: ['serviceId', 'providerId'],
+            ConversationState.SLOT_PENDING: ['serviceId', 'providerId'],
             ConversationState.CONFIRM_PENDING: [
                 'serviceId', 'providerId', 'selectedSlot',
                 'clientName', 'clientEmail'
@@ -238,7 +228,6 @@ class ChatFSM:
                 'serviceId', 'providerId', 'selectedSlot',
                 'clientName', 'clientEmail', 'bookingId'
             ]
-        }
         }
         
         required_fields = required_by_state.get(state, [])

@@ -308,3 +308,15 @@ class ApiKey:
         if "*" in self.allowed_origins:
             return True
         return origin in self.allowed_origins
+
+
+@dataclass
+class FAQ:
+    """Frequently Asked Question entity"""
+    faq_id: str
+    tenant_id: TenantId
+    question: str
+    answer: str
+    category: str
+    active: bool = True
+

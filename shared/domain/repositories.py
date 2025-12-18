@@ -12,7 +12,7 @@ from datetime import datetime
 
 from .entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
-    Booking, Conversation, ApiKey, TimeSlot
+    Booking, Conversation, ApiKey, TimeSlot, FAQ
 )
 
 
@@ -194,3 +194,23 @@ class IConversationRepository(ABC):
     def update(self, conversation: Conversation) -> None:
         """Update conversation state"""
         pass
+
+
+class IFAQRepository(ABC):
+    """Port for FAQ operations"""
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: TenantId) -> List[FAQ]:
+        """List all FAQs for tenant"""
+        pass
+
+    @abstractmethod
+    def save(self, faq: FAQ) -> None:
+        """Persist FAQ"""
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, faq_id: str) -> None:
+        """Delete FAQ"""
+        pass
+

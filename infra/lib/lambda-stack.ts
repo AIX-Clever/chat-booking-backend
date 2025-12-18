@@ -28,6 +28,7 @@ interface LambdaStackProps extends cdk.StackProps {
   categoriesTable: dynamodb.ITable;
   tenantUsageTable: dynamodb.ITable;
   workflowsTable: dynamodb.ITable;
+  faqsTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -42,6 +43,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly getTenantFunction: lambda.Function;
   public readonly metricsFunction: lambda.Function;
   public readonly workflowManagerFunction: lambda.Function;
+  public readonly faqManagerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -66,6 +68,7 @@ export class LambdaStack extends cdk.Stack {
         CATEGORIES_TABLE: props.categoriesTable.tableName,
         TENANT_USAGE_TABLE: props.tenantUsageTable.tableName,
         WORKFLOWS_TABLE: props.workflowsTable.tableName,
+        FAQS_TABLE: props.faqsTable.tableName,
         LOG_LEVEL: 'INFO',
       },
     };
@@ -254,6 +257,23 @@ export class LambdaStack extends cdk.Stack {
     props.workflowsTable.grantReadWriteData(this.workflowManagerFunction);
     props.tenantsTable.grantReadData(this.workflowManagerFunction);
 
+    // 11. FAQ Manager Lambda
+    this.faqManagerFunction = new lambda.Function(this, 'FaqManagerFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-FaqManager',
+      description: 'FAQ CRUD operations',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'faq_manager')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.faqsTable.grantReadWriteData(this.faqManagerFunction);
+    props.tenantsTable.grantReadData(this.faqManagerFunction);
+
+    // Grant permissions to Chat Agent to read FAQs
+    props.faqsTable.grantReadData(this.chatAgentFunction);
+
     // CloudWatch alarms for critical functions
     this.createAlarms();
 
@@ -286,6 +306,11 @@ export class LambdaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'WorkflowManagerFunctionArn', {
       value: this.workflowManagerFunction.functionArn,
       description: 'Workflow Manager Lambda ARN',
+    });
+
+    new cdk.CfnOutput(this, 'FaqManagerFunctionArn', {
+      value: this.faqManagerFunction.functionArn,
+      description: 'FAQ Manager Lambda ARN',
     });
   }
 

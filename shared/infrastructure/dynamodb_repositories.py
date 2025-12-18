@@ -16,12 +16,12 @@ from ..domain.entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
     Booking, Conversation, ApiKey, TimeSlot, CustomerInfo,
     BookingStatus, PaymentStatus, ConversationState, TenantStatus, TenantPlan,
-    TimeRange
+    TimeRange, FAQ
 )
 from ..domain.repositories import (
     ITenantRepository, IApiKeyRepository, IServiceRepository,
     IProviderRepository, IAvailabilityRepository, IBookingRepository,
-    IConversationRepository
+    IConversationRepository, IFAQRepository
 )
 from ..domain.exceptions import (
     EntityNotFoundError, ConflictError
@@ -506,3 +506,52 @@ class DynamoDBConversationRepository(IConversationRepository):
             user_context=item.get('userContext', {}),
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
+
+
+class DynamoDBFAQRepository(IFAQRepository):
+    """DynamoDB implementation of FAQ repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('DYNAMODB_FAQS_TABLE', 'FAQs')
+        )
+
+    def list_by_tenant(self, tenant_id: TenantId) -> List[FAQ]:
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
+            )
+            
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing FAQs: {e}")
+            return []
+
+    def save(self, faq: FAQ) -> None:
+        item = {
+            'tenantId': str(faq.tenant_id),
+            'faqId': faq.faq_id,
+            'question': faq.question,
+            'answer': faq.answer,
+            'category': faq.category,
+            'active': faq.active
+        }
+        
+        self.table.put_item(Item=item)
+
+    def delete(self, tenant_id: TenantId, faq_id: str) -> None:
+        self.table.delete_item(
+            Key={'tenantId': str(tenant_id), 'faqId': faq_id}
+        )
+
+    def _item_to_entity(self, item: dict) -> FAQ:
+        return FAQ(
+            faq_id=item['faqId'],
+            tenant_id=TenantId(item['tenantId']),
+            question=item['question'],
+            answer=item['answer'],
+            category=item['category'],
+            active=item.get('active', True)
+        )
+
