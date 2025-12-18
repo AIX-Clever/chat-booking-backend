@@ -143,9 +143,6 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
             last_used_at=datetime.fromisoformat(item['lastUsedAt']) if item.get('lastUsedAt') else None
         )
 
-            last_used_at=datetime.fromisoformat(item['lastUsedAt']) if item.get('lastUsedAt') else None
-        )
-
 
 class DynamoDBFAQRepository(IFAQRepository):
     """DynamoDB implementation of FAQ repository"""
