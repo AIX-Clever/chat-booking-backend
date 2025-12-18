@@ -11,10 +11,9 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBConversationRepository,
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
-    DynamoDBBookingRepository,
-    DynamoDBAvailabilityRepository,
-    DynamoDBFAQRepository
+    DynamoDBBookingRepository
 )
+from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -32,15 +31,14 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 booking_repo = DynamoDBBookingRepository()
 availability_repo = DynamoDBAvailabilityRepository()
-faq_repo = DynamoDBFAQRepository()
 metrics_service = MetricsService()
 
 chat_agent_service = ChatAgentService(
     conversation_repo,
     service_repo,
-    booking_repo=booking_repo,
-    availability_repo=availability_repo,
-    faq_repo=faq_repo
+    provider_repo,
+    booking_repo,
+    availability_repo
 )
 
 logger = Logger()

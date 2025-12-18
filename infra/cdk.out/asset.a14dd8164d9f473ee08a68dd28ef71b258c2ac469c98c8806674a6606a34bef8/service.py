@@ -20,10 +20,7 @@ from shared.domain.repositories import (
     IServiceRepository,
     IProviderRepository,
     IBookingRepository,
-    IProviderRepository,
-    IBookingRepository,
-    IAvailabilityRepository,
-    IFAQRepository
+    IAvailabilityRepository
 )
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -59,16 +56,13 @@ class ChatAgentService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         booking_repo: IBookingRepository,
-        booking_repo: IBookingRepository,
-        availability_repo: IAvailabilityRepository,
-        faq_repo: IFAQRepository
+        availability_repo: IAvailabilityRepository
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
         self._provider_repo = provider_repo
         self._booking_repo = booking_repo
         self._availability_repo = availability_repo
-        self._faq_repo = faq_repo
     
     def start_conversation(
         self,
@@ -221,22 +215,8 @@ class ChatAgentService:
         """Handle service selection"""
         service_id = user_data.get('serviceId') if user_data else None
         
-        if message == 'start_booking_flow':
-             # Normal flow, do nothing, proceed to search or list services
-             pass
-        elif message == 'list_providers':
-             # New flow: User wants to see providers directly
-             # Transition to PROVIDER_PENDING (skipping service selection)
-             conversation.transition_to(ConversationState.PROVIDER_PENDING)
-             conversation.transition_to(ConversationState.PROVIDER_PENDING)
-             return self._handle_provider_request(tenant_id, conversation)
-        elif message == 'get_faqs':
-             # New flow: User wants to see FAQs
-             return self._handle_faq_request(tenant_id, conversation)
-        
         # Try to find service by name if not explicitly selected
         services = self._service_repo.search(tenant_id)
-
 
         if not service_id:
             # Check if message matches any service name
@@ -291,19 +271,15 @@ class ChatAgentService:
         tenant_id: TenantId,
         conversation: Conversation
     ) -> dict:
-        """Show available providers for selected service OR all providers"""
+        """Show available providers for selected service"""
         service_id = conversation.context.get('serviceId')
         
-        if service_id:
-            # Get providers that can provide this service
-            providers = self._provider_repo.list_by_service(tenant_id, service_id)
-        else:
-            # Get ALL providers (Provider-First Flow)
-            providers = self._provider_repo.list_by_tenant(tenant_id)
+        # Get providers that can provide this service
+        providers = self._provider_repo.list_by_service(tenant_id, service_id)
         
         if not providers:
             return ResponseBuilder.error_message(
-                "No hay profesionales disponibles en este momento"
+                "No hay profesionales disponibles para este servicio"
             )
         
         providers_list = [
@@ -599,43 +575,3 @@ class ChatAgentService:
                  {'label': 'Sí, ver servicios', 'value': 'book'}
              ]
         }
-
-    def _handle_faq_request(
-        self,
-        tenant_id: TenantId,
-        conversation: Conversation
-    ) -> dict:
-        """Fetch and show FAQs"""
-        faqs = self._faq_repo.list_by_tenant(tenant_id)
-        
-        if not faqs:
-             return ResponseBuilder.error_message("No hay preguntas frecuentes configuradas.")
-        
-        # Format as options (bubbles)
-        # We can use 'quick_replies' or a specific 'options' type if user clicks them to see answer
-        # For simplicity, let's assume if they click an option, they send the question text
-        # and we can match it? Or maybe we just show them as text?
-        # A better UX for FAQs is usually a carousel or list of expandable items.
-        # But 'quick_replies' is standard for buttons.
-        
-        # If the user selects one, we need to handle it.
-        # But `process_message` handles user input.
-        # If we return bubbles, the user clicks one, sending the `value` (e.g. faq_id)
-        # Then `process_message` needs to detect if it's an FAQ selection.
-        # Currently _handle_service_selection is the active state/handler.
-        # It expects a service name or ID.
-        
-        # To make this robust, we might need a FAQ_VIEWING state.
-        # But for MVP, let's just return the list and if they click, we rely on text matching
-        # OR we improve the logic.
-        
-        # Let's send them as a text list for now to ensure visibility
-        faq_text = "Aquí tienes algunas preguntas frecuentes:\n\n"
-        for faq in faqs:
-            faq_text += f"❓ *{faq.question}*\n💡 {faq.answer}\n\n"
-            
-        return {
-            'type': 'text',
-            'text': faq_text
-        }
-

@@ -25,6 +25,8 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   updateTenantFunction: lambda.IFunction;
   getTenantFunction: lambda.IFunction;
   metricsFunction: lambda.IFunction;
+  workflowManagerFunction: lambda.IFunction;
+  faqManagerFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -114,6 +116,16 @@ export class AppSyncApiStack extends cdk.Stack {
       props.metricsFunction
     );
 
+    const workflowManagerDataSource = this.api.addLambdaDataSource(
+      'WorkflowManagerDataSource',
+      props.workflowManagerFunction
+    );
+
+    const faqManagerDataSource = this.api.addLambdaDataSource(
+      'FaqManagerDataSource',
+      props.faqManagerFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -123,7 +135,9 @@ export class AppSyncApiStack extends cdk.Stack {
       registerTenantDataSource,
       updateTenantDataSource,
       getTenantDataSource,
-      metricsDataSource
+      metricsDataSource,
+      workflowManagerDataSource,
+      faqManagerDataSource
     );
 
     // Outputs
@@ -209,6 +223,15 @@ type ApiKey {
   status: String!
   createdAt: AWSDateTime!
   expiresAt: AWSDateTime!
+}
+
+type FAQ @aws_api_key @aws_cognito_user_pools {
+  faqId: ID!
+  tenantId: ID!
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean!
 }
 
 # Types - Dashboard Metrics
@@ -384,6 +407,22 @@ input UpdateTenantInput {
   settings: AWSJSON
 }
 
+# Inputs - FAQs
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
+}
+
 # Inputs - Catalog
 input CreateCategoryInput {
   name: String!
@@ -551,6 +590,7 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
   
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
@@ -581,6 +621,11 @@ type Mutation {
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
   setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
   
+  # FAQs (Admin)
+  createFAQ(input: CreateFAQInput!): FAQ! @aws_cognito_user_pools
+  updateFAQ(input: UpdateFAQInput!): FAQ! @aws_cognito_user_pools
+  deleteFAQ(faqId: ID!): FAQ! @aws_cognito_user_pools
+
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
@@ -613,7 +658,9 @@ schema {
     registerTenantDataSource: appsync.LambdaDataSource,
     updateTenantDataSource: appsync.LambdaDataSource,
     getTenantDataSource: appsync.LambdaDataSource,
-    metricsDataSource: appsync.LambdaDataSource
+    metricsDataSource: appsync.LambdaDataSource,
+    workflowManagerDataSource: appsync.LambdaDataSource,
+    faqManagerDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -799,6 +846,71 @@ schema {
     bookingDataSource.createResolver('CreateBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'createBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Workflow resolvers
+    workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
+      typeName: 'Query',
+      fieldName: 'listWorkflows',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('GetWorkflowResolver', {
+      typeName: 'Query',
+      fieldName: 'getWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('CreateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('UpdateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('DeleteWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // FAQ Resolvers
+    faqManagerDataSource.createResolver('ListFAQsResolver', {
+      typeName: 'Query',
+      fieldName: 'listFAQs',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('CreateFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createFAQ',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('UpdateFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateFAQ',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('DeleteFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteFAQ',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

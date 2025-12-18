@@ -1,0 +1,110 @@
+{
+    "name": "Default Booking Flow",
+    "description": "Standard flow with Greeting, Menu, and Booking options",
+    "definition": {
+        "nodes": [
+            {
+                "id": "start-1",
+                "type": "start",
+                "position": {
+                    "x": 250,
+                    "y": 50
+                },
+                "data": {
+                    "label": "Inicio"
+                }
+            },
+            {
+                "id": "msg-greeting",
+                "type": "message",
+                "position": {
+                    "x": 250,
+                    "y": 150
+                },
+                "data": {
+                    "label": "Saludo Inicial",
+                    "content": "¡Hola! 👋 Bienvenido. ¿En qué puedo ayudarte hoy?"
+                }
+            },
+            {
+                "id": "decision-menu",
+                "type": "decision",
+                "position": {
+                    "x": 250,
+                    "y": 300
+                },
+                "data": {
+                    "label": "Menú Principal",
+                    "question": "Selecciona una opción"
+                }
+            },
+            {
+                "id": "tool-services",
+                "type": "tool",
+                "position": {
+                    "x": 0,
+                    "y": 450
+                },
+                "data": {
+                    "label": "Ver Servicios",
+                    "toolName": "start_booking_flow"
+                }
+            },
+            {
+                "id": "tool-providers",
+                "type": "tool",
+                "position": {
+                    "x": 250,
+                    "y": 450
+                },
+                "data": {
+                    "label": "Ver Profesionales",
+                    "toolName": "list_providers"
+                }
+            },
+            {
+                "id": "tool-faqs",
+                "type": "tool",
+                "position": {
+                    "x": 500,
+                    "y": 450
+                },
+                "data": {
+                    "label": "Preguntas Frecuentes",
+                    "toolName": "get_faqs"
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "start-1",
+                "target": "msg-greeting"
+            },
+            {
+                "id": "e2",
+                "source": "msg-greeting",
+                "target": "decision-menu"
+            },
+            {
+                "id": "e-services",
+                "source": "decision-menu",
+                "target": "tool-services",
+                "label": "Ver Servicios"
+            },
+            {
+                "id": "e-providers",
+                "source": "decision-menu",
+                "target": "tool-providers",
+                "label": "Ver Profesionales"
+            },
+            {
+                "id": "e-faqs",
+                "source": "decision-menu",
+                "target": "tool-faqs",
+                "label": "Preguntas Frecuentes"
+            }
+        ]
+    },
+    "status": "PUBLISHED"
+}

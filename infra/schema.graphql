@@ -65,6 +65,65 @@ type ApiKey {
   expiresAt: AWSDateTime!
 }
 
+# Types - Dashboard Metrics
+type DashboardSummary @aws_cognito_user_pools {
+  revenue: Float!
+  bookings: Int!
+  messages: Int!
+  tokensIA: Int!
+  conversionsChat: Int!
+  aiResponses: Int!
+  conversionRate: Float!
+  autoAttendanceRate: Float!
+}
+
+type DailyMetric @aws_cognito_user_pools {
+  date: String!
+  bookings: Int!
+  messages: Int!
+}
+
+type TopService @aws_cognito_user_pools {
+  serviceId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type TopProvider @aws_cognito_user_pools {
+  providerId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type BookingStatusCounts @aws_cognito_user_pools {
+  CONFIRMED: Int!
+  PENDING: Int!
+  CANCELLED: Int!
+  NO_SHOW: Int!
+}
+
+type MetricError @aws_cognito_user_pools {
+  type: String!
+  count: Int!
+  lastOccurred: String
+}
+
+type DashboardMetrics @aws_cognito_user_pools {
+  period: String!
+  summary: DashboardSummary!
+  daily: [DailyMetric!]!
+  topServices: [TopService!]!
+  topProviders: [TopProvider!]!
+  bookingStatus: BookingStatusCounts!
+  errors: [MetricError!]!
+}
+
+type PlanUsage @aws_cognito_user_pools {
+  messages: Int!
+  bookings: Int!
+  tokensIA: Int!
+}
+
 # Types - Catalog
 type Category @aws_api_key @aws_cognito_user_pools {
   categoryId: ID!
@@ -251,7 +310,16 @@ input SetAvailabilityInput {
   dayOfWeek: String!
   timeRanges: [TimeRangeInput!]!
   breaks: [TimeRangeInput!]
-  exceptions: [String!]
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
+type ProviderExceptions @aws_cognito_user_pools {
+  providerId: ID!
+  exceptions: [String!]!
 }
 
 # Inputs - Bookings
@@ -337,6 +405,10 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  
+  # Dashboard Metrics (Admin)
+  getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
+  getPlanUsage: PlanUsage @aws_cognito_user_pools
 }
 
 # Mutations
@@ -361,6 +433,7 @@ type Mutation {
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
+  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
   
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools

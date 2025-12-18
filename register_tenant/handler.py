@@ -2,6 +2,7 @@
 import os
 import boto3
 import uuid
+import json
 import secrets
 from datetime import datetime, timezone
 from typing import Dict, Any
@@ -11,6 +12,15 @@ from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
 from shared.utils import lambda_response, Logger, generate_api_key, hash_api_key
 
 cognito = boto3.client('cognito-idp')
+workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
+
+# Load Default Flow
+try:
+    with open(os.path.join(os.path.dirname(__file__), '../workflow_manager/default_flow.json'), 'r') as f:
+        DEFAULT_FLOW = json.load(f)
+except Exception as e:
+    print(f"Warning: Could not load default flow: {e}")
+    DEFAULT_FLOW = {}
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -121,6 +131,28 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # We can add `apiKey` to the `Tenant` type in schema temporarily or query it separately.
         
         api_key_repo.save(api_key)
+
+        # 7. Create Default Workflow
+        if DEFAULT_FLOW:
+            try:
+                workflow_id = str(uuid.uuid4())
+                current_time = datetime.now(timezone.utc).isoformat()
+                
+                # Clone and prepare item
+                workflow_item = DEFAULT_FLOW.copy()
+                workflow_item.update({
+                    'tenantId': str(tenant_id),
+                    'workflowId': workflow_id,
+                    'createdAt': current_time,
+                    'updatedAt': current_time,
+                    'status': 'PUBLISHED'
+                })
+                
+                logger.info(f"Creating default workflow for tenant {tenant_id}")
+                workflows_table.put_item(Item=workflow_item)
+            except Exception as w_error:
+                # Don't fail registration if workflow creation fails, just log it
+                logger.error(f"Failed to create default workflow: {w_error}")
         
         # 7. Return Result
         # Map entity to GraphQL type
