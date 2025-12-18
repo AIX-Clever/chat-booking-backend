@@ -143,7 +143,53 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
             last_used_at=datetime.fromisoformat(item['lastUsedAt']) if item.get('lastUsedAt') else None
         )
 
+            last_used_at=datetime.fromisoformat(item['lastUsedAt']) if item.get('lastUsedAt') else None
+        )
 
+
+class DynamoDBFAQRepository(IFAQRepository):
+    """DynamoDB implementation of FAQ repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('DYNAMODB_FAQS_TABLE', 'ChatBooking-FAQs')
+        )
+
+    def list_by_tenant(self, tenant_id: TenantId) -> List[FAQ]:
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
+            )
+            
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing FAQs: {e}")
+            return []
+
+    def save(self, faq: FAQ) -> None:
+        item = {
+            'tenantId': str(faq.tenant_id),
+            'faqId': faq.faq_id,
+            'question': faq.question,
+            'answer': faq.answer,
+            'active': faq.active
+        }
+        
+        if faq.category:
+            item['category'] = faq.category
+
+        self.table.put_item(Item=item)
+
+    def _item_to_entity(self, item: dict) -> FAQ:
+        return FAQ(
+            faq_id=item['faqId'],
+            tenant_id=TenantId(item['tenantId']),
+            question=item['question'],
+            answer=item['answer'],
+            category=item.get('category'),
+            active=item.get('active', True)
+        )
 class DynamoDBServiceRepository(IServiceRepository):
     """DynamoDB implementation of Service repository"""
 

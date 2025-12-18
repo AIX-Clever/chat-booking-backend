@@ -38,9 +38,10 @@ metrics_service = MetricsService()
 chat_agent_service = ChatAgentService(
     conversation_repo,
     service_repo,
-    booking_repo=booking_repo,
-    availability_repo=availability_repo,
-    faq_repo=faq_repo
+    provider_repo,
+    booking_repo,
+    availability_repo,
+    faq_repo
 )
 
 logger = Logger()

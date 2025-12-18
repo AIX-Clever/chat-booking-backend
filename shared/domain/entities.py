@@ -117,6 +117,18 @@ class Service:
 
 
 @dataclass
+class FAQ:
+    """Frequently Asked Question entity"""
+    faq_id: str
+    tenant_id: TenantId
+    question: str
+    answer: str
+    category: Optional[str] = None
+    active: bool = True
+
+
+
+@dataclass
 class Provider:
     """Provider (professional) entity"""
     provider_id: str

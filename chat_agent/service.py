@@ -59,7 +59,10 @@ class ChatAgentService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         booking_repo: IBookingRepository,
+<<<<<<< HEAD
         booking_repo: IBookingRepository,
+=======
+>>>>>>> e7a4e0f (feat: implement full FAQ system (infra, domain, service))
         availability_repo: IAvailabilityRepository,
         faq_repo: IFAQRepository
     ):
@@ -231,6 +234,10 @@ class ChatAgentService:
              return self._handle_provider_request(tenant_id, conversation)
         elif message == 'get_faqs':
              # New flow: User wants to see FAQs
+<<<<<<< HEAD
+=======
+             # We stay in SERVICE_PENDING (or move to a generic state, but staying allows going back)
+>>>>>>> e7a4e0f (feat: implement full FAQ system (infra, domain, service))
              return self._handle_faq_request(tenant_id, conversation)
         
         # Try to find service by name if not explicitly selected
@@ -604,6 +611,7 @@ class ChatAgentService:
         tenant_id: TenantId,
         conversation: Conversation
     ) -> dict:
+<<<<<<< HEAD
         """Fetch and show FAQs"""
         faqs = self._faq_repo.list_by_tenant(tenant_id)
         
@@ -638,3 +646,34 @@ class ChatAgentService:
             'text': faq_text
         }
 
+=======
+        """Show FAQs as bubbles/options"""
+        faqs = self._faq_repo.list_by_tenant(tenant_id)
+        
+        if not faqs:
+            return ResponseBuilder.error_message(
+                "No hay preguntas frecuentes configuradas en este momento."
+            )
+        
+        # Build options list using MessageType.OPTIONS (Bubbles)
+        # We reuse service_selection_message format or similar since it renders bubbles
+        # ResponseBuilder.category_selection_message is also good if we want simple chips
+        
+        # Let's verify what options structure is expected.
+        # MessageType.OPTIONS expects 'options' list with 'label', 'value', 'description'
+        
+        options = [
+            {
+                'label': faq.question,
+                'value': f"faq_{faq.faq_id}",
+                'description': None # Description is optional
+            }
+            for faq in faqs
+        ]
+        
+        return {
+            'type': 'options',
+            'text': 'Estas son las preguntas frecuentes:',
+            'options': options
+        }
+>>>>>>> e7a4e0f (feat: implement full FAQ system (infra, domain, service))

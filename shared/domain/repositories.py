@@ -16,6 +16,21 @@ from .entities import (
 )
 
 
+class IFAQRepository(ABC):
+    """Port for FAQ operations"""
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: TenantId) -> List[FAQ]:
+        """List all FAQs for tenant"""
+        pass
+
+    @abstractmethod
+    def save(self, faq: FAQ) -> None:
+        """Persist FAQ"""
+        pass
+
+
+
 class ITenantRepository(ABC):
     """Port for Tenant persistence"""
 
