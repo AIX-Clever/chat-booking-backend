@@ -1,0 +1,92 @@
+{
+    "name": "Default Booking Flow",
+    "description": "Standard flow based on legacy FSM logic",
+    "definition": {
+        "nodes": [
+            {
+                "id": "start-1",
+                "type": "start",
+                "position": {
+                    "x": 100,
+                    "y": 100
+                },
+                "data": {
+                    "label": "Start Conversation"
+                }
+            },
+            {
+                "id": "msg-1",
+                "type": "message",
+                "position": {
+                    "x": 100,
+                    "y": 200
+                },
+                "data": {
+                    "label": "Greeting",
+                    "content": "¡Hola! 👋 Bienvenido a nuestro sistema de reservas. ¿En qué puedo ayudarte hoy?"
+                }
+            },
+            {
+                "id": "decision-1",
+                "type": "decision",
+                "position": {
+                    "x": 100,
+                    "y": 350
+                },
+                "data": {
+                    "label": "User Intent",
+                    "question": "Select an option"
+                }
+            },
+            {
+                "id": "tool-1",
+                "type": "tool",
+                "position": {
+                    "x": -50,
+                    "y": 500
+                },
+                "data": {
+                    "label": "Book Appointment",
+                    "toolName": "start_booking_flow"
+                }
+            },
+            {
+                "id": "tool-2",
+                "type": "tool",
+                "position": {
+                    "x": 250,
+                    "y": 500
+                },
+                "data": {
+                    "label": "View Bookings",
+                    "toolName": "list_my_bookings"
+                }
+            }
+        ],
+        "edges": [
+            {
+                "id": "e1",
+                "source": "start-1",
+                "target": "msg-1"
+            },
+            {
+                "id": "e2",
+                "source": "msg-1",
+                "target": "decision-1"
+            },
+            {
+                "id": "e3",
+                "source": "decision-1",
+                "target": "tool-1",
+                "label": "Hacer reserva"
+            },
+            {
+                "id": "e4",
+                "source": "decision-1",
+                "target": "tool-2",
+                "label": "Ver reservas"
+            }
+        ]
+    },
+    "status": "PUBLISHED"
+}

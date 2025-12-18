@@ -178,6 +178,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         USER_POOL_ID: props.userPool.userPoolId,
+        WORKFLOWS_TABLE: props.workflowsTable.tableName,
       },
       timeout: cdk.Duration.seconds(15),
     });
@@ -185,6 +186,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadWriteData(this.registerTenantFunction);
     props.apiKeysTable.grantReadWriteData(this.registerTenantFunction);
+    props.workflowsTable.grantReadWriteData(this.registerTenantFunction);
     props.userPool.grant(this.registerTenantFunction, 'cognito-idp:AdminCreateUser', 'cognito-idp:AdminSetUserPassword');
 
     // 7. Update Tenant Lambda
