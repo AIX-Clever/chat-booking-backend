@@ -228,7 +228,6 @@ class ChatAgentService:
              # New flow: User wants to see providers directly
              # Transition to PROVIDER_PENDING (skipping service selection)
              conversation.transition_to(ConversationState.PROVIDER_PENDING)
-             conversation.transition_to(ConversationState.PROVIDER_PENDING)
              return self._handle_provider_request(tenant_id, conversation)
         elif message == 'get_faqs':
              # New flow: User wants to see FAQs
