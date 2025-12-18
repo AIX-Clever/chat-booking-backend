@@ -1,65 +1,77 @@
 {
     "name": "Default Booking Flow",
-    "description": "Standard flow based on legacy FSM logic",
+    "description": "Standard flow with Greeting, Menu, and Booking options",
     "definition": {
         "nodes": [
             {
                 "id": "start-1",
                 "type": "start",
                 "position": {
-                    "x": 100,
-                    "y": 100
+                    "x": 250,
+                    "y": 50
                 },
                 "data": {
-                    "label": "Start Conversation"
+                    "label": "Inicio"
                 }
             },
             {
-                "id": "msg-1",
+                "id": "msg-greeting",
                 "type": "message",
                 "position": {
-                    "x": 100,
-                    "y": 200
+                    "x": 250,
+                    "y": 150
                 },
                 "data": {
-                    "label": "Greeting",
-                    "content": "¡Hola! 👋 Bienvenido a nuestro sistema de reservas. ¿En qué puedo ayudarte hoy?"
+                    "label": "Saludo Inicial",
+                    "content": "¡Hola! 👋 Bienvenido. ¿En qué puedo ayudarte hoy?"
                 }
             },
             {
-                "id": "decision-1",
+                "id": "decision-menu",
                 "type": "decision",
                 "position": {
-                    "x": 100,
-                    "y": 350
+                    "x": 250,
+                    "y": 300
                 },
                 "data": {
-                    "label": "User Intent",
-                    "question": "Select an option"
+                    "label": "Menú Principal",
+                    "question": "Selecciona una opción"
                 }
             },
             {
-                "id": "tool-1",
+                "id": "tool-services",
                 "type": "tool",
                 "position": {
-                    "x": -50,
-                    "y": 500
+                    "x": 0,
+                    "y": 450
                 },
                 "data": {
-                    "label": "Book Appointment",
+                    "label": "Ver Servicios",
                     "toolName": "start_booking_flow"
                 }
             },
             {
-                "id": "tool-2",
+                "id": "tool-providers",
                 "type": "tool",
                 "position": {
                     "x": 250,
-                    "y": 500
+                    "y": 450
                 },
                 "data": {
-                    "label": "View Bookings",
-                    "toolName": "list_my_bookings"
+                    "label": "Ver Profesionales",
+                    "toolName": "list_providers"
+                }
+            },
+            {
+                "id": "tool-faqs",
+                "type": "tool",
+                "position": {
+                    "x": 500,
+                    "y": 450
+                },
+                "data": {
+                    "label": "Preguntas Frecuentes",
+                    "toolName": "get_faqs"
                 }
             }
         ],
@@ -67,24 +79,30 @@
             {
                 "id": "e1",
                 "source": "start-1",
-                "target": "msg-1"
+                "target": "msg-greeting"
             },
             {
                 "id": "e2",
-                "source": "msg-1",
-                "target": "decision-1"
+                "source": "msg-greeting",
+                "target": "decision-menu"
             },
             {
-                "id": "e3",
-                "source": "decision-1",
-                "target": "tool-1",
-                "label": "Hacer reserva"
+                "id": "e-services",
+                "source": "decision-menu",
+                "target": "tool-services",
+                "label": "Ver Servicios"
             },
             {
-                "id": "e4",
-                "source": "decision-1",
-                "target": "tool-2",
-                "label": "Ver reservas"
+                "id": "e-providers",
+                "source": "decision-menu",
+                "target": "tool-providers",
+                "label": "Ver Profesionales"
+            },
+            {
+                "id": "e-faqs",
+                "source": "decision-menu",
+                "target": "tool-faqs",
+                "label": "Preguntas Frecuentes"
             }
         ]
     },
