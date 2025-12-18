@@ -25,6 +25,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   updateTenantFunction: lambda.IFunction;
   getTenantFunction: lambda.IFunction;
   metricsFunction: lambda.IFunction;
+  workflowManagerFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -114,6 +115,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.metricsFunction
     );
 
+    const workflowManagerDataSource = this.api.addLambdaDataSource(
+      'WorkflowManagerDataSource',
+      props.workflowManagerFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -123,7 +129,8 @@ export class AppSyncApiStack extends cdk.Stack {
       registerTenantDataSource,
       updateTenantDataSource,
       getTenantDataSource,
-      metricsDataSource
+      metricsDataSource,
+      workflowManagerDataSource
     );
 
     // Outputs
@@ -613,7 +620,8 @@ schema {
     registerTenantDataSource: appsync.LambdaDataSource,
     updateTenantDataSource: appsync.LambdaDataSource,
     getTenantDataSource: appsync.LambdaDataSource,
-    metricsDataSource: appsync.LambdaDataSource
+    metricsDataSource: appsync.LambdaDataSource,
+    workflowManagerDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -799,6 +807,42 @@ schema {
     bookingDataSource.createResolver('CreateBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'createBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Workflow resolvers
+    workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
+      typeName: 'Query',
+      fieldName: 'listWorkflows',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('GetWorkflowResolver', {
+      typeName: 'Query',
+      fieldName: 'getWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('CreateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('UpdateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('DeleteWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteWorkflow',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

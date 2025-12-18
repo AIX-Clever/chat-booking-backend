@@ -65,6 +65,7 @@ export class LambdaStack extends cdk.Stack {
         CONVERSATIONS_TABLE: props.conversationsTable.tableName,
         CATEGORIES_TABLE: props.categoriesTable.tableName,
         TENANT_USAGE_TABLE: props.tenantUsageTable.tableName,
+        WORKFLOWS_TABLE: props.workflowsTable.tableName,
         LOG_LEVEL: 'INFO',
       },
     };
@@ -278,6 +279,11 @@ export class LambdaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'ChatAgentFunctionArn', {
       value: this.chatAgentFunction.functionArn,
       description: 'Chat Agent Lambda ARN',
+    });
+
+    new cdk.CfnOutput(this, 'WorkflowManagerFunctionArn', {
+      value: this.workflowManagerFunction.functionArn,
+      description: 'Workflow Manager Lambda ARN',
     });
   }
 

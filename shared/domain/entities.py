@@ -204,6 +204,8 @@ class Booking:
     status: BookingStatus
     payment_status: PaymentStatus = PaymentStatus.NONE
     conversation_id: Optional[str] = None
+    notes: Optional[str] = None
+    total_amount: Optional[float] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def confirm(self):

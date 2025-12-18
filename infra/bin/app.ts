@@ -68,6 +68,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
   conversationsTable: databaseStack.conversationsTable,
   categoriesTable: databaseStack.categoriesTable,
   tenantUsageTable: databaseStack.tenantUsageTable,
+  workflowsTable: databaseStack.workflowsTable,
   userPool: authStack.userPool,
 });
 lambdaStack.addDependency(databaseStack);
@@ -87,6 +88,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   updateTenantFunction: lambdaStack.updateTenantFunction,
   getTenantFunction: lambdaStack.getTenantFunction,
   metricsFunction: lambdaStack.metricsFunction,
+  workflowManagerFunction: lambdaStack.workflowManagerFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);
