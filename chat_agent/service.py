@@ -215,8 +215,18 @@ class ChatAgentService:
         """Handle service selection"""
         service_id = user_data.get('serviceId') if user_data else None
         
+        if message == 'start_booking_flow':
+             # Normal flow, do nothing, proceed to search or list services
+             pass
+        elif message == 'list_providers':
+             # New flow: User wants to see providers directly
+             # Transition to PROVIDER_PENDING (skipping service selection)
+             conversation.transition_to(ConversationState.PROVIDER_PENDING)
+             return self._handle_provider_request(tenant_id, conversation)
+        
         # Try to find service by name if not explicitly selected
         services = self._service_repo.search(tenant_id)
+
 
         if not service_id:
             # Check if message matches any service name
@@ -271,15 +281,19 @@ class ChatAgentService:
         tenant_id: TenantId,
         conversation: Conversation
     ) -> dict:
-        """Show available providers for selected service"""
+        """Show available providers for selected service OR all providers"""
         service_id = conversation.context.get('serviceId')
         
-        # Get providers that can provide this service
-        providers = self._provider_repo.list_by_service(tenant_id, service_id)
+        if service_id:
+            # Get providers that can provide this service
+            providers = self._provider_repo.list_by_service(tenant_id, service_id)
+        else:
+            # Get ALL providers (Provider-First Flow)
+            providers = self._provider_repo.list_by_tenant(tenant_id)
         
         if not providers:
             return ResponseBuilder.error_message(
-                "No hay profesionales disponibles para este servicio"
+                "No hay profesionales disponibles en este momento"
             )
         
         providers_list = [
