@@ -65,6 +65,15 @@ type ApiKey {
   expiresAt: AWSDateTime!
 }
 
+type FAQ @aws_api_key @aws_cognito_user_pools {
+  faqId: ID!
+  tenantId: ID!
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean!
+}
+
 # Types - Dashboard Metrics
 type DashboardSummary @aws_cognito_user_pools {
   revenue: Float!
@@ -238,6 +247,22 @@ input UpdateTenantInput {
   settings: AWSJSON
 }
 
+# Inputs - FAQs
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
+}
+
 # Inputs - Catalog
 input CreateCategoryInput {
   name: String!
@@ -405,6 +430,7 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
   
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
@@ -435,6 +461,11 @@ type Mutation {
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
   setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
   
+  # FAQs (Admin)
+  createFAQ(input: CreateFAQInput!): FAQ! @aws_cognito_user_pools
+  updateFAQ(input: UpdateFAQInput!): FAQ! @aws_cognito_user_pools
+  deleteFAQ(faqId: ID!): FAQ! @aws_cognito_user_pools
+
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools

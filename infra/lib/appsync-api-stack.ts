@@ -929,6 +929,13 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    bookingDataSource.createResolver('MarkAsNoShowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'markAsNoShow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     // Chat Agent resolvers
     chatAgentDataSource.createResolver('StartConversationResolver', {
       typeName: 'Mutation',
