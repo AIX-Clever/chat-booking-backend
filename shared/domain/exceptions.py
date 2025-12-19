@@ -1,48 +1,83 @@
 """
-Domain Exceptions
+Custom Exceptions
+
+Domain-specific exceptions that represent business rule violations
 """
 
-class DomainError(Exception):
-    """Base domain exception"""
+
+class DomainException(Exception):
+    """Base exception for domain errors"""
     pass
 
 
-class EntityNotFoundError(DomainError):
-    """Raised when an entity is not found"""
-    def __init__(self, entity_name: str, entity_id: str):
-        self.entity_name = entity_name
+class EntityNotFoundError(DomainException):
+    """Entity doesn't exist"""
+    
+    def __init__(self, entity_type: str, entity_id: str):
+        self.entity_type = entity_type
         self.entity_id = entity_id
-        super().__init__(f"{entity_name} with ID {entity_id} not found")
+        super().__init__(f"{entity_type} not found: {entity_id}")
 
 
-class ValidationError(DomainError):
-    """Raised when validation fails"""
+class ConflictError(DomainException):
+    """Resource conflict (e.g., overbooking)"""
     pass
 
 
-class TenantNotActiveError(DomainError):
-    """Raised when tenant is not active"""
+class ValidationError(DomainException):
+    """Invalid input data"""
     pass
 
 
-class ServiceNotAvailableError(DomainError):
-    """Raised when service is not available"""
+class UnauthorizedError(DomainException):
+    """Authentication/Authorization failed"""
     pass
 
 
-class ProviderNotAvailableError(DomainError):
-    """Raised when provider cannot provide service"""
+class TenantNotActiveError(DomainException):
+    """Tenant account is not active"""
+    
+    def __init__(self, tenant_id: str):
+        super().__init__(f"Tenant {tenant_id} is not active")
+
+
+class ServiceNotAvailableError(DomainException):
+    """Service cannot be booked"""
+    
+    def __init__(self, service_id: str):
+        super().__init__(f"Service {service_id} is not available")
+
+
+class ProviderNotAvailableError(DomainException):
+    """Provider cannot provide service"""
+    
     def __init__(self, provider_id: str, service_id: str):
-        self.provider_id = provider_id
-        self.service_id = service_id
         super().__init__(f"Provider {provider_id} cannot provide service {service_id}")
 
 
-class SlotNotAvailableError(DomainError):
-    """Raised when time slot is not available"""
-    pass
+class SlotNotAvailableError(DomainException):
+    """Time slot is already taken"""
+    
+    def __init__(self, start_time: str):
+        super().__init__(f"Time slot starting at {start_time} is not available")
 
 
-class ConflictError(DomainError):
-    """Raised when optimistic locking fails"""
-    pass
+class InvalidApiKeyError(UnauthorizedError):
+    """API Key is invalid or revoked"""
+    
+    def __init__(self):
+        super().__init__("Invalid or revoked API key")
+
+
+class OriginNotAllowedError(UnauthorizedError):
+    """Request origin is not in allowed list"""
+    
+    def __init__(self, origin: str):
+        super().__init__(f"Origin not allowed: {origin}")
+
+
+class RateLimitExceededError(DomainException):
+    """Too many requests"""
+    
+    def __init__(self):
+        super().__init__("Rate limit exceeded")

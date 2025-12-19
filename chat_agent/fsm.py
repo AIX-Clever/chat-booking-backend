@@ -226,10 +226,6 @@ class ChatFSM:
             ConversationState.PROVIDER_SELECTED: ['providerId'], # serviceId might still be missing if inferred later
             ConversationState.PROVIDER_SELECTED: ['providerId'],
             ConversationState.SLOT_PENDING: ['providerId'], # Service ID might be determined by slot or provider
-<<<<<<< HEAD
-            ConversationState.CONFIRM_PENDING: [
-=======
->>>>>>> 2a6df10 (feat: implement provider-first flow logic in FSM and Service)
             ConversationState.CONFIRM_PENDING: [
                 'serviceId', 'providerId', 'selectedSlot',
                 'clientName', 'clientEmail'
@@ -238,7 +234,6 @@ class ChatFSM:
                 'serviceId', 'providerId', 'selectedSlot',
                 'clientName', 'clientEmail', 'bookingId'
             ]
-        }
         }
         
         required_fields = required_by_state.get(state, [])

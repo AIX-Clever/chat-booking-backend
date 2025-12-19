@@ -59,7 +59,6 @@ class ChatAgentService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         booking_repo: IBookingRepository,
-        booking_repo: IBookingRepository,
         availability_repo: IAvailabilityRepository,
         faq_repo: IFAQRepository
     ):

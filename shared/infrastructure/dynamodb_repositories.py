@@ -34,7 +34,7 @@ class DynamoDBTenantRepository(ITenantRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_TENANTS_TABLE', 'Tenants')
+            table_name or os.environ.get('TENANTS_TABLE', 'ChatBooking-Tenants')
         )
 
     def get_by_id(self, tenant_id: TenantId) -> Optional[Tenant]:
@@ -85,7 +85,7 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_TENANT_API_KEYS_TABLE', 'TenantApiKeys')
+            table_name or os.environ.get('API_KEYS_TABLE', 'ChatBooking-ApiKeys')
         )
 
     def find_by_hash(self, api_key_hash: str) -> Optional[ApiKey]:
@@ -150,7 +150,7 @@ class DynamoDBServiceRepository(IServiceRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_SERVICES_TABLE', 'Services')
+            table_name or os.environ.get('SERVICES_TABLE', 'ChatBooking-Services')
         )
 
     def get_by_id(self, tenant_id: TenantId, service_id: str) -> Optional[Service]:
@@ -236,7 +236,7 @@ class DynamoDBProviderRepository(IProviderRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_PROVIDERS_TABLE', 'Providers')
+            table_name or os.environ.get('PROVIDERS_TABLE', 'ChatBooking-Providers')
         )
 
     def get_by_id(self, tenant_id: TenantId, provider_id: str) -> Optional[Provider]:
@@ -276,6 +276,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             'name': provider.name,
             'services': provider.service_ids,
             'timezone': provider.timezone,
+            'metadata': provider.metadata,
             'active': provider.active
         }
         
@@ -297,6 +298,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             bio=item.get('bio'),
             service_ids=item.get('services', []),
             timezone=item['timezone'],
+            metadata=item.get('metadata', {}),
             active=item.get('active', True)
         )
 
@@ -307,7 +309,7 @@ class DynamoDBBookingRepository(IBookingRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_BOOKINGS_TABLE', 'Bookings')
+            table_name or os.environ.get('BOOKINGS_TABLE', 'ChatBooking-Bookings')
         )
 
     def get_by_id(self, tenant_id: TenantId, booking_id: str) -> Optional[Booking]:
@@ -450,13 +452,13 @@ class DynamoDBConversationRepository(IConversationRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_CONVERSATION_STATE_TABLE', 'ConversationState')
+            table_name or os.environ.get('CONVERSATIONS_TABLE', 'ChatBooking-Conversations')
         )
 
     def get_by_id(self, tenant_id: TenantId, conversation_id: str) -> Optional[Conversation]:
         try:
             response = self.table.get_item(
-                Key={'PK': str(tenant_id), 'SK': conversation_id}
+                Key={'tenantId': str(tenant_id), 'conversationId': conversation_id}
             )
             item = response.get('Item')
             
@@ -470,11 +472,12 @@ class DynamoDBConversationRepository(IConversationRepository):
 
     def save(self, conversation: Conversation) -> None:
         item = {
-            'PK': str(conversation.tenant_id),
-            'SK': conversation.conversation_id,
+            'tenantId': str(conversation.tenant_id),
+            'conversationId': conversation.conversation_id,
             'state': conversation.state.value,
             'updatedAt': conversation.updated_at.isoformat(),
-            'userContext': conversation.user_context
+            'createdAt': conversation.created_at.isoformat(),
+            'context': conversation.context
         }
         
         if conversation.service_id:
@@ -495,8 +498,8 @@ class DynamoDBConversationRepository(IConversationRepository):
 
     def _item_to_entity(self, item: dict) -> Conversation:
         return Conversation(
-            conversation_id=item['SK'],
-            tenant_id=TenantId(item['PK']),
+            conversation_id=item['conversationId'],
+            tenant_id=TenantId(item['tenantId']),
             state=ConversationState(item['state']),
             service_id=item.get('serviceId'),
             provider_id=item.get('providerId'),
@@ -504,6 +507,7 @@ class DynamoDBConversationRepository(IConversationRepository):
             slot_end=datetime.fromisoformat(item['slotEnd']) if item.get('slotEnd') else None,
             booking_id=item.get('bookingId'),
             user_context=item.get('userContext', {}),
+            created_at=datetime.fromisoformat(item['createdAt']) if item.get('createdAt') else datetime.fromisoformat(item['updatedAt']),
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
 
@@ -554,4 +558,3 @@ class DynamoDBFAQRepository(IFAQRepository):
             category=item['category'],
             active=item.get('active', True)
         )
-

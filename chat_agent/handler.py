@@ -12,9 +12,9 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
     DynamoDBBookingRepository,
-    DynamoDBAvailabilityRepository,
     DynamoDBFAQRepository
 )
+from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -38,6 +38,7 @@ metrics_service = MetricsService()
 chat_agent_service = ChatAgentService(
     conversation_repo,
     service_repo,
+    provider_repo,
     booking_repo=booking_repo,
     availability_repo=availability_repo,
     faq_repo=faq_repo

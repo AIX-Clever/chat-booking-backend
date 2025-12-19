@@ -8,7 +8,7 @@ Following Hexagonal Architecture principles:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -88,7 +88,7 @@ class Tenant:
     owner_user_id: str
     billing_email: str
     settings: Dict[str, Any] = field(default_factory=dict)
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def is_active(self) -> bool:
         """Check if tenant can use the service"""
@@ -97,6 +97,21 @@ class Tenant:
     def can_create_booking(self) -> bool:
         """Business rule: only active tenants can create bookings"""
         return self.is_active()
+
+
+
+@dataclass
+class Category:
+    """Category entity"""
+    category_id: str
+    tenant_id: TenantId
+    name: str
+    description: Optional[str] = None
+    is_active: bool = True
+    display_order: int = 0
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -125,6 +140,7 @@ class Provider:
     bio: Optional[str]
     service_ids: List[str]
     timezone: str
+    metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
 
     def can_provide_service(self, service_id: str) -> bool:
@@ -206,7 +222,8 @@ class Booking:
     conversation_id: Optional[str] = None
     notes: Optional[str] = None
     total_amount: Optional[float] = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def confirm(self):
         """Confirm booking"""
@@ -221,13 +238,6 @@ class Booking:
             self.status = BookingStatus.CANCELLED
         else:
             raise ValueError(f"Cannot cancel booking with status {self.status}")
-
-    def mark_as_no_show(self):
-        """Mark booking as no show"""
-        if self.status in [BookingStatus.PENDING, BookingStatus.CONFIRMED]:
-            self.status = BookingStatus.NO_SHOW
-        else:
-            raise ValueError(f"Cannot mark as no-show booking with status {self.status}")
 
     def is_active(self) -> bool:
         """Check if booking is active"""
@@ -245,7 +255,7 @@ class Message:
     message_id: str
     sender: str  # USER, AGENT, SYSTEM
     text: str
-    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -260,13 +270,14 @@ class Conversation:
     slot_start: Optional[datetime] = None
     slot_end: Optional[datetime] = None
     booking_id: Optional[str] = None
-    user_context: Dict[str, Any] = field(default_factory=dict)
-    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    context: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def transition_to(self, new_state: ConversationState):
         """Transition to new state"""
         self.state = new_state
-        self.updated_at = datetime.now(UTC)
+        self.updated_at = datetime.now(timezone.utc)
 
     def set_service(self, service_id: str):
         """Set selected service"""
@@ -326,4 +337,3 @@ class FAQ:
     answer: str
     category: str
     active: bool = True
-
