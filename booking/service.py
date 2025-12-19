@@ -317,6 +317,26 @@ class BookingService:
         self._booking_repo.save(booking)
         return booking
 
+    def mark_as_no_show(self, tenant_id: TenantId, booking_id: str) -> Booking:
+        """
+        Mark a booking as no show
+        
+        Args:
+            tenant_id: Tenant identifier
+            booking_id: Booking identifier
+        
+        Returns:
+            Updated Booking entity
+        
+        Raises:
+            EntityNotFoundError: If booking not found
+            ValidationError: If booking cannot be marked as no show
+        """
+        booking = self.get_booking(tenant_id, booking_id)
+        booking.mark_as_no_show()
+        self._booking_repo.save(booking)
+        return booking
+
 
 class BookingQueryService:
     """

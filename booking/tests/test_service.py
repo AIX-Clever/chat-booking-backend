@@ -369,6 +369,33 @@ class TestBookingService:
         assert result.status == BookingStatus.CANCELLED
         mock_repos['booking'].save.assert_called_once()
 
+    def test_mark_as_no_show(self, booking_service, mock_repos, tenant_id):
+        """Test marking booking as no show"""
+        customer = CustomerInfo(
+            customer_id=None,
+            name="Jane Smith",
+            email="jane@example.com",
+            phone=None
+        )
+        booking = Booking(
+            booking_id="bkg_123",
+            tenant_id=tenant_id,
+            service_id="svc_123",
+            provider_id="pro_123",
+            customer_info=customer,
+            start_time=datetime.now(timezone.utc) + timedelta(days=1),
+            end_time=datetime.now(timezone.utc) + timedelta(days=1, hours=1),
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus.PENDING
+        )
+        
+        mock_repos['booking'].get_by_id.return_value = booking
+        
+        result = booking_service.mark_as_no_show(tenant_id, "bkg_123")
+        
+        assert result.status == BookingStatus.NO_SHOW
+        mock_repos['booking'].save.assert_called_once()
+
 
 class TestBookingQueryService:
     """Test BookingQueryService"""

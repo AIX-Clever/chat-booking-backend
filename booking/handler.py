@@ -84,6 +84,9 @@ def lambda_handler(event: dict, context) -> dict:
         elif field == 'cancelBooking':
             return handle_cancel_booking(tenant_id, input_data)
         
+        elif field == 'markAsNoShow':
+            return handle_mark_as_no_show(tenant_id, input_data)
+        
         elif field == 'getBooking':
             return handle_get_booking(tenant_id, input_data)
         
@@ -336,6 +339,34 @@ def handle_get_by_conversation(tenant_id: TenantId, input_data: dict) -> dict:
     if not booking:
         return error_response("No booking found for this conversation", 404)
 
+    return success_response(booking_to_dict(booking))
+
+
+def handle_mark_as_no_show(tenant_id: TenantId, input_data: dict) -> dict:
+    """
+    Mark a booking as no show
+    
+    Input:
+    {
+        "bookingId": "bkg_123"
+    }
+    """
+    booking_id = input_data.get('bookingId')
+    if not booking_id:
+        return error_response("Missing bookingId", 400)
+
+    # Get old status before update
+    old_booking = booking_query_service.get_booking(tenant_id, booking_id)
+    old_status = old_booking.status.value if old_booking else None
+
+    booking = booking_service.mark_as_no_show(tenant_id, booking_id)
+    
+    # Track status change
+    try:
+        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+    except Exception as e:
+        logger.warning("Failed to track booking status change", error=str(e))
+    
     return success_response(booking_to_dict(booking))
 
 
