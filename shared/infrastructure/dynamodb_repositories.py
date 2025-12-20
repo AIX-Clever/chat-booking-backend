@@ -491,7 +491,21 @@ class DynamoDBConversationRepository(IConversationRepository):
         if conversation.booking_id:
             item['bookingId'] = conversation.booking_id
 
+
+        # Serialize datetimes and fix floats
+        item = self._convert_floats_to_decimals(item)
         self.table.put_item(Item=item)
+
+    def _convert_floats_to_decimals(self, obj):
+        """Recursively convert float to Decimal for DynamoDB"""
+        from decimal import Decimal
+        if isinstance(obj, float):
+            return Decimal(str(obj))
+        elif isinstance(obj, dict):
+            return {k: self._convert_floats_to_decimals(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_floats_to_decimals(v) for v in obj]
+        return obj
 
     def update(self, conversation: Conversation) -> None:
         self.save(conversation)  # DynamoDB put_item is idempotent
