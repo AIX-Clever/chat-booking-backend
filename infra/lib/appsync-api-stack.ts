@@ -851,7 +851,9 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    // Workflow resolvers
+    // Workflow resolvers - COMMENTED OUT: Schema fields not defined yet
+    // TODO: Uncomment when Workflow types/queries/mutations are added to schema
+    /*
     workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
       typeName: 'Query',
       fieldName: 'listWorkflows',
@@ -886,6 +888,7 @@ schema {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+    */
 
     // FAQ Resolvers
     faqManagerDataSource.createResolver('ListFAQsResolver', {
