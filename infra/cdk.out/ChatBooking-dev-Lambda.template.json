@@ -1,5 +1,16 @@
 {
  "Description": "Lambda functions for Chat Booking SaaS",
+ "Parameters": {
+  "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/chatbooking/layers/python-layer-arn"
+  },
+  "BootstrapVersion": {
+   "Type": "AWS::SSM::Parameter::Value<String>",
+   "Default": "/cdk-bootstrap/hnb659fds/version",
+   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  }
+ },
  "Resources": {
   "AuthResolverFunctionServiceRoleE466CDE6": {
    "Type": "AWS::IAM::Role",
@@ -152,6 +163,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -159,7 +179,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 256,
@@ -426,7 +446,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "06d8e0b5f674cb26f596a91b6751b6dd0dcfa3cbcc137ed45beb351210cb212c.zip"
+     "S3Key": "0f4aa9d14bf882ad01a51f9d7f1464b21ae145f8354834b4d0abfe85f14e38dc.zip"
     },
     "Description": "Service and provider catalog management",
     "Environment": {
@@ -455,6 +475,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -462,7 +491,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -481,7 +510,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/CatalogFunction/Resource",
-    "aws:asset:path": "asset.06d8e0b5f674cb26f596a91b6751b6dd0dcfa3cbcc137ed45beb351210cb212c",
+    "aws:asset:path": "asset.0f4aa9d14bf882ad01a51f9d7f1464b21ae145f8354834b4d0abfe85f14e38dc",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -649,7 +678,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "4f92c1308abf1357e56ea6318dca8baa7654e0df0c25e5f61c8e593fb9f82bf2.zip"
+     "S3Key": "549158006a792a378b0db559a0c2ad438a51aa8d514e25f19db438d53248e6ff.zip"
     },
     "Description": "Calculate available time slots for bookings",
     "Environment": {
@@ -678,6 +707,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO",
       "SLOT_INTERVAL_MINUTES": "15"
      }
@@ -686,7 +724,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -705,7 +743,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/AvailabilityFunction/Resource",
-    "aws:asset:path": "asset.4f92c1308abf1357e56ea6318dca8baa7654e0df0c25e5f61c8e593fb9f82bf2",
+    "aws:asset:path": "asset.549158006a792a378b0db559a0c2ad438a51aa8d514e25f19db438d53248e6ff",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -878,6 +916,19 @@
          ]
         }
        ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E"
+       }
       }
      ],
      "Version": "2012-10-17"
@@ -900,7 +951,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "0103a436f788201fb5505201ff75da5d317b97a604272701ea8edd6dcc3ee617.zip"
+     "S3Key": "a22af7c89813309dbfca145fd5d784c146be599aa464391e0105192e4bc71470.zip"
     },
     "Description": "Booking creation, confirmation, and cancellation",
     "Environment": {
@@ -929,6 +980,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -936,7 +996,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -955,7 +1015,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/BookingFunction/Resource",
-    "aws:asset:path": "asset.0103a436f788201fb5505201ff75da5d317b97a604272701ea8edd6dcc3ee617",
+    "aws:asset:path": "asset.a22af7c89813309dbfca145fd5d784c146be599aa464391e0105192e4bc71470",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1089,6 +1149,9 @@
          "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385"
         },
         {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E"
+        },
+        {
          "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B"
         },
         {
@@ -1117,6 +1180,19 @@
          ]
         }
        ]
+      },
+      {
+       "Action": [
+        "dynamodb:BatchWriteItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:PutItem",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E"
+       }
       }
      ],
      "Version": "2012-10-17"
@@ -1139,7 +1215,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "ea4129bee41638766aef95502d9f380f976a85eb3fdf89b8541d4bf3ecd9dd98.zip"
+     "S3Key": "81dc969df3f6aa3e340a28eed838fd559052d0e25958de08c0f46faf2621594c.zip"
     },
     "Description": "Conversational FSM agent for booking flow",
     "Environment": {
@@ -1168,6 +1244,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO"
      }
     },
@@ -1175,7 +1260,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 1024,
@@ -1194,7 +1279,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/ChatAgentFunction/Resource",
-    "aws:asset:path": "asset.ea4129bee41638766aef95502d9f380f976a85eb3fdf89b8541d4bf3ecd9dd98",
+    "aws:asset:path": "asset.81dc969df3f6aa3e340a28eed838fd559052d0e25958de08c0f46faf2621594c",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1288,6 +1373,9 @@
          "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
         },
         {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B"
+        },
+        {
          "Fn::Join": [
           "",
           [
@@ -1342,7 +1430,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "a908de25eb75b720f1f9292f5b959d974f791e0f7aee839989f2a3f6255da03e.zip"
+     "S3Key": "3f683571d3ef8db8925b12c5b6987d02dde19fe7a7e1310bf1f321565ea1b3c0.zip"
     },
     "Description": "Public tenant registration endpoint",
     "Environment": {
@@ -1371,6 +1459,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO",
       "USER_POOL_ID": {
        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
@@ -1381,7 +1478,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -1400,7 +1497,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/RegisterTenantFunction/Resource",
-    "aws:asset:path": "asset.a908de25eb75b720f1f9292f5b959d974f791e0f7aee839989f2a3f6255da03e",
+    "aws:asset:path": "asset.3f683571d3ef8db8925b12c5b6987d02dde19fe7a7e1310bf1f321565ea1b3c0",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1531,7 +1628,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "44da60d5a0ef4ba81442c60754c6fe39e8dd3bc0133b7350443b4aa863cf5342.zip"
+     "S3Key": "4a9f0f10d35d7d873c6cb0966ea80d7bba773be3eb76cb3c6f110f099fe48e24.zip"
     },
     "Description": "Tenant settings update",
     "Environment": {
@@ -1560,6 +1657,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO",
       "USER_POOL_ID": {
        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
@@ -1570,7 +1676,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -1589,7 +1695,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/UpdateTenantFunction/Resource",
-    "aws:asset:path": "asset.44da60d5a0ef4ba81442c60754c6fe39e8dd3bc0133b7350443b4aa863cf5342",
+    "aws:asset:path": "asset.4a9f0f10d35d7d873c6cb0966ea80d7bba773be3eb76cb3c6f110f099fe48e24",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1716,7 +1822,7 @@
      "S3Bucket": {
       "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
      },
-     "S3Key": "e3cb7c82760bdcddf562e6a3f1c7c547599572ec9a99706748d6ccd4af922cbb.zip"
+     "S3Key": "032c87501aca7cff7c7caf209911d0d3effd938b9ab4e516a0cbc1679beb978f.zip"
     },
     "Description": "Get tenant details",
     "Environment": {
@@ -1745,6 +1851,15 @@
       "CATEGORIES_TABLE": {
        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
       },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
       "LOG_LEVEL": "INFO",
       "USER_POOL_ID": {
        "Fn::ImportValue": "ChatBooking-dev-Auth:ExportsOutputRefAdminUserPoolD0AF18CF79276EF5"
@@ -1755,7 +1870,7 @@
     "Handler": "handler.lambda_handler",
     "Layers": [
      {
-      "Fn::ImportValue": "ChatBookingPythonLayerArn"
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
      }
     ],
     "MemorySize": 512,
@@ -1774,7 +1889,7 @@
    ],
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/GetTenantFunction/Resource",
-    "aws:asset:path": "asset.e3cb7c82760bdcddf562e6a3f1c7c547599572ec9a99706748d6ccd4af922cbb",
+    "aws:asset:path": "asset.032c87501aca7cff7c7caf209911d0d3effd938b9ab4e516a0cbc1679beb978f",
     "aws:asset:is-bundled": false,
     "aws:asset:property": "Code"
    }
@@ -1803,6 +1918,589 @@
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/GetTenantFunction/LogRetention/Resource"
+   }
+  },
+  "MetricsFunctionServiceRoleE5E38475": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/MetricsFunction/ServiceRole/Resource"
+   }
+  },
+  "MetricsFunctionServiceRoleDefaultPolicy2910AFFD": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "MetricsFunctionServiceRoleDefaultPolicy2910AFFD",
+    "Roles": [
+     {
+      "Ref": "MetricsFunctionServiceRoleE5E38475"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/MetricsFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "MetricsFunction5338A29D": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "43c2d14f0c1fba09fbd55114b835de2ab2135b6e685e05e00975760b73e5c398.zip"
+    },
+    "Description": "Dashboard metrics and usage analytics",
+    "Environment": {
+     "Variables": {
+      "TENANTS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+      },
+      "API_KEYS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+      },
+      "SERVICES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+      },
+      "PROVIDERS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+      },
+      "AVAILABILITY_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+      },
+      "BOOKINGS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+      },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
+      "LOG_LEVEL": "INFO"
+     }
+    },
+    "FunctionName": "ChatBooking-Metrics",
+    "Handler": "handler.lambda_handler",
+    "Layers": [
+     {
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
+     }
+    ],
+    "MemorySize": 256,
+    "Role": {
+     "Fn::GetAtt": [
+      "MetricsFunctionServiceRoleE5E38475",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11",
+    "Timeout": 15
+   },
+   "DependsOn": [
+    "MetricsFunctionServiceRoleDefaultPolicy2910AFFD",
+    "MetricsFunctionServiceRoleE5E38475"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/MetricsFunction/Resource",
+    "aws:asset:path": "asset.43c2d14f0c1fba09fbd55114b835de2ab2135b6e685e05e00975760b73e5c398",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "MetricsFunctionLogRetention3368998D": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "MetricsFunction5338A29D"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/MetricsFunction/LogRetention/Resource"
+   }
+  },
+  "WorkflowManagerFunctionServiceRole48DEBD9F": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/WorkflowManagerFunction/ServiceRole/Resource"
+   }
+  },
+  "WorkflowManagerFunctionServiceRoleDefaultPolicy0004EE38": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B"
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "WorkflowManagerFunctionServiceRoleDefaultPolicy0004EE38",
+    "Roles": [
+     {
+      "Ref": "WorkflowManagerFunctionServiceRole48DEBD9F"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/WorkflowManagerFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "WorkflowManagerFunction18E1490D": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "83501c0f20d8b99400309091a368897209118b9f253bd7b0a29dc1228a71831a.zip"
+    },
+    "Description": "Workflow CRUD operations",
+    "Environment": {
+     "Variables": {
+      "TENANTS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+      },
+      "API_KEYS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+      },
+      "SERVICES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+      },
+      "PROVIDERS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+      },
+      "AVAILABILITY_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+      },
+      "BOOKINGS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+      },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
+      "LOG_LEVEL": "INFO"
+     }
+    },
+    "FunctionName": "ChatBooking-WorkflowManager",
+    "Handler": "handler.lambda_handler",
+    "Layers": [
+     {
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
+     }
+    ],
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "WorkflowManagerFunctionServiceRole48DEBD9F",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "WorkflowManagerFunctionServiceRoleDefaultPolicy0004EE38",
+    "WorkflowManagerFunctionServiceRole48DEBD9F"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/WorkflowManagerFunction/Resource",
+    "aws:asset:path": "asset.83501c0f20d8b99400309091a368897209118b9f253bd7b0a29dc1228a71831a",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "WorkflowManagerFunctionLogRetentionCA2F13EE": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "WorkflowManagerFunction18E1490D"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/WorkflowManagerFunction/LogRetention/Resource"
+   }
+  },
+  "FaqManagerFunctionServiceRoleFB51A6D6": {
+   "Type": "AWS::IAM::Role",
+   "Properties": {
+    "AssumeRolePolicyDocument": {
+     "Statement": [
+      {
+       "Action": "sts:AssumeRole",
+       "Effect": "Allow",
+       "Principal": {
+        "Service": "lambda.amazonaws.com"
+       }
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "ManagedPolicyArns": [
+     {
+      "Fn::Join": [
+       "",
+       [
+        "arn:",
+        {
+         "Ref": "AWS::Partition"
+        },
+        ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+       ]
+      ]
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/FaqManagerFunction/ServiceRole/Resource"
+   }
+  },
+  "FaqManagerFunctionServiceRoleDefaultPolicy984C30C3": {
+   "Type": "AWS::IAM::Policy",
+   "Properties": {
+    "PolicyDocument": {
+     "Statement": [
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:BatchWriteItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DeleteItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan",
+        "dynamodb:UpdateItem"
+       ],
+       "Effect": "Allow",
+       "Resource": {
+        "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E"
+       }
+      },
+      {
+       "Action": [
+        "dynamodb:BatchGetItem",
+        "dynamodb:ConditionCheckItem",
+        "dynamodb:DescribeTable",
+        "dynamodb:GetItem",
+        "dynamodb:GetRecords",
+        "dynamodb:GetShardIterator",
+        "dynamodb:Query",
+        "dynamodb:Scan"
+       ],
+       "Effect": "Allow",
+       "Resource": [
+        {
+         "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+        },
+        {
+         "Fn::Join": [
+          "",
+          [
+           {
+            "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087"
+           },
+           "/index/*"
+          ]
+         ]
+        }
+       ]
+      }
+     ],
+     "Version": "2012-10-17"
+    },
+    "PolicyName": "FaqManagerFunctionServiceRoleDefaultPolicy984C30C3",
+    "Roles": [
+     {
+      "Ref": "FaqManagerFunctionServiceRoleFB51A6D6"
+     }
+    ]
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/FaqManagerFunction/ServiceRole/DefaultPolicy/Resource"
+   }
+  },
+  "FaqManagerFunction20F19AB0": {
+   "Type": "AWS::Lambda::Function",
+   "Properties": {
+    "Code": {
+     "S3Bucket": {
+      "Fn::Sub": "cdk-hnb659fds-assets-${AWS::AccountId}-us-east-1"
+     },
+     "S3Key": "9e69632a856e23c4ef82572ba70447ef6a02deb640c74d9d10c5a427ac806892.zip"
+    },
+    "Description": "FAQ CRUD operations",
+    "Environment": {
+     "Variables": {
+      "TENANTS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantsTableB701DC57BE8E768B"
+      },
+      "API_KEYS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefApiKeysTable9F4DC7E79648F444"
+      },
+      "SERVICES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefServicesTableF56E8DC54FC0C84D"
+      },
+      "PROVIDERS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefProvidersTable1BBEDB6D429B9BF2"
+      },
+      "AVAILABILITY_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefAvailabilityTable497A1E6E14D99412"
+      },
+      "BOOKINGS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefBookingsTableB262848587A36CBD"
+      },
+      "CONVERSATIONS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefConversationsTableCD91EB96EE2E4585"
+      },
+      "CATEGORIES_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
+      },
+      "TENANT_USAGE_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+      },
+      "WORKFLOWS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+      },
+      "FAQS_TABLE": {
+       "Fn::ImportValue": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+      },
+      "LOG_LEVEL": "INFO"
+     }
+    },
+    "FunctionName": "ChatBooking-FaqManager",
+    "Handler": "handler.lambda_handler",
+    "Layers": [
+     {
+      "Ref": "SsmParameterValuechatbookinglayerspythonlayerarnC96584B6F00A464EAD1953AFF4B05118Parameter"
+     }
+    ],
+    "MemorySize": 512,
+    "Role": {
+     "Fn::GetAtt": [
+      "FaqManagerFunctionServiceRoleFB51A6D6",
+      "Arn"
+     ]
+    },
+    "Runtime": "python3.11",
+    "Timeout": 30
+   },
+   "DependsOn": [
+    "FaqManagerFunctionServiceRoleDefaultPolicy984C30C3",
+    "FaqManagerFunctionServiceRoleFB51A6D6"
+   ],
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/FaqManagerFunction/Resource",
+    "aws:asset:path": "asset.9e69632a856e23c4ef82572ba70447ef6a02deb640c74d9d10c5a427ac806892",
+    "aws:asset:is-bundled": false,
+    "aws:asset:property": "Code"
+   }
+  },
+  "FaqManagerFunctionLogRetentionCE001A44": {
+   "Type": "Custom::LogRetention",
+   "Properties": {
+    "ServiceToken": {
+     "Fn::GetAtt": [
+      "LogRetentionaae0aa3c5b4d4f87b02d85b201efdd8aFD4BFC8A",
+      "Arn"
+     ]
+    },
+    "LogGroupName": {
+     "Fn::Join": [
+      "",
+      [
+       "/aws/lambda/",
+       {
+        "Ref": "FaqManagerFunction20F19AB0"
+       }
+      ]
+     ]
+    },
+    "RetentionInDays": 7
+   },
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Lambda/FaqManagerFunction/LogRetention/Resource"
    }
   },
   "AuthResolverErrorAlarm73C8A7D0": {
@@ -2120,7 +2818,7 @@
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
-    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02Oy2rDQAxFvyX7sdrYqyyTQFaBBucDgjJWXMXzKJampgzz78FTCl2dA7rcqxbaroXtBhdp7DA1ju+Qr4p2Mj1JTLMlg4vcskN/HxDyKQWrHIM5PsJ/v9DsWYRjKIbRQ+6jo/VQeYmO7U/NVStGuhuKkArsVxjp4JDsRHpAIePiKHCOY09KoU5YF9OwoNpPyHuHs1/LqpRiasVVceQw1s2/14+P8JH0K2kxIQ4ET3n7bt9hu4Nu8xTmZk5B2RP0v3wBkuLeeA8BAAA="
+    "Analytics": "v2:deflate64:H4sIAAAAAAAA/02Oy2rDQAxFvyX7sdrYqy6TQFeFGucDgjJWXMXzKCNNTDDz78VTCl2dA7rcqxbaroX9Dhdp7Dg3jq+wnhXtbE630GNCT0rJDCQxJ0sGF7msDv11RFjfc7DKMWzZ/95T8izCMRTD6GEdoqPtUNlHx/ZZc9WKke6CIqQChw1GOjhmO5MeUci4OAl8xGkgpVAnrIt5XFDtF6wHh8lvZVVKMbXirDhxmOrm3+unW/jM+p21mBBHgru8PNpX2L9Bt7sLc5NyUPYEwy9/AMB0QLQcAQAA"
    },
    "Metadata": {
     "aws:cdk:path": "ChatBooking-dev-Lambda/CDKMetadata/Default"
@@ -2169,6 +2867,24 @@
    "Value": {
     "Fn::GetAtt": [
      "ChatAgentFunction2B92A177",
+     "Arn"
+    ]
+   }
+  },
+  "WorkflowManagerFunctionArn": {
+   "Description": "Workflow Manager Lambda ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "WorkflowManagerFunction18E1490D",
+     "Arn"
+    ]
+   }
+  },
+  "FaqManagerFunctionArn": {
+   "Description": "FAQ Manager Lambda ARN",
+   "Value": {
+    "Fn::GetAtt": [
+     "FaqManagerFunction20F19AB0",
      "Arn"
     ]
    }
@@ -2260,13 +2976,39 @@
    "Export": {
     "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttGetTenantFunction7FA934B2ArnC38DE340"
    }
-  }
- },
- "Parameters": {
-  "BootstrapVersion": {
-   "Type": "AWS::SSM::Parameter::Value<String>",
-   "Default": "/cdk-bootstrap/hnb659fds/version",
-   "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]"
+  },
+  "ExportsOutputFnGetAttMetricsFunction5338A29DArn5B374B0D": {
+   "Value": {
+    "Fn::GetAtt": [
+     "MetricsFunction5338A29D",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttMetricsFunction5338A29DArn5B374B0D"
+   }
+  },
+  "ExportsOutputFnGetAttWorkflowManagerFunction18E1490DArn4BB432FE": {
+   "Value": {
+    "Fn::GetAtt": [
+     "WorkflowManagerFunction18E1490D",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttWorkflowManagerFunction18E1490DArn4BB432FE"
+   }
+  },
+  "ExportsOutputFnGetAttFaqManagerFunction20F19AB0ArnD4ECF1FF": {
+   "Value": {
+    "Fn::GetAtt": [
+     "FaqManagerFunction20F19AB0",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Lambda:ExportsOutputFnGetAttFaqManagerFunction20F19AB0ArnD4ECF1FF"
+   }
   }
  },
  "Rules": {

@@ -2,13 +2,7 @@
 import pytest
 import os
 from unittest.mock import Mock, patch, MagicMock
-
-# Patch boto3 before importing handler to prevent NoRegionError
-with patch('boto3.client') as mock_client, \
-     patch('boto3.resource') as mock_resource:
-    mock_client.return_value = MagicMock()
-    mock_resource.return_value.Table.return_value = MagicMock()
-    from register_tenant.handler import lambda_handler
+from register_tenant.handler import lambda_handler
 
 @pytest.fixture
 def mock_env():
@@ -21,11 +15,6 @@ def mock_cognito():
         yield mock
 
 @pytest.fixture
-def mock_workflows_table():
-    with patch('register_tenant.handler.workflows_table') as mock:
-        yield mock
-
-@pytest.fixture
 def mock_repositories():
     with patch('register_tenant.handler.DynamoDBTenantRepository') as mock_tenant_repo, \
          patch('register_tenant.handler.DynamoDBApiKeyRepository') as mock_api_key_repo:
@@ -35,8 +24,10 @@ def mock_repositories():
         
         yield tenant_repo_instance, api_key_repo_instance
 
-def test_register_tenant_success(mock_env, mock_cognito, mock_workflows_table, mock_repositories):
+def test_register_tenant_success(mock_env, mock_cognito, mock_repositories):
     # Setup
+    # mock_cognito is now the object 'cognito' in handler.py
+    
     tenant_repo, api_key_repo = mock_repositories
     
     event = {
@@ -65,7 +56,7 @@ def test_register_tenant_success(mock_env, mock_cognito, mock_workflows_table, m
     tenant_repo.save.assert_called_once()
     api_key_repo.save.assert_called_once()
 
-def test_register_tenant_missing_input(mock_env, mock_cognito, mock_workflows_table):
+def test_register_tenant_missing_input(mock_env):
     event = {}
     with pytest.raises(Exception):
         lambda_handler(event, {})

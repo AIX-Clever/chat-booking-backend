@@ -11,10 +11,8 @@ from shared.domain.entities import Tenant, TenantId, TenantStatus, TenantPlan, A
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository, DynamoDBApiKeyRepository
 from shared.utils import lambda_response, Logger, generate_api_key, hash_api_key
 
-
-# Lazy-initialized clients to avoid NoRegionError during test collection
-cognito = None
-workflows_table = None
+cognito = boto3.client('cognito-idp')
+workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
 
 # Load Default Flow
 try:
@@ -31,14 +29,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Args:
         event: AppSync event with arguments
     """
-    global cognito, workflows_table
-    
-    # Lazy initialization of boto3 clients
-    if cognito is None:
-        cognito = boto3.client('cognito-idp')
-    if workflows_table is None:
-        workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
-    
     logger = Logger()
     logger.info("Starting tenant registration", event=event)
     

@@ -457,6 +457,124 @@
     "aws:cdk:path": "ChatBooking-dev-Database/CategoriesTable/Resource"
    }
   },
+  "TenantUsageTableF384CCCA": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "PK",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "SK",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "PK",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "SK",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-TenantUsage",
+    "TimeToLiveSpecification": {
+     "AttributeName": "ttl",
+     "Enabled": true
+    }
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/TenantUsageTable/Resource"
+   }
+  },
+  "WorkflowsTable4E215008": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "workflowId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "workflowId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-Workflows"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/WorkflowsTable/Resource"
+   }
+  },
+  "FAQsTableB8072970": {
+   "Type": "AWS::DynamoDB::Table",
+   "Properties": {
+    "AttributeDefinitions": [
+     {
+      "AttributeName": "tenantId",
+      "AttributeType": "S"
+     },
+     {
+      "AttributeName": "faqId",
+      "AttributeType": "S"
+     }
+    ],
+    "BillingMode": "PAY_PER_REQUEST",
+    "KeySchema": [
+     {
+      "AttributeName": "tenantId",
+      "KeyType": "HASH"
+     },
+     {
+      "AttributeName": "faqId",
+      "KeyType": "RANGE"
+     }
+    ],
+    "PointInTimeRecoverySpecification": {
+     "PointInTimeRecoveryEnabled": true
+    },
+    "SSESpecification": {
+     "SSEEnabled": true
+    },
+    "TableName": "ChatBooking-FAQs"
+   },
+   "UpdateReplacePolicy": "Retain",
+   "DeletionPolicy": "Retain",
+   "Metadata": {
+    "aws:cdk:path": "ChatBooking-dev-Database/FAQsTable/Resource"
+   }
+  },
   "CDKMetadata": {
    "Type": "AWS::CDK::Metadata",
    "Properties": {
@@ -514,6 +632,24 @@
    "Description": "Categories table name",
    "Value": {
     "Ref": "CategoriesTable9FFF5A67"
+   }
+  },
+  "TenantUsageTableName": {
+   "Description": "Tenant Usage (metrics) table name",
+   "Value": {
+    "Ref": "TenantUsageTableF384CCCA"
+   }
+  },
+  "WorkflowsTableName": {
+   "Description": "Workflows table name",
+   "Value": {
+    "Ref": "WorkflowsTable4E215008"
+   }
+  },
+  "FAQsTableName": {
+   "Description": "FAQs table name",
+   "Value": {
+    "Ref": "FAQsTableB8072970"
    }
   },
   "ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087": {
@@ -602,6 +738,30 @@
     "Name": "ChatBooking-dev-Database:ExportsOutputRefCategoriesTable9FFF5A678A053E38"
    }
   },
+  "ExportsOutputRefTenantUsageTableF384CCCA317F1334": {
+   "Value": {
+    "Ref": "TenantUsageTableF384CCCA"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefTenantUsageTableF384CCCA317F1334"
+   }
+  },
+  "ExportsOutputRefWorkflowsTable4E215008D0FFE690": {
+   "Value": {
+    "Ref": "WorkflowsTable4E215008"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefWorkflowsTable4E215008D0FFE690"
+   }
+  },
+  "ExportsOutputRefFAQsTableB80729705EF12C8E": {
+   "Value": {
+    "Ref": "FAQsTableB8072970"
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputRefFAQsTableB80729705EF12C8E"
+   }
+  },
   "ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6": {
    "Value": {
     "Fn::GetAtt": [
@@ -666,6 +826,39 @@
    },
    "Export": {
     "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttConversationsTableCD91EB96Arn4A2B28C6"
+   }
+  },
+  "ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E": {
+   "Value": {
+    "Fn::GetAtt": [
+     "TenantUsageTableF384CCCA",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E"
+   }
+  },
+  "ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E": {
+   "Value": {
+    "Fn::GetAtt": [
+     "FAQsTableB8072970",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E"
+   }
+  },
+  "ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B": {
+   "Value": {
+    "Fn::GetAtt": [
+     "WorkflowsTable4E215008",
+     "Arn"
+    ]
+   },
+   "Export": {
+    "Name": "ChatBooking-dev-Database:ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B"
    }
   }
  },

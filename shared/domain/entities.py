@@ -239,6 +239,13 @@ class Booking:
         else:
             raise ValueError(f"Cannot cancel booking with status {self.status}")
 
+    def mark_as_no_show(self):
+        """Mark booking as no show"""
+        if self.status == BookingStatus.CONFIRMED:
+            self.status = BookingStatus.NO_SHOW
+        else:
+            raise ValueError(f"Cannot mark as no show a booking with status {self.status}")
+
     def is_active(self) -> bool:
         """Check if booking is active"""
         return self.status in [BookingStatus.PENDING, BookingStatus.CONFIRMED]
