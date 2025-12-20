@@ -79,7 +79,7 @@ class ChatAgentService:
              self._workflow_repo.save(active_workflow)
         
         # Self-healing: Repair broken default workflow if missing critical steps
-        if active_workflow.name == "Default Booking Flow" and "select_provider" not in active_workflow.steps:
+        if active_workflow.name == "Default Booking Flow" and "confirm_booking" not in active_workflow.steps:
              updated_default = self._create_default_workflow(tenant_id)
              # Preserve ID and other metadata, just update steps
              active_workflow.steps = updated_default.steps
@@ -127,7 +127,7 @@ class ChatAgentService:
         # Global Intent Detection (Greeting / Reset)
         if message and message_type == 'text':
              normalized = message.lower().strip()
-             if normalized in ['hola', 'buenos dias', 'buenas tardes', 'inicio', 'menu']:
+             if normalized in ['hola', 'buenos dias', 'buenas tardes', 'inicio', 'menu', 'flow_services', 'flow_providers', 'flow_faqs']:
                  # Reset to start/menu
                  response = self.workflow_engine.process_step(
                      conversation, workflow, "start" # Or "initial_menu" if we want to skip hello
@@ -188,17 +188,18 @@ class ChatAgentService:
                     "stepId": "search_service",
                     "type": "TOOL",
                     "content": {"tool": "searchServices"},
-                    "next": "select_provider"
+                    "next": "list_providers"
                 },
                 "list_providers": {
                     "stepId": "list_providers",
                     "type": "TOOL",
-                    "content": {"tool": "listProviders"}
+                    "content": {"tool": "listProviders"},
+                    "next": "confirm_booking"
                 },
-                "select_provider": {
-                    "stepId": "select_provider",
+                "confirm_booking": {
+                    "stepId": "confirm_booking",
                     "type": "MESSAGE",
-                    "content": {"text": "Funcionalidad de selección de proveedor en construcción. Por favor intenta 'Ver Profesionales'."}
+                    "content": {"text": "¡Perfecto! Funcionalidad de confirmación en desarrollo. Aquí termina el demo por ahora."}
                 },
                 "show_faqs": {
                     "stepId": "show_faqs",
