@@ -70,6 +70,9 @@ export class LambdaStack extends cdk.Stack {
         WORKFLOWS_TABLE: props.workflowsTable.tableName,
         FAQS_TABLE: props.faqsTable.tableName,
         LOG_LEVEL: 'INFO',
+        // Aliases for legacy/shared code compatibility
+        DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
+        DYNAMODB_FAQS_TABLE: props.faqsTable.tableName,
       },
     };
 

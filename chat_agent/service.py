@@ -77,6 +77,13 @@ class ChatAgentService:
              # Logic inlined to avoid dependencies on workflow_manager package
              active_workflow = self._create_default_workflow(tenant_id)
              self._workflow_repo.save(active_workflow)
+        
+        # Self-healing: Repair broken default workflow if missing critical steps
+        if active_workflow.name == "Default Booking Flow" and "select_provider" not in active_workflow.steps:
+             updated_default = self._create_default_workflow(tenant_id)
+             # Preserve ID and other metadata, just update steps
+             active_workflow.steps = updated_default.steps
+             self._workflow_repo.save(active_workflow)
 
         # 2. Initialize Conversation
         conversation = Conversation(
