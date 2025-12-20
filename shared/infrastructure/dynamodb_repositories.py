@@ -506,7 +506,7 @@ class DynamoDBConversationRepository(IConversationRepository):
             slot_start=datetime.fromisoformat(item['slotStart']) if item.get('slotStart') else None,
             slot_end=datetime.fromisoformat(item['slotEnd']) if item.get('slotEnd') else None,
             booking_id=item.get('bookingId'),
-            user_context=item.get('userContext', {}),
+            context=item.get('context', {}),
             created_at=datetime.fromisoformat(item['createdAt']) if item.get('createdAt') else datetime.fromisoformat(item['updatedAt']),
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
