@@ -15,54 +15,34 @@ dynamodb = boto3.resource('dynamodb')
 workflows_table = dynamodb.Table(os.environ['WORKFLOWS_TABLE'])
 tenants_table = dynamodb.Table(os.environ['TENANTS_TABLE'])
 
+from shared.utils import extract_appsync_event, error_response
+from shared.domain.entities import TenantId
+
 def lambda_handler(event, context):
     """
     Handler for Workflow CRUD operations via AppSync
     """
-    logger.info(f"Event: {json.dumps(event)}")
-    
-    # Get operation details
-    info = event.get('info', {})
-    field_name = info.get('fieldName')
-    arguments = event.get('arguments', {})
-    identity = event.get('identity', {})
-    
-    # Determine tenantId
-    # For API Key auth (public/test), we might pass tenantId in valid inputs or it might be in the identity for Cognito
-    # In this system, Cognito identity usually has claims
-    tenant_id = None
-    
-    # Try to get tenant_id from Cognito custom attributes
-    if 'claims' in identity:
-        tenant_id = identity['claims'].get('custom:tenantId')
-        
-    # If not in claims (e.g. Admin or API Key), check arguments or fallback
-    # For admin operations, we usually expect to be authenticated as a user belonging to a tenant
-    if not tenant_id:
-         # For development/admin access, we might need a way to specify tenantId if not in token
-         # But the schema says Workflows are @aws_cognito_user_pools, so we should have a user
-         logger.warning("No tenantId found in identity claims")
-         # Fallback for testing if allowed, or error
-         # In arguments?
-         pass
-         
-    # For now, let's assume we extract it or error if strictly required.
-    # However, createWorkflow might rely on the user's tenant.
-    
     try:
+        # Use shared utility to consistent extraction
+        field_name, tenant_id_str, arguments = extract_appsync_event(event)
+        tenant_id = tenant_id_str # extract_appsync_event returns string or TenantId? value. let's check. 
+        # extract_appsync_event returns (field, tenant_id_str, input_data)
+        
+        logger.info(f"Operation: {field_name}, Tenant: {tenant_id}")
+        
         if field_name == 'listWorkflows':
             return list_workflows(tenant_id)
         elif field_name == 'getWorkflow':
             return get_workflow(tenant_id, arguments.get('workflowId'))
         elif field_name == 'createWorkflow':
-            return create_workflow(tenant_id, arguments.get('input'))
+            return create_workflow(tenant_id, arguments)
         elif field_name == 'updateWorkflow':
-            return update_workflow(tenant_id, arguments.get('input'))
+            return update_workflow(tenant_id, arguments)
         elif field_name == 'deleteWorkflow':
             return delete_workflow(tenant_id, arguments.get('workflowId'))
         else:
             raise Exception(f"Unknown field name: {field_name}")
-            
+
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         raise e
