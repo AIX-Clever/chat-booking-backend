@@ -1,6 +1,6 @@
 
 from typing import Optional, Dict, Any, List
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId
 from shared.domain.exceptions import ValidationError
 from fsm import ResponseBuilder
@@ -11,10 +11,11 @@ class WorkflowEngine:
     Replaces the hardcoded FSM logic.
     """
 
-    def __init__(self, service_repo, provider_repo, faq_repo):
+    def __init__(self, service_repo, provider_repo, faq_repo, availability_repo):
         self.service_repo = service_repo
         self.provider_repo = provider_repo
         self.faq_repo = faq_repo
+        self.availability_repo = availability_repo
 
     def process_step(
         self, 
@@ -259,8 +260,15 @@ class WorkflowEngine:
                   selected_provider = next((p for p in providers if is_match(clean_input, p.name)), None)
              
              if selected_provider:
-                 conversation.context['providerId'] = selected_provider.provider_id
-                 conversation.context['providerName'] = selected_provider.name
+                  conversation.context['providerName'] = selected_provider.name
+                 return step.next_step
+
+        elif tool_name == 'checkAvailability':
+             # Expecting a timestamp or date string selection
+             val = user_data.get('value') if user_data else user_input
+             
+             if val:
+                 conversation.context['selectedSlot'] = val
                  return step.next_step
 
         return None
@@ -322,5 +330,57 @@ class WorkflowEngine:
              }
 
             
+        elif tool_name == 'checkAvailability':
+             provider_id = conversation.context.get('providerId')
+             if not provider_id:
+                 return ResponseBuilder.error_message("Error: Profesional no seleccionado.")
+
+             # Get availability rules
+             availability = self.availability_repo.get_provider_availability(conversation.tenant_id, provider_id)
+             
+             # Generate slots for next 5 days
+             slots = []
+             today = datetime.now(UTC)
+             
+             # Map weekday ISO (1=Mon, 7=Sun) to Entity (MON, TUE...)
+             weekday_map = {0: 'MON', 1: 'TUE', 2: 'WED', 3: 'THU', 4: 'FRI', 5: 'SAT', 6: 'SUN'}
+             
+             for i in range(1, 6): # Next 5 days
+                 date = today + timedelta(days=i)
+                 day_str = weekday_map[date.weekday()]
+                 
+                 # Find rules for this day
+                 day_rule = next((r for r in availability if r.day_of_week == day_str), None)
+                 
+                 if day_rule:
+                     for window in day_rule.time_ranges:
+                         # Simple 60 min slots generation
+                         # Parse HH:MM
+                         start_h, start_m = map(int, window.start.split(':'))
+                         end_h, end_m = map(int, window.end.split(':'))
+                         
+                         current_h, current_m = start_h, start_m
+                         
+                         while (current_h * 60 + current_m) + 60 <= (end_h * 60 + end_m):
+                             # Format slot
+                             slot_start = f"{date.strftime('%Y-%m-%d')}T{current_h:02d}:{current_m:02d}:00"
+                             # end = +60 mins
+                             
+                             slots.append({
+                                 'start': slot_start,
+                                 'available': True
+                             })
+                             
+                             # Increment 60 mins
+                             current_m += 60
+                             while current_m >= 60:
+                                 current_m -= 60
+                                 current_h += 1
+                                 
+             if not slots:
+                  return ResponseBuilder.error_message("Lo siento, no hay horarios disponibles para este profesional próximamente.")
+             
+             return ResponseBuilder.date_selection_message(slots[:10]) # Limit to 10 for UI
+
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
 
