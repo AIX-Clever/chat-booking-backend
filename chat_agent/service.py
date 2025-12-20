@@ -57,7 +57,7 @@ class ChatAgentService:
         self._workflow_repo = workflow_repo
         
         self.workflow_engine = WorkflowEngine(
-            service_repo, provider_repo, faq_repo
+            service_repo, provider_repo, faq_repo, availability_repo
         )
     
     def start_conversation(
@@ -79,7 +79,7 @@ class ChatAgentService:
              self._workflow_repo.save(active_workflow)
         
         # Self-healing: Repair broken default workflow if missing critical steps
-        if active_workflow.name == "Default Booking Flow" and "confirm_booking" not in active_workflow.steps:
+        if active_workflow.name == "Default Booking Flow" and "select_timeslot" not in active_workflow.steps:
              updated_default = self._create_default_workflow(tenant_id)
              # Preserve ID and other metadata, just update steps
              active_workflow.steps = updated_default.steps
@@ -194,6 +194,12 @@ class ChatAgentService:
                     "stepId": "list_providers",
                     "type": "TOOL",
                     "content": {"tool": "listProviders"},
+                    "next": "select_timeslot"
+                },
+                "select_timeslot": {
+                    "stepId": "select_timeslot",
+                    "type": "TOOL",
+                    "content": {"tool": "checkAvailability"},
                     "next": "confirm_booking"
                 },
                 "confirm_booking": {
