@@ -25,6 +25,9 @@ export class DatabaseStack extends cdk.Stack {
   public readonly bookingsTable: dynamodb.Table;
   public readonly conversationsTable: dynamodb.Table;
   public readonly categoriesTable: dynamodb.Table;
+  public readonly tenantUsageTable: dynamodb.Table;
+  public readonly workflowsTable: dynamodb.Table;
+  public readonly faqsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -261,6 +264,58 @@ export class DatabaseStack extends cdk.Stack {
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
     });
 
+    // 9. TenantUsage Table - Pre-aggregated metrics for dashboard
+    this.tenantUsageTable = new dynamodb.Table(this, 'TenantUsageTable', {
+      tableName: 'ChatBooking-TenantUsage',
+      partitionKey: {
+        name: 'PK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'SK',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+      timeToLiveAttribute: 'ttl', // Auto-cleanup old metrics
+    });
+
+    // 10. Workflows Table
+    this.workflowsTable = new dynamodb.Table(this, 'WorkflowsTable', {
+      tableName: 'ChatBooking-Workflows',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'workflowId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
+    // 11. FAQs Table
+    this.faqsTable = new dynamodb.Table(this, 'FAQsTable', {
+      tableName: 'ChatBooking-FAQs',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'faqId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
     // Output table names and ARNs
     new cdk.CfnOutput(this, 'TenantsTableName', {
       value: this.tenantsTable.tableName,
@@ -300,6 +355,21 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'CategoriesTableName', {
       value: this.categoriesTable.tableName,
       description: 'Categories table name',
+    });
+
+    new cdk.CfnOutput(this, 'TenantUsageTableName', {
+      value: this.tenantUsageTable.tableName,
+      description: 'Tenant Usage (metrics) table name',
+    });
+
+    new cdk.CfnOutput(this, 'WorkflowsTableName', {
+      value: this.workflowsTable.tableName,
+      description: 'Workflows table name',
+    });
+
+    new cdk.CfnOutput(this, 'FAQsTableName', {
+      value: this.faqsTable.tableName,
+      description: 'FAQs table name',
     });
   }
 }

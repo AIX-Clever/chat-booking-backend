@@ -78,6 +78,12 @@ def lambda_handler(event: dict, context) -> dict:
         elif field == 'getProviderAvailability':
             return handle_get_provider_availability(tenant_id, input_data)
         
+        elif field == 'setProviderExceptions':
+            return handle_set_provider_exceptions(tenant_id, input_data)
+        
+        elif field == 'getProviderExceptions':
+            return handle_get_provider_exceptions(tenant_id, input_data)
+        
         else:
             return error_response(f"Unknown operation: {field}", 400)
 
@@ -179,6 +185,7 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
     day_of_week = input_data.get('dayOfWeek')
     time_ranges = input_data.get('timeRanges', [])
     breaks = input_data.get('breaks', [])
+    exceptions = input_data.get('exceptions', [])
     
     logger.info("handle_set_availability input", input_data=input_data)
 
@@ -196,7 +203,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
         provider_id,
         day_of_week,
         time_ranges,
-        breaks
+        breaks,
+        exceptions
     )
 
     # Convert to response format
@@ -210,7 +218,8 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
         'breaks': [
             {'startTime': br.start_time, 'endTime': br.end_time}
             for br in availability.breaks
-        ]
+        ],
+        'exceptions': availability.exceptions
     }
 
     return success_response(response_data)
@@ -233,6 +242,9 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
     # Get availability from repository
     schedule = availability_repo.get_provider_availability(tenant_id, provider_id)
     
+    # Get exceptions separately (now stored in dedicated item)
+    exceptions = availability_repo.get_provider_exceptions(tenant_id, provider_id)
+    
     # Convert to response format
     response_data = []
     for avail in schedule:
@@ -246,8 +258,62 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
             'breaks': [
                 {'startTime': br.start_time, 'endTime': br.end_time}
                 for br in avail.breaks
-            ]
+            ],
+            'exceptions': exceptions  # Include provider-level exceptions in first item
         })
         
     return success_response(response_data)
 
+
+def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dict:
+    """
+    Set provider exception dates (days off)
+    
+    Input:
+    {
+        "providerId": "pro_456",
+        "exceptions": ["2024-12-25", "2024-12-31"]
+    }
+    """
+    provider_id = input_data.get('providerId')
+    exceptions = input_data.get('exceptions', [])
+    
+    if not provider_id:
+        return error_response("Missing required field: providerId", 400)
+
+    logger.info(
+        "Setting provider exceptions",
+        tenant_id=str(tenant_id),
+        provider_id=provider_id,
+        exceptions_count=len(exceptions)
+    )
+
+    # Save exceptions to dedicated storage
+    availability_repo.save_provider_exceptions(tenant_id, provider_id, exceptions)
+
+    return success_response({
+        'providerId': provider_id,
+        'exceptions': exceptions
+    })
+
+
+def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dict:
+    """
+    Get provider exception dates
+    
+    Input:
+    {
+        "providerId": "pro_456"
+    }
+    """
+    provider_id = input_data.get('providerId')
+    
+    if not provider_id:
+        return error_response("Missing required field: providerId", 400)
+
+    exceptions = availability_repo.get_provider_exceptions(tenant_id, provider_id)
+
+    return success_response({
+        'providerId': provider_id,
+        'exceptions': exceptions
+    })

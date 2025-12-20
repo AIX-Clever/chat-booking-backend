@@ -11,7 +11,9 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBConversationRepository,
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
-    DynamoDBBookingRepository
+    DynamoDBBookingRepository,
+    DynamoDBFAQRepository,
+    DynamoDBWorkflowRepository
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
@@ -20,6 +22,7 @@ from shared.domain.exceptions import (
     ValidationError
 )
 from shared.utils import Logger, success_response, error_response, extract_appsync_event
+from shared.metrics import MetricsService
 
 from service import ChatAgentService
 
@@ -30,13 +33,18 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 booking_repo = DynamoDBBookingRepository()
 availability_repo = DynamoDBAvailabilityRepository()
+faq_repo = DynamoDBFAQRepository()
+workflow_repo = DynamoDBWorkflowRepository()
+metrics_service = MetricsService()
 
 chat_agent_service = ChatAgentService(
     conversation_repo,
     service_repo,
     provider_repo,
-    booking_repo,
-    availability_repo
+    booking_repo=booking_repo,
+    availability_repo=availability_repo,
+    faq_repo=faq_repo,
+    workflow_repo=workflow_repo
 )
 
 logger = Logger()
@@ -119,6 +127,12 @@ def handle_start_conversation(tenant_id: TenantId, input_data: dict) -> dict:
         metadata
     )
     
+    # Track AI response (welcome message counts as AI response)
+    try:
+        metrics_service.increment_message(tenant_id.value, is_ai_response=True)
+    except Exception as e:
+        logger.warning("Failed to track start conversation metrics", error=str(e))
+    
     return success_response({
         'conversation': conversation_to_dict(conversation),
         'response': response
@@ -159,6 +173,15 @@ def handle_send_message(tenant_id: TenantId, input_data: dict) -> dict:
         user_data
     )
     
+    # Track message metrics
+    try:
+        # Track user message
+        metrics_service.increment_message(tenant_id.value, is_ai_response=False)
+        # Track AI response
+        metrics_service.increment_message(tenant_id.value, is_ai_response=True)
+    except Exception as e:
+        logger.warning("Failed to track message metrics", error=str(e))
+    
     return success_response({
         'conversation': conversation_to_dict(conversation),
         'response': response
@@ -183,6 +206,12 @@ def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
         tenant_id,
         conversation_id
     )
+    
+    # Track chat conversion (booking created from chat)
+    try:
+        metrics_service.increment_conversation_completed(tenant_id.value)
+    except Exception as e:
+        logger.warning("Failed to track chat conversion metrics", error=str(e))
     
     return success_response({
         'conversation': conversation_to_dict(conversation),

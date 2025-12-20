@@ -109,6 +109,12 @@ class AvailabilityService:
             avail.day_of_week: avail
             for avail in availability_schedule
         }
+        
+        # Get provider-level exceptions (now stored separately)
+        provider_exceptions = self.availability_repo.get_provider_exceptions(
+            tenant_id,
+            provider_id
+        )
 
         # Get existing bookings in date range
         existing_bookings = self.booking_repo.list_by_provider(
@@ -123,7 +129,8 @@ class AvailabilityService:
             from_date,
             to_date,
             service.duration_minutes,
-            availability_map
+            availability_map,
+            provider_exceptions
         )
 
         # Filter out occupied slots
@@ -146,28 +153,35 @@ class AvailabilityService:
         from_date: datetime,
         to_date: datetime,
         duration_minutes: int,
-        availability_map: Dict[str, ProviderAvailability]
+        availability_map: Dict[str, ProviderAvailability],
+        exceptions: List[str] = None
     ) -> List[TimeSlot]:
         """
         Generate all possible slots based on provider availability
         
+        Args:
+            exceptions: Provider-level exception dates (YYYY-MM-DD format)
+        
         Returns slots at regular intervals (slot_interval_minutes)
         within provider's working hours
         """
+        if exceptions is None:
+            exceptions = []
+            
         slots = []
         current_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
         while current_date < to_date:
             day_name = current_date.strftime('%a').upper()  # MON, TUE, etc.
             
+            # Check if date is in exceptions list (provider-level)
+            date_str = current_date.date().isoformat()
+            if date_str in exceptions:
+                current_date += timedelta(days=1)
+                continue
+            
             if day_name in availability_map:
                 availability = availability_map[day_name]
-                
-                # Check if date is in exceptions list
-                date_str = current_date.date().isoformat()
-                if date_str in availability.exceptions:
-                    current_date += timedelta(days=1)
-                    continue
 
                 # Generate slots for each time range
                 for time_range in availability.time_ranges:
@@ -288,7 +302,8 @@ class AvailabilityManagementService:
         provider_id: str,
         day_of_week: str,
         time_ranges: List[Dict[str, str]],
-        breaks: List[Dict[str, str]] = None
+        breaks: List[Dict[str, str]] = None,
+        exceptions: List[str] = None
     ) -> ProviderAvailability:
         """
         Set availability schedule for a specific day
@@ -299,12 +314,14 @@ class AvailabilityManagementService:
             day_of_week: Day name (MON, TUE, WED, THU, FRI, SAT, SUN)
             time_ranges: List of {startTime, endTime} dicts
             breaks: Optional list of break periods
+            exceptions: Optional list of exception dates (ISO format)
         """
         self.logger.info(
             "Setting provider availability",
             tenant_id=str(tenant_id),
             provider_id=provider_id,
-            day_of_week=day_of_week
+            day_of_week=day_of_week,
+            exceptions_count=len(exceptions) if exceptions else 0
         )
 
         from shared.domain.entities import TimeRange
@@ -329,7 +346,7 @@ class AvailabilityManagementService:
             day_of_week=day_of_week.upper(),
             time_ranges=time_range_objects,
             breaks=break_objects,
-            exceptions=[]
+            exceptions=exceptions or []
         )
 
         # Persist

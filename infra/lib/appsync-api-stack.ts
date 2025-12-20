@@ -24,6 +24,9 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   registerTenantFunction: lambda.IFunction;
   updateTenantFunction: lambda.IFunction;
   getTenantFunction: lambda.IFunction;
+  metricsFunction: lambda.IFunction;
+  workflowManagerFunction: lambda.IFunction;
+  faqManagerFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -108,6 +111,21 @@ export class AppSyncApiStack extends cdk.Stack {
       props.getTenantFunction
     );
 
+    const metricsDataSource = this.api.addLambdaDataSource(
+      'MetricsDataSource',
+      props.metricsFunction
+    );
+
+    const workflowManagerDataSource = this.api.addLambdaDataSource(
+      'WorkflowManagerDataSource',
+      props.workflowManagerFunction
+    );
+
+    const faqManagerDataSource = this.api.addLambdaDataSource(
+      'FaqManagerDataSource',
+      props.faqManagerFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -116,7 +134,10 @@ export class AppSyncApiStack extends cdk.Stack {
       chatAgentDataSource,
       registerTenantDataSource,
       updateTenantDataSource,
-      getTenantDataSource
+      getTenantDataSource,
+      metricsDataSource,
+      workflowManagerDataSource,
+      faqManagerDataSource
     );
 
     // Outputs
@@ -204,6 +225,74 @@ type ApiKey {
   expiresAt: AWSDateTime!
 }
 
+type FAQ @aws_api_key @aws_cognito_user_pools {
+  faqId: ID!
+  tenantId: ID!
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean!
+}
+
+# Types - Dashboard Metrics
+type DashboardSummary @aws_cognito_user_pools {
+  revenue: Float!
+  bookings: Int!
+  messages: Int!
+  tokensIA: Int!
+  conversionsChat: Int!
+  aiResponses: Int!
+  conversionRate: Float!
+  autoAttendanceRate: Float!
+}
+
+type DailyMetric @aws_cognito_user_pools {
+  date: String!
+  bookings: Int!
+  messages: Int!
+}
+
+type TopService @aws_cognito_user_pools {
+  serviceId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type TopProvider @aws_cognito_user_pools {
+  providerId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type BookingStatusCounts @aws_cognito_user_pools {
+  CONFIRMED: Int!
+  PENDING: Int!
+  CANCELLED: Int!
+  NO_SHOW: Int!
+}
+
+type MetricError @aws_cognito_user_pools {
+  type: String!
+  count: Int!
+  lastOccurred: String
+}
+
+type DashboardMetrics @aws_cognito_user_pools {
+  period: String!
+  summary: DashboardSummary!
+  daily: [DailyMetric!]!
+  topServices: [TopService!]!
+  topProviders: [TopProvider!]!
+  bookingStatus: BookingStatusCounts!
+  errors: [MetricError!]!
+}
+
+type PlanUsage @aws_cognito_user_pools {
+  messages: Int!
+  bookings: Int!
+  tokensIA: Int!
+}
+
 # Types - Catalog
 type Category @aws_api_key @aws_cognito_user_pools {
   categoryId: ID!
@@ -256,6 +345,7 @@ type ProviderAvailability @aws_cognito_user_pools {
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
+  exceptions: [String!]
 }
 
 # Types - Bookings
@@ -303,6 +393,26 @@ type ChatResponse @aws_api_key {
   response: AWSJSON!
 }
 
+# Types - Workflow
+type WorkflowStep @aws_cognito_user_pools {
+  stepId: String!
+  type: String!
+  content: AWSJSON
+  next: String
+}
+
+type Workflow @aws_cognito_user_pools {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  steps: AWSJSON! # JSON object with map of steps
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 
 # Inputs - Tenant
 input RegisterTenantInput {
@@ -315,6 +425,22 @@ input UpdateTenantInput {
   name: String
   billingEmail: String
   settings: AWSJSON
+}
+
+# Inputs - FAQs
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
 }
 
 # Inputs - Catalog
@@ -391,6 +517,16 @@ input SetAvailabilityInput {
   breaks: [TimeRangeInput!]
 }
 
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
+type ProviderExceptions @aws_cognito_user_pools {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
 # Inputs - Bookings
 input CreateBookingInput {
   serviceId: ID!
@@ -452,6 +588,22 @@ input GetConversationInput {
   conversationId: ID!
 }
 
+# Inputs - Workflow
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  steps: AWSJSON!
+  isActive: Boolean
+}
+
+input UpdateWorkflowInput {
+  workflowId: ID!
+  name: String
+  description: String
+  steps: AWSJSON
+  isActive: Boolean
+}
+
 # Queries
 type Query {
   # Catalog
@@ -474,11 +626,19 @@ type Query {
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
+  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
+  
+  # Workflow (Admin)
+  listWorkflows: [Workflow!]! @aws_cognito_user_pools
+  getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
+
+  # Dashboard Metrics (Admin)
+  getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
+  getPlanUsage: PlanUsage @aws_cognito_user_pools
 }
 
 # Mutations
 type Mutation {
-  # Tenant (Public/Auth)
   # Tenant (Public/Auth)
   registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
   updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
@@ -498,11 +658,23 @@ type Mutation {
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
+  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
   
+  # FAQs (Admin)
+  createFAQ(input: CreateFAQInput!): FAQ! @aws_cognito_user_pools
+  updateFAQ(input: UpdateFAQInput!): FAQ! @aws_cognito_user_pools
+  deleteFAQ(faqId: ID!): FAQ! @aws_cognito_user_pools
+
+  # Workflows (Admin)
+  createWorkflow(input: CreateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
+
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
+  markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
   
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
@@ -530,7 +702,10 @@ schema {
     chatAgentDataSource: appsync.LambdaDataSource,
     registerTenantDataSource: appsync.LambdaDataSource,
     updateTenantDataSource: appsync.LambdaDataSource,
-    getTenantDataSource: appsync.LambdaDataSource
+    getTenantDataSource: appsync.LambdaDataSource,
+    metricsDataSource: appsync.LambdaDataSource,
+    workflowManagerDataSource: appsync.LambdaDataSource,
+    faqManagerDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -677,6 +852,13 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    availabilityDataSource.createResolver('SetProviderExceptionsResolver', {
+      typeName: 'Mutation',
+      fieldName: 'setProviderExceptions',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     // Booking resolvers
     bookingDataSource.createResolver('GetBookingResolver', {
       typeName: 'Query',
@@ -713,6 +895,72 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+
+    // Workflow resolvers
+    workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
+      typeName: 'Query',
+      fieldName: 'listWorkflows',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('GetWorkflowResolver', {
+      typeName: 'Query',
+      fieldName: 'getWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('CreateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('UpdateWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    workflowManagerDataSource.createResolver('DeleteWorkflowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteWorkflow',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // FAQ Resolvers
+    faqManagerDataSource.createResolver('ListFAQsResolver', {
+      typeName: 'Query',
+      fieldName: 'listFAQs',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('CreateFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createFAQ',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('UpdateFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateFAQ',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    faqManagerDataSource.createResolver('DeleteFAQResolver', {
+      typeName: 'Mutation',
+      fieldName: 'deleteFAQ',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     bookingDataSource.createResolver('ConfirmBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'confirmBooking',
@@ -723,6 +971,13 @@ schema {
     bookingDataSource.createResolver('CancelBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'cancelBooking',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    bookingDataSource.createResolver('MarkAsNoShowResolver', {
+      typeName: 'Mutation',
+      fieldName: 'markAsNoShow',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
@@ -752,6 +1007,21 @@ schema {
     chatAgentDataSource.createResolver('GetConversationResolver', {
       typeName: 'Query',
       fieldName: 'getConversation',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Metrics resolvers
+    metricsDataSource.createResolver('GetDashboardMetricsResolver', {
+      typeName: 'Query',
+      fieldName: 'getDashboardMetrics',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    metricsDataSource.createResolver('GetPlanUsageResolver', {
+      typeName: 'Query',
+      fieldName: 'getPlanUsage',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

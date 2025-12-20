@@ -1,4 +1,3 @@
-```
 """
 Unit tests for auth_resolver service
 """

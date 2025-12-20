@@ -45,7 +45,7 @@ class TestStateTransition:
             tenant_id=TenantId("test123"),
             state=ConversationState.SERVICE_SELECTED,
             service_id='svc_123',
-            user_context={'serviceId': 'svc_123'}
+            context={'serviceId': 'svc_123'}
         )
         
         can_transition, error = transition.can_transition(conversation)

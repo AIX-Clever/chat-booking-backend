@@ -1,0 +1,57 @@
+{
+    "name": "Default Booking Flow",
+    "steps": {
+        "start": {
+            "stepId": "start",
+            "type": "DYNAMIC_OPTIONS",
+            "content": {
+                "text": "¡Hola! 👋 Soy Lucia. Bienvenido. ¿En qué te puedo ayudar hoy?",
+                "sources": [
+                    "SERVICES",
+                    "PROVIDERS",
+                    "FAQS"
+                ],
+                "options_mapping": {
+                    "SERVICES": {
+                        "label": "Reservar Servicio",
+                        "value": "flow_booking",
+                        "next": "search_service"
+                    },
+                    "PROVIDERS": {
+                        "label": "Ver Profesionales",
+                        "value": "flow_providers",
+                        "next": "list_providers"
+                    },
+                    "FAQS": {
+                        "label": "Preguntas Frecuentes",
+                        "value": "flow_faqs",
+                        "next": "show_faqs"
+                    }
+                },
+                "empty_text": "No hay servicios disponibles por el momento."
+            }
+        },
+        "search_service": {
+            "stepId": "search_service",
+            "type": "TOOL",
+            "content": {
+                "tool": "searchServices"
+            },
+            "next": "select_provider"
+        },
+        "list_providers": {
+            "stepId": "list_providers",
+            "type": "TOOL",
+            "content": {
+                "tool": "listProviders"
+            }
+        },
+        "show_faqs": {
+            "stepId": "show_faqs",
+            "type": "TOOL",
+            "content": {
+                "tool": "showFAQs"
+            }
+        }
+    }
+}

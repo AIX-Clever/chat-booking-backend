@@ -262,6 +262,7 @@ def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
 
 def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
     """Update existing service"""
+    logger.info(f"handle_update_service input: {input_data}")
     service = service_mgmt_service.update_service(
         tenant_id=tenant_id,
         service_id=input_data['serviceId'],
@@ -272,6 +273,7 @@ def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
         price=input_data.get('price'),
         active=input_data.get('active')
     )
+    logger.info(f"Service updated result: {service}")
     return success_response(service_to_dict(service))
 
 
