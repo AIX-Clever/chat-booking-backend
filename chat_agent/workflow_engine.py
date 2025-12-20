@@ -260,16 +260,17 @@ class WorkflowEngine:
                   selected_provider = next((p for p in providers if is_match(clean_input, p.name)), None)
              
              if selected_provider:
-                  conversation.context['providerName'] = selected_provider.name
-                 return step.next_step
+                conversation.context['providerId'] = selected_provider.provider_id
+                conversation.context['providerName'] = selected_provider.name
+                return step.next_step
 
         elif tool_name == 'checkAvailability':
-             # Expecting a timestamp or date string selection
-             val = user_data.get('value') if user_data else user_input
-             
-             if val:
-                 conversation.context['selectedSlot'] = val
-                 return step.next_step
+            # Expecting a timestamp or date string selection
+            val = user_data.get('value') if user_data else user_input
+            
+            if val:
+                conversation.context['selectedSlot'] = val
+                return step.next_step
 
         return None
 
