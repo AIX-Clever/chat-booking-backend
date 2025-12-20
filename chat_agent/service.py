@@ -29,7 +29,7 @@ from shared.domain.exceptions import (
     ValidationError
 )
 from shared.utils import generate_id, parse_iso_datetime
-from .workflow_engine import WorkflowEngine
+from workflow_engine import WorkflowEngine
 from fsm import ResponseBuilder
 
 
