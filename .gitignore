@@ -46,3 +46,5 @@ htmlcov/
 .aws-sam/
 samconfig.toml
 
+# CDK
+infra/cdk.out/
