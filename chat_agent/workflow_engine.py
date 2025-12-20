@@ -48,6 +48,21 @@ class WorkflowEngine:
             next_step_id = self._handle_question_input(current_step, user_input, user_data, conversation)
         elif current_step.type == 'DYNAMIC_OPTIONS':
             next_step_id = self._handle_dynamic_options_input(current_step, user_input, user_data, conversation)
+        elif current_step.type == 'TOOL':
+             # Try to handle input for the tool (e.g. selection)
+             # If it returns a next_step_id, it means we consumed the input successfully
+             next_step_id = self._handle_tool_input(current_step, user_input, user_data, conversation)
+             
+             # If no input matching happened, check if we should just auto-advance (e.g. invalid input but flow forces move)
+             # But generally for selection tools we want to stay until valid selection
+             if not next_step_id and current_step.next_step and not user_input:
+                  # Only auto-advance if NO input was provided (e.g. just landing on step)
+                  # But process_step is usually called WITH input.
+                  # Logic refinement:
+                  # If we are here, it means we are "in" the tool step and user replied.
+                  # If _handle_tool_input returned None, it means invalid selection.
+                  # We should probably return error/retry or re-render tool.
+                  pass
         else:
             # For types that don't wait for input (like MESSAGE), we should have auto-advanced.
             # If we are here, it means we probably sent a message and now user replied.
@@ -191,6 +206,64 @@ class WorkflowEngine:
                 return config.get('next')
                 
         return None # Invalid selection
+
+    def _handle_tool_input(self, step, user_input, user_data, conversation):
+        tool_name = step.content.get('tool')
+        
+        # Helper for fuzzy match
+        def is_match(text, target):
+            return target.lower() in text.lower() or text.lower() in target.lower()
+
+        if tool_name == 'searchServices':
+            # Expecting logic: User selects a service
+            services = self.service_repo.list_by_tenant(conversation.tenant_id)
+            active_services = [s for s in services if s.active]
+            
+            # 1. Check direct value (if structured input)
+            val = user_data.get('value') if user_data else None
+            # Some widgets send "service_id" or similar? Assuming "value" holds ID if clicked.
+            
+            selected_service = None
+            
+            if val:
+                 selected_service = next((s for s in active_services if s.service_id == val), None)
+            
+            if not selected_service and user_input:
+                 # Fuzzy match name
+                 # Remove common prefixes like "Selecciono: "
+                 clean_input = user_input.replace("Selecciono:", "").strip()
+                 selected_service = next((s for s in active_services if is_match(clean_input, s.name)), None)
+            
+            if selected_service:
+                conversation.context['serviceId'] = selected_service.service_id
+                conversation.context['serviceName'] = selected_service.name
+                return step.next_step
+                
+        elif tool_name == 'listProviders':
+             # Expecting logic: User selects a provider
+             providers = self.provider_repo.list_by_tenant(conversation.tenant_id)
+             
+             # Filter by service if in context? (Optional logic)
+             service_id = conversation.context.get('serviceId')
+             if service_id:
+                 providers = [p for p in providers if p.can_provide_service(service_id)]
+            
+             val = user_data.get('value') if user_data else None
+             selected_provider = None
+             
+             if val:
+                  selected_provider = next((p for p in providers if p.provider_id == val), None)
+                  
+             if not selected_provider and user_input:
+                  clean_input = user_input.replace("Prefiero con:", "").strip()
+                  selected_provider = next((p for p in providers if is_match(clean_input, p.name)), None)
+             
+             if selected_provider:
+                 conversation.context['providerId'] = selected_provider.provider_id
+                 conversation.context['providerName'] = selected_provider.name
+                 return step.next_step
+
+        return None
 
     def _execute_tool(self, conversation, step, workflow):
         tool_name = step.content.get('tool')
