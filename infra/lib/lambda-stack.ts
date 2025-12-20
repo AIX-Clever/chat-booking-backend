@@ -169,6 +169,7 @@ export class LambdaStack extends cdk.Stack {
     props.availabilityTable.grantReadData(this.chatAgentFunction);
     props.bookingsTable.grantReadWriteData(this.chatAgentFunction);
     props.tenantUsageTable.grantWriteData(this.chatAgentFunction); // For metrics tracking
+    props.workflowsTable.grantReadWriteData(this.chatAgentFunction); // For self-healing (create default workflow)
 
     // 6. Register Tenant Lambda
     this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
