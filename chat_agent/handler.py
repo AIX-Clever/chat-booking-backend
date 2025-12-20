@@ -12,7 +12,8 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
     DynamoDBBookingRepository,
-    DynamoDBFAQRepository
+    DynamoDBFAQRepository,
+    DynamoDBWorkflowRepository
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
@@ -33,6 +34,7 @@ provider_repo = DynamoDBProviderRepository()
 booking_repo = DynamoDBBookingRepository()
 availability_repo = DynamoDBAvailabilityRepository()
 faq_repo = DynamoDBFAQRepository()
+workflow_repo = DynamoDBWorkflowRepository()
 metrics_service = MetricsService()
 
 chat_agent_service = ChatAgentService(
@@ -41,7 +43,8 @@ chat_agent_service = ChatAgentService(
     provider_repo,
     booking_repo=booking_repo,
     availability_repo=availability_repo,
-    faq_repo=faq_repo
+    faq_repo=faq_repo,
+    workflow_repo=workflow_repo
 )
 
 logger = Logger()

@@ -18,7 +18,7 @@ workflows_table = None
 
 # Load Default Flow
 try:
-    with open(os.path.join(os.path.dirname(__file__), '../workflow_manager/default_flow.json'), 'r') as f:
+    with open(os.path.join(os.path.dirname(__file__), '../workflow_manager/base_workflow.json'), 'r') as f:
         DEFAULT_FLOW = json.load(f)
 except Exception as e:
     print(f"Warning: Could not load default flow: {e}")
@@ -99,10 +99,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 Permanent=True
             )
             
-            # Update owner_user_id with actual Cognito Sub
-            # cognito_sub = response['User']['Attributes']... (lookup 'sub')
-            # For simplicity, we keep email or extract sub if critical.
-            
         except cognito.exceptions.UsernameExistsException:
              # Check if user exists but has no tenant? Or just fail.
              # Ideally we check this before.
@@ -122,23 +118,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         api_key = ApiKey(
             api_key_id=api_key_id,
             tenant_id=tenant_id,
-            api_key_hash=hashed_key, # In a real scenario we save hash
-            # Wait, Entity expects api_key_hash, but Repository might need to handle hashing?
-            # Looking at utils.py, generate_api_key returns (public, hashed).
-            # The Repository save params? 
-            # Let's assume Entity stores what we give it.
+            api_key_hash=hashed_key, 
             status="ACTIVE",
-            allowed_origins=["*"], # Allow all for onboarding
+            allowed_origins=["*"], 
             rate_limit=1000,
             created_at=datetime.now(timezone.utc)
         )
-        # Note: The Entity definition for ApiKey uses 'api_key_hash'.
-        # But we might want to return the PUBLIC key to the user or save it somewhere? 
-        # The return type is Tenant. It doesn't include ApiKey. 
-        # The user can get ApiKey from dashboard. 
-        # But for 'Launch' wizard step, we might need it.
-        # However, the Schema returns `Tenant`. `Tenant` type in schema doesn't have apiKey. 
-        # We can add `apiKey` to the `Tenant` type in schema temporarily or query it separately.
         
         api_key_repo.save(api_key)
 
@@ -149,14 +134,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 current_time = datetime.now(timezone.utc).isoformat()
                 
                 # Clone and prepare item
-                workflow_item = DEFAULT_FLOW.copy()
-                workflow_item.update({
+                # IMPORTANT: In DynamoDB repository we store steps as a Map
+                # DEFAULT_FLOW["steps"] is already a dict, which is perfect for DynamoDB Map
+                
+                workflow_item = {
                     'tenantId': str(tenant_id),
                     'workflowId': workflow_id,
+                    'name': DEFAULT_FLOW.get('name', 'Default Flow'),
+                    'description': DEFAULT_FLOW.get('description', ''),
+                    'steps': DEFAULT_FLOW.get('steps', {}),
+                    'isActive': True,
                     'createdAt': current_time,
                     'updatedAt': current_time,
-                    'status': 'PUBLISHED'
-                })
+                    'metadata': {}
+                }
                 
                 logger.info(f"Creating default workflow for tenant {tenant_id}")
                 workflows_table.put_item(Item=workflow_item)

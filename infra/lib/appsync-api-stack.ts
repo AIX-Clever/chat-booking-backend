@@ -393,6 +393,26 @@ type ChatResponse @aws_api_key {
   response: AWSJSON!
 }
 
+# Types - Workflow
+type WorkflowStep @aws_cognito_user_pools {
+  stepId: String!
+  type: String!
+  content: AWSJSON
+  next: String
+}
+
+type Workflow @aws_cognito_user_pools {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  steps: AWSJSON! # JSON object with map of steps
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 
 # Inputs - Tenant
 input RegisterTenantInput {
@@ -568,6 +588,22 @@ input GetConversationInput {
   conversationId: ID!
 }
 
+# Inputs - Workflow
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  steps: AWSJSON!
+  isActive: Boolean
+}
+
+input UpdateWorkflowInput {
+  workflowId: ID!
+  name: String
+  description: String
+  steps: AWSJSON
+  isActive: Boolean
+}
+
 # Queries
 type Query {
   # Catalog
@@ -592,6 +628,10 @@ type Query {
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
   listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
   
+  # Workflow (Admin)
+  listWorkflows: [Workflow!]! @aws_cognito_user_pools
+  getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
+
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
   getPlanUsage: PlanUsage @aws_cognito_user_pools
@@ -599,7 +639,6 @@ type Query {
 
 # Mutations
 type Mutation {
-  # Tenant (Public/Auth)
   # Tenant (Public/Auth)
   registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
   updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
@@ -625,6 +664,11 @@ type Mutation {
   createFAQ(input: CreateFAQInput!): FAQ! @aws_cognito_user_pools
   updateFAQ(input: UpdateFAQInput!): FAQ! @aws_cognito_user_pools
   deleteFAQ(faqId: ID!): FAQ! @aws_cognito_user_pools
+
+  # Workflows (Admin)
+  createWorkflow(input: CreateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
+  deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
 
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
@@ -851,9 +895,8 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
-    // Workflow resolvers - COMMENTED OUT: Schema fields not defined yet
-    // TODO: Uncomment when Workflow types/queries/mutations are added to schema
-    /*
+
+    // Workflow resolvers
     workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
       typeName: 'Query',
       fieldName: 'listWorkflows',
@@ -888,7 +931,6 @@ schema {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
-    */
 
     // FAQ Resolvers
     faqManagerDataSource.createResolver('ListFAQsResolver', {

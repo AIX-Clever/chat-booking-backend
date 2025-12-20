@@ -490,6 +490,10 @@ class DynamoDBConversationRepository(IConversationRepository):
             item['slotEnd'] = conversation.slot_end.isoformat()
         if conversation.booking_id:
             item['bookingId'] = conversation.booking_id
+        if conversation.workflow_id:
+            item['workflowId'] = conversation.workflow_id
+        if conversation.current_step_id:
+            item['currentStepId'] = conversation.current_step_id
 
 
         # Serialize datetimes and fix floats
@@ -520,6 +524,8 @@ class DynamoDBConversationRepository(IConversationRepository):
             slot_start=datetime.fromisoformat(item['slotStart']) if item.get('slotStart') else None,
             slot_end=datetime.fromisoformat(item['slotEnd']) if item.get('slotEnd') else None,
             booking_id=item.get('bookingId'),
+            workflow_id=item.get('workflowId'),
+            current_step_id=item.get('currentStepId'),
             context=item.get('context', {}),
             created_at=datetime.fromisoformat(item['createdAt']) if item.get('createdAt') else datetime.fromisoformat(item['updatedAt']),
             updated_at=datetime.fromisoformat(item['updatedAt'])
@@ -563,6 +569,7 @@ class DynamoDBFAQRepository(IFAQRepository):
             Key={'tenantId': str(tenant_id), 'faqId': faq_id}
         )
 
+
     def _item_to_entity(self, item: dict) -> FAQ:
         return FAQ(
             faq_id=item['faqId'],
@@ -572,3 +579,82 @@ class DynamoDBFAQRepository(IFAQRepository):
             category=item['category'],
             active=item.get('active', True)
         )
+
+
+class DynamoDBWorkflowRepository:
+    """DynamoDB implementation of Workflow repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('DYNAMODB_WORKFLOWS_TABLE', 'Workflows')
+        )
+
+    def get_by_id(self, tenant_id: TenantId, workflow_id: str) -> Optional[Workflow]:
+        try:
+            response = self.table.get_item(
+                Key={'tenantId': str(tenant_id), 'workflowId': workflow_id}
+            )
+            item = response.get('Item')
+            if not item:
+                return None
+            return self._item_to_entity(item)
+        except ClientError as e:
+            print(f"Error getting workflow: {e}")
+            return None
+
+    def list_by_tenant(self, tenant_id: TenantId) -> List[Workflow]:
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
+            )
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing workflows: {e}")
+            return []
+
+    def save(self, workflow: Workflow) -> None:
+        item = {
+            'tenantId': str(workflow.tenant_id),
+            'workflowId': workflow.workflow_id,
+            'name': workflow.name,
+            'description': workflow.description,
+            'isActive': workflow.is_active,
+            'steps': {sid: self._step_to_dict(s) for sid, s in workflow.steps.items()},
+            'metadata': workflow.metadata,
+            'createdAt': workflow.created_at.isoformat(),
+            'updatedAt': workflow.updated_at.isoformat()
+        }
+        self.table.put_item(Item=item)
+
+    def _step_to_dict(self, step: WorkflowStep) -> dict:
+        return {
+            'stepId': step.step_id,
+            'type': step.type,
+            'content': step.content,
+            'next': step.next_step
+        }
+
+    def _item_to_entity(self, item: dict) -> Workflow:
+        steps_dict = item.get('steps', {})
+        steps = {}
+        for sid, sdata in steps_dict.items():
+            steps[sid] = WorkflowStep(
+                step_id=sdata['stepId'],
+                type=sdata['type'],
+                content=sdata.get('content', {}),
+                next_step=sdata.get('next')
+            )
+            
+        return Workflow(
+            workflow_id=item['workflowId'],
+            tenant_id=TenantId(item['tenantId']),
+            name=item['name'],
+            description=item.get('description'),
+            is_active=item.get('isActive', True),
+            steps=steps,
+            metadata=item.get('metadata', {}),
+            created_at=datetime.fromisoformat(item['createdAt']),
+            updated_at=datetime.fromisoformat(item['updatedAt'])
+        )
+

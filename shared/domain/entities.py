@@ -277,6 +277,8 @@ class Conversation:
     slot_start: Optional[datetime] = None
     slot_end: Optional[datetime] = None
     booking_id: Optional[str] = None
+    workflow_id: Optional[str] = None
+    current_step_id: Optional[str] = None
     context: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -344,3 +346,22 @@ class FAQ:
     answer: str
     category: str
     active: bool = True
+
+@dataclass
+class WorkflowStep:
+    step_id: str
+    type: str  # MESSAGE, QUESTION, TOOL, CONDITION, DYNAMIC_OPTIONS
+    content: Dict[str, Any]
+    next_step: Optional[str] = None
+
+@dataclass
+class Workflow:
+    workflow_id: str
+    tenant_id: TenantId
+    name: str
+    steps: Dict[str, WorkflowStep]
+    description: Optional[str] = None
+    is_active: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))

@@ -12,7 +12,7 @@ from datetime import datetime
 
 from .entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
-    Booking, Conversation, ApiKey, TimeSlot, Category, FAQ
+    Booking, Conversation, ApiKey, TimeSlot, Category, FAQ, Workflow
 )
 
 
@@ -236,3 +236,23 @@ class IFAQRepository(ABC):
     def delete(self, tenant_id: TenantId, faq_id: str) -> None:
         """Delete FAQ"""
         pass
+
+
+class IWorkflowRepository(ABC):
+    """Port for Workflow operations"""
+
+    @abstractmethod
+    def get_by_id(self, tenant_id: TenantId, workflow_id: str) -> Optional[Workflow]:
+        """Retrieve workflow by ID"""
+        pass
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: TenantId) -> List[Workflow]:
+        """List all workflows for tenant"""
+        pass
+
+    @abstractmethod
+    def save(self, workflow: Workflow) -> None:
+        """Persist workflow"""
+        pass
+
