@@ -3,17 +3,9 @@
     "steps": {
         "start": {
             "stepId": "start",
-            "type": "MESSAGE",
-            "content": {
-                "text": "¡Hola! 👋 Soy Lucia. ¿En qué te puedo ayudar hoy?"
-            },
-            "next": "initial_menu"
-        },
-        "initial_menu": {
-            "stepId": "initial_menu",
             "type": "DYNAMIC_OPTIONS",
             "content": {
-                "text": "Selecciona una opción:",
+                "text": "¡Hola! 👋 Soy Lucia. Bienvenido. ¿En qué te puedo ayudar hoy?",
                 "sources": [
                     "SERVICES",
                     "PROVIDERS",

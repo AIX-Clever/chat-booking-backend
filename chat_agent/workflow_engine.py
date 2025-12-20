@@ -74,11 +74,9 @@ class WorkflowEngine:
 
         if step.type == 'MESSAGE':
             # Send message and optionally auto-advance
-            # If next_step is present, we might want to recurse immediately depending on UI
-            # For chat, usually valid to send text and wait, OR send text and immediately process next logic
-            # Simplification: Return text, if next exists, frontend/user triggers next? 
-            # Actually, standard chatbot: send msg, wait for user. 
-            # UNLESS it's a structural node. 
+            if step.next_step:
+                conversation.current_step_id = step.next_step
+            
             return {
                 'type': 'text',
                 'text': step.content.get('text', '')
@@ -198,11 +196,58 @@ class WorkflowEngine:
         tool_name = step.content.get('tool')
         
         if tool_name == 'searchServices':
-            # This would be similar to _handle_service_selection logic
-            # For MVP, assume it returns a list of services or transitions
-            # If tool returns data, we might need an intermediate step 
-            # OR the tool returns the next step id directly?
-            pass
+            # List all services
+            services = self.service_repo.list_by_tenant(conversation.tenant_id)
+            services = [s for s in services if s.active]
+            
+            if not services:
+                return ResponseBuilder.error_message("No hay servicios disponibles.")
+                
+            services_list = [
+                {
+                    'serviceId': s.service_id,
+                    'name': s.name,
+                    'description': s.description,
+                    'price': float(s.price) if s.price else 0,
+                    'duration': s.duration_minutes
+                }
+                for s in services
+            ]
+            
+            return ResponseBuilder.service_selection_message(
+                services_list, 
+                text="Por favor selecciona un servicio:"
+            )
+            
+        elif tool_name == 'listProviders':
+             providers = self.provider_repo.list_by_tenant(conversation.tenant_id)
+             if not providers:
+                 return ResponseBuilder.error_message("No hay profesionales disponibles.")
+                 
+             providers_list = [
+                {
+                    'providerId': p.provider_id,
+                    'name': p.name,
+                    'bio': p.bio
+                }
+                for p in providers
+            ]
+             return ResponseBuilder.provider_selection_message(providers_list)
+
+        elif tool_name == 'showFAQs':
+             faqs = self.faq_repo.list_by_tenant(conversation.tenant_id)
+             if not faqs:
+                 return ResponseBuilder.error_message("No hay preguntas frecuentes.")
+             
+             faq_text = "Aquí tienes algunas preguntas frecuentes:\n\n"
+             for faq in faqs:
+                 faq_text += f"❓ *{faq.question}*\n💡 {faq.answer}\n\n"
+            
+             return {
+                 'type': 'text',
+                 'text': faq_text
+             }
+
             
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
 

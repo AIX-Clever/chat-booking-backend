@@ -16,7 +16,7 @@ from ..domain.entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
     Booking, Conversation, ApiKey, TimeSlot, CustomerInfo,
     BookingStatus, PaymentStatus, ConversationState, TenantStatus, TenantPlan,
-    TimeRange, FAQ
+    TimeRange, FAQ, Workflow, WorkflowStep
 )
 from ..domain.repositories import (
     ITenantRepository, IApiKeyRepository, IServiceRepository,
