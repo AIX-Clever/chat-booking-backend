@@ -188,6 +188,11 @@ class ChatAgentService:
                     "type": "TOOL",
                     "content": {"tool": "listProviders"}
                 },
+                "select_provider": {
+                    "stepId": "select_provider",
+                    "type": "MESSAGE",
+                    "content": {"text": "Funcionalidad de selección de proveedor en construcción. Por favor intenta 'Ver Profesionales'."}
+                },
                 "show_faqs": {
                     "stepId": "show_faqs",
                     "type": "TOOL",
