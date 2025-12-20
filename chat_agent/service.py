@@ -73,8 +73,13 @@ class ChatAgentService:
         active_workflow = next((w for w in workflows if w.is_active), None)
         
         if not active_workflow:
-             # Fallback if no workflow found (shouldn't happen with default creation)
-             return self._fallback_start(tenant_id, conversation_id)
+             # Legacy/Migration: Create default workflow for existing tenant
+             # This ensures functionality for tenants created before this update
+             from workflow_manager.base_workflow import create_default_workflow_entity # We need to move logic to a shared place or inline it
+             # Inline logic for now to avoid complexity, reusing what we know about base_workflow
+             # Actually, better to define a helper in utils or directly here
+             active_workflow = self._create_default_workflow(tenant_id)
+             self._workflow_repo.save(active_workflow)
 
         # 2. Initialize Conversation
         conversation = Conversation(
@@ -151,5 +156,46 @@ class ChatAgentService:
          # This logic should be moved to a TOOL execution inside WorkflowEngine ideally
          # But for now we might keep it accessible
          pass
+
+    def _create_default_workflow(self, tenant_id: TenantId):
+        import json
+        import os
+        from shared.domain.entities import Workflow, WorkflowStep
+        
+        try:
+            # Assume file is adjacent or accessible relative to CWD in Lambda
+            # In Lambda, CWD is defined. But safer to find relative to file.
+            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            file_path = os.path.join(base_path, 'workflow_manager', 'base_workflow.json')
+            
+            with open(file_path, 'r') as f:
+                data = json.load(f)
+                
+            steps = {}
+            for sid, content in data['steps'].items():
+                steps[sid] = WorkflowStep(
+                    step_id=content['stepId'],
+                    type=content['type'],
+                    content=content.get('content', {}),
+                    next_step=content.get('next')
+                )
+                
+            return Workflow(
+                workflow_id=generate_id('wf'),
+                tenant_id=tenant_id,
+                name=data.get('name', 'Default Workflow'),
+                description="Auto-generated default workflow",
+                steps=steps,
+                is_active=True,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
+            )
+        except Exception as e:
+            # Fallback hardcoded if file fails
+            from shared.domain.entities import WorkflowStep
+            steps = {
+                 "start": WorkflowStep("start", "MESSAGE", {"text": "Hola! (Fallback)"})
+            }
+            return Workflow(generate_id('wf'), tenant_id, "Fallback", "", steps, True, datetime.now(UTC), datetime.now(UTC))
 
 
