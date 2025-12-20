@@ -538,7 +538,7 @@ class DynamoDBFAQRepository(IFAQRepository):
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_FAQS_TABLE', 'FAQs')
+            table_name or os.environ.get('FAQS_TABLE', 'ChatBooking-FAQs')
         )
 
     def list_by_tenant(self, tenant_id: TenantId) -> List[FAQ]:
@@ -587,7 +587,7 @@ class DynamoDBWorkflowRepository:
     def __init__(self, table_name: Optional[str] = None):
         self.dynamodb = boto3.resource('dynamodb')
         self.table = self.dynamodb.Table(
-            table_name or os.environ.get('DYNAMODB_WORKFLOWS_TABLE', 'Workflows')
+            table_name or os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows')
         )
 
     def get_by_id(self, tenant_id: TenantId, workflow_id: str) -> Optional[Workflow]:
