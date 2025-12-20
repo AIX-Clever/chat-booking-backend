@@ -74,10 +74,7 @@ class ChatAgentService:
         
         if not active_workflow:
              # Legacy/Migration: Create default workflow for existing tenant
-             # This ensures functionality for tenants created before this update
-             from workflow_manager.base_workflow import create_default_workflow_entity # We need to move logic to a shared place or inline it
-             # Inline logic for now to avoid complexity, reusing what we know about base_workflow
-             # Actually, better to define a helper in utils or directly here
+             # Logic inlined to avoid dependencies on workflow_manager package
              active_workflow = self._create_default_workflow(tenant_id)
              self._workflow_repo.save(active_workflow)
 
@@ -159,43 +156,64 @@ class ChatAgentService:
 
     def _create_default_workflow(self, tenant_id: TenantId):
         import json
-        import os
         from shared.domain.entities import Workflow, WorkflowStep
         
-        try:
-            # Assume file is adjacent or accessible relative to CWD in Lambda
-            # In Lambda, CWD is defined. But safer to find relative to file.
-            base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            file_path = os.path.join(base_path, 'workflow_manager', 'base_workflow.json')
-            
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-                
-            steps = {}
-            for sid, content in data['steps'].items():
-                steps[sid] = WorkflowStep(
-                    step_id=content['stepId'],
-                    type=content['type'],
-                    content=content.get('content', {}),
-                    next_step=content.get('next')
-                )
-                
-            return Workflow(
-                workflow_id=generate_id('wf'),
-                tenant_id=tenant_id,
-                name=data.get('name', 'Default Workflow'),
-                description="Auto-generated default workflow",
-                steps=steps,
-                is_active=True,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC)
-            )
-        except Exception as e:
-            # Fallback hardcoded if file fails
-            from shared.domain.entities import WorkflowStep
-            steps = {
-                 "start": WorkflowStep("start", "MESSAGE", {"text": "Hola! (Fallback)"})
+        # Hardcoded default workflow (copy of base_workflow.json)
+        # Used as fallback and initial setup for self-healing
+        data = {
+            "name": "Default Booking Flow",
+            "steps": {
+                "start": {
+                    "stepId": "start",
+                    "type": "DYNAMIC_OPTIONS",
+                    "content": {
+                        "text": "¡Hola! 👋 Soy Lucia. Bienvenido. ¿En qué te puedo ayudar hoy?",
+                        "sources": ["SERVICES", "PROVIDERS", "FAQS"],
+                        "options_mapping": {
+                            "SERVICES": {"label": "Reservar Servicio", "value": "flow_booking", "next": "search_service"},
+                            "PROVIDERS": {"label": "Ver Profesionales", "value": "flow_providers", "next": "list_providers"},
+                            "FAQS": {"label": "Preguntas Frecuentes", "value": "flow_faqs", "next": "show_faqs"}
+                        },
+                        "empty_text": "No hay servicios disponibles por el momento."
+                    }
+                },
+                "search_service": {
+                    "stepId": "search_service",
+                    "type": "TOOL",
+                    "content": {"tool": "searchServices"},
+                    "next": "select_provider"
+                },
+                "list_providers": {
+                    "stepId": "list_providers",
+                    "type": "TOOL",
+                    "content": {"tool": "listProviders"}
+                },
+                "show_faqs": {
+                    "stepId": "show_faqs",
+                    "type": "TOOL",
+                    "content": {"tool": "showFAQs"}
+                }
             }
-            return Workflow(generate_id('wf'), tenant_id, "Fallback", "", steps, True, datetime.now(UTC), datetime.now(UTC))
+        }
+            
+        steps = {}
+        for sid, content in data['steps'].items():
+            steps[sid] = WorkflowStep(
+                step_id=content['stepId'],
+                type=content['type'],
+                content=content.get('content', {}),
+                next_step=content.get('next')
+            )
+            
+        return Workflow(
+            workflow_id=generate_id('wf'),
+            tenant_id=tenant_id,
+            name=data.get('name', 'Default Workflow'),
+            description="Auto-generated default workflow",
+            steps=steps,
+            is_active=True,
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC)
+        )
 
 
