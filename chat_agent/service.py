@@ -127,7 +127,7 @@ class ChatAgentService:
         # Global Intent Detection (Greeting / Reset)
         if message and message_type == 'text':
              normalized = message.lower().strip()
-             if normalized in ['hola', 'buenos dias', 'buenas tardes', 'inicio', 'menu', 'flow_services', 'flow_providers', 'flow_faqs']:
+             if normalized in ['hola', 'buenos dias', 'buenas tardes', 'inicio', 'menu']:
                  # Reset to start/menu
                  response = self.workflow_engine.process_step(
                      conversation, workflow, "start" # Or "initial_menu" if we want to skip hello
