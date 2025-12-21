@@ -14,43 +14,41 @@ logger.setLevel(os.environ.get('LOG_LEVEL', 'INFO'))
 dynamodb = boto3.resource('dynamodb')
 faqs_table = dynamodb.Table(os.environ['FAQS_TABLE'])
 
+from shared.utils import extract_appsync_event, success_response, error_response
+from shared.domain.entities import TenantId
+
 def lambda_handler(event, context):
     """
     Handler for FAQ CRUD operations via AppSync
     """
     logger.info(f"Event: {json.dumps(event)}")
     
-    # Get operation details
-    info = event.get('info', {})
-    field_name = info.get('fieldName')
-    arguments = event.get('arguments', {})
-    identity = event.get('identity', {})
-    
-    # Determine tenantId from Cognito identity
-    tenant_id = None
-    if 'claims' in identity:
-        tenant_id = identity['claims'].get('custom:tenantId')
-        
-    if not tenant_id:
-         logger.warning("No tenantId found in identity claims")
-         # Fallback or error handling driven by specific requirements
-         # For now, we proceed but individual methods should validat
-         pass
-    
     try:
+        field_name, tenant_id_str, arguments = extract_appsync_event(event) # arguments is the input_data
+        tenant_id = tenant_id_str
+
         if field_name == 'listFAQs':
             return list_faqs(tenant_id)
         elif field_name == 'createFAQ':
-            return create_faq(tenant_id, arguments.get('input'))
+            # extract_appsync_event returns the input map as the 3rd arg. 
+            # Check if arguments needs 'input' key or is the input itself. 
+            # In catalog/handler it returns input_data.
+            # But the original code looked at arguments.get('input').
+            # extract_appsync_event usually returns 'arguments' or 'arguments['input']'.
+            # Let's trust extract_appsync_event standardization.
+            # If arguments is already the input payload:
+            return create_faq(tenant_id, arguments)
         elif field_name == 'updateFAQ':
-            return update_faq(tenant_id, arguments.get('input'))
+            return update_faq(tenant_id, arguments)
         elif field_name == 'deleteFAQ':
+            # For delete, arguments usually contains { 'faqId': ... }
             return delete_faq(tenant_id, arguments.get('faqId'))
         else:
             raise Exception(f"Unknown field name: {field_name}")
             
     except Exception as e:
         logger.error(f"Error: {str(e)}")
+        # Raise e to return error to AppSync, or use error_response if we change return type signature
         raise e
 
 def list_faqs(tenant_id):
