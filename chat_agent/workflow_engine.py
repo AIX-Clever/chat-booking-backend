@@ -346,6 +346,21 @@ class WorkflowEngine:
              # Get availability rules
              availability = self.availability_repo.get_provider_availability(conversation.tenant_id, provider_id)
              
+             # Fallback: If no availability defined in DB, use default Mon-Fri 09:00-17:00
+             if not availability:
+                 from shared.domain.entities import Availability, TimeRange
+                 availability = [
+                     Availability(
+                         availability_id='default',
+                         tenant_id=conversation.tenant_id,
+                         provider_id=provider_id,
+                         day_of_week=day,
+                         time_ranges=[TimeRange(start='09:00', end='17:00')],
+                         active=True
+                     )
+                     for day in ['MON', 'TUE', 'WED', 'THU', 'FRI']
+                 ]
+             
              # Generate slots for next 5 days
              slots = []
              today = datetime.now(UTC)
@@ -386,7 +401,7 @@ class WorkflowEngine:
                                  current_h += 1
                                  
              if not slots:
-                  return ResponseBuilder.error_message("Lo siento, no hay horarios disponibles para este profesional próximamente.")
+                  return ResponseBuilder.no_availability_message()
              
              return ResponseBuilder.date_selection_message(slots[:10]) # Limit to 10 for UI
 
