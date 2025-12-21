@@ -269,9 +269,36 @@ class WorkflowEngine:
             # Expecting a timestamp or date string selection
             val = user_data.get('value') if user_data else user_input
             
+            # Handle navigation intents from "No Availability" message
+            if val == 'change_provider' or (user_input and 'si' in user_input.lower()):
+                # Find step with tool 'listProviders' to backtrack safely
+                # Simplified: Hardcode common ID or transition to 'flow_providers' intent if supported
+                # For now, let's look for a step named 'list_providers' or 'select_provider' in workflow
+                
+                # Check if 'list_providers' exists
+                if 'list_providers' in workflow.steps:
+                    return 'list_providers'
+                if 'select_provider' in workflow.steps:
+                    return 'select_provider'
+                
+                # Fallback: Just return None -> might loop or error. 
+                # Better: Reset providerId and go to start?
+                # Let's try to return 'list_providers' assuming default flow structure.
+                return 'list_providers'
+
+            if val == 'restart':
+                return 'start'
+
             if val:
-                conversation.context['selectedSlot'] = val
-                return step.next_step
+                # Basic validation: Is it a slot (ISO Date)?
+                # If it's just random text like "hola", ignore it to prevent invalid booking
+                if 'T' in val and len(val) > 10:
+                     conversation.context['selectedSlot'] = val
+                     return step.next_step
+                     
+            # If we are here, input was invalid or just conversation text.
+            # Return None to potentially stay on step or re-prompt? 
+            return None
 
         return None
 
