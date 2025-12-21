@@ -257,7 +257,8 @@ class WorkflowEngine:
                   
              if not selected_provider and user_input:
                   clean_input = user_input.replace("Prefiero con:", "").strip()
-                  selected_provider = next((p for p in providers if is_match(clean_input, p.name)), None)
+                  # Try to match name OR provider_id directly (fuzzy or exact)
+                  selected_provider = next((p for p in providers if is_match(clean_input, p.name) or clean_input == p.provider_id), None)
              
              if selected_provider:
                 conversation.context['providerId'] = selected_provider.provider_id
