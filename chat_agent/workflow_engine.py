@@ -303,8 +303,14 @@ class WorkflowEngine:
             
         elif tool_name == 'listProviders':
              providers = self.provider_repo.list_by_tenant(conversation.tenant_id)
+             
+             # Filter by service if in context
+             service_id = conversation.context.get('serviceId')
+             if service_id:
+                 providers = [p for p in providers if p.can_provide_service(service_id)]
+            
              if not providers:
-                 return ResponseBuilder.error_message("No hay profesionales disponibles.")
+                  return ResponseBuilder.error_message("No hay profesionales disponibles para este servicio.")
                  
              providers_list = [
                 {
