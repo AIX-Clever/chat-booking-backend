@@ -52,7 +52,7 @@ class WorkflowEngine:
         elif current_step.type == 'TOOL':
              # Try to handle input for the tool (e.g. selection)
              # If it returns a next_step_id, it means we consumed the input successfully
-             next_step_id = self._handle_tool_input(current_step, user_input, user_data, conversation)
+             next_step_id = self._handle_tool_input(current_step, user_input, user_data, conversation, workflow)
              
              # If no input matching happened, check if we should just auto-advance (e.g. invalid input but flow forces move)
              # But generally for selection tools we want to stay until valid selection
@@ -208,7 +208,7 @@ class WorkflowEngine:
                 
         return None # Invalid selection
 
-    def _handle_tool_input(self, step, user_input, user_data, conversation):
+    def _handle_tool_input(self, step, user_input, user_data, conversation, workflow):
         tool_name = step.content.get('tool')
         
         # Helper for fuzzy match
