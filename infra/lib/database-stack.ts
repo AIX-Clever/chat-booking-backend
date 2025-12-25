@@ -28,6 +28,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly tenantUsageTable: dynamodb.Table;
   public readonly workflowsTable: dynamodb.Table;
   public readonly faqsTable: dynamodb.Table;
+  public readonly documentsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -316,6 +317,23 @@ export class DatabaseStack extends cdk.Stack {
       encryption: dynamodb.TableEncryption.AWS_MANAGED,
     });
 
+    // 12. Documents Table (Knowledge Base)
+    this.documentsTable = new dynamodb.Table(this, 'DocumentsTable', {
+      tableName: 'ChatBooking-Documents',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'documentId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
     // Output table names and ARNs
     new cdk.CfnOutput(this, 'TenantsTableName', {
       value: this.tenantsTable.tableName,
@@ -370,6 +388,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FAQsTableName', {
       value: this.faqsTable.tableName,
       description: 'FAQs table name',
+    });
+
+    new cdk.CfnOutput(this, 'DocumentsTableName', {
+      value: this.documentsTable.tableName,
+      description: 'Documents table name',
     });
   }
 }
