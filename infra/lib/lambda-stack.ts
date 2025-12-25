@@ -5,6 +5,8 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -31,6 +33,7 @@ interface LambdaStackProps extends cdk.StackProps {
   tenantUsageTable: dynamodb.ITable;
   workflowsTable: dynamodb.ITable;
   faqsTable: dynamodb.ITable;
+  documentsTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
   vpc?: cdk.aws_ec2.IVpc;
   dbSecurityGroup?: cdk.aws_ec2.ISecurityGroup;
@@ -44,6 +47,9 @@ export class LambdaStack extends cdk.Stack {
   public readonly availabilityFunction: lambda.Function;
   public readonly bookingFunction: lambda.Function;
   public readonly chatAgentFunction: lambda.Function;
+  public readonly ingestionFunction: lambda.Function;
+  public readonly presignFunction: lambda.Function;
+  public readonly documentsBucket: s3.Bucket;
   public readonly registerTenantFunction: lambda.Function;
   public readonly updateTenantFunction: lambda.Function;
   public readonly getTenantFunction: lambda.Function;
@@ -306,6 +312,90 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions to Chat Agent to read FAQs
     props.faqsTable.grantReadData(this.chatAgentFunction);
 
+    // Grant permissions to Chat Agent to read FAQs
+    props.faqsTable.grantReadData(this.chatAgentFunction);
+
+    // 12. Ingestion Function (Knowledge Base - S3 Trigger)
+    // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
+    this.documentsBucket = new s3.Bucket(this, 'DocumentsBucket', {
+      bucketName: `chatbooking-docs-${this.account}-${this.region}`,
+      versioned: true,
+      encryption: s3.BucketEncryption.S3_MANAGED,
+      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+      cors: [
+        {
+          allowedMethods: [s3.HttpMethods.PUT],
+          allowedOrigins: ['*'], // In prod, restrict to CloudFront domain
+          allowedHeaders: ['*'],
+        }
+      ],
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    this.ingestionFunction = new lambda.Function(this, 'IngestionFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-Ingestion',
+      description: 'Document ingestion logic (RAG) - Triggered by S3',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'knowledge_base')),
+      handler: 'ingestion_handler.lambda_handler', // Specific handler
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(300),
+      memorySize: 1024,
+      environment: {
+        ...commonProps.environment,
+        DB_SECRET_ARN: props.dbSecret?.secretArn || '',
+        DB_ENDPOINT: props.dbEndpoint || '',
+      }
+    });
+
+    // S3 Trigger
+    this.documentsBucket.addEventNotification(
+      s3.EventType.OBJECT_CREATED,
+      new s3n.LambdaDestination(this.ingestionFunction)
+    );
+    this.documentsBucket.grantRead(this.ingestionFunction);
+
+    // Grant permissions for Ingestion
+    props.tenantsTable.grantReadData(this.ingestionFunction);
+    if (props.dbSecret) {
+      props.dbSecret.grantRead(this.ingestionFunction);
+    }
+
+    // Grant Bedrock
+    this.ingestionFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel'],
+      resources: ['*'],
+    }));
+
+    // Grant RDS Data API
+    if (props.dbEndpoint) {
+      this.ingestionFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+        actions: ['rds-data:ExecuteStatement', 'rds-data:BatchExecuteStatement'],
+        resources: [props.dbEndpoint],
+      }));
+    }
+
+    // 13. Presign Function (Get Upload URL)
+    this.presignFunction = new lambda.Function(this, 'PresignFunction', {
+      ...commonProps,
+      functionName: 'ChatBooking-Presign',
+      description: 'Generate S3 Presigned URLs for uploads',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'knowledge_base')),
+      handler: 'presign_handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        DOCUMENTS_BUCKET: this.documentsBucket.bucketName,
+        DOCUMENTS_TABLE: props.documentsTable.tableName,
+      }
+    });
+
+    this.documentsBucket.grantWrite(this.presignFunction); // Allow putting objects (presigning)
+    // cdk grantWrite actually allows PutObject*
+    props.tenantsTable.grantReadData(this.presignFunction); // To check plan/limits
+    props.documentsTable.grantReadWriteData(this.presignFunction); // Create PENDING record
+    props.documentsTable.grantReadWriteData(this.ingestionFunction); // Update status to INDEXED
+
     // CloudWatch alarms for critical functions
     this.createAlarms();
 
@@ -343,6 +433,11 @@ export class LambdaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'FaqManagerFunctionArn', {
       value: this.faqManagerFunction.functionArn,
       description: 'FAQ Manager Lambda ARN',
+    });
+
+    new cdk.CfnOutput(this, 'IngestionFunctionArn', {
+      value: this.ingestionFunction.functionArn,
+      description: 'Ingestion Lambda ARN',
     });
   }
 

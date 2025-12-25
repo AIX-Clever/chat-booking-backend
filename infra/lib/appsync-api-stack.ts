@@ -27,6 +27,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   metricsFunction: lambda.IFunction;
   workflowManagerFunction: lambda.IFunction;
   faqManagerFunction: lambda.IFunction;
+  presignFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -126,6 +127,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.faqManagerFunction
     );
 
+    const presignDataSource = this.api.addLambdaDataSource(
+      'PresignDataSource',
+      props.presignFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -137,7 +143,8 @@ export class AppSyncApiStack extends cdk.Stack {
       getTenantDataSource,
       metricsDataSource,
       workflowManagerDataSource,
-      faqManagerDataSource
+      faqManagerDataSource,
+      presignDataSource
     );
 
     // Outputs
@@ -707,7 +714,8 @@ schema {
     getTenantDataSource: appsync.LambdaDataSource,
     metricsDataSource: appsync.LambdaDataSource,
     workflowManagerDataSource: appsync.LambdaDataSource,
-    faqManagerDataSource: appsync.LambdaDataSource
+    faqManagerDataSource: appsync.LambdaDataSource,
+    presignDataSource: appsync.LambdaDataSource
   ): void {
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
@@ -804,6 +812,13 @@ schema {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    // Documents Resolver
+    presignDataSource.createResolver('GetUploadUrlResolver', {
+      typeName: 'Mutation',
+      fieldName: 'getUploadUrl',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
     catalogDataSource.createResolver('DeleteCategoryResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteCategory',
