@@ -16,7 +16,7 @@ export class VectorDatabaseStack extends cdk.Stack {
         // 1. VPC: Private Isolated (No Internet Access)
         this.vpc = new ec2.Vpc(this, 'ChatBookingVpc', {
             ipAddresses: ec2.IpAddresses.cidr('10.0.0.0/16'),
-            maxAzs: 2,
+            availabilityZones: ['us-east-1a', 'us-east-1b'],
             subnetConfiguration: [
                 {
                     cidrMask: 24,
