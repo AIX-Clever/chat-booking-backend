@@ -313,6 +313,28 @@ class Conversation:
             self.slot_end
         ])
 
+    def add_message(self, role: str, content: str, metadata: Dict[str, Any] = None):
+        """Add a message to conversation history"""
+        if not hasattr(self, 'messages') or self.messages is None:
+            self.messages = []
+            
+        msg = {
+            'role': role,
+            'content': content,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        }
+        if metadata:
+            msg['metadata'] = metadata
+            
+        self.messages.append(msg)
+        self.updated_at = datetime.now(timezone.utc)
+
+    def get_history(self) -> List[Dict[str, Any]]:
+        """Get conversation history in standardized format"""
+        if not hasattr(self, 'messages') or self.messages is None:
+            return []
+        return self.messages
+
 
 @dataclass
 class ApiKey:

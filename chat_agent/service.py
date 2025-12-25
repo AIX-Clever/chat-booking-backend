@@ -22,7 +22,8 @@ from shared.domain.repositories import (
     IBookingRepository,
     IAvailabilityRepository,
     IFAQRepository,
-    IWorkflowRepository
+    IWorkflowRepository,
+    ITenantRepository
 )
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -30,7 +31,12 @@ from shared.domain.exceptions import (
 )
 from shared.utils import generate_id, parse_iso_datetime
 from workflow_engine import WorkflowEngine
+from workflow_engine import WorkflowEngine
 from fsm import ResponseBuilder
+from ai_handler import AIHandler
+from shared.infrastructure.vector_repository import VectorRepository
+import os
+
 
 
 class ChatAgentService:
@@ -46,7 +52,8 @@ class ChatAgentService:
         booking_repo: IBookingRepository,
         availability_repo: IAvailabilityRepository,
         faq_repo: IFAQRepository,
-        workflow_repo: IWorkflowRepository
+        workflow_repo: IWorkflowRepository,
+        tenant_repo: ITenantRepository
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -55,10 +62,20 @@ class ChatAgentService:
         self._availability_repo = availability_repo
         self._faq_repo = faq_repo
         self._workflow_repo = workflow_repo
+        self._tenant_repo = tenant_repo
         
         self.workflow_engine = WorkflowEngine(
             service_repo, provider_repo, faq_repo, availability_repo
         )
+
+        # Initialize AI Handler if infrastructure is available
+        self.ai_handler = None
+        db_cluster_arn = os.environ.get('DB_ENDPOINT') # Mapped to Cluster ARN in infra
+        db_secret_arn = os.environ.get('DB_SECRET_ARN')
+        
+        if db_cluster_arn and db_secret_arn:
+            vector_repo = VectorRepository(db_cluster_arn, db_secret_arn)
+            self.ai_handler = AIHandler(vector_repo)
     
     def start_conversation(
         self,
@@ -110,12 +127,52 @@ class ChatAgentService:
         conversation_id: str,
         message: str,
         message_type: str = 'text',
-        user_data: Optional[Dict[str, Any]] = None
+        user_data: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None
     ) -> tuple[Conversation, dict]:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation:
             raise EntityNotFoundError(f"Conversation not found: {conversation_id}")
+
+        # 0. Check for AI Mode (Business/Enterprise)
+        tenant = self._tenant_repo.get_by_id(tenant_id)
+        if not tenant:
+             raise EntityNotFoundError(f"Tenant not found: {tenant_id}")
+             
+        # Check settings for AI Mode
+        ai_settings = tenant.settings.get('ai', {}) or {}
+        ai_enabled = ai_settings.get('enabled', False)
+        # Fallback to metadata for testing override if needed, but prioritize DB
+        ai_mode = 'BEDROCK_RAG' if ai_enabled else None
+        
+        if ai_mode == 'BEDROCK_RAG' and self.ai_handler:
+            # RAG FLOW
             
+            # 1. Get History (Last 10 messages)
+            # conversation.history is needed. Assuming conversation entity has it or we query it.
+            # Only existing messages are relevant.
+            
+            # 2. Get Response from AI
+            ai_response_text = self.ai_handler.generate_response(
+                tenant_id, 
+                conversation.get_history(), # Assuming get_history() exists or property
+                message
+            )
+            
+            # 3. Wrap in standard response format
+            response = {
+                'type': 'text',
+                'text': ai_response_text,
+                'ai_generated': True
+            }
+            
+            # 4. Save User Message & AI Response to History
+            conversation.add_message('user', message)
+            conversation.add_message('assistant', ai_response_text)
+            self._conversation_repo.save(conversation)
+            
+            return conversation, response
+
         if not conversation.workflow_id:
             # Legacy conversation or broken state
             return self._fallback_process(tenant_id, conversation, message, user_data)
