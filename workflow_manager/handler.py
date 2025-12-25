@@ -72,7 +72,7 @@ def create_workflow(tenant_id, input_data):
     if not tenant_id:
         raise Exception("Unauthorized: Missing tenantId")
         
-    workflow_id = str(uuid.uuid4())
+    workflow_id = input_data.get('workflowId') or str(uuid.uuid4())
     timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
     
     item = {
@@ -80,8 +80,9 @@ def create_workflow(tenant_id, input_data):
         'workflowId': workflow_id,
         'name': input_data['name'],
         'description': input_data.get('description'),
-        'definition': input_data['definition'], # JSON
-        'status': input_data.get('status', 'DRAFT'),
+        'steps': input_data['steps'], # JSON/Map
+        'metadata': input_data.get('metadata', {}),
+        'isActive': input_data.get('isActive', True),
         'createdAt': timestamp,
         'updatedAt': timestamp
     }
@@ -101,7 +102,8 @@ def update_workflow(tenant_id, input_data):
     expression_values = {}
     expression_names = {}
     
-    fields = ['name', 'description', 'definition', 'status']
+    # Correct fields based on AppSync schema
+    fields = ['name', 'description', 'steps', 'metadata', 'isActive']
     for field in fields:
         if field in input_data:
             update_parts.append(f"#{field} = :{field}")
