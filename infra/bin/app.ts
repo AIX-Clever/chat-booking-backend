@@ -87,6 +87,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
+lambdaStack.addDependency(vectorDbStack);
 
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
