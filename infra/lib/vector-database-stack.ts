@@ -63,7 +63,7 @@ export class VectorDatabaseStack extends cdk.Stack {
         });
 
         // 4. Aurora Serverless v2
-        this.cluster = new rds.DatabaseCluster(this, 'VectorDatabase', {
+        this.cluster = new rds.DatabaseCluster(this, 'VectorDatabaseV2', {
             engine: rds.DatabaseClusterEngine.auroraPostgres({
                 version: rds.AuroraPostgresEngineVersion.VER_15_10, // Supports pgvector 0.5.0+
             }),
