@@ -5,6 +5,7 @@ import { DatabaseStack } from '../lib/database-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { AppSyncApiStack } from '../lib/appsync-api-stack';
 import { AuthStack } from '../lib/auth-stack';
+import { VectorDatabaseStack } from '../lib/vector-database-stack';
 
 /**
  * CDK App Entry Point
@@ -54,11 +55,22 @@ const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
   tags,
 });
 
+// 2.5 Vector Database Stack - Aurora Serverless v2 + VPC (Private Network)
+const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-VectorDB`, {
+  env: { account, region },
+  description: 'Aurora Serverless v2 with pgvector for AI Embeddings',
+  tags,
+});
+
 // 3. Lambda Stack - Business Logic
 const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking SaaS',
   tags,
+  vpc: vectorDbStack.vpc,
+  dbSecurityGroup: vectorDbStack.dbSecurityGroup,
+  dbSecret: vectorDbStack.dbSecret,
+  dbEndpoint: vectorDbStack.cluster.clusterArn, // For Data API, we pass the ARN
   tenantsTable: databaseStack.tenantsTable,
   apiKeysTable: databaseStack.apiKeysTable,
   servicesTable: databaseStack.servicesTable,

@@ -3,6 +3,8 @@ import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Construct } from 'constructs';
 import * as path from 'path';
 
@@ -30,6 +32,10 @@ interface LambdaStackProps extends cdk.StackProps {
   workflowsTable: dynamodb.ITable;
   faqsTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
+  vpc?: cdk.aws_ec2.IVpc;
+  dbSecurityGroup?: cdk.aws_ec2.ISecurityGroup;
+  dbSecret?: cdk.aws_secretsmanager.ISecret;
+  dbEndpoint?: string; // Cluster ARN for Data API
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -163,6 +169,13 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(60), // More time for conversation logic
       memorySize: 1024, // More memory for FSM processing
+      vpc: props.vpc,
+      securityGroups: props.dbSecurityGroup ? [props.dbSecurityGroup] : undefined,
+      environment: {
+        ...commonProps.environment,
+        DB_SECRET_ARN: props.dbSecret?.secretArn || '',
+        DB_ENDPOINT: props.dbEndpoint || '',
+      }
     });
 
     // Grant permissions - chat agent needs access to everything
@@ -173,6 +186,21 @@ export class LambdaStack extends cdk.Stack {
     props.bookingsTable.grantReadWriteData(this.chatAgentFunction);
     props.tenantUsageTable.grantWriteData(this.chatAgentFunction); // For metrics tracking
     props.workflowsTable.grantReadWriteData(this.chatAgentFunction); // For self-healing (create default workflow)
+
+    // Grant Bedrock Access for AI Plans
+    this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['bedrock:InvokeModel', 'bedrock:InvokeModelWithResponseStream'],
+      resources: ['*'], // Scope this down in production to specific models
+    }));
+
+    // Grant RDS Data API Access
+    if (props.dbSecret && props.dbEndpoint) {
+      props.dbSecret.grantRead(this.chatAgentFunction);
+      this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+        actions: ['rds-data:ExecuteStatement', 'rds-data:BatchExecuteStatement'],
+        resources: [props.dbEndpoint], // DB Cluster ARN
+      }));
+    }
 
     // 6. Register Tenant Lambda
     this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
