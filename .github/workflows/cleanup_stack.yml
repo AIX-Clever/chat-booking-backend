@@ -1,0 +1,35 @@
+name: Cleanup Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      stack_name:
+        description: 'Name of the CloudFormation stack to delete'
+        required: true
+        type: string
+      region:
+        description: 'AWS Region'
+        required: false
+        default: 'us-east-1'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  delete-stack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
+          aws-region: ${{ inputs.region }}
+
+      - name: Delete CloudFormation Stack
+        run: |
+          echo "Deleting stack: ${{ inputs.stack_name }} in ${{ inputs.region }}"
+          aws cloudformation delete-stack --stack-name ${{ inputs.stack_name }} --region ${{ inputs.region }}
+          echo "Delete command issued. Wait for deletion to complete."
+          aws cloudformation wait stack-delete-complete --stack-name ${{ inputs.stack_name }} --region ${{ inputs.region }}
+          echo "Stack deleted successfully."
