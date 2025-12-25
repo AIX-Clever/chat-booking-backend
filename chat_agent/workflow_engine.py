@@ -286,7 +286,7 @@ class WorkflowEngine:
                 # Let's try to return 'list_providers' assuming default flow structure.
                 return 'list_providers'
 
-            if val == 'restart':
+            if val == 'restart' or (user_input and 'no' in user_input.lower()):
                 return 'start'
 
             if val:
