@@ -55,17 +55,17 @@ const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
   tags,
 });
 
-// 2.5 Vector Database Stack - Aurora Serverless v2 + VPC (Private Network)
-const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-VectorDB`, {
+// 2.5 Knowledge Base Stack - Aurora Serverless v2 + VPC (Private Network)
+const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase`, {
   env: { account, region },
-  description: 'Aurora Serverless v2 with pgvector for AI Embeddings',
+  description: 'Aurora Serverless v2 with pgvector for AI Knowledge Base',
   tags,
 });
 
-// 3. Lambda Stack - Business Logic
-const lambdaStack = new LambdaStack(app, `${stackPrefix}-Lambda`, {
+// 3. Backend Stack - Business Logic
+const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
-  description: 'Lambda functions for Chat Booking SaaS',
+  description: 'Lambda functions for Chat Booking Backend',
   tags,
   vpc: vectorDbStack.vpc,
   dbSecurityGroup: vectorDbStack.dbSecurityGroup,
