@@ -593,6 +593,7 @@ input CreateWorkflowInput {
   name: String!
   description: String
   steps: AWSJSON!
+  metadata: AWSJSON
   isActive: Boolean
 }
 
@@ -601,6 +602,7 @@ input UpdateWorkflowInput {
   name: String
   description: String
   steps: AWSJSON
+  metadata: AWSJSON
   isActive: Boolean
 }
 
