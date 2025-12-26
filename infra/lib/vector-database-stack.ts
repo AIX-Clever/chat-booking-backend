@@ -88,13 +88,11 @@ export class VectorDatabaseStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'DatabaseEndpoint', {
             value: this.cluster.clusterEndpoint.hostname,
             description: 'Aurora Cluster Endpoint',
-            exportName: 'ChatBookingVideoDbEndpoint',
         });
 
         new cdk.CfnOutput(this, 'DatabaseSecretArn', {
             value: this.dbSecret.secretArn,
             description: 'Aurora Secret ARN',
-            exportName: 'ChatBookingVectorDbSecretArn',
         });
     }
 }
