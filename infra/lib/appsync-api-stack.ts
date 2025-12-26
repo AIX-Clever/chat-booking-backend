@@ -679,6 +679,9 @@ type Mutation {
   updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
   deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
 
+  # Documents (Knowledge Base)
+  getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
