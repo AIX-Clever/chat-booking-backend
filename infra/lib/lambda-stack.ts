@@ -98,7 +98,6 @@ export class LambdaStack extends cdk.Stack {
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-AuthResolver',
       description: 'AppSync authorizer - validates API keys and returns tenant context',
       code: lambda.Code.fromAsset(path.join(backendPath, 'auth_resolver')),
       handler: 'handler.lambda_handler',
@@ -114,7 +113,6 @@ export class LambdaStack extends cdk.Stack {
     // 2. Catalog Lambda
     this.catalogFunction = new lambda.Function(this, 'CatalogFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Catalog',
       description: 'Service and provider catalog management',
       code: lambda.Code.fromAsset(path.join(backendPath, 'catalog')),
       handler: 'handler.lambda_handler',
@@ -129,7 +127,6 @@ export class LambdaStack extends cdk.Stack {
     // 3. Availability Lambda
     this.availabilityFunction = new lambda.Function(this, 'AvailabilityFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Availability',
       description: 'Calculate available time slots for bookings',
       code: lambda.Code.fromAsset(path.join(backendPath, 'availability')),
       handler: 'handler.lambda_handler',
@@ -149,7 +146,6 @@ export class LambdaStack extends cdk.Stack {
     // 4. Booking Lambda
     this.bookingFunction = new lambda.Function(this, 'BookingFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Booking',
       description: 'Booking creation, confirmation, and cancellation',
       code: lambda.Code.fromAsset(path.join(backendPath, 'booking')),
       handler: 'handler.lambda_handler',
@@ -168,7 +164,6 @@ export class LambdaStack extends cdk.Stack {
     // 5. Chat Agent Lambda
     this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-ChatAgent',
       description: 'Conversational FSM agent for booking flow',
       code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
       handler: 'handler.lambda_handler',
@@ -211,7 +206,6 @@ export class LambdaStack extends cdk.Stack {
     // 6. Register Tenant Lambda
     this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-RegisterTenant',
       description: 'Public tenant registration endpoint',
       code: lambda.Code.fromAsset(path.join(backendPath, 'register_tenant')),
       handler: 'handler.lambda_handler',
@@ -233,7 +227,6 @@ export class LambdaStack extends cdk.Stack {
     // 7. Update Tenant Lambda
     this.updateTenantFunction = new lambda.Function(this, 'UpdateTenantFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-UpdateTenant',
       description: 'Tenant settings update',
       code: lambda.Code.fromAsset(path.join(backendPath, 'update_tenant')),
       handler: 'handler.lambda_handler',
@@ -251,7 +244,6 @@ export class LambdaStack extends cdk.Stack {
     // 8. Get Tenant Lambda
     this.getTenantFunction = new lambda.Function(this, 'GetTenantFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-GetTenant',
       description: 'Get tenant details',
       code: lambda.Code.fromAsset(path.join(backendPath, 'get_tenant')),
       handler: 'handler.lambda_handler',
@@ -269,7 +261,6 @@ export class LambdaStack extends cdk.Stack {
     // 9. Metrics Lambda
     this.metricsFunction = new lambda.Function(this, 'MetricsFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Metrics',
       description: 'Dashboard metrics and usage analytics',
       code: lambda.Code.fromAsset(path.join(backendPath, 'metrics')),
       handler: 'handler.lambda_handler',
@@ -284,7 +275,6 @@ export class LambdaStack extends cdk.Stack {
     // 10. Workflow Manager Lambda
     this.workflowManagerFunction = new lambda.Function(this, 'WorkflowManagerFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-WorkflowManager',
       description: 'Workflow CRUD operations',
       code: lambda.Code.fromAsset(path.join(backendPath, 'workflow_manager')),
       handler: 'handler.lambda_handler',
@@ -298,7 +288,6 @@ export class LambdaStack extends cdk.Stack {
     // 11. FAQ Manager Lambda
     this.faqManagerFunction = new lambda.Function(this, 'FaqManagerFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-FaqManager',
       description: 'FAQ CRUD operations',
       code: lambda.Code.fromAsset(path.join(backendPath, 'faq_manager')),
       handler: 'handler.lambda_handler',
@@ -318,7 +307,6 @@ export class LambdaStack extends cdk.Stack {
     // 12. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
     this.documentsBucket = new s3.Bucket(this, 'DocumentsBucket', {
-      bucketName: `chatbooking-docs-${this.account}-${this.region}`,
       versioned: true,
       encryption: s3.BucketEncryption.S3_MANAGED,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
@@ -334,7 +322,6 @@ export class LambdaStack extends cdk.Stack {
 
     this.ingestionFunction = new lambda.Function(this, 'IngestionFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Ingestion',
       description: 'Document ingestion logic (RAG) - Triggered by S3',
       code: lambda.Code.fromAsset(path.join(backendPath, 'knowledge_base')),
       handler: 'ingestion_handler.lambda_handler', // Specific handler
@@ -378,7 +365,6 @@ export class LambdaStack extends cdk.Stack {
     // 13. Presign Function (Get Upload URL)
     this.presignFunction = new lambda.Function(this, 'PresignFunction', {
       ...commonProps,
-      functionName: 'ChatBooking-Presign',
       description: 'Generate S3 Presigned URLs for uploads',
       code: lambda.Code.fromAsset(path.join(backendPath, 'knowledge_base')),
       handler: 'presign_handler.lambda_handler',
