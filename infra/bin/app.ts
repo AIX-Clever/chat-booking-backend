@@ -63,7 +63,7 @@ const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase
 });
 
 // 3. Backend Stack - Business Logic
-const lambdaStack = new LambdaStack(app, `${stackPrefix}-BackendV2`, {
+const lambdaStack = new LambdaStack(app, `${stackPrefix}-BackendV3`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking Backend',
   tags,
@@ -90,7 +90,7 @@ lambdaStack.addDependency(authStack);
 lambdaStack.addDependency(vectorDbStack);
 
 // 4. AppSync API Stack - GraphQL Gateway
-const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
+const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApiV2`, {
   env: { account, region },
   description: 'GraphQL API for Chat Booking SaaS',
   tags,
