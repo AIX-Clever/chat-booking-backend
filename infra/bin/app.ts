@@ -63,7 +63,7 @@ const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase
 });
 
 // 3. Backend Stack - Business Logic
-const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
+const lambdaStack = new LambdaStack(app, `${stackPrefix}-BackendV2`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking Backend',
   tags,
