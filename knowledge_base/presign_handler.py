@@ -43,7 +43,7 @@ def handle_get_upload_url(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Storage not configured", 503)
 
     file_name = input_data.get('fileName')
-    file_type = input_data.get('fileType')
+    file_type = input_data.get('contentType')
     
     if not file_name or not file_type:
         return error_response("Missing fileName or fileType", 400)
