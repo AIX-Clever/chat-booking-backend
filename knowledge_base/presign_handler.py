@@ -90,7 +90,7 @@ def handle_get_upload_url(tenant_id: TenantId, input_data: dict) -> dict:
     
     documents_table.put_item(Item=item)
     
-    return success_response({
+    return json.dumps({
         'uploadUrl': url,
         'key': key,
         'documentId': document_id
