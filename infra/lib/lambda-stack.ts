@@ -448,7 +448,6 @@ export class LambdaStack extends cdk.Stack {
         threshold: 10,
         evaluationPeriods: 1,
         alarmDescription: `${name} Lambda errors exceed threshold`,
-        alarmName: `ChatBooking-${name}-Errors`,
         treatMissingData: cdk.aws_cloudwatch.TreatMissingData.NOT_BREACHING,
       });
 
@@ -463,7 +462,6 @@ export class LambdaStack extends cdk.Stack {
         threshold: 5,
         evaluationPeriods: 1,
         alarmDescription: `${name} Lambda throttles exceed threshold`,
-        alarmName: `ChatBooking-${name}-Throttles`,
         treatMissingData: cdk.aws_cloudwatch.TreatMissingData.NOT_BREACHING,
       });
 
@@ -478,7 +476,6 @@ export class LambdaStack extends cdk.Stack {
         threshold: fn.timeout!.toMilliseconds() * 0.8, // 80% of timeout
         evaluationPeriods: 2,
         alarmDescription: `${name} Lambda duration high (P99)`,
-        alarmName: `ChatBooking-${name}-Duration`,
         treatMissingData: cdk.aws_cloudwatch.TreatMissingData.NOT_BREACHING,
       });
     });
