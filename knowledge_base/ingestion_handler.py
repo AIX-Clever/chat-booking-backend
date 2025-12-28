@@ -5,7 +5,7 @@ from datetime import datetime
 from shared.utils import Logger
 from shared.domain.entities import TenantId
 from shared.infrastructure.vector_repository import VectorRepository
-from chat_agent.ai_handler import AIHandler
+from shared.ai_handler import AIHandler
 from .document_processor import DocumentProcessor
 
 logger = Logger()
