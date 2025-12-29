@@ -80,6 +80,7 @@ export class VectorDatabaseStack extends cdk.Stack {
             defaultDatabaseName: 'chatbookingvec',
             storageEncrypted: true,
             removalPolicy: cdk.RemovalPolicy.RETAIN, // Safer for DBs
+            enableDataApi: true,
         });
 
         this.dbSecret = this.cluster.secret!;
