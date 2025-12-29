@@ -132,12 +132,12 @@ class ChatAgentService:
     ) -> tuple[Conversation, dict]:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation:
-            raise EntityNotFoundError(f"Conversation not found: {conversation_id}")
+            raise EntityNotFoundError("Conversation", conversation_id)
 
         # 0. Check for AI Mode (Business/Enterprise)
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
-             raise EntityNotFoundError(f"Tenant not found: {tenant_id}")
+             raise EntityNotFoundError("Tenant", str(tenant_id))
              
         # Check settings for AI Mode
         ai_settings = tenant.settings.get('ai', {}) or {}
