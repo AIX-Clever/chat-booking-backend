@@ -142,6 +142,21 @@ class ChatAgentService:
         # Check settings for AI Mode
         ai_settings = tenant.settings.get('ai', {}) or {}
         ai_enabled = ai_settings.get('enabled', False)
+
+        # Allow override via user_data (for testing)
+        if user_data:
+            # Parse if string (AWSJSON)
+            if isinstance(user_data, str):
+                import json
+                try:
+                    user_data_dict = json.loads(user_data)
+                except:
+                    user_data_dict = {}
+            else:
+                user_data_dict = user_data
+                
+            if user_data_dict.get('force_rag'):
+                ai_enabled = True
         # Fallback to metadata for testing override if needed, but prioritize DB
         ai_mode = 'BEDROCK_RAG' if ai_enabled else None
         
