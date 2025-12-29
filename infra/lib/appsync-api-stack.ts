@@ -720,78 +720,94 @@ schema {
     faqManagerDataSource: appsync.LambdaDataSource,
     presignDataSource: appsync.LambdaDataSource
   ): void {
+    const requestTemplate = appsync.MappingTemplate.fromString(`{
+      "version": "2018-05-29",
+      "operation": "Invoke",
+      "payload": {
+        "arguments": $util.toJson($context.arguments),
+        "identity": $util.toJson($context.identity),
+        "source": $util.toJson($context.source),
+        "request": {
+          "headers": $util.toJson($context.request.headers)
+        },
+        "info": $util.toJson($context.info)
+      }
+    }`);
+
+    const responseTemplate = appsync.MappingTemplate.lambdaResult();
+
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
       typeName: 'Mutation',
       fieldName: 'registerTenant',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Update Tenant Resolver
     updateTenantDataSource.createResolver('UpdateTenantResolver', {
       typeName: 'Mutation',
       fieldName: 'updateTenant',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Get Tenant Resolver
     getTenantDataSource.createResolver('GetTenantResolver', {
       typeName: 'Query',
       fieldName: 'getTenant',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Catalog resolvers
     catalogDataSource.createResolver('SearchServicesResolver', {
       typeName: 'Query',
       fieldName: 'searchServices',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('GetServiceResolver', {
       typeName: 'Query',
       fieldName: 'getService',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('ListProvidersResolver', {
       typeName: 'Query',
       fieldName: 'listProviders',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('ListProvidersByServiceResolver', {
       typeName: 'Query',
       fieldName: 'listProvidersByService',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('CreateServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'createService',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('UpdateServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'updateService',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('DeleteServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteService',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     catalogDataSource.createResolver('ListCategoriesResolver', {
@@ -890,8 +906,8 @@ schema {
     bookingDataSource.createResolver('ListBookingsByProviderResolver', {
       typeName: 'Query',
       fieldName: 'listBookingsByProvider',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('ListBookingsByClientResolver', {
