@@ -71,7 +71,7 @@ class VectorRepository:
         """
         
         params = [
-            {'name': 'tenant_id', 'value': {'stringValue': tenant_id}},
+            {'name': 'tenant_id', 'value': {'stringValue': str(tenant_id)}},
             {'name': 'embedding', 'value': {'stringValue': embedding_str}},
             {'name': 'limit', 'value': {'longValue': limit}}
         ]
@@ -101,7 +101,7 @@ class VectorRepository:
         """
         
         params = [
-            {'name': 'tenant_id', 'value': {'stringValue': tenant_id}},
+            {'name': 'tenant_id', 'value': {'stringValue': str(tenant_id)}},
             {'name': 'content', 'value': {'stringValue': content}},
             {'name': 'embedding', 'value': {'stringValue': embedding_str}}
         ]

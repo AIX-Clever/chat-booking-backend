@@ -205,7 +205,7 @@ enum TenantStatus {
 }
 
 enum TenantPlan {
-  FREE
+  LITE
   PRO
   BUSINESS
   ENTERPRISE

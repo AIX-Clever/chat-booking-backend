@@ -20,7 +20,7 @@ def test_update_tenant_success(mock_tenant_repo):
         owner_user_id="user-123",
         billing_email="old@test.com",
         status=TenantStatus.ACTIVE,
-        plan=TenantPlan.FREE,
+        plan=TenantPlan.LITE,
         settings={"theme": "dark"}
     )
     mock_tenant_repo.get_by_id.return_value = existing_tenant

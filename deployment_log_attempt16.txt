@@ -1,0 +1,721 @@
+deploy	Set up job	﻿2025-12-26T13:22:33.8907378Z Current runner version: '2.330.0'
+deploy	Set up job	2025-12-26T13:22:33.8945418Z ##[group]Runner Image Provisioner
+deploy	Set up job	2025-12-26T13:22:33.8946887Z Hosted Compute Agent
+deploy	Set up job	2025-12-26T13:22:33.8947815Z Version: 20251211.462
+deploy	Set up job	2025-12-26T13:22:33.8948944Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+deploy	Set up job	2025-12-26T13:22:33.8950227Z Build Date: 2025-12-11T16:28:49Z
+deploy	Set up job	2025-12-26T13:22:33.8951223Z Worker ID: {57d6a66a-3132-4695-ad73-21c57c189f44}
+deploy	Set up job	2025-12-26T13:22:33.8952473Z ##[endgroup]
+deploy	Set up job	2025-12-26T13:22:33.8953271Z ##[group]Operating System
+deploy	Set up job	2025-12-26T13:22:33.8954769Z Ubuntu
+deploy	Set up job	2025-12-26T13:22:33.8955694Z 24.04.3
+deploy	Set up job	2025-12-26T13:22:33.8956450Z LTS
+deploy	Set up job	2025-12-26T13:22:33.8957326Z ##[endgroup]
+deploy	Set up job	2025-12-26T13:22:33.8958165Z ##[group]Runner Image
+deploy	Set up job	2025-12-26T13:22:33.8959101Z Image: ubuntu-24.04
+deploy	Set up job	2025-12-26T13:22:33.8959898Z Version: 20251215.174.1
+deploy	Set up job	2025-12-26T13:22:33.8961808Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251215.174/images/ubuntu/Ubuntu2404-Readme.md
+deploy	Set up job	2025-12-26T13:22:33.8964546Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251215.174
+deploy	Set up job	2025-12-26T13:22:33.8966805Z ##[endgroup]
+deploy	Set up job	2025-12-26T13:22:33.8968590Z ##[group]GITHUB_TOKEN Permissions
+deploy	Set up job	2025-12-26T13:22:33.8971432Z Contents: read
+deploy	Set up job	2025-12-26T13:22:33.8972360Z Metadata: read
+deploy	Set up job	2025-12-26T13:22:33.8973257Z ##[endgroup]
+deploy	Set up job	2025-12-26T13:22:33.8977129Z Secret source: Actions
+deploy	Set up job	2025-12-26T13:22:33.8978333Z Prepare workflow directory
+deploy	Set up job	2025-12-26T13:22:33.9478613Z Prepare all required actions
+deploy	Set up job	2025-12-26T13:22:33.9537574Z Getting action download info
+deploy	Set up job	2025-12-26T13:22:34.2132760Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+deploy	Set up job	2025-12-26T13:22:34.3370633Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+deploy	Set up job	2025-12-26T13:22:34.4863060Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+deploy	Set up job	2025-12-26T13:22:34.6066746Z Download action repository 'aws-actions/configure-aws-credentials@v4' (SHA:7474bc4690e29a8392af63c5b98e7449536d5c3a)
+deploy	Set up job	2025-12-26T13:22:34.9623200Z Complete job name: deploy
+deploy	Checkout repo	﻿2025-12-26T13:22:35.0413213Z ##[group]Run actions/checkout@v4
+deploy	Checkout repo	2025-12-26T13:22:35.0414649Z with:
+deploy	Checkout repo	2025-12-26T13:22:35.0415410Z   repository: AIX-Clever/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:35.0416650Z   token: ***
+deploy	Checkout repo	2025-12-26T13:22:35.0417325Z   ssh-strict: true
+deploy	Checkout repo	2025-12-26T13:22:35.0418019Z   ssh-user: git
+deploy	Checkout repo	2025-12-26T13:22:35.0418734Z   persist-credentials: true
+deploy	Checkout repo	2025-12-26T13:22:35.0419523Z   clean: true
+deploy	Checkout repo	2025-12-26T13:22:35.0420247Z   sparse-checkout-cone-mode: true
+deploy	Checkout repo	2025-12-26T13:22:35.0421102Z   fetch-depth: 1
+deploy	Checkout repo	2025-12-26T13:22:35.0421795Z   fetch-tags: false
+deploy	Checkout repo	2025-12-26T13:22:35.0422508Z   show-progress: true
+deploy	Checkout repo	2025-12-26T13:22:35.0423230Z   lfs: false
+deploy	Checkout repo	2025-12-26T13:22:35.0424046Z   submodules: false
+deploy	Checkout repo	2025-12-26T13:22:35.0424775Z   set-safe-directory: true
+deploy	Checkout repo	2025-12-26T13:22:35.0425814Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:35.1514791Z Syncing repository: AIX-Clever/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:35.1517350Z ##[group]Getting Git version info
+deploy	Checkout repo	2025-12-26T13:22:35.1518844Z Working directory is '/home/runner/work/chat-booking-backend/chat-booking-backend'
+deploy	Checkout repo	2025-12-26T13:22:35.1520840Z [command]/usr/bin/git version
+deploy	Checkout repo	2025-12-26T13:22:35.1588291Z git version 2.52.0
+deploy	Checkout repo	2025-12-26T13:22:35.1614692Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:35.1629251Z Temporarily overriding HOME='/home/runner/work/_temp/9b1567e8-5992-46d8-a3ff-f49714858880' before making global git config changes
+deploy	Checkout repo	2025-12-26T13:22:35.1631720Z Adding repository directory to the temporary git global config as a safe directory
+deploy	Checkout repo	2025-12-26T13:22:35.1642642Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:35.1689803Z Deleting the contents of '/home/runner/work/chat-booking-backend/chat-booking-backend'
+deploy	Checkout repo	2025-12-26T13:22:35.1693545Z ##[group]Initializing the repository
+deploy	Checkout repo	2025-12-26T13:22:35.1699075Z [command]/usr/bin/git init /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:35.1808105Z hint: Using 'master' as the name for the initial branch. This default branch name
+deploy	Checkout repo	2025-12-26T13:22:35.1810882Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+deploy	Checkout repo	2025-12-26T13:22:35.1813083Z hint: to use in all of your new repositories, which will suppress this warning,
+deploy	Checkout repo	2025-12-26T13:22:35.1815504Z hint: call:
+deploy	Checkout repo	2025-12-26T13:22:35.1816628Z hint:
+deploy	Checkout repo	2025-12-26T13:22:35.1818089Z hint: 	git config --global init.defaultBranch <name>
+deploy	Checkout repo	2025-12-26T13:22:35.1819874Z hint:
+deploy	Checkout repo	2025-12-26T13:22:35.1821493Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+deploy	Checkout repo	2025-12-26T13:22:35.1824518Z hint: 'development'. The just-created branch can be renamed via this command:
+deploy	Checkout repo	2025-12-26T13:22:35.1826838Z hint:
+deploy	Checkout repo	2025-12-26T13:22:35.1827974Z hint: 	git branch -m <name>
+deploy	Checkout repo	2025-12-26T13:22:35.1829269Z hint:
+deploy	Checkout repo	2025-12-26T13:22:35.1830976Z hint: Disable this message with "git config set advice.defaultBranchName false"
+deploy	Checkout repo	2025-12-26T13:22:35.1833507Z Initialized empty Git repository in /home/runner/work/chat-booking-backend/chat-booking-backend/.git/
+deploy	Checkout repo	2025-12-26T13:22:35.1837228Z [command]/usr/bin/git remote add origin https://github.com/AIX-Clever/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:35.1861558Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:35.1863933Z ##[group]Disabling automatic garbage collection
+deploy	Checkout repo	2025-12-26T13:22:35.1865958Z [command]/usr/bin/git config --local gc.auto 0
+deploy	Checkout repo	2025-12-26T13:22:35.1895244Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:35.1897269Z ##[group]Setting up auth
+deploy	Checkout repo	2025-12-26T13:22:35.1903097Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy	Checkout repo	2025-12-26T13:22:35.1935515Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy	Checkout repo	2025-12-26T13:22:35.2407357Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy	Checkout repo	2025-12-26T13:22:35.2440437Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy	Checkout repo	2025-12-26T13:22:35.2665469Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy	Checkout repo	2025-12-26T13:22:35.2699333Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy	Checkout repo	2025-12-26T13:22:35.2921992Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+deploy	Checkout repo	2025-12-26T13:22:35.2956029Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:35.2958157Z ##[group]Fetching the repository
+deploy	Checkout repo	2025-12-26T13:22:35.2967082Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +fc3f23c2ec5e78749e9fc902dde86d30dd05f3a5:refs/remotes/origin/dev
+deploy	Checkout repo	2025-12-26T13:22:37.0096025Z From https://github.com/AIX-Clever/chat-booking-backend
+deploy	Checkout repo	2025-12-26T13:22:37.0097213Z  * [new ref]         fc3f23c2ec5e78749e9fc902dde86d30dd05f3a5 -> origin/dev
+deploy	Checkout repo	2025-12-26T13:22:37.0178496Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:37.0179057Z ##[group]Determining the checkout info
+deploy	Checkout repo	2025-12-26T13:22:37.0180499Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:37.0186555Z [command]/usr/bin/git sparse-checkout disable
+deploy	Checkout repo	2025-12-26T13:22:37.0230497Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+deploy	Checkout repo	2025-12-26T13:22:37.0259309Z ##[group]Checking out the ref
+deploy	Checkout repo	2025-12-26T13:22:37.0263877Z [command]/usr/bin/git checkout --progress --force -B dev refs/remotes/origin/dev
+deploy	Checkout repo	2025-12-26T13:22:37.8149911Z Switched to a new branch 'dev'
+deploy	Checkout repo	2025-12-26T13:22:37.8151199Z branch 'dev' set up to track 'origin/dev'.
+deploy	Checkout repo	2025-12-26T13:22:37.8194148Z ##[endgroup]
+deploy	Checkout repo	2025-12-26T13:22:37.8231471Z [command]/usr/bin/git log -1 --format=%H
+deploy	Checkout repo	2025-12-26T13:22:37.8256305Z fc3f23c2ec5e78749e9fc902dde86d30dd05f3a5
+deploy	Setup Node.js	﻿2025-12-26T13:22:37.8487231Z ##[group]Run actions/setup-node@v4
+deploy	Setup Node.js	2025-12-26T13:22:37.8487563Z with:
+deploy	Setup Node.js	2025-12-26T13:22:37.8487756Z   node-version: 20
+deploy	Setup Node.js	2025-12-26T13:22:37.8487953Z   always-auth: false
+deploy	Setup Node.js	2025-12-26T13:22:37.8488379Z   check-latest: false
+deploy	Setup Node.js	2025-12-26T13:22:37.8488700Z   token: ***
+deploy	Setup Node.js	2025-12-26T13:22:37.8488876Z ##[endgroup]
+deploy	Setup Node.js	2025-12-26T13:22:38.0546856Z Found in cache @ /opt/hostedtoolcache/node/20.19.6/x64
+deploy	Setup Node.js	2025-12-26T13:22:38.0553179Z ##[group]Environment details
+deploy	Setup Node.js	2025-12-26T13:22:40.4975852Z node: v20.19.6
+deploy	Setup Node.js	2025-12-26T13:22:40.4976308Z npm: 10.8.2
+deploy	Setup Node.js	2025-12-26T13:22:40.4976779Z yarn: 1.22.22
+deploy	Setup Node.js	2025-12-26T13:22:40.4978177Z ##[endgroup]
+deploy	Setup Python	﻿2025-12-26T13:22:40.5184625Z ##[group]Run actions/setup-python@v5
+deploy	Setup Python	2025-12-26T13:22:40.5184922Z with:
+deploy	Setup Python	2025-12-26T13:22:40.5185142Z   python-version: 3.9
+deploy	Setup Python	2025-12-26T13:22:40.5185380Z   check-latest: false
+deploy	Setup Python	2025-12-26T13:22:40.5185705Z   token: ***
+deploy	Setup Python	2025-12-26T13:22:40.5185905Z   update-environment: true
+deploy	Setup Python	2025-12-26T13:22:40.5186141Z   allow-prereleases: false
+deploy	Setup Python	2025-12-26T13:22:40.5186379Z   freethreaded: false
+deploy	Setup Python	2025-12-26T13:22:40.5186581Z ##[endgroup]
+deploy	Setup Python	2025-12-26T13:22:40.6855961Z ##[group]Installed versions
+deploy	Setup Python	2025-12-26T13:22:40.6969593Z Successfully set up CPython (3.9.25)
+deploy	Setup Python	2025-12-26T13:22:40.6970241Z ##[endgroup]
+deploy	Install Lambda Dependencies	﻿2025-12-26T13:22:40.7070366Z ##[group]Run # Find all requirements.txt files and install dependencies to their directory
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7071003Z [36;1m# Find all requirements.txt files and install dependencies to their directory[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7071625Z [36;1mfind . -name "requirements.txt" -not -path "*/node_modules/*" -not -path "*/.venv/*" | while read req_file; do[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7072121Z [36;1m  echo "Installing dependencies for $req_file"[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7072409Z [36;1m  dir=$(dirname "$req_file")[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7072681Z [36;1m  pip install -r "$req_file" -t "$dir"[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7072939Z [36;1mdone[0m
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7123213Z shell: /usr/bin/bash -e {0}
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7123467Z env:
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7123883Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7124312Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7124706Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7125092Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7125433Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7125768Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7126058Z ##[endgroup]
+deploy	Install Lambda Dependencies	2025-12-26T13:22:40.7453237Z Installing dependencies for ./availability/requirements.txt
+deploy	Install Lambda Dependencies	2025-12-26T13:22:43.7544487Z Collecting boto3>=1.34.0 (from -r ./availability/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:43.8042095Z   Downloading boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.2641460Z Collecting botocore>=1.34.0 (from -r ./availability/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.2725648Z   Downloading botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.2959009Z Collecting python-dateutil>=2.8.2 (from -r ./availability/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.3042301Z   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.3508734Z Collecting pytz>=2023.3 (from -r ./availability/requirements.txt (line 4))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.3592789Z   Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.5308982Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./availability/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.5389303Z   Downloading jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.5631314Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./availability/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.5712422Z   Downloading s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.6114433Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./availability/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.6192514Z   Downloading urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.6489772Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./availability/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.6566758Z   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.8351849Z Downloading boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.8522512Z Downloading botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9297869Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 203.3 MB/s  0:00:00
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9379947Z Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9491015Z Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9591263Z Downloading s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9712954Z Downloading urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9816662Z Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:44.9941822Z Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:45.0923131Z Installing collected packages: pytz, urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	Install Lambda Dependencies	2025-12-26T13:22:45.9814034Z 
+deploy	Install Lambda Dependencies	2025-12-26T13:22:45.9838376Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 pytz-2025.2 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	Install Lambda Dependencies	2025-12-26T13:22:46.1561852Z Installing dependencies for ./chat_agent/requirements.txt
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.0192027Z Collecting requests (from -r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.0657377Z   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.0896538Z Collecting aws-xray-sdk (from -r ./chat_agent/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.0977730Z   Downloading aws_xray_sdk-2.15.0-py2.py3-none-any.whl.metadata (23 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.4839546Z Collecting boto3>=1.34.0 (from -r ./chat_agent/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.4860470Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5044351Z Collecting python-dateutil>=2.8.2 (from -r ./chat_agent/requirements.txt (line 4))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5062084Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5493040Z Collecting pytz>=2023.3 (from -r ./chat_agent/requirements.txt (line 5))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5512562Z   Using cached pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5841643Z Collecting pypdf>=3.0.0 (from -r ./chat_agent/requirements.txt (line 6))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.5928959Z   Downloading pypdf-6.5.0-py3-none-any.whl.metadata (7.1 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.7120113Z Collecting charset_normalizer<4,>=2 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.7209591Z   Downloading charset_normalizer-3.4.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.7456398Z Collecting idna<4,>=2.5 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.7536766Z   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.7919367Z Collecting urllib3<3,>=1.21.1 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.8003914Z   Downloading urllib3-2.6.2-py3-none-any.whl.metadata (6.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.8492573Z Collecting certifi>=2017.4.17 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:47.8572171Z   Downloading certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.0355049Z Collecting wrapt (from aws-xray-sdk->-r ./chat_agent/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.0439718Z   Downloading wrapt-2.0.1-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (9.0 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.5851189Z Collecting botocore>=1.11.3 (from aws-xray-sdk->-r ./chat_agent/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.5872631Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7185748Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./chat_agent/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7203238Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7425383Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./chat_agent/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7442673Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7599844Z Collecting urllib3<3,>=1.21.1 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7617686Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7843157Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./chat_agent/requirements.txt (line 4))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:48.7860709Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0161381Z Collecting typing_extensions>=4.0 (from pypdf>=3.0.0->-r ./chat_agent/requirements.txt (line 6))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0241799Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0400957Z Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0514245Z Downloading charset_normalizer-3.4.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0673954Z Downloading idna-3.11-py3-none-any.whl (71 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0780165Z Downloading aws_xray_sdk-2.15.0-py2.py3-none-any.whl (103 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0823271Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0841551Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0966455Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.0984600Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1002112Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1020122Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1038181Z Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1121737Z Downloading pypdf-6.5.0-py3-none-any.whl (329 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1286237Z Downloading certifi-2025.11.12-py3-none-any.whl (159 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1329925Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1408622Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.1525966Z Downloading wrapt-2.0.1-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (113 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:49.2536116Z Installing collected packages: pytz, wrapt, urllib3, typing_extensions, six, jmespath, idna, charset_normalizer, certifi, requests, python-dateutil, pypdf, botocore, s3transfer, aws-xray-sdk, boto3
+deploy	Install Lambda Dependencies	2025-12-26T13:22:50.6414761Z 
+deploy	Install Lambda Dependencies	2025-12-26T13:22:50.6452480Z Successfully installed aws-xray-sdk-2.15.0 boto3-1.42.16 botocore-1.42.16 certifi-2025.11.12 charset_normalizer-3.4.4 idna-3.11 jmespath-1.0.1 pypdf-6.5.0 python-dateutil-2.9.0.post0 pytz-2025.2 requests-2.32.5 s3transfer-0.16.0 six-1.17.0 typing_extensions-4.15.0 urllib3-1.26.20 wrapt-2.0.1
+deploy	Install Lambda Dependencies	2025-12-26T13:22:50.7763382Z Installing dependencies for ./auth_resolver/requirements.txt
+deploy	Install Lambda Dependencies	2025-12-26T13:22:51.5502994Z Collecting boto3>=1.34.0 (from -r ./auth_resolver/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:51.5524443Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:51.5703011Z Collecting python-dateutil>=2.8.2 (from -r ./auth_resolver/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:51.5721512Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.0106194Z Collecting botocore>=1.34.0 (from -r ./auth_resolver/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.0127541Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2319080Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./auth_resolver/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2338056Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2544288Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./auth_resolver/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2561721Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2942755Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./auth_resolver/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.2960796Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.3191621Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./auth_resolver/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.3209160Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4709473Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4727310Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4850469Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4868762Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4886044Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4903243Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.4921041Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:52.5605607Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	Install Lambda Dependencies	2025-12-26T13:22:53.3186408Z 
+deploy	Install Lambda Dependencies	2025-12-26T13:22:53.3208199Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	Install Lambda Dependencies	2025-12-26T13:22:53.3992898Z Installing dependencies for ./booking/requirements.txt
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.1485390Z Collecting boto3>=1.34.0 (from -r ./booking/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.1506314Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.5833074Z Collecting botocore>=1.34.0 (from -r ./booking/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.5853187Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.6033228Z Collecting python-dateutil>=2.8.2 (from -r ./booking/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.6050880Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8171553Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./booking/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8189688Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8415123Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./booking/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8432110Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8830273Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./booking/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.8847517Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.9074063Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./booking/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:54.9091392Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1189921Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1208305Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1333964Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1351692Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1368555Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1385204Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.1402661Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.2089462Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.9817622Z 
+deploy	Install Lambda Dependencies	2025-12-26T13:22:55.9840291Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	Install Lambda Dependencies	2025-12-26T13:22:56.0670941Z Installing dependencies for ./catalog/requirements.txt
+deploy	Install Lambda Dependencies	2025-12-26T13:22:56.8143429Z Collecting boto3>=1.34.0 (from -r ./catalog/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:56.8164384Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:56.8336784Z Collecting python-dateutil>=2.8.2 (from -r ./catalog/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:56.8354477Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.2653481Z Collecting botocore>=1.34.0 (from -r ./catalog/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.2674010Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.4869279Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./catalog/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.4886790Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5112418Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./catalog/requirements.txt (line 1))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5128893Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5500719Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./catalog/requirements.txt (line 3))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5518087Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5739272Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./catalog/requirements.txt (line 2))
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.5756266Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.7897166Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.7913930Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8037754Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8055951Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8072898Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8090582Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8108184Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	Install Lambda Dependencies	2025-12-26T13:22:57.8808548Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	Install Lambda Dependencies	2025-12-26T13:22:58.6422719Z 
+deploy	Install Lambda Dependencies	2025-12-26T13:22:58.6445106Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	Configure AWS credentials	﻿2025-12-26T13:22:58.7324439Z ##[group]Run aws-actions/configure-aws-credentials@v4
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7324791Z with:
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7325079Z   role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7325431Z   aws-region: us-east-1
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7325658Z   audience: sts.amazonaws.com
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7325904Z   output-env-credentials: true
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7326137Z env:
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7326374Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7326791Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7327198Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7327564Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7327937Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7328297Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	Configure AWS credentials	2025-12-26T13:22:58.7328597Z ##[endgroup]
+deploy	Configure AWS credentials	2025-12-26T13:22:58.9500820Z Assuming role with OIDC
+deploy	Configure AWS credentials	2025-12-26T13:22:59.0340959Z Authenticated as assumedRoleId AROAY2YXRRJ4FJCZEMYSV:GitHubActions
+deploy	Install CDK dependencies	﻿2025-12-26T13:22:59.0634023Z ##[group]Run npm ci
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0634321Z [36;1mnpm ci[0m
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0667479Z shell: /usr/bin/bash -e {0}
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0667739Z env:
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0668021Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0668493Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0668958Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0669374Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0669955Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0670364Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0670723Z   AWS_DEFAULT_REGION: us-east-1
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0670984Z   AWS_REGION: us-east-1
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0671348Z   AWS_ACCESS_KEY_ID: ***
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0671712Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0677340Z   AWS_SESSION_TOKEN: ***
+deploy	Install CDK dependencies	2025-12-26T13:22:59.0677579Z ##[endgroup]
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6271927Z 
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6272698Z added 26 packages, and audited 63 packages in 6s
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6273203Z 
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6273489Z 4 packages are looking for funding
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6274194Z   run `npm fund` for details
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6281752Z 
+deploy	Install CDK dependencies	2025-12-26T13:23:05.6281997Z found 0 vulnerabilities
+deploy	Sanitize Environment Name	﻿2025-12-26T13:23:05.6498187Z ##[group]Run # Get branch name (head_ref for PRs, ref_name for dispatch)
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6498699Z [36;1m# Get branch name (head_ref for PRs, ref_name for dispatch)[0m
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6499050Z [36;1mRAW_BRANCH=dev[0m
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6499280Z [36;1m# Replace slashes with hyphens[0m
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6499574Z [36;1mSANITIZED_BRANCH=${RAW_BRANCH//\//-}[0m
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6499921Z [36;1mecho "ENV_NAME=${SANITIZED_BRANCH}" >> $GITHUB_ENV[0m
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6534420Z shell: /usr/bin/bash -e {0}
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6534666Z env:
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6534916Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6535337Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6535748Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6536101Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6536481Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6536884Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6537202Z   AWS_DEFAULT_REGION: us-east-1
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6537440Z   AWS_REGION: us-east-1
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6538027Z   AWS_ACCESS_KEY_ID: ***
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6538361Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6543321Z   AWS_SESSION_TOKEN: ***
+deploy	Sanitize Environment Name	2025-12-26T13:23:05.6543533Z ##[endgroup]
+deploy	Deploy with CDK	﻿2025-12-26T13:23:05.6650050Z ##[group]Run npx cdk deploy --all --require-approval never
+deploy	Deploy with CDK	2025-12-26T13:23:05.6650476Z [36;1mnpx cdk deploy --all --require-approval never[0m
+deploy	Deploy with CDK	2025-12-26T13:23:05.6681755Z shell: /usr/bin/bash -e {0}
+deploy	Deploy with CDK	2025-12-26T13:23:05.6682000Z env:
+deploy	Deploy with CDK	2025-12-26T13:23:05.6682248Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Deploy with CDK	2025-12-26T13:23:05.6682668Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	Deploy with CDK	2025-12-26T13:23:05.6683071Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Deploy with CDK	2025-12-26T13:23:05.6683422Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Deploy with CDK	2025-12-26T13:23:05.6683900Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	Deploy with CDK	2025-12-26T13:23:05.6684254Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	Deploy with CDK	2025-12-26T13:23:05.6684579Z   AWS_DEFAULT_REGION: us-east-1
+deploy	Deploy with CDK	2025-12-26T13:23:05.6684803Z   AWS_REGION: us-east-1
+deploy	Deploy with CDK	2025-12-26T13:23:05.6685134Z   AWS_ACCESS_KEY_ID: ***
+deploy	Deploy with CDK	2025-12-26T13:23:05.6685457Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	Deploy with CDK	2025-12-26T13:23:05.6690260Z   AWS_SESSION_TOKEN: ***
+deploy	Deploy with CDK	2025-12-26T13:23:05.6690482Z   ENV_NAME: dev
+deploy	Deploy with CDK	2025-12-26T13:23:05.6690663Z   ENV: dev
+deploy	Deploy with CDK	2025-12-26T13:23:05.6690827Z ##[endgroup]
+deploy	Deploy with CDK	2025-12-26T13:23:12.2273087Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.2274012Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.2274536Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3306692Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3307670Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3308326Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3316420Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3317628Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3318271Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3325932Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3326770Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3327394Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3331809Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3332598Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3333000Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3337682Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3338498Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3339118Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3343880Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3344705Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3345320Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3349724Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3350547Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3351158Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3355490Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3356317Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3356933Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3364563Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3365369Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3365989Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3371638Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3372435Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3373387Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3378279Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3379083Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.3379686Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3462341Z [WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3464155Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3465413Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3466236Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3467750Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3469104Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3469980Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.3470619Z   
+deploy	Deploy with CDK	2025-12-26T13:23:12.3471051Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:12.4900773Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:12.4902091Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:12.4903261Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:13.1596600Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:13.1597293Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:13.1598090Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:13.7126796Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:13.7127607Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:13.7128164Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:14.3167146Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:14.3168072Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:14.3168694Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:14.7994639Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:14.7995463Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:14.7996020Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4447760Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4448340Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4448731Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4470763Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4471288Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4471670Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4492915Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4493860Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4494461Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4525815Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4526349Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4526741Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4548385Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4548904Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4549289Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4572944Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4573475Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4574078Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4656574Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4657445Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4657880Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4743386Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4744469Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4745145Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4949293Z [WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:15.4950119Z   use Definition.schema instead
+deploy	Deploy with CDK	2025-12-26T13:23:15.4950782Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:16.1177505Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:21.0736257Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.0737064Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.0737659Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1622047Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1623054Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1623943Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1683014Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1683872Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1684294Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1691719Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1692783Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1693237Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1697993Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1698634Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1699023Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1703560Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1704349Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1704747Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1709084Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1709740Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1710125Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1714495Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1715201Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1715620Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1719113Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1719774Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1726294Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1727135Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1727634Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1728025Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1732442Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1733133Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1733508Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1738099Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1738788Z   use `pointInTimeRecoverySpecification` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.1739457Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1800305Z [WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1802029Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1803452Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1804326Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1805470Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1806457Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1807135Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.1807637Z   
+deploy	Deploy with CDK	2025-12-26T13:23:21.1807970Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.3144986Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.3145884Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.3146524Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.5745399Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.5746100Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.5746585Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.7452969Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.7453583Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.7454229Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:21.9159962Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:21.9160795Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:21.9161366Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.0638482Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.0639351Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.0639933Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2675636Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2676371Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2676885Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2695986Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2696588Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2696932Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2714501Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2715462Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2716138Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2737767Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2738489Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2738988Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2758021Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2758649Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2758985Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2777998Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2778609Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2778937Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2857878Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2858679Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2859090Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2941865Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.2942902Z   use `logGroup` instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.2943318Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.3140625Z [WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+deploy	Deploy with CDK	2025-12-26T13:23:22.3141201Z   use Definition.schema instead
+deploy	Deploy with CDK	2025-12-26T13:23:22.3141625Z   This API will be removed in the next major release.
+deploy	Deploy with CDK	2025-12-26T13:23:22.8276690Z 
+deploy	Deploy with CDK	2025-12-26T13:23:22.8277528Z ✨  Synthesis time: 16.01s
+deploy	Deploy with CDK	2025-12-26T13:23:22.8277750Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.2020647Z ChatBooking-dev-Database
+deploy	Deploy with CDK	2025-12-26T13:23:23.2024886Z ChatBooking-dev-Database: deploying... [1/5]
+deploy	Deploy with CDK	2025-12-26T13:23:23.2549303Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:23.2684835Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:23.3574595Z ChatBooking-dev-BackendV4: start: Building AuthResolverFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3575429Z ChatBooking-dev-BackendV4: success: Built AuthResolverFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3581940Z ChatBooking-dev-BackendV4: start: Building CatalogFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3582652Z ChatBooking-dev-BackendV4: success: Built CatalogFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3587801Z ChatBooking-dev-BackendV4: start: Building AvailabilityFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3588806Z ChatBooking-dev-BackendV4: success: Built AvailabilityFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3595421Z ChatBooking-dev-BackendV4: start: Building BookingFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3596398Z ChatBooking-dev-BackendV4: success: Built BookingFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3600714Z ChatBooking-dev-BackendV4: start: Building ChatAgentFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3601490Z ChatBooking-dev-BackendV4: success: Built ChatAgentFunction/Code
+deploy	Deploy with CDK	2025-12-26T13:23:23.3605946Z ChatBooking-dev-BackendV4: start: Building ChatBooking-dev-BackendV4 Template
+deploy	Deploy with CDK	2025-12-26T13:23:23.3606882Z ChatBooking-dev-BackendV4: success: Built ChatBooking-dev-BackendV4 Template
+deploy	Deploy with CDK	2025-12-26T13:23:23.3610867Z ChatBooking-dev-AppSyncApiV3: start: Building ChatBooking-dev-AppSyncApiV3 Template
+deploy	Deploy with CDK	2025-12-26T13:23:23.3611821Z ChatBooking-dev-AppSyncApiV3: success: Built ChatBooking-dev-AppSyncApiV3 Template
+deploy	Deploy with CDK	2025-12-26T13:23:23.5814836Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.5816177Z  ✅  ChatBooking-dev-Database (no changes)
+deploy	Deploy with CDK	2025-12-26T13:23:23.5816952Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.5817490Z ✨  Deployment time: 0.38s
+deploy	Deploy with CDK	2025-12-26T13:23:23.5817968Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.5818219Z Outputs:
+deploy	Deploy with CDK	2025-12-26T13:23:23.5818958Z ChatBooking-dev-Database.ApiKeysTableName = ChatBooking-ApiKeys
+deploy	Deploy with CDK	2025-12-26T13:23:23.5820070Z ChatBooking-dev-Database.AvailabilityTableName = ChatBooking-ProviderAvailability
+deploy	Deploy with CDK	2025-12-26T13:23:23.5821517Z ChatBooking-dev-Database.BookingsTableName = ChatBooking-Bookings
+deploy	Deploy with CDK	2025-12-26T13:23:23.5822554Z ChatBooking-dev-Database.CategoriesTableName = ChatBooking-Categories
+deploy	Deploy with CDK	2025-12-26T13:23:23.5823987Z ChatBooking-dev-Database.ConversationsTableName = ChatBooking-Conversations
+deploy	Deploy with CDK	2025-12-26T13:23:23.5825085Z ChatBooking-dev-Database.DocumentsTableName = ChatBooking-Documents
+deploy	Deploy with CDK	2025-12-26T13:23:23.5827065Z ChatBooking-dev-Database.ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-ApiKeys
+deploy	Deploy with CDK	2025-12-26T13:23:23.5829606Z ChatBooking-dev-Database.ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-ProviderAvailability
+deploy	Deploy with CDK	2025-12-26T13:23:23.5832266Z ChatBooking-dev-Database.ExportsOutputFnGetAttBookingsTableB2628485Arn4FAB36A9 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Bookings
+deploy	Deploy with CDK	2025-12-26T13:23:23.5835306Z ChatBooking-dev-Database.ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Categories
+deploy	Deploy with CDK	2025-12-26T13:23:23.5837819Z ChatBooking-dev-Database.ExportsOutputFnGetAttConversationsTableCD91EB96Arn4A2B28C6 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Conversations
+deploy	Deploy with CDK	2025-12-26T13:23:23.5840665Z ChatBooking-dev-Database.ExportsOutputFnGetAttDocumentsTable7E808EE5Arn0820EA25 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Documents
+deploy	Deploy with CDK	2025-12-26T13:23:23.5842805Z ChatBooking-dev-Database.ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-FAQs
+deploy	Deploy with CDK	2025-12-26T13:23:23.5845769Z ChatBooking-dev-Database.ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Providers
+deploy	Deploy with CDK	2025-12-26T13:23:23.5848329Z ChatBooking-dev-Database.ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Services
+deploy	Deploy with CDK	2025-12-26T13:23:23.5851007Z ChatBooking-dev-Database.ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-TenantUsage
+deploy	Deploy with CDK	2025-12-26T13:23:23.5853374Z ChatBooking-dev-Database.ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Tenants
+deploy	Deploy with CDK	2025-12-26T13:23:23.5856314Z ChatBooking-dev-Database.ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Workflows
+deploy	Deploy with CDK	2025-12-26T13:23:23.5858089Z ChatBooking-dev-Database.ExportsOutputRefApiKeysTable9F4DC7E79648F444 = ChatBooking-ApiKeys
+deploy	Deploy with CDK	2025-12-26T13:23:23.5859705Z ChatBooking-dev-Database.ExportsOutputRefAvailabilityTable497A1E6E14D99412 = ChatBooking-ProviderAvailability
+deploy	Deploy with CDK	2025-12-26T13:23:23.5861391Z ChatBooking-dev-Database.ExportsOutputRefBookingsTableB262848587A36CBD = ChatBooking-Bookings
+deploy	Deploy with CDK	2025-12-26T13:23:23.5862971Z ChatBooking-dev-Database.ExportsOutputRefCategoriesTable9FFF5A678A053E38 = ChatBooking-Categories
+deploy	Deploy with CDK	2025-12-26T13:23:23.5865341Z ChatBooking-dev-Database.ExportsOutputRefConversationsTableCD91EB96EE2E4585 = ChatBooking-Conversations
+deploy	Deploy with CDK	2025-12-26T13:23:23.5867516Z ChatBooking-dev-Database.ExportsOutputRefDocumentsTable7E808EE5AF045745 = ChatBooking-Documents
+deploy	Deploy with CDK	2025-12-26T13:23:23.5868907Z ChatBooking-dev-Database.ExportsOutputRefFAQsTableB80729705EF12C8E = ChatBooking-FAQs
+deploy	Deploy with CDK	2025-12-26T13:23:23.5870270Z ChatBooking-dev-Database.ExportsOutputRefProvidersTable1BBEDB6D429B9BF2 = ChatBooking-Providers
+deploy	Deploy with CDK	2025-12-26T13:23:23.5871971Z ChatBooking-dev-Database.ExportsOutputRefServicesTableF56E8DC54FC0C84D = ChatBooking-Services
+deploy	Deploy with CDK	2025-12-26T13:23:23.5873455Z ChatBooking-dev-Database.ExportsOutputRefTenantUsageTableF384CCCA317F1334 = ChatBooking-TenantUsage
+deploy	Deploy with CDK	2025-12-26T13:23:23.5875180Z ChatBooking-dev-Database.ExportsOutputRefTenantsTableB701DC57BE8E768B = ChatBooking-Tenants
+deploy	Deploy with CDK	2025-12-26T13:23:23.5876251Z ChatBooking-dev-Database.ExportsOutputRefWorkflowsTable4E215008D0FFE690 = ChatBooking-Workflows
+deploy	Deploy with CDK	2025-12-26T13:23:23.5876922Z ChatBooking-dev-Database.FAQsTableName = ChatBooking-FAQs
+deploy	Deploy with CDK	2025-12-26T13:23:23.5877459Z ChatBooking-dev-Database.ProvidersTableName = ChatBooking-Providers
+deploy	Deploy with CDK	2025-12-26T13:23:23.5878007Z ChatBooking-dev-Database.ServicesTableName = ChatBooking-Services
+deploy	Deploy with CDK	2025-12-26T13:23:23.5878797Z ChatBooking-dev-Database.TenantUsageTableName = ChatBooking-TenantUsage
+deploy	Deploy with CDK	2025-12-26T13:23:23.5879712Z ChatBooking-dev-Database.TenantsTableName = ChatBooking-Tenants
+deploy	Deploy with CDK	2025-12-26T13:23:23.5880675Z ChatBooking-dev-Database.WorkflowsTableName = ChatBooking-Workflows
+deploy	Deploy with CDK	2025-12-26T13:23:23.5881322Z Stack ARN:
+deploy	Deploy with CDK	2025-12-26T13:23:23.5882023Z arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-Database/734ed200-d5f3-11f0-aad1-0e2b43abba09
+deploy	Deploy with CDK	2025-12-26T13:23:23.5882435Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.5882645Z ✨  Total time: 16.38s
+deploy	Deploy with CDK	2025-12-26T13:23:23.5882780Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.5882886Z ChatBooking-dev-Auth
+deploy	Deploy with CDK	2025-12-26T13:23:23.5883175Z ChatBooking-dev-Auth: deploying... [2/5]
+deploy	Deploy with CDK	2025-12-26T13:23:23.7859785Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.7860960Z  ✅  ChatBooking-dev-Auth (no changes)
+deploy	Deploy with CDK	2025-12-26T13:23:23.7861577Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.7862021Z ✨  Deployment time: 0.2s
+deploy	Deploy with CDK	2025-12-26T13:23:23.7862526Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.7863066Z Outputs:
+deploy	Deploy with CDK	2025-12-26T13:23:23.7864816Z ChatBooking-dev-Auth.ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57 = arn:aws:cognito-idp:us-east-1:607250385528:userpool/us-east-1_dG9vi0gz5
+deploy	Deploy with CDK	2025-12-26T13:23:23.7868016Z ChatBooking-dev-Auth.ExportsOutputRefAdminUserPoolD0AF18CF79276EF5 = us-east-1_dG9vi0gz5
+deploy	Deploy with CDK	2025-12-26T13:23:23.7869682Z ChatBooking-dev-Auth.UserPoolArn = arn:aws:cognito-idp:us-east-1:607250385528:userpool/us-east-1_dG9vi0gz5
+deploy	Deploy with CDK	2025-12-26T13:23:23.7871053Z ChatBooking-dev-Auth.UserPoolClientId = 7fst837q5gptanpev9fur88va6
+deploy	Deploy with CDK	2025-12-26T13:23:23.7878850Z ChatBooking-dev-Auth.UserPoolDomain = chatbooking-admin-607250385528
+deploy	Deploy with CDK	2025-12-26T13:23:23.7879751Z ChatBooking-dev-Auth.UserPoolId = us-east-1_dG9vi0gz5
+deploy	Deploy with CDK	2025-12-26T13:23:23.7882062Z ChatBooking-dev-Auth.UserPoolLoginUrl = https://chatbooking-admin-607250385528.auth.us-east-1.amazoncognito.com/login?client_id=7fst837q5gptanpev9fur88va6&response_type=code&redirect_uri=http://localhost:3000/auth/callback
+deploy	Deploy with CDK	2025-12-26T13:23:23.7883928Z Stack ARN:
+deploy	Deploy with CDK	2025-12-26T13:23:23.7884911Z arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-Auth/514e71b0-d5f3-11f0-a6f5-124023a51f0d
+deploy	Deploy with CDK	2025-12-26T13:23:23.7885662Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.7885967Z ✨  Total time: 16.21s
+deploy	Deploy with CDK	2025-12-26T13:23:23.7886212Z 
+deploy	Deploy with CDK	2025-12-26T13:23:23.7886426Z ChatBooking-dev-KnowledgeBase
+deploy	Deploy with CDK	2025-12-26T13:23:23.7887063Z ChatBooking-dev-KnowledgeBase: deploying... [3/5]
+deploy	Deploy with CDK	2025-12-26T13:23:24.0211313Z 
+deploy	Deploy with CDK	2025-12-26T13:23:24.0213184Z  ✅  ChatBooking-dev-KnowledgeBase (no changes)
+deploy	Deploy with CDK	2025-12-26T13:23:24.0215085Z 
+deploy	Deploy with CDK	2025-12-26T13:23:24.0215460Z ✨  Deployment time: 0.23s
+deploy	Deploy with CDK	2025-12-26T13:23:24.0215753Z 
+deploy	Deploy with CDK	2025-12-26T13:23:24.0215910Z Outputs:
+deploy	Deploy with CDK	2025-12-26T13:23:24.0217570Z ChatBooking-dev-KnowledgeBase.DatabaseEndpoint = chatbooking-dev-knowledge-vectordatabasev2434b2578-xdcvfqx3st8i.cluster-cklcyqa8b2gr.us-east-1.rds.amazonaws.com
+deploy	Deploy with CDK	2025-12-26T13:23:24.0220537Z ChatBooking-dev-KnowledgeBase.DatabaseSecretArn = arn:aws:secretsmanager:us-east-1:607250385528:secret:VectorDatabaseV2SecretAA59A-yOEbH5z6ns7F-vISSvC
+deploy	Deploy with CDK	2025-12-26T13:23:24.0222444Z ChatBooking-dev-KnowledgeBase.ExportsOutputFnGetAttDbSecurityGroupE9D701ADGroupId7A7C114A = sg-03991c5a50ebedb3a
+deploy	Deploy with CDK	2025-12-26T13:23:24.0224765Z ChatBooking-dev-KnowledgeBase.ExportsOutputRefChatBookingVpcIsolatedSubnet1Subnet32DB4342E8F5464C = subnet-088ef2147e97824fb
+deploy	Deploy with CDK	2025-12-26T13:23:24.0227006Z ChatBooking-dev-KnowledgeBase.ExportsOutputRefChatBookingVpcIsolatedSubnet2SubnetEE3163B2F94EAEE0 = subnet-0133a325246e83ff3
+deploy	Deploy with CDK	2025-12-26T13:23:24.0229378Z ChatBooking-dev-KnowledgeBase.ExportsOutputRefVectorDatabaseV2434B25788F13BE46 = chatbooking-dev-knowledge-vectordatabasev2434b2578-xdcvfqx3st8i
+deploy	Deploy with CDK	2025-12-26T13:23:24.0232270Z ChatBooking-dev-KnowledgeBase.ExportsOutputRefVectorDatabaseV2SecretAttachmentF170D3E6384C4713 = arn:aws:secretsmanager:us-east-1:607250385528:secret:VectorDatabaseV2SecretAA59A-yOEbH5z6ns7F-vISSvC
+deploy	Deploy with CDK	2025-12-26T13:23:24.0235354Z Stack ARN:
+deploy	Deploy with CDK	2025-12-26T13:23:24.0236337Z arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-KnowledgeBase/49f72bc0-e203-11f0-a598-12771eb5df43
+deploy	Deploy with CDK	2025-12-26T13:23:24.0237075Z 
+deploy	Deploy with CDK	2025-12-26T13:23:24.0237735Z ✨  Total time: 16.24s
+deploy	Deploy with CDK	2025-12-26T13:23:24.0237955Z 
+deploy	Deploy with CDK	2025-12-26T13:23:24.1091522Z ChatBooking-dev-BackendV4: start: Publishing CatalogFunction/Code (607250385528-us-east-1-864d6205)
+deploy	Deploy with CDK	2025-12-26T13:23:24.1136686Z ChatBooking-dev-BackendV4: start: Publishing AuthResolverFunction/Code (607250385528-us-east-1-f797577d)
+deploy	Deploy with CDK	2025-12-26T13:23:24.1388969Z ChatBooking-dev-BackendV4: start: Publishing BookingFunction/Code (607250385528-us-east-1-a06112a5)
+deploy	Deploy with CDK	2025-12-26T13:23:24.1479235Z ChatBooking-dev-BackendV4: start: Publishing AvailabilityFunction/Code (607250385528-us-east-1-bb632dd1)
+deploy	Deploy with CDK	2025-12-26T13:23:24.1664860Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:24.1726152Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:24.1842262Z ChatBooking-dev-BackendV4: start: Publishing ChatAgentFunction/Code (607250385528-us-east-1-2ef5c12d)
+deploy	Deploy with CDK	2025-12-26T13:23:24.2002883Z ChatBooking-dev-BackendV4: start: Publishing ChatBooking-dev-BackendV4 Template (607250385528-us-east-1-0c0a80cb)
+deploy	Deploy with CDK	2025-12-26T13:23:24.2059086Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:24.2093396Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-file-publishing-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	Deploy with CDK	2025-12-26T13:23:24.7682943Z ChatBooking-dev-BackendV4: success: Published ChatBooking-dev-BackendV4 Template (607250385528-us-east-1-0c0a80cb)
+deploy	Deploy with CDK	2025-12-26T13:23:29.1237065Z ChatBooking-dev-BackendV4: success: Published CatalogFunction/Code (607250385528-us-east-1-864d6205)
+deploy	Deploy with CDK	2025-12-26T13:23:29.1354888Z ChatBooking-dev-BackendV4: success: Published AuthResolverFunction/Code (607250385528-us-east-1-f797577d)
+deploy	Deploy with CDK	2025-12-26T13:23:29.1506446Z ChatBooking-dev-BackendV4: success: Published BookingFunction/Code (607250385528-us-east-1-a06112a5)
+deploy	Deploy with CDK	2025-12-26T13:23:29.9371363Z ChatBooking-dev-BackendV4: success: Published AvailabilityFunction/Code (607250385528-us-east-1-bb632dd1)
+deploy	Deploy with CDK	2025-12-26T13:23:30.2238150Z ChatBooking-dev-BackendV4: success: Published ChatAgentFunction/Code (607250385528-us-east-1-2ef5c12d)
+deploy	Deploy with CDK	2025-12-26T13:23:30.2239022Z ChatBooking-dev-BackendV4
+deploy	Deploy with CDK	2025-12-26T13:23:30.2247000Z ChatBooking-dev-BackendV4: deploying... [4/5]
+deploy	Deploy with CDK	2025-12-26T13:23:30.7805074Z ChatBooking-dev-BackendV4: creating CloudFormation changeset...
+deploy	Deploy with CDK	2025-12-26T13:23:30.9247783Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9249188Z NOTICES         (What's this? https://github.com/aws/aws-cdk/wiki/CLI-Notices)
+deploy	Deploy with CDK	2025-12-26T13:23:30.9249516Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9251894Z 34892	CDK CLI will collect telemetry data on command usage starting at version 2.1100.0 (unless opted out)
+deploy	Deploy with CDK	2025-12-26T13:23:30.9252561Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9252930Z 	Overview: We do not collect customer content and we anonymize the
+deploy	Deploy with CDK	2025-12-26T13:23:30.9253860Z 	          telemetry we do collect. See the attached issue for more
+deploy	Deploy with CDK	2025-12-26T13:23:30.9254589Z 	          information on what data is collected, why, and how to
+deploy	Deploy with CDK	2025-12-26T13:23:30.9255308Z 	          opt-out. Telemetry will NOT be collected for any CDK CLI
+deploy	Deploy with CDK	2025-12-26T13:23:30.9255983Z 	          version prior to version 2.1100.0 - regardless of
+deploy	Deploy with CDK	2025-12-26T13:23:30.9256505Z 	          opt-in/out. You can also preview the telemetry we will start
+deploy	Deploy with CDK	2025-12-26T13:23:30.9256936Z 	          collecting by logging it to a local file, by adding
+deploy	Deploy with CDK	2025-12-26T13:23:30.9257379Z 	          `--unstable=telemetry --telemetry-file=my/local/file` to any
+deploy	Deploy with CDK	2025-12-26T13:23:30.9257785Z 	          `cdk` command.
+deploy	Deploy with CDK	2025-12-26T13:23:30.9258044Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9258264Z 	Affected versions: cli: >=2.0.0 <2.1100.0
+deploy	Deploy with CDK	2025-12-26T13:23:30.9258589Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9258918Z 	More information at: https://github.com/aws/aws-cdk/issues/34892
+deploy	Deploy with CDK	2025-12-26T13:23:30.9259202Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9259209Z 
+deploy	Deploy with CDK	2025-12-26T13:23:30.9260221Z If you don’t want to see a notice anymore, use "cdk acknowledge <id>". For example, "cdk acknowledge 34892".
+deploy	Deploy with CDK	2025-12-26T13:23:30.9261729Z ❌  ChatBooking-dev-BackendV4 failed: ValidationError: Stack:arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-BackendV4/0a7a3630-e25e-11f0-81e7-0affdfdc7503 is in CREATE_IN_PROGRESS state and can not be updated.
+deploy	Deploy with CDK	2025-12-26T13:23:30.9591521Z ##[error]Process completed with exit code 1.
+deploy	Post Configure AWS credentials	﻿2025-12-26T13:23:30.9664831Z Post job cleanup.
+deploy	Post Checkout repo	﻿2025-12-26T13:23:31.0951511Z Post job cleanup.
+deploy	Post Checkout repo	2025-12-26T13:23:31.1901736Z [command]/usr/bin/git version
+deploy	Post Checkout repo	2025-12-26T13:23:31.1939727Z git version 2.52.0
+deploy	Post Checkout repo	2025-12-26T13:23:31.1984322Z Temporarily overriding HOME='/home/runner/work/_temp/fac11772-f591-44da-adf1-ff9553be28f2' before making global git config changes
+deploy	Post Checkout repo	2025-12-26T13:23:31.1985846Z Adding repository directory to the temporary git global config as a safe directory
+deploy	Post Checkout repo	2025-12-26T13:23:31.1991205Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	Post Checkout repo	2025-12-26T13:23:31.2028166Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy	Post Checkout repo	2025-12-26T13:23:31.2061726Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy	Post Checkout repo	2025-12-26T13:23:31.2313779Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy	Post Checkout repo	2025-12-26T13:23:31.2337527Z http.https://github.com/.extraheader
+deploy	Post Checkout repo	2025-12-26T13:23:31.2355515Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+deploy	Post Checkout repo	2025-12-26T13:23:31.2390936Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy	Post Checkout repo	2025-12-26T13:23:31.2651317Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy	Post Checkout repo	2025-12-26T13:23:31.2685554Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy	Complete job	﻿2025-12-26T13:23:31.3037929Z Cleaning up orphan processes

@@ -51,8 +51,9 @@ class TenantStatus(Enum):
 
 class TenantPlan(Enum):
     """Subscription plans"""
-    FREE = "FREE"
+    LITE = "LITE"
     PRO = "PRO"
+    BUSINESS = "BUSINESS"
     ENTERPRISE = "ENTERPRISE"
 
 
