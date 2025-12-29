@@ -157,14 +157,16 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # 7. Return Result
         # Map entity to GraphQL type
-        return {
             'tenantId': str(tenant.tenant_id),
             'name': tenant.name,
+            'slug': tenant.slug,
             'status': tenant.status.value,
             'plan': tenant.plan.value,
+            'ownerUserId': tenant.owner_user_id,
             'billingEmail': tenant.billing_email,
-            'createdAt': tenant.created_at.isoformat() + 'Z'
-        }
+            'settings': json.dumps(tenant.settings) if tenant.settings else None,
+            'createdAt': tenant.created_at.isoformat(),
+            'updatedAt': tenant.created_at.isoformat()
 
     except ValueError as ve:
         logger.warning(f"Validation error: {ve}")
