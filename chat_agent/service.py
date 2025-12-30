@@ -272,12 +272,30 @@ class ChatAgentService:
                     "stepId": "select_timeslot",
                     "type": "TOOL",
                     "content": {"tool": "checkAvailability"},
+                    "next": "request_contact_info"
+                },
+                "request_contact_info": {
+                    "stepId": "request_contact_info",
+                    "type": "MESSAGE",
+                    "content": {"text": "Perfecto. Para confirmar tu reserva, necesito algunos datos."},
+                    "next": "collect_contact_info"
+                },
+                "collect_contact_info": {
+                    "stepId": "collect_contact_info",
+                    "type": "TOOL",
+                    "content": {"tool": "collectContactInfo"},
                     "next": "confirm_booking"
                 },
                 "confirm_booking": {
                     "stepId": "confirm_booking",
+                    "type": "TOOL",
+                    "content": {"tool": "confirmBooking"},
+                    "next": "booking_success"
+                },
+                "booking_success": {
+                    "stepId": "booking_success",
                     "type": "MESSAGE",
-                    "content": {"text": "¡Perfecto! Funcionalidad de confirmación en desarrollo. Aquí termina el demo por ahora."}
+                    "content": {"text": "¡Reserva confirmada! 🎉 Te hemos enviado un email de confirmación."}
                 },
                 "show_faqs": {
                     "stepId": "show_faqs",
