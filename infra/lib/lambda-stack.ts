@@ -104,6 +104,10 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(10), // Fast for auth
       memorySize: 256, // Less memory for simple validation
+      environment: {
+        ...commonProps.environment,
+        ALLOWED_IPS: '181.166.197.80', // Default IP for dev (Santiago/VTR)
+      },
     });
 
     // Grant permissions
