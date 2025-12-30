@@ -96,7 +96,8 @@ class ChatAgentService:
              self._workflow_repo.save(active_workflow)
         
         # Self-healing: Repair broken default workflow if missing critical steps
-        if active_workflow.name == "Default Booking Flow" and "select_timeslot" not in active_workflow.steps:
+        # Check for 'select_timeslot' (basic) or 'request_contact_info' (v2 flow)
+        if active_workflow.name == "Default Booking Flow" and ("select_timeslot" not in active_workflow.steps or "request_contact_info" not in active_workflow.steps):
              updated_default = self._create_default_workflow(tenant_id)
              # Preserve ID and other metadata, just update steps
              active_workflow.steps = updated_default.steps
