@@ -48,3 +48,5 @@ samconfig.toml
 
 # CDK
 infra/cdk.out/
+debug_register_tenant_local.py
+test_plan_sync.py
