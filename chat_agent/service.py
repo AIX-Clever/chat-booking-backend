@@ -247,7 +247,7 @@ class ChatAgentService:
                     "stepId": "start",
                     "type": "DYNAMIC_OPTIONS",
                     "content": {
-                        "text": "¡Hola! 👋 Soy Lucia. Bienvenido. ¿En qué te puedo ayudar hoy?",
+                        "text": "¿En qué te puedo ayudar hoy?",
                         "sources": ["SERVICES", "PROVIDERS", "FAQS"],
                         "options_mapping": {
                             "SERVICES": {"label": "Reservar Servicio", "value": "flow_booking", "next": "search_service"},
