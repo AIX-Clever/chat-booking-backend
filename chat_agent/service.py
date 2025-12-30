@@ -65,7 +65,7 @@ class ChatAgentService:
         self._tenant_repo = tenant_repo
         
         self.workflow_engine = WorkflowEngine(
-            service_repo, provider_repo, faq_repo, availability_repo
+            service_repo, provider_repo, faq_repo, availability_repo, booking_repo
         )
 
         # Initialize AI Handler if infrastructure is available

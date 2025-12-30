@@ -1,8 +1,9 @@
 
 from typing import Optional, Dict, Any, List
 from datetime import datetime, UTC, timedelta
-from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId
+from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId, Booking, BookingStatus, CustomerInfo
 from shared.domain.exceptions import ValidationError
+from shared.utils import generate_id
 from fsm import ResponseBuilder
 
 class WorkflowEngine:
@@ -11,11 +12,12 @@ class WorkflowEngine:
     Replaces the hardcoded FSM logic.
     """
 
-    def __init__(self, service_repo, provider_repo, faq_repo, availability_repo):
+    def __init__(self, service_repo, provider_repo, faq_repo, availability_repo, booking_repo):
         self.service_repo = service_repo
         self.provider_repo = provider_repo
         self.faq_repo = faq_repo
         self.availability_repo = availability_repo
+        self.booking_repo = booking_repo
 
     def process_step(
         self, 
@@ -299,6 +301,42 @@ class WorkflowEngine:
             # If we are here, input was invalid or just conversation text.
             # Return None to potentially stay on step or re-prompt? 
             return None
+            
+        elif tool_name == 'collectContactInfo':
+             # Try to parse contact info from user_data (form submission) or user_input (text)
+             # Expected keys: clientName, clientEmail, clientPhone
+             
+             data = user_data if user_data else {}
+             
+             # If text input, simple heuristics (or rely on ai later)
+             # For now, require structured input or valid json?
+             # Or just accept it as 'notes' if we can't parse?
+             # Let's assume the frontend sends a FORM submission as user_data.
+             
+             name = data.get('clientName')
+             email = data.get('clientEmail')
+             
+             # Simple validation
+             if name and email:
+                 conversation.context['clientName'] = name
+                 conversation.context['clientEmail'] = email
+                 conversation.context['clientPhone'] = data.get('clientPhone')
+                 conversation.context['notes'] = data.get('notes')
+                 return step.next_step
+             
+             # If using text chat purely, we might need a multi-turn slot filling here.
+             # But for this implementation, let's assume if we fail to parse, we stay on step.
+             
+             return None
+
+        elif tool_name == 'confirmBooking':
+            # This tool is usually auto-executed, but if we are here handling input,
+            # it means the user replied to the "Success" message.
+            # We should probably do nothing or restart?
+            if 'gracias' in user_input.lower():
+                return None # Stay on success message
+            
+            return None
 
         return None
 
@@ -431,6 +469,63 @@ class WorkflowEngine:
                   return ResponseBuilder.no_availability_message()
              
              return ResponseBuilder.date_selection_message(slots[:10]) # Limit to 10 for UI
+
+        elif tool_name == 'collectContactInfo':
+             return ResponseBuilder.contact_info_message()
+             
+        elif tool_name == 'confirmBooking':
+            # Create the booking
+            try:
+                ctx = conversation.context
+                
+                # Validate required fields
+                required = ['serviceId', 'providerId', 'selectedSlot', 'clientName', 'clientEmail']
+                missing = [f for f in required if not ctx.get(f)]
+                if missing:
+                     return ResponseBuilder.error_message(f"Faltan datos para la reserva: {', '.join(missing)}")
+                
+                booking_id = generate_id('bk')
+                
+                booking = Booking(
+                    booking_id=booking_id,
+                    tenant_id=conversation.tenant_id,
+                    service_id=ctx['serviceId'],
+                    provider_id=ctx['providerId'],
+                    customer_info=CustomerInfo(
+                        name=ctx['clientName'],
+                        email=ctx['clientEmail'],
+                        phone=ctx.get('clientPhone')
+                    ),
+                    start_time=ctx['selectedSlot'],
+                    status=BookingStatus.CONFIRMED,
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
+                )
+                
+                self.booking_repo.save(booking)
+                
+                # Store booking id in context
+                conversation.context['bookingId'] = booking_id
+                
+                # Return success message
+                # Note: We return the message directly. 
+                # The state remains on this step unless we force move, 
+                # but typically this is the end of flow.
+                
+                # Construct booking dict for response
+                booking_dict = {
+                    'bookingId': booking.booking_id,
+                    'clientEmail': booking.customer_info.email,
+                    'serviceName': ctx.get('serviceName', 'Servicio'), # Should be in context
+                    'providerName': ctx.get('providerName', 'Profesional'),
+                    'startTime': booking.start_time
+                }
+                
+                return ResponseBuilder.success_message(booking_dict)
+                
+            except Exception as e:
+                print(f"Booking Error: {e}")
+                return ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
 
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
 
