@@ -9,6 +9,36 @@ class VectorRepository:
         self.db_cluster_arn = db_cluster_arn
         self.db_secret_arn = db_secret_arn
         self.database_name = 'chatbookingvec'
+        
+    def ensure_schema(self):
+        """
+        Idempotent schema initialization:
+        1. Enable vector extension
+        2. Create embeddings table with vector(1024)
+        """
+        # 1. Extension
+        self._execute("CREATE EXTENSION IF NOT EXISTS vector;")
+        
+        # 2. Table
+        # Note: If validation fails later due to dimension mismatch (e.g. old 1536 table),
+        # we might need to manually DROP via reset_schema() or admin console.
+        sql_table = """
+            CREATE TABLE IF NOT EXISTS embeddings (
+                id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                tenant_id VARCHAR(255) NOT NULL,
+                content TEXT,
+                embedding vector(1024),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            );
+        """
+        self._execute(sql_table)
+        
+        # 3. Index (Optional but good for valid JSON response)
+        # self._execute("CREATE INDEX IF NOT EXISTS idx_embeddings_cosine ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);")
+
+    def reset_schema(self):
+        """DANGEROUS: Drops table to force recreation"""
+        self._execute("DROP TABLE IF EXISTS embeddings;")
 
     def _execute(self, sql: str, parameters: List[Dict[str, Any]] = None):
         """Helper to execute SQL via Data API"""
@@ -41,7 +71,7 @@ class VectorRepository:
         """
         
         params = [
-            {'name': 'tenant_id', 'value': {'stringValue': tenant_id}},
+            {'name': 'tenant_id', 'value': {'stringValue': str(tenant_id)}},
             {'name': 'embedding', 'value': {'stringValue': embedding_str}},
             {'name': 'limit', 'value': {'longValue': limit}}
         ]
@@ -71,7 +101,7 @@ class VectorRepository:
         """
         
         params = [
-            {'name': 'tenant_id', 'value': {'stringValue': tenant_id}},
+            {'name': 'tenant_id', 'value': {'stringValue': str(tenant_id)}},
             {'name': 'content', 'value': {'stringValue': content}},
             {'name': 'embedding', 'value': {'stringValue': embedding_str}}
         ]

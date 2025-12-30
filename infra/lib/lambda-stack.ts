@@ -168,7 +168,7 @@ export class LambdaStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
-      timeout: cdk.Duration.seconds(60), // More time for conversation logic
+      timeout: cdk.Duration.seconds(120), // More time for conversation logic / RAG
       memorySize: 1024, // More memory for FSM processing
       vpc: props.vpc,
       securityGroups: props.dbSecurityGroup ? [props.dbSecurityGroup] : undefined,
@@ -187,6 +187,7 @@ export class LambdaStack extends cdk.Stack {
     props.bookingsTable.grantReadWriteData(this.chatAgentFunction);
     props.tenantUsageTable.grantWriteData(this.chatAgentFunction); // For metrics tracking
     props.workflowsTable.grantReadWriteData(this.chatAgentFunction); // For self-healing (create default workflow)
+    props.tenantsTable.grantReadData(this.chatAgentFunction);
 
     // Grant Bedrock Access for AI Plans
     this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({

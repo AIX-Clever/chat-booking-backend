@@ -70,7 +70,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             name=company_name,
             slug=slug,
             status=TenantStatus.ACTIVE, # Start active for frictionless flow
-            plan=TenantPlan.FREE,       # Start on Free plan
+            plan=TenantPlan.LITE,       # Start on Lite plan
             owner_user_id=email,        # Temporary, will be linked to Cognito Sub if needed
             billing_email=email,
             created_at=datetime.now(timezone.utc)
@@ -160,10 +160,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         return {
             'tenantId': str(tenant.tenant_id),
             'name': tenant.name,
+            'slug': tenant.slug,
             'status': tenant.status.value,
             'plan': tenant.plan.value,
+            'ownerUserId': tenant.owner_user_id,
             'billingEmail': tenant.billing_email,
-            'createdAt': tenant.created_at.isoformat() + 'Z'
+            'settings': json.dumps(tenant.settings) if tenant.settings else None,
+            'createdAt': tenant.created_at.isoformat(),
+            'updatedAt': tenant.created_at.isoformat()
         }
 
     except ValueError as ve:

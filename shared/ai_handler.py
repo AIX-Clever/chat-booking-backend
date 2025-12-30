@@ -23,7 +23,7 @@ class AIHandler:
                 accept="application/json",
                 body=json.dumps({
                     "inputText": text,
-                    "dimensions": 1536,
+                    "dimensions": 1024,
                     "normalize": True
                 })
             )

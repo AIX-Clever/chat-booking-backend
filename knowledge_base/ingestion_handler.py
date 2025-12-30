@@ -5,8 +5,8 @@ from datetime import datetime
 from shared.utils import Logger
 from shared.domain.entities import TenantId
 from shared.infrastructure.vector_repository import VectorRepository
-from chat_agent.ai_handler import AIHandler
-from .document_processor import DocumentProcessor
+from shared.ai_handler import AIHandler
+from document_processor import DocumentProcessor
 
 logger = Logger()
 s3_client = boto3.client('s3')
@@ -36,6 +36,14 @@ def lambda_handler(event: dict, context):
     logger.info("Ingestion triggered", event=event)
     
     # Iterate over records (usually 1)
+    # Ensure DB Schema exists (Idempotent)
+    try:
+        vector_repo.ensure_schema()
+    except Exception as e:
+        logger.error("Schema initialization failed", error=str(e))
+        # Decide if we want to stop or continue. 
+        # Continuing might fail on insert, but let's try.
+    
     for record in event.get('Records', []):
         try:
             process_record(record)

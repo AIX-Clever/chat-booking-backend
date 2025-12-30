@@ -62,6 +62,11 @@ export class VectorDatabaseStack extends cdk.Stack {
             service: ec2.InterfaceVpcEndpointAwsService.BEDROCK_RUNTIME,
         });
 
+        // RDS Data API (required for Aurora Serverless v2 Data API access from Isolated Subnet)
+        this.vpc.addInterfaceEndpoint('RdsDataEndpoint', {
+            service: ec2.InterfaceVpcEndpointAwsService.RDS_DATA,
+        });
+
         // 4. Aurora Serverless v2
         this.cluster = new rds.DatabaseCluster(this, 'VectorDatabaseV2', {
             engine: rds.DatabaseClusterEngine.auroraPostgres({
@@ -80,6 +85,7 @@ export class VectorDatabaseStack extends cdk.Stack {
             defaultDatabaseName: 'chatbookingvec',
             storageEncrypted: true,
             removalPolicy: cdk.RemovalPolicy.RETAIN, // Safer for DBs
+            enableDataApi: true,
         });
 
         this.dbSecret = this.cluster.secret!;

@@ -67,7 +67,7 @@ jobs:
 
       - name: Deploy with CDK
         working-directory: infra
-        run: npx cdk deploy --all --require-approval never
+        run: npx cdk deploy --all --require-approval never -c env=${{ env.ENV_NAME }}
         env:
           ENV: ${{ env.ENV_NAME }} # Uses sanitized branch name
 

@@ -382,7 +382,7 @@ class WorkflowEngine:
                          tenant_id=conversation.tenant_id,
                          provider_id=provider_id,
                          day_of_week=day,
-                         time_ranges=[TimeRange(start='09:00', end='17:00')],
+                     time_ranges=[TimeRange(start_time='09:00', end_time='17:00')],
                          active=True
                      )
                      for day in ['MON', 'TUE', 'WED', 'THU', 'FRI']
@@ -406,8 +406,8 @@ class WorkflowEngine:
                      for window in day_rule.time_ranges:
                          # Simple 60 min slots generation
                          # Parse HH:MM
-                         start_h, start_m = map(int, window.start.split(':'))
-                         end_h, end_m = map(int, window.end.split(':'))
+                         start_h, start_m = map(int, window.start_time.split(':'))
+                         end_h, end_m = map(int, window.end_time.split(':'))
                          
                          current_h, current_m = start_h, start_m
                          

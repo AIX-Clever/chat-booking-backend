@@ -1,0 +1,684 @@
+deploy	UNKNOWN STEP	﻿2025-12-25T17:10:13.7164203Z Current runner version: '2.330.0'
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7186885Z ##[group]Runner Image Provisioner
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7187628Z Hosted Compute Agent
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7188167Z Version: 20251211.462
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7188723Z Commit: 6cbad8c2bb55d58165063d031ccabf57e2d2db61
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7189313Z Build Date: 2025-12-11T16:28:49Z
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7189920Z Worker ID: {99495091-c963-4465-9195-a8c91a1f4a35}
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7190492Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7190961Z ##[group]Operating System
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7191443Z Ubuntu
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7191882Z 24.04.3
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7192286Z LTS
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7192673Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7193128Z ##[group]Runner Image
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7193575Z Image: ubuntu-24.04
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7194030Z Version: 20251215.174.1
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7194899Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20251215.174/images/ubuntu/Ubuntu2404-Readme.md
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7196440Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20251215.174
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7197366Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7198203Z ##[group]GITHUB_TOKEN Permissions
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7200271Z Contents: read
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7200726Z Metadata: read
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7201160Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7203202Z Secret source: Actions
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7203793Z Prepare workflow directory
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7504323Z Prepare all required actions
+deploy	UNKNOWN STEP	2025-12-25T17:10:13.7546381Z Getting action download info
+deploy	UNKNOWN STEP	2025-12-25T17:10:14.1913361Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+deploy	UNKNOWN STEP	2025-12-25T17:10:14.2645125Z Download action repository 'actions/setup-node@v4' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+deploy	UNKNOWN STEP	2025-12-25T17:10:14.3381136Z Download action repository 'actions/setup-python@v5' (SHA:a26af69be951a213d495a4c3e4e4022e16d87065)
+deploy	UNKNOWN STEP	2025-12-25T17:10:14.4022026Z Download action repository 'aws-actions/configure-aws-credentials@v4' (SHA:7474bc4690e29a8392af63c5b98e7449536d5c3a)
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.3724575Z Complete job name: deploy
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4589460Z ##[group]Run actions/checkout@v4
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4590777Z with:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4591601Z   repository: AIX-Clever/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4592997Z   token: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4593728Z   ssh-strict: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4594497Z   ssh-user: git
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4595287Z   persist-credentials: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4596312Z   clean: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4597113Z   sparse-checkout-cone-mode: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4598052Z   fetch-depth: 1
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4598818Z   fetch-tags: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4599592Z   show-progress: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4600374Z   lfs: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4601089Z   submodules: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4601856Z   set-safe-directory: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.4602953Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5613150Z Syncing repository: AIX-Clever/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5615633Z ##[group]Getting Git version info
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5617443Z Working directory is '/home/runner/work/chat-booking-backend/chat-booking-backend'
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5619495Z [command]/usr/bin/git version
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5655219Z git version 2.52.0
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5678213Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5691219Z Temporarily overriding HOME='/home/runner/work/_temp/2e1bd50e-bf52-489b-af09-7d04ceba87e1' before making global git config changes
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5693686Z Adding repository directory to the temporary git global config as a safe directory
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5703985Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5735402Z Deleting the contents of '/home/runner/work/chat-booking-backend/chat-booking-backend'
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5738350Z ##[group]Initializing the repository
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5742393Z [command]/usr/bin/git init /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5832908Z hint: Using 'master' as the name for the initial branch. This default branch name
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5836164Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5838446Z hint: to use in all of your new repositories, which will suppress this warning,
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5839718Z hint: call:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5840396Z hint:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5841277Z hint: 	git config --global init.defaultBranch <name>
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5842631Z hint:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5843664Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5845306Z hint: 'development'. The just-created branch can be renamed via this command:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5846775Z hint:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5847729Z hint: 	git branch -m <name>
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5848592Z hint:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5849680Z hint: Disable this message with "git config set advice.defaultBranchName false"
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5851708Z Initialized empty Git repository in /home/runner/work/chat-booking-backend/chat-booking-backend/.git/
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5854967Z [command]/usr/bin/git remote add origin https://github.com/AIX-Clever/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5877072Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5878508Z ##[group]Disabling automatic garbage collection
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5880097Z [command]/usr/bin/git config --local gc.auto 0
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5902987Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5904228Z ##[group]Setting up auth
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5909145Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.5933602Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6198543Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6222530Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6389811Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6420862Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6591538Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6620081Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6622232Z ##[group]Fetching the repository
+deploy	UNKNOWN STEP	2025-12-25T17:10:15.6630847Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +71fb026b5896a865facb96cdff848e15c776e366:refs/remotes/origin/dev
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8889429Z From https://github.com/AIX-Clever/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8891279Z  * [new ref]         71fb026b5896a865facb96cdff848e15c776e366 -> origin/dev
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8916589Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8917445Z ##[group]Determining the checkout info
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8919066Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8923729Z [command]/usr/bin/git sparse-checkout disable
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8958545Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8978662Z ##[group]Checking out the ref
+deploy	UNKNOWN STEP	2025-12-25T17:10:17.8982189Z [command]/usr/bin/git checkout --progress --force -B dev refs/remotes/origin/dev
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5245211Z Switched to a new branch 'dev'
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5245838Z branch 'dev' set up to track 'origin/dev'.
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5267673Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5304632Z [command]/usr/bin/git log -1 --format=%H
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5324583Z 71fb026b5896a865facb96cdff848e15c776e366
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5523435Z ##[group]Run actions/setup-node@v4
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5523724Z with:
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5523899Z   node-version: 20
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5524101Z   always-auth: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5524487Z   check-latest: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5524841Z   token: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.5525026Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.7146238Z Found in cache @ /opt/hostedtoolcache/node/20.19.6/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:18.7152365Z ##[group]Environment details
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0333291Z node: v20.19.6
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0333703Z npm: 10.8.2
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0334084Z yarn: 1.22.22
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0335304Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0441322Z ##[group]Run actions/setup-python@v5
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0441617Z with:
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0441942Z   python-version: 3.9
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0442183Z   check-latest: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0442547Z   token: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0442747Z   update-environment: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0442965Z   allow-prereleases: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0443184Z   freethreaded: false
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.0443370Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.1988365Z ##[group]Installed versions
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2085499Z Successfully set up CPython (3.9.25)
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2086606Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2166572Z ##[group]Run # Find all requirements.txt files and install dependencies to their directory
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2167381Z [36;1m# Find all requirements.txt files and install dependencies to their directory[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2168036Z [36;1mfind . -name "requirements.txt" -not -path "*/node_modules/*" -not -path "*/.venv/*" | while read req_file; do[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2168534Z [36;1m  echo "Installing dependencies for $req_file"[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2168820Z [36;1m  dir=$(dirname "$req_file")[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2169084Z [36;1m  pip install -r "$req_file" -t "$dir"[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2169337Z [36;1mdone[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2202363Z shell: /usr/bin/bash -e {0}
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2202623Z env:
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2202875Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2203272Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2203690Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2204026Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2204350Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2204684Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2204957Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:19.2422504Z Installing dependencies for ./availability/requirements.txt
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.3940912Z Collecting boto3>=1.34.0 (from -r ./availability/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.4497479Z   Downloading boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.8866845Z Collecting botocore>=1.34.0 (from -r ./availability/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.8975164Z   Downloading botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.9205818Z Collecting python-dateutil>=2.8.2 (from -r ./availability/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.9311383Z   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.9776195Z Collecting pytz>=2023.3 (from -r ./availability/requirements.txt (line 4))
+deploy	UNKNOWN STEP	2025-12-25T17:10:21.9882550Z   Downloading pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.1795106Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./availability/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.1902744Z   Downloading jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.2171236Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./availability/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.2279138Z   Downloading s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.2682171Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./availability/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.2789013Z   Downloading urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.3143752Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./availability/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.3251591Z   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.4659229Z Downloading boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.4882006Z Downloading botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.5599103Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 228.5 MB/s  0:00:00
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.5709407Z Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.5845626Z Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.5971992Z Downloading s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.6098385Z Downloading urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.6230262Z Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.6366408Z Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:22.7271461Z Installing collected packages: pytz, urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	UNKNOWN STEP	2025-12-25T17:10:23.3964258Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:23.3985445Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 pytz-2025.2 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	UNKNOWN STEP	2025-12-25T17:10:23.5708819Z Installing dependencies for ./chat_agent/requirements.txt
+deploy	UNKNOWN STEP	2025-12-25T17:10:23.9458517Z Collecting requests (from -r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:23.9985394Z   Downloading requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.0267076Z Collecting aws-xray-sdk (from -r ./chat_agent/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.0380621Z   Downloading aws_xray_sdk-2.15.0-py2.py3-none-any.whl.metadata (23 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.3896929Z Collecting boto3>=1.34.0 (from -r ./chat_agent/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.3913018Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4107675Z Collecting python-dateutil>=2.8.2 (from -r ./chat_agent/requirements.txt (line 4))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4131534Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4544075Z Collecting pytz>=2023.3 (from -r ./chat_agent/requirements.txt (line 5))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4562112Z   Using cached pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4879898Z Collecting pypdf>=3.0.0 (from -r ./chat_agent/requirements.txt (line 6))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.4986742Z   Downloading pypdf-6.5.0-py3-none-any.whl.metadata (7.1 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.6083280Z Collecting charset_normalizer<4,>=2 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.6202384Z   Downloading charset_normalizer-3.4.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (37 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.6458456Z Collecting idna<4,>=2.5 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.6561064Z   Downloading idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.6938083Z Collecting urllib3<3,>=1.21.1 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.7042042Z   Downloading urllib3-2.6.2-py3-none-any.whl.metadata (6.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.7499098Z Collecting certifi>=2017.4.17 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.7601924Z   Downloading certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.9237730Z Collecting wrapt (from aws-xray-sdk->-r ./chat_agent/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:24.9344009Z   Downloading wrapt-2.0.1-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (9.0 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.4246912Z Collecting botocore>=1.11.3 (from aws-xray-sdk->-r ./chat_agent/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.4262958Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.6706756Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./chat_agent/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.6724003Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.6977443Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./chat_agent/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.7005339Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.7172822Z Collecting urllib3<3,>=1.21.1 (from requests->-r ./chat_agent/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.7191275Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.7442129Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./chat_agent/requirements.txt (line 4))
+deploy	UNKNOWN STEP	2025-12-25T17:10:25.7463573Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0131997Z Collecting typing_extensions>=4.0 (from pypdf>=3.0.0->-r ./chat_agent/requirements.txt (line 6))
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0237637Z   Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0415600Z Downloading requests-2.32.5-py3-none-any.whl (64 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0557396Z Downloading charset_normalizer-3.4.4-cp39-cp39-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (153 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0764962Z Downloading idna-3.11-py3-none-any.whl (71 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0894298Z Downloading aws_xray_sdk-2.15.0-py2.py3-none-any.whl (103 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0941066Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.0957422Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1045594Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1062318Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1077890Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1093987Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1110259Z Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1230380Z Downloading pypdf-6.5.0-py3-none-any.whl (329 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1434397Z Downloading certifi-2025.11.12-py3-none-any.whl (159 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1480399Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1584976Z Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.1710802Z Downloading wrapt-2.0.1-cp39-cp39-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (113 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:26.2657974Z Installing collected packages: pytz, wrapt, urllib3, typing_extensions, six, jmespath, idna, charset_normalizer, certifi, requests, python-dateutil, pypdf, botocore, s3transfer, aws-xray-sdk, boto3
+deploy	UNKNOWN STEP	2025-12-25T17:10:27.3525564Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:27.3555543Z Successfully installed aws-xray-sdk-2.15.0 boto3-1.42.16 botocore-1.42.16 certifi-2025.11.12 charset_normalizer-3.4.4 idna-3.11 jmespath-1.0.1 pypdf-6.5.0 python-dateutil-2.9.0.post0 pytz-2025.2 requests-2.32.5 s3transfer-0.16.0 six-1.17.0 typing_extensions-4.15.0 urllib3-1.26.20 wrapt-2.0.1
+deploy	UNKNOWN STEP	2025-12-25T17:10:27.4661989Z Installing dependencies for ./auth_resolver/requirements.txt
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.1403756Z Collecting boto3>=1.34.0 (from -r ./auth_resolver/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.1422620Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.1625664Z Collecting python-dateutil>=2.8.2 (from -r ./auth_resolver/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.1642427Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.5587753Z Collecting botocore>=1.34.0 (from -r ./auth_resolver/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.5603965Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.6859978Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./auth_resolver/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.6877125Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7101788Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./auth_resolver/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7118229Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7470457Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./auth_resolver/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7486916Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7726808Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./auth_resolver/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.7742844Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.8963094Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.8983228Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9072439Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9089390Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9105369Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9120869Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9137128Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:28.9792626Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	UNKNOWN STEP	2025-12-25T17:10:29.5718489Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:29.5738024Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	UNKNOWN STEP	2025-12-25T17:10:29.6520285Z Installing dependencies for ./booking/requirements.txt
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.3279825Z Collecting boto3>=1.34.0 (from -r ./booking/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.3297607Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.7256839Z Collecting botocore>=1.34.0 (from -r ./booking/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.7275525Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.7477265Z Collecting python-dateutil>=2.8.2 (from -r ./booking/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.7494597Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.9374107Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./booking/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.9391335Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.9640322Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./booking/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:30.9658500Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.0038395Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./booking/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.0056993Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.0306216Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./booking/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.0323779Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3003381Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3020970Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3111188Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3128272Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3144359Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3160345Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3176883Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.3846464Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.9721710Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:31.9741448Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	UNKNOWN STEP	2025-12-25T17:10:32.0513129Z Installing dependencies for ./catalog/requirements.txt
+deploy	UNKNOWN STEP	2025-12-25T17:10:32.7258785Z Collecting boto3>=1.34.0 (from -r ./catalog/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:32.7277992Z   Using cached boto3-1.42.16-py3-none-any.whl.metadata (6.8 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:32.7474884Z Collecting python-dateutil>=2.8.2 (from -r ./catalog/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:32.7491980Z   Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.1481233Z Collecting botocore>=1.34.0 (from -r ./catalog/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.1499037Z   Using cached botocore-1.42.16-py3-none-any.whl.metadata (5.9 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.2989084Z Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.34.0->-r ./catalog/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3006694Z   Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3229990Z Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.34.0->-r ./catalog/requirements.txt (line 1))
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3248541Z   Using cached s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3621890Z Collecting urllib3<1.27,>=1.25.4 (from botocore>=1.34.0->-r ./catalog/requirements.txt (line 3))
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3640617Z   Using cached urllib3-1.26.20-py2.py3-none-any.whl.metadata (50 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3886609Z Collecting six>=1.5 (from python-dateutil>=2.8.2->-r ./catalog/requirements.txt (line 2))
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.3904505Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5315333Z Using cached boto3-1.42.16-py3-none-any.whl (140 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5331224Z Using cached botocore-1.42.16-py3-none-any.whl (14.6 MB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5419159Z Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5436243Z Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5452232Z Using cached s3transfer-0.16.0-py3-none-any.whl (86 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5468149Z Using cached urllib3-1.26.20-py2.py3-none-any.whl (144 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.5484560Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+deploy	UNKNOWN STEP	2025-12-25T17:10:33.6148930Z Installing collected packages: urllib3, six, jmespath, python-dateutil, botocore, s3transfer, boto3
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.1998902Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2018513Z Successfully installed boto3-1.42.16 botocore-1.42.16 jmespath-1.0.1 python-dateutil-2.9.0.post0 s3transfer-0.16.0 six-1.17.0 urllib3-1.26.20
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2834955Z ##[group]Run aws-actions/configure-aws-credentials@v4
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2835259Z with:
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2835518Z   role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2835846Z   aws-region: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2836189Z   audience: sts.amazonaws.com
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2836421Z   output-env-credentials: true
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2836637Z env:
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2836858Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2837238Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2837602Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2837949Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2838271Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2838602Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.2838879Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.6767174Z Assuming role with OIDC
+deploy	UNKNOWN STEP	2025-12-25T17:10:34.9554841Z Authenticated as assumedRoleId AROAY2YXRRJ4FJCZEMYSV:GitHubActions
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0257928Z ##[group]Run npm ci
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0258172Z [36;1mnpm ci[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0278037Z shell: /usr/bin/bash -e {0}
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0278295Z env:
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0278561Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0278968Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0279359Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0279697Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0280151Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0280497Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0280801Z   AWS_DEFAULT_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0281039Z   AWS_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0281615Z   AWS_ACCESS_KEY_ID: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0281955Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0286654Z   AWS_SESSION_TOKEN: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:35.0286913Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0754434Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0755172Z added 26 packages, and audited 63 packages in 5s
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0755600Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0755858Z 4 packages are looking for funding
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0756510Z   run `npm fund` for details
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0764411Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0764971Z found 0 vulnerabilities
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0904664Z ##[group]Run # Get branch name (head_ref for PRs, ref_name for dispatch)
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0905132Z [36;1m# Get branch name (head_ref for PRs, ref_name for dispatch)[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0905475Z [36;1mRAW_BRANCH=dev[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0905713Z [36;1m# Replace slashes with hyphens[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0906109Z [36;1mSANITIZED_BRANCH=${RAW_BRANCH//\//-}[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0906431Z [36;1mecho "ENV_NAME=${SANITIZED_BRANCH}" >> $GITHUB_ENV[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0925297Z shell: /usr/bin/bash -e {0}
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0925540Z env:
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0925803Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0926284Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0926674Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0927025Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0927414Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0927754Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0928052Z   AWS_DEFAULT_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0928292Z   AWS_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0928606Z   AWS_ACCESS_KEY_ID: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0928920Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0933442Z   AWS_SESSION_TOKEN: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.0933654Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1067370Z ##[group]Run npx cdk deploy --all --require-approval never
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1067754Z [36;1mnpx cdk deploy --all --require-approval never[0m
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1085306Z shell: /usr/bin/bash -e {0}
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1085541Z env:
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1085804Z   pythonLocation: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1086392Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib/pkgconfig
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1086786Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1087133Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1087480Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.9.25/x64
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1087823Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.9.25/x64/lib
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1088137Z   AWS_DEFAULT_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1088372Z   AWS_REGION: us-east-1
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1088675Z   AWS_ACCESS_KEY_ID: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1089040Z   AWS_SECRET_ACCESS_KEY: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1093568Z   AWS_SESSION_TOKEN: ***
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1093784Z   ENV_NAME: dev
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1093963Z   ENV: dev
+deploy	UNKNOWN STEP	2025-12-25T17:10:40.1094144Z ##[endgroup]
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0133174Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0133790Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0134241Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0975312Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0976501Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0977123Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0984847Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0985755Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0986428Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0991143Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0991683Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0992112Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0996561Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0997014Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.0997369Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1001434Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1001875Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1002221Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1006530Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1006973Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1007325Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1010794Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1011516Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1011867Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1016923Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1017788Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1018441Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1024735Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1025595Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1026411Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1030985Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1032111Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1032746Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1036860Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1037664Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1038287Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1094396Z [WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1095908Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1097348Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1098242Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1099673Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1100869Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1101687Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1102273Z   
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.1102667Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.2256404Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.2257132Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.2257636Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.6475813Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.6476761Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:46.6477563Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.0228864Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.0229356Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.0229747Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.3934322Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.3935062Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.3935549Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.6859641Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.6860337Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:47.6860812Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1732433Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1733107Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1733620Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1754575Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1755119Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1755467Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1773580Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1774121Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1774449Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1803823Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1804483Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1804795Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1828232Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1828937Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1829453Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1849601Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1850296Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1850785Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1922879Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1923523Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1924015Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1996126Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1996963Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.1997578Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.2177581Z [WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.2178412Z   use Definition.schema instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.2179058Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:48.9795548Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-lookup-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.8474414Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.8475155Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.8475606Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9264586Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9265466Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9266297Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9271940Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9272725Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9273331Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9280686Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9281921Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9282570Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9286724Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9287550Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9288155Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9292394Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9293212Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9293828Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9298283Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9299103Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9299746Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9303643Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9304461Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9305085Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9308987Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9309773Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9310396Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9316334Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9317188Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9317835Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9322614Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9323405Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9324005Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9328511Z [WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9329732Z   use `pointInTimeRecoverySpecification` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9330356Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9435182Z [WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9436863Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9438127Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9438992Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9440410Z   Advanced Security Mode is deprecated due to user pool feature plans. Use StandardThreatProtectionMode and CustomThreatProtectionMode to set Thread Protection level.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9441632Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9442426Z [WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9443028Z   
+deploy	UNKNOWN STEP	2025-12-25T17:10:53.9443468Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.0508309Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.0508805Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.0509179Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.2706741Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.2707165Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.2707473Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.3997529Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.3998016Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.3998388Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.5330576Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.5331077Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.5331467Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.6483085Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.6483655Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.6483977Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8055051Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8055779Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8056434Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8076289Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8076959Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8077475Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8093134Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8093926Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8094442Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8147423Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8148107Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8148624Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8167013Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8167674Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8168183Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8186282Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8186990Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8187503Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8263325Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8263993Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8264480Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8339843Z [WARNING] aws-cdk-lib.aws_lambda.FunctionOptions#logRetention is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8340350Z   use `logGroup` instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8340714Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8514961Z [WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8515499Z   use Definition.schema instead
+deploy	UNKNOWN STEP	2025-12-25T17:10:54.8515875Z   This API will be removed in the next major release.
+deploy	UNKNOWN STEP	2025-12-25T17:10:55.2965650Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:55.2967076Z ✨  Synthesis time: 14.21s
+deploy	UNKNOWN STEP	2025-12-25T17:10:55.2967287Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.4510579Z ChatBooking-dev-Database
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.4514567Z ChatBooking-dev-Database: deploying... [1/5]
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.7306873Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.7360839Z current credentials could not be used to assume 'arn:aws:iam::607250385528:role/cdk-hnb659fds-deploy-role-607250385528-us-east-1', but are for the right account. Proceeding anyway.
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.9956708Z ChatBooking-dev-Backend: start: Building AuthResolverFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.9957457Z ChatBooking-dev-Backend: success: Built AuthResolverFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.9973910Z ChatBooking-dev-Backend: start: Building CatalogFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:56.9974717Z ChatBooking-dev-Backend: success: Built CatalogFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0019046Z ChatBooking-dev-Backend: start: Building AvailabilityFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0019878Z ChatBooking-dev-Backend: success: Built AvailabilityFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0024219Z ChatBooking-dev-Backend: start: Building BookingFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0025102Z ChatBooking-dev-Backend: success: Built BookingFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0029325Z ChatBooking-dev-Backend: start: Building ChatAgentFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0030057Z ChatBooking-dev-Backend: success: Built ChatAgentFunction/Code
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0034220Z ChatBooking-dev-Backend: start: Building ChatBooking-dev-Backend Template
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0034987Z ChatBooking-dev-Backend: success: Built ChatBooking-dev-Backend Template
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0039334Z ChatBooking-dev-AppSyncApi: start: Building ChatBooking-dev-AppSyncApi Template
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.0040079Z ChatBooking-dev-AppSyncApi: success: Built ChatBooking-dev-AppSyncApi Template
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6490527Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6491357Z  ✅  ChatBooking-dev-Database (no changes)
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6491668Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6491942Z ✨  Deployment time: 1.2s
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6492176Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6492311Z Outputs:
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6492903Z ChatBooking-dev-Database.ApiKeysTableName = ChatBooking-ApiKeys
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6493911Z ChatBooking-dev-Database.AvailabilityTableName = ChatBooking-ProviderAvailability
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6494923Z ChatBooking-dev-Database.BookingsTableName = ChatBooking-Bookings
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6495815Z ChatBooking-dev-Database.CategoriesTableName = ChatBooking-Categories
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6496926Z ChatBooking-dev-Database.ConversationsTableName = ChatBooking-Conversations
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6497875Z ChatBooking-dev-Database.DocumentsTableName = ChatBooking-Documents
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6499425Z ChatBooking-dev-Database.ExportsOutputFnGetAttApiKeysTable9F4DC7E7ArnE84F3BB0 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-ApiKeys
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6501129Z ChatBooking-dev-Database.ExportsOutputFnGetAttAvailabilityTable497A1E6EArn6251D385 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-ProviderAvailability
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6502539Z ChatBooking-dev-Database.ExportsOutputFnGetAttBookingsTableB2628485Arn4FAB36A9 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Bookings
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6503691Z ChatBooking-dev-Database.ExportsOutputFnGetAttCategoriesTable9FFF5A67Arn8D0D486E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Categories
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6505506Z ChatBooking-dev-Database.ExportsOutputFnGetAttConversationsTableCD91EB96Arn4A2B28C6 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Conversations
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6506780Z ChatBooking-dev-Database.ExportsOutputFnGetAttDocumentsTable7E808EE5Arn0820EA25 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Documents
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6508004Z ChatBooking-dev-Database.ExportsOutputFnGetAttFAQsTableB8072970ArnF8F4D35E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-FAQs
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6509130Z ChatBooking-dev-Database.ExportsOutputFnGetAttProvidersTable1BBEDB6DArn8763273B = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Providers
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6510270Z ChatBooking-dev-Database.ExportsOutputFnGetAttServicesTableF56E8DC5ArnE543C7F6 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Services
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6511449Z ChatBooking-dev-Database.ExportsOutputFnGetAttTenantUsageTableF384CCCAArnA8EBDD0E = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-TenantUsage
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6512698Z ChatBooking-dev-Database.ExportsOutputFnGetAttTenantsTableB701DC57ArnFFAEC087 = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Tenants
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6513842Z ChatBooking-dev-Database.ExportsOutputFnGetAttWorkflowsTable4E215008Arn0D44497B = arn:aws:dynamodb:us-east-1:607250385528:table/ChatBooking-Workflows
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6514772Z ChatBooking-dev-Database.ExportsOutputRefApiKeysTable9F4DC7E79648F444 = ChatBooking-ApiKeys
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6515615Z ChatBooking-dev-Database.ExportsOutputRefAvailabilityTable497A1E6E14D99412 = ChatBooking-ProviderAvailability
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6516650Z ChatBooking-dev-Database.ExportsOutputRefBookingsTableB262848587A36CBD = ChatBooking-Bookings
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6517539Z ChatBooking-dev-Database.ExportsOutputRefCategoriesTable9FFF5A678A053E38 = ChatBooking-Categories
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6518483Z ChatBooking-dev-Database.ExportsOutputRefConversationsTableCD91EB96EE2E4585 = ChatBooking-Conversations
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6519303Z ChatBooking-dev-Database.ExportsOutputRefDocumentsTable7E808EE5AF045745 = ChatBooking-Documents
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6520064Z ChatBooking-dev-Database.ExportsOutputRefFAQsTableB80729705EF12C8E = ChatBooking-FAQs
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6520807Z ChatBooking-dev-Database.ExportsOutputRefProvidersTable1BBEDB6D429B9BF2 = ChatBooking-Providers
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6521597Z ChatBooking-dev-Database.ExportsOutputRefServicesTableF56E8DC54FC0C84D = ChatBooking-Services
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6522392Z ChatBooking-dev-Database.ExportsOutputRefTenantUsageTableF384CCCA317F1334 = ChatBooking-TenantUsage
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6523177Z ChatBooking-dev-Database.ExportsOutputRefTenantsTableB701DC57BE8E768B = ChatBooking-Tenants
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6523938Z ChatBooking-dev-Database.ExportsOutputRefWorkflowsTable4E215008D0FFE690 = ChatBooking-Workflows
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6524551Z ChatBooking-dev-Database.FAQsTableName = ChatBooking-FAQs
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6525038Z ChatBooking-dev-Database.ProvidersTableName = ChatBooking-Providers
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6525550Z ChatBooking-dev-Database.ServicesTableName = ChatBooking-Services
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6526183Z ChatBooking-dev-Database.TenantUsageTableName = ChatBooking-TenantUsage
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6526704Z ChatBooking-dev-Database.TenantsTableName = ChatBooking-Tenants
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6527202Z ChatBooking-dev-Database.WorkflowsTableName = ChatBooking-Workflows
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6527548Z Stack ARN:
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6528072Z arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-Database/734ed200-d5f3-11f0-aad1-0e2b43abba09
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6528453Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6528674Z ✨  Total time: 15.4s
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6528808Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6528918Z ChatBooking-dev-Auth
+deploy	UNKNOWN STEP	2025-12-25T17:10:57.6529192Z ChatBooking-dev-Auth: deploying... [2/5]
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2223286Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2224429Z  ✅  ChatBooking-dev-Auth (no changes)
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2224996Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2225419Z ✨  Deployment time: 0.57s
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2234026Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2234354Z Outputs:
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2236194Z ChatBooking-dev-Auth.ExportsOutputFnGetAttAdminUserPoolD0AF18CFArnBE306E57 = arn:aws:cognito-idp:us-east-1:607250385528:userpool/us-east-1_dG9vi0gz5
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2237780Z ChatBooking-dev-Auth.ExportsOutputRefAdminUserPoolD0AF18CF79276EF5 = us-east-1_dG9vi0gz5
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2239099Z ChatBooking-dev-Auth.UserPoolArn = arn:aws:cognito-idp:us-east-1:607250385528:userpool/us-east-1_dG9vi0gz5
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2240181Z ChatBooking-dev-Auth.UserPoolClientId = 7fst837q5gptanpev9fur88va6
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2240981Z ChatBooking-dev-Auth.UserPoolDomain = chatbooking-admin-607250385528
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2241734Z ChatBooking-dev-Auth.UserPoolId = us-east-1_dG9vi0gz5
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2243898Z ChatBooking-dev-Auth.UserPoolLoginUrl = https://chatbooking-admin-607250385528.auth.us-east-1.amazoncognito.com/login?client_id=7fst837q5gptanpev9fur88va6&response_type=code&redirect_uri=http://localhost:3000/auth/callback
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2245488Z Stack ARN:
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2246506Z arn:aws:cloudformation:us-east-1:607250385528:stack/ChatBooking-dev-Auth/514e71b0-d5f3-11f0-a6f5-124023a51f0d
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2247096Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2247432Z ✨  Total time: 14.78s
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2247660Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2247861Z ChatBooking-dev-KnowledgeBase
+deploy	UNKNOWN STEP	2025-12-25T17:10:58.2248435Z ChatBooking-dev-KnowledgeBase: deploying... [3/5]
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6492907Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6493749Z NOTICES         (What's this? https://github.com/aws/aws-cdk/wiki/CLI-Notices)
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6494265Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6496779Z 34892	CDK CLI will collect telemetry data on command usage starting at version 2.1100.0 (unless opted out)
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6497398Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6497768Z 	Overview: We do not collect customer content and we anonymize the
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6498343Z 	          telemetry we do collect. See the attached issue for more
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6499067Z 	          information on what data is collected, why, and how to
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6499477Z 	          opt-out. Telemetry will NOT be collected for any CDK CLI
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6499860Z 	          version prior to version 2.1100.0 - regardless of
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6500259Z 	          opt-in/out. You can also preview the telemetry we will start
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6500647Z 	          collecting by logging it to a local file, by adding
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6501046Z 	          `--unstable=telemetry --telemetry-file=my/local/file` to any
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6501372Z 	          `cdk` command.
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6501517Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6501646Z 	Affected versions: cli: >=2.0.0 <2.1100.0
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6501820Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6502127Z 	More information at: https://github.com/aws/aws-cdk/issues/34892
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6502548Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6502567Z 
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6503492Z If you don’t want to see a notice anymore, use "cdk acknowledge <id>". For example, "cdk acknowledge 34892".
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6504451Z ❌  ChatBooking-dev-KnowledgeBase failed: InvalidChangeSetStatusException: Cannot delete ChangeSet in status CREATE_IN_PROGRESS
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6688377Z ##[error]Process completed with exit code 1.
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.6756403Z Post job cleanup.
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.7889902Z Post job cleanup.
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8749433Z [command]/usr/bin/git version
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8781211Z git version 2.52.0
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8820044Z Temporarily overriding HOME='/home/runner/work/_temp/1de7be69-a04c-431b-9c43-98008bb56a6c' before making global git config changes
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8821376Z Adding repository directory to the temporary git global config as a safe directory
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8833995Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/chat-booking-backend/chat-booking-backend
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8865153Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.8893408Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9083724Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9101666Z http.https://github.com/.extraheader
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9113181Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9142026Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9323739Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9349624Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+deploy	UNKNOWN STEP	2025-12-25T17:10:59.9630735Z Cleaning up orphan processes

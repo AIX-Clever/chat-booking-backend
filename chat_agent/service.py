@@ -33,7 +33,7 @@ from shared.utils import generate_id, parse_iso_datetime
 from workflow_engine import WorkflowEngine
 from workflow_engine import WorkflowEngine
 from fsm import ResponseBuilder
-from ai_handler import AIHandler
+from shared.ai_handler import AIHandler
 from shared.infrastructure.vector_repository import VectorRepository
 import os
 
@@ -132,16 +132,31 @@ class ChatAgentService:
     ) -> tuple[Conversation, dict]:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation:
-            raise EntityNotFoundError(f"Conversation not found: {conversation_id}")
+            raise EntityNotFoundError("Conversation", conversation_id)
 
         # 0. Check for AI Mode (Business/Enterprise)
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
-             raise EntityNotFoundError(f"Tenant not found: {tenant_id}")
+             raise EntityNotFoundError("Tenant", str(tenant_id))
              
         # Check settings for AI Mode
         ai_settings = tenant.settings.get('ai', {}) or {}
         ai_enabled = ai_settings.get('enabled', False)
+
+        # Allow override via user_data (for testing)
+        if user_data:
+            # Parse if string (AWSJSON)
+            if isinstance(user_data, str):
+                import json
+                try:
+                    user_data_dict = json.loads(user_data)
+                except:
+                    user_data_dict = {}
+            else:
+                user_data_dict = user_data
+                
+            if user_data_dict.get('force_rag'):
+                ai_enabled = True
         # Fallback to metadata for testing override if needed, but prioritize DB
         ai_mode = 'BEDROCK_RAG' if ai_enabled else None
         
@@ -257,12 +272,30 @@ class ChatAgentService:
                     "stepId": "select_timeslot",
                     "type": "TOOL",
                     "content": {"tool": "checkAvailability"},
+                    "next": "request_contact_info"
+                },
+                "request_contact_info": {
+                    "stepId": "request_contact_info",
+                    "type": "MESSAGE",
+                    "content": {"text": "Perfecto. Para confirmar tu reserva, necesito algunos datos."},
+                    "next": "collect_contact_info"
+                },
+                "collect_contact_info": {
+                    "stepId": "collect_contact_info",
+                    "type": "TOOL",
+                    "content": {"tool": "collectContactInfo"},
                     "next": "confirm_booking"
                 },
                 "confirm_booking": {
                     "stepId": "confirm_booking",
+                    "type": "TOOL",
+                    "content": {"tool": "confirmBooking"},
+                    "next": "booking_success"
+                },
+                "booking_success": {
+                    "stepId": "booking_success",
                     "type": "MESSAGE",
-                    "content": {"text": "¡Perfecto! Funcionalidad de confirmación en desarrollo. Aquí termina el demo por ahora."}
+                    "content": {"text": "¡Reserva confirmada! 🎉 Te hemos enviado un email de confirmación."}
                 },
                 "show_faqs": {
                     "stepId": "show_faqs",
