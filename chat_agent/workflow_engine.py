@@ -377,7 +377,40 @@ class WorkflowEngine:
             
              if not providers:
                   return ResponseBuilder.error_message("No hay profesionales disponibles para este servicio.")
+             
+             # Optimization: If only one provider, auto-select it!
+             if len(providers) == 1:
+                 p = providers[0]
+                 conversation.context['providerId'] = p.provider_id
+                 conversation.context['providerName'] = p.name
                  
+                 # We need to advance to the next step immediately.
+                 # Since we are in _execute_tool, which is called by _execute_step,
+                 # we can't easily change the step ID of the caller *before* it returns unless we access conversation.
+                 
+                 # Check if we can find the next step
+                 # The 'step' object passed here is the current 'list_providers' step.
+                 next_step_id = step.next_step
+                 
+                 if next_step_id:
+                     conversation.current_step_id = next_step_id
+                     # Recursively execute the next step (e.g. checkAvailability/select_timeslot)
+                     # But first, let's inform the user about the auto-selection?
+                     # Ideally we return a composite message: "Asigned to X" + "Select time".
+                     # But our ResponseBuilder structure typically returns one main payload.
+                     
+                     # A hack/feature: Return a TEXT response saying "Atendiendo: Mario Alvarez" 
+                     # AND somehow trigger the next step?
+                     # Or just return the response of the NEXT step directly.
+                     
+                     # Let's return the next step's response. The user will see the Calendar directly.
+                     # We can prepend a text message if the UI supports it, but standard response is one block.
+                     # The user will see "Select a time" and context has the provider.
+                     
+                     # To be user friendly, we probably want to mention who it is.
+                     # But let's stick to the requested logic: "skip to select date".
+                     return self._execute_step(conversation, workflow, next_step_id)
+
              providers_list = [
                 {
                     'providerId': p.provider_id,
