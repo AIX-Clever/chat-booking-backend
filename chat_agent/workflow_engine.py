@@ -4,7 +4,7 @@ from datetime import datetime, UTC, timedelta
 from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId, Booking, BookingStatus, CustomerInfo
 from shared.domain.exceptions import ValidationError
 from shared.utils import generate_id
-from fsm import ResponseBuilder
+from .fsm import ResponseBuilder
 
 class WorkflowEngine:
     """
@@ -427,15 +427,13 @@ class WorkflowEngine:
              
              # Fallback: If no availability defined in DB, use default Mon-Fri 09:00-17:00
              if not availability:
-                 from shared.domain.entities import Availability, TimeRange
+                 from shared.domain.entities import ProviderAvailability, TimeRange
                  availability = [
-                     Availability(
-                         availability_id='default',
+                     ProviderAvailability(
                          tenant_id=conversation.tenant_id,
                          provider_id=provider_id,
                          day_of_week=day,
-                     time_ranges=[TimeRange(start_time='09:00', end_time='17:00')],
-                         active=True
+                         time_ranges=[TimeRange(start_time='09:00', end_time='17:00')]
                      )
                      for day in ['MON', 'TUE', 'WED', 'THU', 'FRI']
                  ]
@@ -500,6 +498,18 @@ class WorkflowEngine:
                 
                 booking_id = generate_id('bk')
                 
+                # Parse start_time (it's stored as ISO string in context)
+                start_time_str = ctx['selectedSlot']
+                if isinstance(start_time_str, str):
+                    try:
+                        start_time = datetime.fromisoformat(start_time_str)
+                    except ValueError:
+                        # Handle case where format might be different (e.g. Z suffix)
+                        start_time = datetime.now(UTC) # Fallback or error? Better to validation info.
+                        print(f"Error parsing date {start_time_str}")
+                else:
+                    start_time = start_time_str 
+
                 booking = Booking(
                     booking_id=booking_id,
                     tenant_id=conversation.tenant_id,
@@ -510,7 +520,7 @@ class WorkflowEngine:
                         email=ctx['clientEmail'],
                         phone=ctx.get('clientPhone')
                     ),
-                    start_time=ctx['selectedSlot'],
+                    start_time=start_time,
                     status=BookingStatus.CONFIRMED,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC)

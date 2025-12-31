@@ -6,8 +6,9 @@ from shared.infrastructure.vector_repository import VectorRepository
 
 logger = logging.getLogger()
 
-class AIHandler:
 import os
+
+class AIHandler:
 
     def __init__(self, vector_repo: VectorRepository):
         self.bedrock_runtime = boto3.client('bedrock-runtime')

@@ -30,9 +30,8 @@ from shared.domain.exceptions import (
     ValidationError
 )
 from shared.utils import generate_id, parse_iso_datetime
-from workflow_engine import WorkflowEngine
-from workflow_engine import WorkflowEngine
-from fsm import ResponseBuilder
+from .workflow_engine import WorkflowEngine
+from .fsm import ResponseBuilder
 from shared.ai_handler import AIHandler
 from shared.infrastructure.vector_repository import VectorRepository
 import os
@@ -173,30 +172,34 @@ class ChatAgentService:
             # Only existing messages are relevant.
             
             # 2. Get Response from AI
-            ai_response_text = self.ai_handler.generate_response(
-                tenant_id, 
-                conversation.get_history(), # Assuming get_history() exists or property
-                message
-            )
+            try:
+                ai_response_text = self.ai_handler.generate_response(
+                    tenant_id, 
+                    conversation.get_history(), # Assuming get_history() exists or property
+                    message
+                )
 
-            # Check for specific error from AI Handler
-            if "trouble connecting to my brain" in ai_response_text:
-                print(f"AI Handler failed: {ai_response_text}. Falling back to FSM.")
-                # Do NOT return here, let it fall through to FSM logic
-            else:
-                # 3. Wrap in standard response format
-                response = {
-                    'type': 'text',
-                    'text': ai_response_text,
-                    'ai_generated': True
-                }
-                
-                # 4. Save User Message & AI Response to History
-                conversation.add_message('user', message)
-                conversation.add_message('assistant', ai_response_text)
-                self._conversation_repo.save(conversation)
-                
-                return conversation, response
+                # Check for specific error from AI Handler
+                if "trouble connecting to my brain" in ai_response_text:
+                    print(f"AI Handler reported error: {ai_response_text}. Falling back to FSM.")
+                    # Do NOT return here, let it fall through to FSM logic
+                else:
+                    # 3. Wrap in standard response format
+                    response = {
+                        'type': 'text',
+                        'text': ai_response_text,
+                        'ai_generated': True
+                    }
+                    
+                    # 4. Save User Message & AI Response to History
+                    conversation.add_message('user', message)
+                    conversation.add_message('assistant', ai_response_text)
+                    self._conversation_repo.save(conversation)
+                    
+                    return conversation, response
+            except Exception as e:
+                print(f"AI Handler Exception: {e}. Falling back to FSM.")
+                # Fall through to FSM logic
 
         if not conversation.workflow_id:
             # Legacy conversation or broken state
