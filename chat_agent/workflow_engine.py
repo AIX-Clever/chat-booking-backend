@@ -386,7 +386,12 @@ class WorkflowEngine:
                      conversation.context['clientEmail'] = text
                  # Heuristic: If we don't have a name yet, and this doesn't look like an email
                  elif not conversation.context.get('clientName'):
-                     conversation.context['clientName'] = text
+                     # Only accept if it looks like a name (not a question, not too short)
+                     if '?' not in text and len(text) > 2:
+                         conversation.context['clientName'] = text
+                     else:
+                         # It's a question or garbage. We ignore it, so the prompt repeats.
+                         pass
                  # Heuristic: If we have name/email, maybe phone?
                  elif not conversation.context.get('clientPhone') and any(c.isdigit() for c in text):
                      conversation.context['clientPhone'] = text
