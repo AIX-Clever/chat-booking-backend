@@ -93,6 +93,12 @@ class WorkflowEngine:
         if not step:
             return ResponseBuilder.error_message("Flow Error: Step needed")
 
+        # HOTFIX: Skip the old static message step for contact info
+        # This allows the new smart tool logic (in collectContactInfo) to handle the prompting dynamicallly.
+        if step_id == 'request_contact_info':
+            conversation.current_step_id = 'collect_contact_info'
+            return self._execute_step(conversation, workflow, 'collect_contact_info')
+
         if step.type == 'MESSAGE':
             # Send message and optionally auto-advance
             if step.next_step:
