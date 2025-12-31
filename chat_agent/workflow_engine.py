@@ -4,7 +4,10 @@ from datetime import datetime, UTC, timedelta
 from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId, Booking, BookingStatus, CustomerInfo
 from shared.domain.exceptions import ValidationError
 from shared.utils import generate_id
-from .fsm import ResponseBuilder
+try:
+    from .fsm import ResponseBuilder
+except ImportError:
+    from fsm import ResponseBuilder
 
 class WorkflowEngine:
     """

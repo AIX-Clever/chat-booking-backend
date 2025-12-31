@@ -30,8 +30,12 @@ from shared.domain.exceptions import (
     ValidationError
 )
 from shared.utils import generate_id, parse_iso_datetime
-from .workflow_engine import WorkflowEngine
-from .fsm import ResponseBuilder
+try:
+    from .workflow_engine import WorkflowEngine
+    from .fsm import ResponseBuilder
+except ImportError:
+    from workflow_engine import WorkflowEngine
+    from fsm import ResponseBuilder
 from shared.ai_handler import AIHandler
 from shared.infrastructure.vector_repository import VectorRepository
 import os
