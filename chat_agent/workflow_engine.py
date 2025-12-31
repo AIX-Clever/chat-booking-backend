@@ -367,29 +367,35 @@ class WorkflowEngine:
             
         elif tool_name == 'collectContactInfo':
              # Try to parse contact info from user_data (form submission) or user_input (text)
-             # Expected keys: clientName, clientEmail, clientPhone
              
              data = user_data if user_data else {}
              
-             # If text input, simple heuristics (or rely on ai later)
-             # For now, require structured input or valid json?
-             # Or just accept it as 'notes' if we can't parse?
-             # Let's assume the frontend sends a FORM submission as user_data.
-             
-             name = data.get('clientName')
-             email = data.get('clientEmail')
-             
-             # Simple validation
-             if name and email:
-                 conversation.context['clientName'] = name
-                 conversation.context['clientEmail'] = email
+             # 1. Structure Input (Form)
+             if data.get('clientName'):
+                 conversation.context['clientName'] = data.get('clientName')
+             if data.get('clientEmail'):
+                 conversation.context['clientEmail'] = data.get('clientEmail')
+             if data.get('clientPhone'):
                  conversation.context['clientPhone'] = data.get('clientPhone')
-                 conversation.context['notes'] = data.get('notes')
+             
+             # 2. Text Input (Slot Filling Strategy)
+             if user_input:
+                 text = user_input.strip()
+                 # Simple heuristic: Contains @ -> Email
+                 if '@' in text:
+                     conversation.context['clientEmail'] = text
+                 # Heuristic: If we don't have a name yet, and this doesn't look like an email
+                 elif not conversation.context.get('clientName'):
+                     conversation.context['clientName'] = text
+                 # Heuristic: If we have name/email, maybe phone?
+                 elif not conversation.context.get('clientPhone') and any(c.isdigit() for c in text):
+                     conversation.context['clientPhone'] = text
+                 
+             # Check completion
+             if conversation.context.get('clientName') and conversation.context.get('clientEmail'):
                  return step.next_step
-             
-             # If using text chat purely, we might need a multi-turn slot filling here.
-             # But for this implementation, let's assume if we fail to parse, we stay on step.
-             
+              
+             # If missing data, we return None to stay on step (and re-prompt)
              return None
 
         elif tool_name == 'confirmBooking':
@@ -552,6 +558,14 @@ class WorkflowEngine:
              return ResponseBuilder.date_selection_message(slots[:10]) # Limit to 10 for UI
 
         elif tool_name == 'collectContactInfo':
+             # Dynamic Prompting based on missing slots
+             ctx = conversation.context
+             missing = []
+             if not ctx.get('clientName'):
+                 return {'type': 'text', 'text': '¿Me podrías indicar tu nombre completo?'}
+             if not ctx.get('clientEmail'):
+                 return {'type': 'text', 'text': f"Gracias {ctx.get('clientName')}. ¿Cual es tu correo electrónico para enviarte la confirmación?"}
+                 
              return ResponseBuilder.contact_info_message()
              
         elif tool_name == 'confirmBooking':
