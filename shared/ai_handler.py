@@ -7,12 +7,14 @@ from shared.infrastructure.vector_repository import VectorRepository
 logger = logging.getLogger()
 
 class AIHandler:
+import os
+
     def __init__(self, vector_repo: VectorRepository):
         self.bedrock_runtime = boto3.client('bedrock-runtime')
         self.vector_repo = vector_repo
         # Models
-        self.embedding_model_id = 'amazon.titan-embed-text-v2:0'
-        self.llm_model_id = 'anthropic.claude-3-sonnet-20240229-v1:0' 
+        self.embedding_model_id = os.environ.get('EMBEDDING_MODEL_ID', 'amazon.titan-embed-text-v2:0')
+        self.llm_model_id = os.environ.get('LLM_MODEL_ID', 'anthropic.claude-3-sonnet-20240229-v1:0') 
 
     def get_embedding(self, text: str) -> List[float]:
         """Generate embedding using Titan v2"""
@@ -85,5 +87,5 @@ class AIHandler:
             response_body = json.loads(response['body'].read())
             return response_body['content'][0]['text']
         except Exception as e:
-            logger.error(f"Error generating response: {str(e)}")
+            logger.error(f"Error generating response from Bedrock (Model: {self.llm_model_id}): {str(e)}", exc_info=True)
             return "I apologize, but I'm having trouble connecting to my brain right now."
