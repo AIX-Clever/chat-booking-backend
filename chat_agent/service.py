@@ -174,20 +174,25 @@ class ChatAgentService:
                 conversation.get_history(), # Assuming get_history() exists or property
                 message
             )
-            
-            # 3. Wrap in standard response format
-            response = {
-                'type': 'text',
-                'text': ai_response_text,
-                'ai_generated': True
-            }
-            
-            # 4. Save User Message & AI Response to History
-            conversation.add_message('user', message)
-            conversation.add_message('assistant', ai_response_text)
-            self._conversation_repo.save(conversation)
-            
-            return conversation, response
+
+            # Check for specific error from AI Handler
+            if "trouble connecting to my brain" in ai_response_text:
+                print(f"AI Handler failed: {ai_response_text}. Falling back to FSM.")
+                # Do NOT return here, let it fall through to FSM logic
+            else:
+                # 3. Wrap in standard response format
+                response = {
+                    'type': 'text',
+                    'text': ai_response_text,
+                    'ai_generated': True
+                }
+                
+                # 4. Save User Message & AI Response to History
+                conversation.add_message('user', message)
+                conversation.add_message('assistant', ai_response_text)
+                self._conversation_repo.save(conversation)
+                
+                return conversation, response
 
         if not conversation.workflow_id:
             # Legacy conversation or broken state
@@ -229,10 +234,58 @@ class ChatAgentService:
          return conversation, {'type': 'text', 'text': 'Legacy conversation not supported in v2 engine.'}
 
     # ... Keep confirm_booking as it might be used by a TOOL ...
-    def confirm_booking(self, tenant_id, conversation_id):
-         # This logic should be moved to a TOOL execution inside WorkflowEngine ideally
-         # But for now we might keep it accessible
-         pass
+    def confirm_booking(self, tenant_id: TenantId, conversation_id: str) -> tuple[Conversation, dict]:
+        conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
+        if not conversation:
+             raise EntityNotFoundError("Conversation", conversation_id)
+
+        try:
+            ctx = conversation.context
+            
+            # Validate required fields
+            required = ['serviceId', 'providerId', 'selectedSlot', 'clientName', 'clientEmail']
+            missing = [f for f in required if not ctx.get(f)]
+            if missing:
+                 return conversation, ResponseBuilder.error_message(f"Faltan datos para la reserva: {', '.join(missing)}")
+            
+            booking_id = generate_id('bk')
+            
+            booking = Booking(
+                booking_id=booking_id,
+                tenant_id=tenant_id,
+                service_id=ctx['serviceId'],
+                provider_id=ctx['providerId'],
+                customer_info=CustomerInfo(
+                    name=ctx['clientName'],
+                    email=ctx['clientEmail'],
+                    phone=ctx.get('clientPhone')
+                ),
+                start_time=ctx['selectedSlot'],
+                status=BookingStatus.CONFIRMED,
+                created_at=datetime.now(UTC),
+                updated_at=datetime.now(UTC)
+            )
+            
+            self._booking_repo.save(booking)
+            
+            # Store booking id in context
+            conversation.context['bookingId'] = booking_id
+            self._conversation_repo.save(conversation)
+            
+            # Construct booking dict for response
+            booking_dict = {
+                'bookingId': booking.booking_id,
+                'clientEmail': booking.customer_info.email,
+                'serviceName': ctx.get('serviceName', 'Servicio'),
+                'providerName': ctx.get('providerName', 'Profesional'),
+                'startTime': booking.start_time
+            }
+            
+            return conversation, ResponseBuilder.success_message(booking_dict)
+            
+        except Exception as e:
+            print(f"Booking Error: {e}")
+            return conversation, ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
 
     def _create_default_workflow(self, tenant_id: TenantId):
         import json
