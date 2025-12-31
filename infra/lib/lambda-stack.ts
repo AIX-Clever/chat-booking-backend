@@ -181,7 +181,7 @@ export class LambdaStack extends cdk.Stack {
         DB_SECRET_ARN: props.dbSecret?.secretArn || '',
         DB_ENDPOINT: props.dbEndpoint || '',
         EMBEDDING_MODEL_ID: process.env.EMBEDDING_MODEL_ID || 'amazon.titan-embed-text-v2:0',
-        LLM_MODEL_ID: process.env.LLM_MODEL_ID || 'amazon.titan-text-express-v1',
+        LLM_MODEL_ID: 'amazon.titan-text-express-v1', // HARDCODED FORCE TO FIX ANTHROPIC ERROR
       }
     });
 
