@@ -585,17 +585,31 @@ class WorkflowEngine:
                 else:
                     start_time = start_time_str 
 
+                # Need service details for duration/price
+                service = self.service_repo.get(conversation.tenant_id, ctx['serviceId'])
+                if not service:
+                    return ResponseBuilder.error_message("Error: Servicio no encontrado")
+
+                # Calculate end_time
+                duration = service.duration_minutes
+                end_time = start_time + timedelta(minutes=duration)
+                
+                # Customer ID strategy: use email
+                customer_id = ctx['clientEmail']
+
                 booking = Booking(
                     booking_id=booking_id,
                     tenant_id=conversation.tenant_id,
                     service_id=ctx['serviceId'],
                     provider_id=ctx['providerId'],
                     customer_info=CustomerInfo(
+                        customer_id=customer_id,
                         name=ctx['clientName'],
                         email=ctx['clientEmail'],
                         phone=ctx.get('clientPhone')
                     ),
                     start_time=start_time,
+                    end_time=end_time,
                     status=BookingStatus.CONFIRMED,
                     created_at=datetime.now(UTC),
                     updated_at=datetime.now(UTC)
