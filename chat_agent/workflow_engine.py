@@ -217,7 +217,8 @@ class WorkflowEngine:
         def is_match(text, target):
             return target.lower() in text.lower() or text.lower() in target.lower()
 
-        if tool_name == 'searchServices':
+        # Normalize tool name keys to handle mismatch (startBookingFlow vs start_booking_flow)
+        if tool_name in ['searchServices', 'start_booking_flow']:
             # Expecting logic: User selects a service
             services = self.service_repo.list_by_tenant(conversation.tenant_id)
             active_services = [s for s in services if s.active]
@@ -242,7 +243,7 @@ class WorkflowEngine:
                 conversation.context['serviceName'] = selected_service.name
                 return step.next_step
                 
-        elif tool_name == 'listProviders':
+        elif tool_name in ['listProviders', 'list_providers']:
              # Expecting logic: User selects a provider
              providers = self.provider_repo.list_by_tenant(conversation.tenant_id)
              
@@ -267,26 +268,16 @@ class WorkflowEngine:
                 conversation.context['providerName'] = selected_provider.name
                 return step.next_step
 
-        elif tool_name == 'checkAvailability':
+        elif tool_name in ['checkAvailability', 'check_availability']:
             # Expecting a timestamp or date string selection
             val = user_data.get('value') if user_data else user_input
             
             # Handle navigation intents from "No Availability" message
             if val == 'change_provider' or (user_input and 'si' in user_input.lower()):
-                # Find step with tool 'listProviders' to backtrack safely
-                # Simplified: Hardcode common ID or transition to 'flow_providers' intent if supported
-                # For now, let's look for a step named 'list_providers' or 'select_provider' in workflow
-                
-                # Check if 'list_providers' exists
-                if 'list_providers' in workflow.steps:
-                    return 'list_providers'
-                if 'select_provider' in workflow.steps:
-                    return 'select_provider'
-                
-                # Fallback: Just return None -> might loop or error. 
-                # Better: Reset providerId and go to start?
-                # Let's try to return 'list_providers' assuming default flow structure.
-                return 'list_providers'
+                # Find step with tool 'listProviders' or 'list_providers' to backtrack dynamically
+                prev_step_id = next((sid for sid, s in workflow.steps.items() 
+                                    if s.content.get('tool') in ['list_providers', 'listProviders']), 'start')
+                return prev_step_id
 
             if val == 'restart' or (user_input and 'no' in user_input.lower()):
                 return 'start'
@@ -343,7 +334,7 @@ class WorkflowEngine:
     def _execute_tool(self, conversation, step, workflow):
         tool_name = step.content.get('tool')
         
-        if tool_name == 'searchServices':
+        if tool_name in ['searchServices', 'start_booking_flow']:
             # List all services
             services = self.service_repo.list_by_tenant(conversation.tenant_id)
             services = [s for s in services if s.active]
@@ -367,7 +358,7 @@ class WorkflowEngine:
                 text="Por favor selecciona un servicio:"
             )
             
-        elif tool_name == 'listProviders':
+        elif tool_name in ['listProviders', 'list_providers']:
              providers = self.provider_repo.list_by_tenant(conversation.tenant_id)
              
              # Filter by service if in context
@@ -395,20 +386,6 @@ class WorkflowEngine:
                  if next_step_id:
                      conversation.current_step_id = next_step_id
                      # Recursively execute the next step (e.g. checkAvailability/select_timeslot)
-                     # But first, let's inform the user about the auto-selection?
-                     # Ideally we return a composite message: "Asigned to X" + "Select time".
-                     # But our ResponseBuilder structure typically returns one main payload.
-                     
-                     # A hack/feature: Return a TEXT response saying "Atendiendo: Mario Alvarez" 
-                     # AND somehow trigger the next step?
-                     # Or just return the response of the NEXT step directly.
-                     
-                     # Let's return the next step's response. The user will see the Calendar directly.
-                     # We can prepend a text message if the UI supports it, but standard response is one block.
-                     # The user will see "Select a time" and context has the provider.
-                     
-                     # To be user friendly, we probably want to mention who it is.
-                     # But let's stick to the requested logic: "skip to select date".
                      return self._execute_step(conversation, workflow, next_step_id)
 
              providers_list = [
@@ -421,7 +398,7 @@ class WorkflowEngine:
             ]
              return ResponseBuilder.provider_selection_message(providers_list)
 
-        elif tool_name == 'showFAQs':
+        elif tool_name in ['showFAQs', 'get_faqs']:
              faqs = self.faq_repo.list_by_tenant(conversation.tenant_id)
              if not faqs:
                  return ResponseBuilder.error_message("No hay preguntas frecuentes.")
@@ -436,7 +413,7 @@ class WorkflowEngine:
              }
 
             
-        elif tool_name == 'checkAvailability':
+        elif tool_name in ['checkAvailability', 'check_availability']:
              provider_id = conversation.context.get('providerId')
              if not provider_id:
                  return ResponseBuilder.error_message("Error: Profesional no seleccionado.")
