@@ -451,8 +451,6 @@ class WorkflowEngine:
             
              if not providers:
                   return ResponseBuilder.error_message("No hay profesionales disponibles para este servicio.")
-             
-                     return self._execute_step(conversation, workflow, next_step_id)
 
              providers_list = [
                 {
