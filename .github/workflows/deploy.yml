@@ -1,12 +1,12 @@
 name: Deploy Backend
 
 on:
-  # push:  # Disabled to prevent double execution (runs on PR merge via open PR or manual trigger)
-  #   branches:
-  #     - dev
-  #     - qa
-  #     - stg
-  #     - prod
+  push:
+    branches:
+      - dev
+      - qa
+      - stg
+      - prod
   pull_request:
     branches:
       - dev
