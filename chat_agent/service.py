@@ -95,9 +95,31 @@ class ChatAgentService:
              active_workflow = self._create_default_workflow(tenant_id)
              self._workflow_repo.save(active_workflow)
         
-        # Self-healing: Repair broken default workflow if missing critical steps
-        # Check for 'select_timeslot' (basic) or 'request_contact_info' (v2 flow)
-        if active_workflow.name == "Default Booking Flow" and ("select_timeslot" not in active_workflow.steps or "request_contact_info" not in active_workflow.steps):
+        # Self-healing: Repair broken default workflow if missing critical steps or corrupted
+        # Check for 'select_timeslot' (basic), 'request_contact_info' (v2 flow), or corrupted 'list_providers'
+        needs_repair = False
+        
+        if active_workflow.name == "Default Booking Flow":
+            steps = active_workflow.steps
+            
+            # Check for missing steps
+            if "select_timeslot" not in steps or "request_contact_info" not in steps:
+                needs_repair = True
+                
+            # Check for corrupted list_providers (e.g. pointing to showFAQs or wrong tool)
+            if "list_providers" in steps:
+                provider_step = steps["list_providers"]
+                # Access as object or dict depending on how it's loaded (Entity vs Dict)
+                # It is loaded as WorkflowStep entity
+                tool = provider_step.content.get('tool')
+                if tool not in ['listProviders', 'list_providers']:
+                     print(f"Detected corrupted list_providers tool: {tool}. repairing...")
+                     needs_repair = True
+            else:
+                 needs_repair = True # Missing list_providers
+                 
+        if needs_repair:
+             print(f"Self-healing workflow {active_workflow.workflow_id}...")
              updated_default = self._create_default_workflow(tenant_id)
              # Preserve ID and other metadata, just update steps
              active_workflow.steps = updated_default.steps

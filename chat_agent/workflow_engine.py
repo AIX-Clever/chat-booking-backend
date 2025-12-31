@@ -400,11 +400,15 @@ class WorkflowEngine:
 
         elif tool_name in ['showFAQs', 'get_faqs']:
              faqs = self.faq_repo.list_by_tenant(conversation.tenant_id)
-             if not faqs:
-                 return ResponseBuilder.error_message("No hay preguntas frecuentes.")
+             
+             # Filter out placeholder/dummy FAQs
+             valid_faqs = [f for f in faqs if "*question*" not in f.question]
+             
+             if not valid_faqs:
+                 return ResponseBuilder.error_message("No hay preguntas frecuentes disponibles.")
              
              faq_text = "Aquí tienes algunas preguntas frecuentes:\n\n"
-             for faq in faqs:
+             for faq in valid_faqs:
                  faq_text += f"❓ *{faq.question}*\n💡 {faq.answer}\n\n"
             
              return {
