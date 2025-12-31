@@ -365,7 +365,7 @@ class ChatAgentService:
                 "show_faqs": {
                     "stepId": "show_faqs",
                     "type": "TOOL",
-                    "content": {"tool": "showFAQs"},
+                    "content": {"tool": "showFAQs", "auto_advance": True},
                     "next": "faq_followup"
                 },
                 "faq_followup": {

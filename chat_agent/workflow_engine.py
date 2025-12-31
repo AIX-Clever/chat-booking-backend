@@ -116,9 +116,9 @@ class WorkflowEngine:
         elif step.type == 'TOOL':
             tool_response = self._execute_tool(conversation, step, workflow)
             
-            # Auto-advance for tools (like showing FAQs) that resolve immediately
-            # This allows showing the Tool Output + The Next Step UI (e.g. Buttons) in one go
-            if step.next_step:
+            # Auto-advance ONLY if explicitly configured (e.g. for informational steps like FAQs)
+            # Interactive tools (like searchServices) must stop to wait for user input.
+            if step.next_step and step.content.get('auto_advance'):
                 conversation.current_step_id = step.next_step
                 next_response = self._execute_step(conversation, workflow, step.next_step)
                 
