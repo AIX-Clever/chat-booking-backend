@@ -114,7 +114,21 @@ class WorkflowEngine:
             return self._generate_dynamic_options(conversation, step)
             
         elif step.type == 'TOOL':
-            return self._execute_tool(conversation, step, workflow)
+            tool_response = self._execute_tool(conversation, step, workflow)
+            
+            # Auto-advance for tools (like showing FAQs) that resolve immediately
+            # This allows showing the Tool Output + The Next Step UI (e.g. Buttons) in one go
+            if step.next_step:
+                conversation.current_step_id = step.next_step
+                next_response = self._execute_step(conversation, workflow, step.next_step)
+                
+                # Merge text content (Tool Result + Next Step Prompt)
+                if 'text' in tool_response and 'text' in next_response:
+                    next_response['text'] = tool_response['text'] + "\n\n" + next_response['text']
+                
+                return next_response
+                
+            return tool_response
 
         return ResponseBuilder.error_message(f"Unknown step type: {step.type}")
 
