@@ -567,7 +567,7 @@ class WorkflowEngine:
              ctx = conversation.context
              missing = []
              if not ctx.get('clientName'):
-                 return {'type': 'text', 'text': '¿Me podrías indicar tu nombre completo?'}
+                 return {'type': 'text', 'text': 'Perfecto. Para confirmar tu reserva, necesito algunos datos.\n\n¿Me podrías indicar tu **nombre completo**?'}
              if not ctx.get('clientEmail'):
                  return {'type': 'text', 'text': f"Gracias {ctx.get('clientName')}. ¿Cual es tu correo electrónico para enviarte la confirmación?"}
                  

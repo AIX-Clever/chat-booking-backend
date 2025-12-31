@@ -305,19 +305,18 @@ class ResponseBuilder:
         }
     
     @staticmethod
-    def provider_selection_message(providers: list[dict], text: str = None) -> dict:
-        """Ask user to select provider"""
+    def contact_info_message():
         return {
-            'type': MessageType.OPTIONS.value,
-            'text': text or '¿Con qué profesional te gustaría agendar?',
-            'options': [
-                {
-                    'label': p['name'],
-                    'value': p['providerId'],
-                    'description': p.get('bio')
-                }
-                for p in providers
-            ]
+            'type': 'form',
+            'text': 'Perfecto. Para confirmar tu reserva, por favor escribe tu **Nombre Completo**.',
+            'form_schema': {
+                'fields': [
+                    {'key': 'clientName', 'label': 'Nombre', 'type': 'text', 'required': True},
+                    {'key': 'clientEmail', 'label': 'Email', 'type': 'email', 'required': True},
+                    {'key': 'clientPhone', 'label': 'Teléfono', 'type': 'tel', 'required': False},
+                    {'key': 'notes', 'label': 'Notas', 'type': 'text', 'required': False}
+                ]
+            }
         }
     
     @staticmethod
