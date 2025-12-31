@@ -203,15 +203,29 @@ class WorkflowEngine:
     def _handle_dynamic_options_input(self, step, user_input, user_data, conversation):
         mapping = step.content.get('options_mapping', {})
         
-        # User selected a value like 'flow_booking'
-        val = user_data.get('value') if user_data else user_input
+        selected_next = None
         
         # Find which source this maps to
         for source, config in mapping.items():
-            if config.get('value') == val:
-                return config.get('next')
+            config_val = config.get('value')
+            config_label = config.get('label', '').lower()
+            
+            # Check 1: Explicit userData value (strongest signal)
+            if user_data and user_data.get('value') == config_val:
+                selected_next = config.get('next')
+                break
                 
-        return None # Invalid selection
+            # Check 2: Message text matches option value (e.g. "flow_booking")
+            if user_input and config_val and user_input.strip() == config_val:
+                selected_next = config.get('next')
+                break
+                
+            # Check 3: Message text matches option label (e.g. "reservar servicio")
+            if user_input and config_label and config_label in user_input.lower():
+                 selected_next = config.get('next')
+                 break
+                 
+        return selected_next # Invalid selection
 
     def _handle_tool_input(self, step, user_input, user_data, conversation, workflow):
         tool_name = step.content.get('tool')
