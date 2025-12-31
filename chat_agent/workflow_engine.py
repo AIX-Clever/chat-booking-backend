@@ -416,22 +416,19 @@ class WorkflowEngine:
              return ResponseBuilder.provider_selection_message(providers_list)
 
         elif tool_name in ['showFAQs', 'get_faqs']:
-             faqs = self.faq_repo.list_by_tenant(conversation.tenant_id)
-             
-             # Filter out placeholder/dummy FAQs
-             valid_faqs = [f for f in faqs if "*question*" not in f.question]
-             
-             if not valid_faqs:
-                 return ResponseBuilder.error_message("No hay preguntas frecuentes disponibles.")
-             
-             faq_text = "Aquí tienes algunas preguntas frecuentes:\n\n"
-             for faq in valid_faqs:
-                 faq_text += f"❓ *{faq.question}*\n💡 {faq.answer}\n\n"
+            faqs = self.faq_repo.list_by_tenant(conversation.tenant_id)
             
-             return {
-                 'type': 'text',
-                 'text': faq_text
-             }
+            # Filter out placeholder/dummy FAQs
+            valid_faqs = [f for f in faqs if "*question*" not in f.question]
+            
+            if not valid_faqs:
+                return {'type': 'text', 'text': 'No hay preguntas frecuentes registradas.'}
+            
+            text = "📚 **Preguntas Frecuentes**\n\nAquí tienes la información que suele ser útil:\n\n"
+            for f in valid_faqs:
+                text += f"🔸 *{f.question}*\n{f.answer}\n\n"
+            
+            return {'type': 'text', 'text': text}
 
             
         elif tool_name in ['checkAvailability', 'check_availability']:

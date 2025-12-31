@@ -366,7 +366,19 @@ class ChatAgentService:
                     "stepId": "show_faqs",
                     "type": "TOOL",
                     "content": {"tool": "showFAQs"},
-                    "next": "start"
+                    "next": "faq_followup"
+                },
+                "faq_followup": {
+                    "stepId": "faq_followup",
+                    "type": "DYNAMIC_OPTIONS",
+                    "content": {
+                        "text": "¿Te gustaría agendar una cita ahora?",
+                        "sources": ["SERVICES", "PROVIDERS"],
+                        "options_mapping": {
+                            "SERVICES": {"label": "📅 Ver Servicios", "value": "flow_booking", "next": "search_service"},
+                            "PROVIDERS": {"label": "👨‍⚕️ Ver Profesionales", "value": "flow_providers", "next": "list_providers"}
+                        }
+                    }
                 }
             }
         }
