@@ -305,6 +305,22 @@ class ResponseBuilder:
         }
     
     @staticmethod
+    def provider_selection_message(providers: list[dict], text: str = None) -> dict:
+        """Ask user to select provider"""
+        return {
+            'type': MessageType.OPTIONS.value,
+            'text': text or '¿Con qué profesional te gustaría agendar?',
+            'options': [
+                {
+                    'label': p['name'],
+                    'value': p['providerId'],
+                    'description': p.get('bio')
+                }
+                for p in providers
+            ]
+        }
+
+    @staticmethod
     def contact_info_message():
         return {
             'type': 'form',
