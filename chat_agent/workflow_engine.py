@@ -452,23 +452,6 @@ class WorkflowEngine:
              if not providers:
                   return ResponseBuilder.error_message("No hay profesionales disponibles para este servicio.")
              
-             # Optimization: If only one provider, auto-select it!
-             if len(providers) == 1:
-                 p = providers[0]
-                 conversation.context['providerId'] = p.provider_id
-                 conversation.context['providerName'] = p.name
-                 
-                 # We need to advance to the next step immediately.
-                 # Since we are in _execute_tool, which is called by _execute_step,
-                 # we can't easily change the step ID of the caller *before* it returns unless we access conversation.
-                 
-                 # Check if we can find the next step
-                 # The 'step' object passed here is the current 'list_providers' step.
-                 next_step_id = step.next_step
-                 
-                 if next_step_id:
-                     conversation.current_step_id = next_step_id
-                     # Recursively execute the next step (e.g. checkAvailability/select_timeslot)
                      return self._execute_step(conversation, workflow, next_step_id)
 
              providers_list = [
