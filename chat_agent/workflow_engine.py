@@ -638,7 +638,10 @@ class WorkflowEngine:
                 
             except Exception as e:
                 print(f"Booking Error: {e}")
-                return ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
+                import traceback
+                traceback.print_exc()
+                # DEBUG: Return the actual error to the user
+                return ResponseBuilder.error_message(f"DEBUG Error: {str(e)}")
 
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
 
