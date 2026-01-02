@@ -422,8 +422,6 @@ class ResponseBuilder:
             'text': text,
             'payload': booking # Optional metadata 
         }
-            'booking': booking
-        }
     
     @staticmethod
     def error_message(error: str) -> dict:

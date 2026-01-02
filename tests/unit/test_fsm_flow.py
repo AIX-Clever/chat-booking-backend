@@ -101,6 +101,7 @@ class TestFSMBasicFlow(unittest.TestCase):
             }
         )
         self.workflow_repo.list_by_tenant.return_value = [self.workflow]
+        self.workflow_repo.get_by_id.return_value = self.workflow
         
     def test_service_flow(self):
         """Test Start -> Service -> Provider -> Slot -> Confirm"""
@@ -140,7 +141,7 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.assertEqual(conv.context['selectedSlot'], slot_iso)
         
         # 6. Contact & Confirm
-        contact_data = {"clientName": "Test", "clientEmail": "test@test.com"}
+        contact_data = {"clientName": "Test", "clientEmail": "test@test.com", "clientPhone": "12345678"} # added phone
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Mis datos", "text", contact_data)
         
         self.assertEqual(self.booking_repo.save.call_count, 1)
@@ -168,7 +169,7 @@ class TestFSMBasicFlow(unittest.TestCase):
         # 5. Slot & Confirm... (Same as above)
         slot_iso = "2025-01-01T10:00:00"
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "10am", "text", {"value": slot_iso})
-        contact_data = {"clientName": "Test", "clientEmail": "test@test.com"}
+        contact_data = {"clientName": "Test", "clientEmail": "test@test.com", "clientPhone": "12345678"} # added phone
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Mis datos", "text", contact_data)
         
         self.assertEqual(self.booking_repo.save.call_count, 2) # Total calls in suite
