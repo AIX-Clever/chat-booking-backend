@@ -398,12 +398,17 @@ class WorkflowEngine:
                      else:
                          # It's a question or garbage. We ignore it, so the prompt repeats.
                          pass
-                 # Heuristic: If we have name/email, maybe phone?
-                 elif not conversation.context.get('clientPhone') and any(c.isdigit() for c in text):
+
+                 # Heuristic: Phone number (mostly digits)
+                 import re
+                 digits = re.sub(r'\D', '', text)
+                 if not conversation.context.get('clientPhone') and len(digits) >= 8:
                      conversation.context['clientPhone'] = text
                  
-             # Check completion
-             if conversation.context.get('clientName') and conversation.context.get('clientEmail'):
+             # Check completion - REQUIRE ALL 3
+             if (conversation.context.get('clientName') and 
+                 conversation.context.get('clientEmail') and 
+                 conversation.context.get('clientPhone')):
                  return step.next_step
               
              # If missing data, we return None to stay on step (and re-prompt)
