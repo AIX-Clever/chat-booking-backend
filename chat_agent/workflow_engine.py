@@ -635,10 +635,14 @@ class WorkflowEngine:
                 # Construct booking dict for response
                 booking_dict = {
                     'bookingId': booking.booking_id,
-                    'clientEmail': booking.customer_info.email,
-                    'serviceName': ctx.get('serviceName', 'Servicio'), # Should be in context
+                    'serviceName': ctx.get('serviceName', 'Servicio'), 
                     'providerName': ctx.get('providerName', 'Profesional'),
-                    'startTime': booking.start_time.isoformat()
+                    'startTime': booking.start_time.isoformat(),
+                    
+                    # Contact Info
+                    'clientName': ctx.get('clientName'),
+                    'clientEmail': ctx.get('clientEmail'),
+                    'clientPhone': ctx.get('clientPhone', 'N/A')
                 }
                 
                 return ResponseBuilder.success_message(booking_dict)

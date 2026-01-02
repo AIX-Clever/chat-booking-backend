@@ -395,9 +395,33 @@ class ResponseBuilder:
     @staticmethod
     def success_message(booking: dict) -> dict:
         """Booking created successfully"""
+        # Parse date for display
+        from datetime import datetime
+        start_time_iso = booking.get('startTime')
+        try:
+            dt = datetime.fromisoformat(start_time_iso)
+            date_str = dt.strftime('%d/%m/%Y a las %H:%M')
+        except:
+            date_str = start_time_iso
+
+        text = (
+            f"¡Reserva confirmada! 🎉\n\n"
+            f"**Resumen de tu cita:**\n"
+            f"💇‍♂️ Servicio: {booking.get('serviceName')}\n"
+            f"👨‍💻 Profesional: {booking.get('providerName')}\n"
+            f"📅 Fecha: {date_str}\n\n"
+            f"**Tus datos:**\n"
+            f"👤 Nombre: {booking.get('clientName')}\n"
+            f"📧 Email: {booking.get('clientEmail')}\n"
+            f"📱 Teléfono: {booking.get('clientPhone')}\n\n"
+            f"Hemos enviado los detalles a tu correo. ¡Te esperamos!"
+        )
+
         return {
             'type': MessageType.SUCCESS.value,
-            'text': f'¡Reserva confirmada! 🎉\n\nTu número de reserva es: {booking["bookingId"]}\n\nTe hemos enviado un email de confirmación a {booking["clientEmail"]}',
+            'text': text,
+            'payload': booking # Optional metadata 
+        }
             'booking': booking
         }
     
