@@ -400,6 +400,10 @@ class ResponseBuilder:
         start_time_iso = booking.get('startTime')
         try:
             dt = datetime.fromisoformat(start_time_iso)
+            # Adjust to UTC-3 (Chile/Latam)
+            # TODO: Use tenant timezone setting
+            from datetime import timedelta
+            dt = dt - timedelta(hours=3)
             date_str = dt.strftime('%d/%m/%Y a las %H:%M')
         except:
             date_str = start_time_iso
