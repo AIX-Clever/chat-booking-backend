@@ -586,7 +586,7 @@ class WorkflowEngine:
                     start_time = start_time_str 
 
                 # Need service details for duration/price
-                service = self.service_repo.get(conversation.tenant_id, ctx['serviceId'])
+                service = self.service_repo.get_by_id(conversation.tenant_id, ctx['serviceId'])
                 if not service:
                     return ResponseBuilder.error_message("Error: Servicio no encontrado")
 
@@ -638,10 +638,8 @@ class WorkflowEngine:
                 
             except Exception as e:
                 print(f"Booking Error: {e}")
-                import traceback
-                traceback.print_exc()
-                # DEBUG: Return the actual error to the user
-                return ResponseBuilder.error_message(f"DEBUG Error: {str(e)}")
+                # Don't expose internal errors to user
+                return ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
 
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
 
