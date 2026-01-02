@@ -302,7 +302,9 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
         end_date
     )
 
-    return success_response([booking_to_dict(b) for b in bookings])
+    serialized_bookings = [booking_to_dict(b) for b in bookings]
+    logger.info("Serialized Bookings Result", count=len(serialized_bookings), sample=serialized_bookings[0] if serialized_bookings else None)
+    return success_response(serialized_bookings)
 
 
 def handle_list_by_client(tenant_id: TenantId, input_data: dict) -> dict:
