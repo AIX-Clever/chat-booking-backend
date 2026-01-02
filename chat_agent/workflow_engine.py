@@ -4,6 +4,7 @@ from datetime import datetime, UTC, timedelta
 from shared.domain.entities import Conversation, Workflow, WorkflowStep, TenantId, Booking, BookingStatus, CustomerInfo
 from shared.domain.exceptions import ValidationError
 from shared.utils import generate_id
+from zoneinfo import ZoneInfo
 try:
     from .fsm import ResponseBuilder
 except ImportError:
@@ -326,33 +327,54 @@ class WorkflowEngine:
                 return step.next_step
                 
             # 2. Parse text input (e.g. "Reservo para: 04-01-2026, 10:00:00 a. m.")
-            # Format depends on locale, but let's try to extract date/time.
             if user_input:
                 import re
-                # Regex for "DD-MM-YYYY, HH:MM" patterns
-                # This is a specific patch for the format seen in the image/logs
-                match = re.search(r'(\d{2}-\d{2}-\d{4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)', user_input)
+                # Improved Regex to capture Date, Time, and AM/PM indicator
+                match = re.search(r'(\d{2}-\d{2}-\d{4}),?\s+(\d{1,2}:\d{2}(?::\d{2})?)(\s*[aApP]\.?\s*[mM]\.?)?', user_input)
+                
                 if match:
-                    date_part = match.group(1) # 04-01-2026
-                    time_part = match.group(2) # 10:00:00
-                    
-                    # Convert to ISO: YYYY-MM-DDTHH:MM:SS
                     try:
-                        day, month, year = date_part.split('-')
-                        # Handle AM/PM if needed, but '10:00:00' looks 24h-ish or requires parsing?
-                        # The user input has "a. m.".
-                        # We should ideally use a robust parser like dateutil or just assume provided ISO is best.
+                        date_str = match.group(1)
+                        time_str = match.group(2)
+                        ampm_str = match.group(3)
                         
-                        # Assuming the backend's "Availability" tool generated this text, we should be able to reverse it.
-                        # But for robustness, let's try to construct a valid-ish ISO or just PASS IT if we trust valid selections.
+                        # 1. Determine Timezone
+                        tz = ZoneInfo("UTC") # Default
+                        provider_id = conversation.context.get('providerId')
+                        if provider_id:
+                            # Assume tenant_id is available in conversation
+                            provider = self.provider_repo.get_by_id(conversation.tenant_id, provider_id)
+                            if provider and provider.timezone:
+                                tz = ZoneInfo(provider.timezone)
                         
-                        # Simplified: If user clicked a button that generated this text, we might have lost the payload.
-                        # We construct a rough ISO.
-                        iso_str = f"{year}-{month}-{day}T{time_part.split(' ')[0]}" # Strip ' a.m.' if encoded in regex
-                        conversation.context['selectedSlot'] = iso_str
+                        # 2. Parse Date & Time to naive object
+                        # Normalize time string to HH:MM:SS
+                        if len(time_str.split(':')) == 2:
+                            time_str += ":00"
+                        
+                        dt_str = f"{date_str} {time_str}"
+                        dt = datetime.strptime(dt_str, "%d-%m-%Y %H:%M:%S")
+                        
+                        # 3. Handle AM/PM adjustment
+                        if ampm_str:
+                            is_pm = 'p' in ampm_str.lower()
+                            if is_pm and dt.hour < 12:
+                                dt = dt.replace(hour=dt.hour + 12)
+                            elif not is_pm and dt.hour == 12:
+                                dt = dt.replace(hour=0)
+                                
+                        # 4. Attach Provider Timezone
+                        dt_aware = dt.replace(tzinfo=tz)
+                        
+                        # 5. Convert to UTC for storage
+                        dt_utc = dt_aware.astimezone(UTC)
+                        
+                        conversation.context['selectedSlot'] = dt_utc.isoformat()
                         return step.next_step
+                        
                     except Exception as e:
                         print(f"Date parsing failed: {e}")
+                        # Don't return None yet, let it fall through or maybe log error
             
             # If we are failing to match, the user is stuck.
             # IMPROVEMENT: If the user input contains high confidence date info, let's accept it merely to unblock flow?
