@@ -549,11 +549,13 @@ input CreateBookingInput {
 
 input ConfirmBookingInput {
   bookingId: ID!
+  tenantId: ID
 }
 
 input CancelBookingInput {
   bookingId: ID!
   reason: String
+  tenantId: ID
 }
 
 input GetBookingInput {
