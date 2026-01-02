@@ -557,6 +557,8 @@ class WorkflowEngine:
                  return {'type': 'text', 'text': 'Perfecto. Para confirmar tu reserva, necesito algunos datos.\n\n¿Me podrías indicar tu **nombre completo**?'}
              if not ctx.get('clientEmail'):
                  return {'type': 'text', 'text': f"Gracias {ctx.get('clientName')}. ¿Cual es tu correo electrónico para enviarte la confirmación?"}
+             if not ctx.get('clientPhone'):
+                 return {'type': 'text', 'text': "Por último, ¿me podrías dejar un número de teléfono de contacto?"}
                  
              return ResponseBuilder.contact_info_message()
              
