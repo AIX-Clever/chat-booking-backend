@@ -631,7 +631,7 @@ class WorkflowEngine:
                     'clientEmail': booking.customer_info.email,
                     'serviceName': ctx.get('serviceName', 'Servicio'), # Should be in context
                     'providerName': ctx.get('providerName', 'Profesional'),
-                    'startTime': booking.start_time
+                    'startTime': booking.start_time.isoformat()
                 }
                 
                 return ResponseBuilder.success_message(booking_dict)
