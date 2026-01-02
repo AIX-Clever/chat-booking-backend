@@ -297,7 +297,7 @@ class WorkflowEngine:
                   
              if not selected_provider and user_input:
                   clean_input = user_input.replace("Prefiero con:", "").strip()
-                  # Try to match name OR provider_id directly (fuzzy or exact)
+                  # Try to match name OR provider_id directly
                   selected_provider = next((p for p in providers if is_match(clean_input, p.name) or clean_input == p.provider_id), None)
              
              if selected_provider:
