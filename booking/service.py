@@ -284,7 +284,7 @@ class BookingService:
         """
         booking = self.get_booking(tenant_id, booking_id)
         booking.confirm()
-        self._booking_repo.save(booking)
+        self._booking_repo.update(booking)
         return booking
     
     def cancel_booking(
@@ -314,7 +314,7 @@ class BookingService:
         # TODO: Store cancellation reason in a separate CancellationReason value object
         # or in booking metadata if needed
         
-        self._booking_repo.save(booking)
+        self._booking_repo.update(booking)
         return booking
 
     def mark_as_no_show(self, tenant_id: TenantId, booking_id: str) -> Booking:
@@ -334,7 +334,7 @@ class BookingService:
         """
         booking = self.get_booking(tenant_id, booking_id)
         booking.mark_as_no_show()
-        self._booking_repo.save(booking)
+        self._booking_repo.update(booking)
         return booking
 
 
