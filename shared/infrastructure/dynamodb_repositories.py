@@ -336,11 +336,14 @@ class DynamoDBBookingRepository(IBookingRepository):
         to_date: datetime
     ) -> List[Booking]:
         try:
+            # Use GSI providerId-start-index
+            # Key: tenantId_providerId (HASH), start (RANGE)
             pk = f"{tenant_id}#{provider_id}"
             response = self.table.query(
+                IndexName='providerId-start-index',
                 KeyConditionExpression=
-                    Key('PK').eq(pk) &
-                    Key('SK').between(from_date.isoformat(), to_date.isoformat())
+                    Key('tenantId_providerId').eq(pk) &
+                    Key('start').between(from_date.isoformat(), to_date.isoformat())
             )
             
             return [self._item_to_entity(item) for item in response.get('Items', [])]
@@ -350,14 +353,13 @@ class DynamoDBBookingRepository(IBookingRepository):
 
     def list_by_customer_email(self, tenant_id: TenantId, customer_email: str) -> List[Booking]:
         try:
-            # Generate customer_id from email to query GSI
-            # Using MD5 for deterministic ID generation (same as create_booking)
-            customer_id = hashlib.md5(customer_email.lower().strip().encode()).hexdigest()
-            
-            gsi_pk = f"{tenant_id}#{customer_id}"
+            # Use GSI clientEmail-index
+            # Key: tenantId (HASH), clientEmail (RANGE)
             response = self.table.query(
-                IndexName='GSI1',
-                KeyConditionExpression=Key('GSI1PK').eq(gsi_pk)
+                IndexName='clientEmail-index',
+                KeyConditionExpression=
+                    Key('tenantId').eq(str(tenant_id)) &
+                    Key('clientEmail').eq(customer_email)
             )
             
             return [self._item_to_entity(item) for item in response.get('Items', [])]
@@ -371,12 +373,16 @@ class DynamoDBBookingRepository(IBookingRepository):
         sk = booking.start_time.isoformat()
         
         item = {
-            'PK': pk,
-            'SK': sk,
+            'PK': pk,  # Kept for legacy/debug
+            'SK': sk,  # Kept for legacy/debug
             'bookingId': booking.booking_id,
             'tenantId': str(booking.tenant_id),
             'serviceId': booking.service_id,
             'providerId': booking.provider_id,
+            # GSI Attributes for providerId-start-index
+            'tenantId_providerId': pk, 
+            'start': sk,
+            
             'endTime': booking.end_time.isoformat(),
             'status': booking.status.value,
             'paymentStatus': booking.payment_status.value,
@@ -389,12 +395,13 @@ class DynamoDBBookingRepository(IBookingRepository):
         # Add customer info if available
         if booking.customer_info.customer_id:
             item['customerId'] = booking.customer_info.customer_id
-            item['GSI1PK'] = f"{booking.tenant_id}#{booking.customer_info.customer_id}"
-            item['GSI1SK'] = sk
+            # NOTE: Removed GSI1PK/GSI1SK as they don't match described schema 'clientEmail-index'
+            # which uses 'clientEmail' as RANGE key.
         if booking.customer_info.name:
             item['customerName'] = booking.customer_info.name
         if booking.customer_info.email:
             item['customerEmail'] = booking.customer_info.email
+            item['clientEmail'] = booking.customer_info.email # Redundant but ensures index match if needed
         if booking.customer_info.phone:
             item['customerPhone'] = booking.customer_info.phone
 
@@ -437,7 +444,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             service_id=item['serviceId'],
             provider_id=item['providerId'],
             customer_info=customer_info,
-            start_time=datetime.fromisoformat(item['SK']),
+            start_time=datetime.fromisoformat(item.get('SK') or item['start']),
             end_time=datetime.fromisoformat(item['endTime']),
             status=BookingStatus(item['status']),
             payment_status=PaymentStatus(item['paymentStatus']),
