@@ -271,7 +271,7 @@ def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
         category=input_data.get('category'),
         duration_minutes=input_data.get('durationMinutes'),
         price=input_data.get('price'),
-        active=input_data.get('active')
+        active=input_data.get('active') if 'active' in input_data else input_data.get('available')
     )
     logger.info(f"Service updated result: {service}")
     return success_response(service_to_dict(service))
@@ -314,7 +314,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         service_ids=input_data.get('serviceIds'),
         timezone=input_data.get('timezone'),
         metadata=input_data.get('metadata'), # Added metadata
-        active=input_data.get('active')
+        active=input_data.get('active') if 'active' in input_data else input_data.get('available')
     )
     return success_response(provider_to_dict(provider))
 
