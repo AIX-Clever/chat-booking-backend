@@ -511,11 +511,23 @@ class WorkflowEngine:
             if not valid_faqs:
                 return {'type': 'text', 'text': 'No hay preguntas frecuentes registradas.'}
             
-            text = "📚 **Preguntas Frecuentes**\n\nAquí tienes la información que suele ser útil:\n\n"
-            for f in valid_faqs:
-                text += f"🔸 *{f.question}*\n{f.answer}\n\n"
+            # Return structured FAQ data for accordion rendering
+            faqs_data = [
+                {
+                    'question': f.question,
+                    'answer': f.answer
+                }
+                for f in valid_faqs
+            ]
             
-            return {'type': 'text', 'text': text}
+            return {
+                'type': 'faq_accordion',
+                'text': 'Aquí tienes la información que suele ser útil:',
+                'metadata': {
+                    'type': 'faq_accordion',
+                    'faqs': faqs_data
+                }
+            }
 
             
         elif tool_name in ['checkAvailability', 'check_availability']:
