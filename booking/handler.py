@@ -374,13 +374,32 @@ def handle_mark_as_no_show(tenant_id: TenantId, input_data: dict) -> dict:
 
 def booking_to_dict(booking) -> dict:
     """Convert Booking entity to dictionary"""
+    # Ensure datetimes are timezone-aware for AppSync AWSDateTime compatibility
+    from datetime import UTC
+    
+    start_time = booking.start_time
+    if start_time.tzinfo is None:
+        start_time = start_time.replace(tzinfo=UTC)
+    
+    end_time = booking.end_time
+    if end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=UTC)
+    
+    created_at = booking.created_at
+    if created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=UTC)
+    
+    updated_at = booking.updated_at if booking.updated_at else booking.created_at
+    if updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=UTC)
+    
     return {
         'bookingId': booking.booking_id,
         'tenantId': booking.tenant_id.value,
         'serviceId': booking.service_id,
         'providerId': booking.provider_id,
-        'start': booking.start_time.isoformat(),
-        'end': booking.end_time.isoformat(),
+        'start': start_time.isoformat(),
+        'end': end_time.isoformat(),
         'status': booking.status.value,
         'clientName': booking.customer_info.name or "Unknown Client",
         'clientEmail': booking.customer_info.email or "no-email@example.com",
@@ -389,6 +408,6 @@ def booking_to_dict(booking) -> dict:
         'conversationId': booking.conversation_id,
         'paymentStatus': booking.payment_status.value,
         'totalAmount': booking.total_amount if booking.total_amount is not None else 0.0,
-        'createdAt': booking.created_at.isoformat(),
-        'updatedAt': booking.updated_at.isoformat() if booking.updated_at else booking.created_at.isoformat()
+        'createdAt': created_at.isoformat(),
+        'updatedAt': updated_at.isoformat()
     }
