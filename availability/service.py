@@ -221,6 +221,11 @@ class AvailabilityService:
         current_slot_start = datetime.combine(date.date(), start_time)
         range_end = datetime.combine(date.date(), end_time)
 
+        # Apply timezone from date if present to ensure slots are timezone-aware
+        if date.tzinfo:
+            current_slot_start = current_slot_start.replace(tzinfo=date.tzinfo)
+            range_end = range_end.replace(tzinfo=date.tzinfo)
+
         # Generate slots at regular intervals
         while current_slot_start + timedelta(minutes=duration_minutes) <= range_end:
             slot_end = current_slot_start + timedelta(minutes=duration_minutes)
