@@ -468,6 +468,18 @@ class WorkflowEngine:
             services = self.service_repo.list_by_tenant(conversation.tenant_id)
             services = [s for s in services if s.active]
             
+            # Filter by provider if in context (Provider-First Flow)
+            provider_id = conversation.context.get('providerId')
+            if provider_id:
+                # Assuming provider_repo available or we can check provider's services
+                # Ideally, we should fetch the provider to see their service_ids
+                # For optimization, we can pull all providers or just this one if we had a method
+                # Using provider_repo.list for now as we don't have get_by_id exposed in valid scope?
+                # Actually, `self.provider_repo` is available
+                provider = self.provider_repo.get_by_id(conversation.tenant_id, provider_id)
+                if provider:
+                    services = [s for s in services if s.service_id in provider.service_ids]
+
             if not services:
                 return ResponseBuilder.error_message("No hay servicios disponibles.")
                 
@@ -540,6 +552,12 @@ class WorkflowEngine:
              provider_id = conversation.context.get('providerId')
              if not provider_id:
                  return ResponseBuilder.error_message("Error: Profesional no seleccionado.")
+            
+             # Safety Net: Ensure Service is selected
+             if not conversation.context.get('serviceId'):
+                 # Loop back to resolve service if we somehow got here without a service
+                 # This handles the "Provider First" edge case where routing failed
+                 return 'resolve_service'
 
              # Get availability rules
              availability = self.availability_repo.get_provider_availability(conversation.tenant_id, provider_id)
