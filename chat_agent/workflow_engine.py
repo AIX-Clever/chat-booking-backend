@@ -304,7 +304,14 @@ class WorkflowEngine:
              if selected_provider:
                 conversation.context['providerId'] = selected_provider.provider_id
                 conversation.context['providerName'] = selected_provider.name
-                return step.next_step
+                
+                # Smart routing: Check if serviceId is already in context
+                # If YES -> Standard flow (Service -> Provider -> Time)
+                # If NO -> Provider flow (Provider -> Service -> Time)
+                if conversation.context.get('serviceId'):
+                    return step.next_step  # Go to select_timeslot
+                else:
+                    return 'resolve_service'  # Ask for service first
 
         elif tool_name in ['checkAvailability', 'check_availability']:
             # Expecting a timestamp or date string selection

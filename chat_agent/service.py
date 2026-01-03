@@ -333,6 +333,12 @@ class ChatAgentService:
                     "content": {"tool": "listProviders"},
                     "next": "select_timeslot"
                 },
+                "resolve_service": {
+                    "stepId": "resolve_service",
+                    "type": "TOOL",
+                    "content": {"tool": "searchServices"},
+                    "next": "select_timeslot"
+                },
                 "select_timeslot": {
                     "stepId": "select_timeslot",
                     "type": "TOOL",
