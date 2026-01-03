@@ -133,6 +133,12 @@ class WorkflowEngine:
                 if 'text' in tool_response and 'text' in next_response:
                     next_response['text'] = tool_response['text'] + "\n\n" + next_response['text']
                 
+                # Merge Metadata (Preserve Tool Metadata, e.g. for FAQs)
+                if 'metadata' in tool_response:
+                    if 'metadata' not in next_response:
+                        next_response['metadata'] = {}
+                    next_response['metadata'].update(tool_response['metadata'])
+
                 return next_response
                 
             return tool_response
