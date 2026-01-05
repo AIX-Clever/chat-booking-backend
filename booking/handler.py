@@ -412,6 +412,8 @@ def booking_to_dict(booking) -> dict:
         'notes': booking.notes,
         'conversationId': booking.conversation_id,
         'paymentStatus': booking.payment_status.value,
+        'paymentIntentId': booking.payment_intent_id,
+        'clientSecret': booking.payment_client_secret,
         'totalAmount': booking.total_amount if booking.total_amount is not None else 0.0,
         'createdAt': created_at.isoformat(),
         'updatedAt': updated_at.isoformat()

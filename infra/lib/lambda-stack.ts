@@ -158,6 +158,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         SES_SENDER_EMAIL: 'noreply@example.com', // Override with actual verified email
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
       }
     });
 

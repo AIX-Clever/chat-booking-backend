@@ -47,6 +47,11 @@ try:
 except ImportError:
     EmailService = None
 
+try:
+    from shared.infrastructure.payment_factory import PaymentGatewayFactory
+except ImportError:
+    PaymentGatewayFactory = None
+
 
 class BookingService:
     """
@@ -210,6 +215,34 @@ class BookingService:
             notes=notes,
             total_amount=service.price
         )
+
+        # Process Payment Intent (Strategy Pattern)
+        if PaymentGatewayFactory and service.price > 0:
+            try:
+                # Resolve gateway based on tenant (could be country-based)
+                # For now using default or checking tenant attributes if available
+                gateway = PaymentGatewayFactory.get_gateway()
+                
+                payment_metadata = {
+                    "booking_id": booking_id,
+                    "tenant_id": tenant_id.value,
+                    "service_name": service.name
+                }
+                
+                # Create Intent
+                intent_data = gateway.create_payment_intent(
+                    amount=service.price,
+                    currency=service.currency, # Assuming Service entity has currency
+                    metadata=payment_metadata
+                )
+                
+                booking.payment_intent_id = intent_data.get('payment_id')
+                booking.payment_client_secret = intent_data.get('client_secret')
+                
+            except Exception as e:
+                # If payment initialization fails, we might want to block booking creation
+                # or create it as PENDING_APPROVAL. For now, log and proceed (booking is PENDING payment)
+                print(f"Failed to initialize payment: {e}")
         
         # Save with conditional expression to prevent race conditions
         # The repository will use a condition to ensure no overlapping bookings

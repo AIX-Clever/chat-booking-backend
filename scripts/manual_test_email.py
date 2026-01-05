@@ -2,7 +2,7 @@ import sys
 import os
 import unittest
 from unittest.mock import MagicMock, patch
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 # Add layer path (adjusting for parallel repo structure)
 # We are in chat-booking-backend/scripts, so we need to go up two levels to repos/conversacion, 
@@ -85,7 +85,7 @@ class TestEmailIntegration(unittest.TestCase):
         self.mock_booking_repo.list_by_provider.return_value = []
         
         # Execute
-        start = datetime.now() + timedelta(days=1)
+        start = datetime.now(timezone.utc) + timedelta(days=1)
         end = start + timedelta(minutes=60)
         
         self.booking_service.create_booking(
