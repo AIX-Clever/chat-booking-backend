@@ -66,27 +66,27 @@ def lambda_handler(event: dict, context) -> dict:
             logger.warning("Missing authorization token")
             return unauthorized_response()
 
-        # Check IP Whitelist
-        allowed_ips = os.environ.get('ALLOWED_IPS')
-        if allowed_ips:
-            request_context = event.get('requestContext', {})
-            # AppSync passes client/source IP in different ways depending on setup, but typically in identity
-            # Ideally verify exact path for AppSync Direct Lambda Authorizer
-            source_ip = request_context.get('identity', {}).get('sourceIp')
-            
-            # If not in identity, checks headers (X-Forwarded-For) as fallback roughly
-            if not source_ip:
-                 # Attempt to find IP in headers if identity is missing (rare related to VTL but good backup)
-                 headers = event.get('headers', {})
-                 source_ip = headers.get('x-forwarded-for') or headers.get('X-Forwarded-For')
-
-            allowed_list = [ip.strip() for ip in allowed_ips.split(',') if ip.strip()]
-            
-            logger.info(f"Checking IP {source_ip} against whitelist")
-            
-            if source_ip and source_ip not in allowed_list:
-                logger.warning(f"IP {source_ip} not in allowed list")
-                return unauthorized_response("IP not allowed")
+        # Check IP Whitelist (DISABLED FOR DEMO)
+        # allowed_ips = os.environ.get('ALLOWED_IPS')
+        # if allowed_ips:
+        #     request_context = event.get('requestContext', {})
+        #     # AppSync passes client/source IP in different ways depending on setup, but typically in identity
+        #     # Ideally verify exact path for AppSync Direct Lambda Authorizer
+        #     source_ip = request_context.get('identity', {}).get('sourceIp')
+        #     
+        #     # If not in identity, checks headers (X-Forwarded-For) as fallback roughly
+        #     if not source_ip:
+        #          # Attempt to find IP in headers if identity is missing (rare related to VTL but good backup)
+        #          headers = event.get('headers', {})
+        #          source_ip = headers.get('x-forwarded-for') or headers.get('X-Forwarded-For')
+        # 
+        #     allowed_list = [ip.strip() for ip in allowed_ips.split(',') if ip.strip()]
+        #     
+        #     logger.info(f"Checking IP {source_ip} against whitelist")
+        #     
+        #     if source_ip and source_ip not in allowed_list:
+        #         logger.warning(f"IP {source_ip} not in allowed list")
+        #         return unauthorized_response("IP not allowed")
 
         # Extract origin from headers
         headers = event.get('headers', {})
