@@ -26,6 +26,8 @@ from shared.domain.exceptions import (
 )
 from shared.utils import Logger, success_response, error_response, parse_iso_datetime, extract_appsync_event
 from shared.metrics import MetricsService
+from shared.infrastructure.notifications import EmailService
+import os
 
 from service import BookingService, BookingQueryService
 
@@ -37,12 +39,15 @@ provider_repo = DynamoDBProviderRepository()
 tenant_repo = DynamoDBTenantRepository()
 conversation_repo = DynamoDBConversationRepository()
 metrics_service = MetricsService()
+email_service = EmailService(region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
 booking_service = BookingService(
     booking_repo,
     service_repo,
     provider_repo,
-    tenant_repo
+    tenant_repo,
+    limit_service=None, # TenantLimitService is opt-in for now or injected if available
+    email_service=email_service
 )
 
 booking_query_service = BookingQueryService(booking_repo, conversation_repo)

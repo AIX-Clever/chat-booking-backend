@@ -155,7 +155,17 @@ export class LambdaStack extends cdk.Stack {
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(60), // More time for booking validation
+      environment: {
+        ...commonProps.environment,
+        SES_SENDER_EMAIL: 'noreply@example.com', // Override with actual verified email
+      }
     });
+
+    // Grant SES permissions
+    this.bookingFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'], // In production, restrict to specific identities
+    }));
 
     // Grant permissions
     props.bookingsTable.grantReadWriteData(this.bookingFunction);

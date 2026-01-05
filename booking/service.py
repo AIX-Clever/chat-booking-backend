@@ -42,6 +42,11 @@ try:
 except ImportError:
     TenantLimitService = None
 
+try:
+    from shared.infrastructure.notifications import EmailService
+except ImportError:
+    EmailService = None
+
 
 class BookingService:
     """
@@ -68,13 +73,15 @@ class BookingService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
-        limit_service: Optional[TenantLimitService] = None
+        limit_service: Optional[TenantLimitService] = None,
+        email_service: Optional[EmailService] = None
     ):
         self._booking_repo = booking_repo
         self._service_repo = service_repo
         self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
         self._limit_service = limit_service
+        self._email_service = email_service
     
     def create_booking(
         self,
@@ -214,6 +221,45 @@ class BookingService:
                 f"Time slot {start.isoformat()} - {end.isoformat()} was just booked"
             )
         
+        # Send confirmation email
+        if self._email_service and client_email:
+            try:
+                subject = f"Reserva Confirmada: {service.name}"
+                body_text = f"Hola {client_name},\n\nTu reserva para {service.name} con {provider.name} ha sido confirmada para el {start.strftime('%Y-%m-%d %H:%M')}.\n\nGracias!"
+                body_html = f"""
+                <html>
+                    <body>
+                        <h2>¡Reserva Confirmada!</h2>
+                        <p>Hola <strong>{client_name}</strong>,</p>
+                        <p>Tu reserva ha sido confirmada con éxito.</p>
+                        <ul>
+                            <li><strong>Servicio:</strong> {service.name}</li>
+                            <li><strong>Profesional:</strong> {provider.name}</li>
+                            <li><strong>Fecha:</strong> {start.strftime('%Y-%m-%d')}</li>
+                            <li><strong>Hora:</strong> {start.strftime('%H:%M')}</li>
+                        </ul>
+                        <p>Gracias por confiar en nosotros.</p>
+                    </body>
+                </html>
+                """
+                # We use a default sender or configured one. 
+                # For now using a placeholder that should be overridden by env var in infrastructure
+                # or passed by the handler.
+                # Actually, EmailService needs a 'source'. 
+                # We can use a noreply address from the tenant domain if valid, or a verified single sender.
+                sender = "noreply@antigravity.com" # TODO: Configure in env
+                
+                self._email_service.send_email(
+                    source=sender,
+                    to_addresses=[client_email],
+                    subject=subject,
+                    body_html=body_html,
+                    body_text=body_text
+                )
+            except Exception as e:
+                # Log but don't fail the booking
+                print(f"Failed to send confirmation email: {e}")
+
         return booking
     
     def _is_slot_available(
