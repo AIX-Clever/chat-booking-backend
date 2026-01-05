@@ -168,6 +168,35 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'], // In production, restrict to specific identities
     }));
 
+    // 5. Payment Webhook Lambda
+    const paymentWebhookFunction = new lambda.Function(this, 'PaymentWebhookFunction', {
+      ...commonProps,
+      description: 'Generic Payment Webhook Handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'payment')),
+      handler: 'webhook_handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
+        STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+      }
+    });
+
+    // Add Function URL (Public Webhook Endpoint)
+    // This generates a unique HTTPS URL like https://<id>.lambda-url.<region>.on.aws/
+    const webhookUrl = paymentWebhookFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    // Grant permissions
+    props.bookingsTable.grantReadWriteData(paymentWebhookFunction);
+
+    // Outputs
+    new cdk.CfnOutput(this, 'PaymentWebhookUrl', {
+      value: webhookUrl.url,
+      description: 'Webhook URL for Payment Providers',
+    });
+
     // Grant permissions
     props.bookingsTable.grantReadWriteData(this.bookingFunction);
     props.servicesTable.grantReadData(this.bookingFunction);
