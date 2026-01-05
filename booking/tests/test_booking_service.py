@@ -336,7 +336,7 @@ class TestBookingService:
         result = booking_service.confirm_booking(tenant_id, "bkg_123")
         
         assert result.status == BookingStatus.CONFIRMED
-        mock_repos['booking'].save.assert_called_once()
+        mock_repos['booking'].update.assert_called_once()
     
     def test_cancel_booking(self, booking_service, mock_repos, tenant_id):
         """Test booking cancellation"""
@@ -367,7 +367,7 @@ class TestBookingService:
         )
         
         assert result.status == BookingStatus.CANCELLED
-        mock_repos['booking'].save.assert_called_once()
+        mock_repos['booking'].update.assert_called_once()
 
     def test_mark_as_no_show(self, booking_service, mock_repos, tenant_id):
         """Test marking booking as no show"""
@@ -394,7 +394,7 @@ class TestBookingService:
         result = booking_service.mark_as_no_show(tenant_id, "bkg_123")
         
         assert result.status == BookingStatus.NO_SHOW
-        mock_repos['booking'].save.assert_called_once()
+        mock_repos['booking'].update.assert_called_once()
 
 
 class TestBookingQueryService:

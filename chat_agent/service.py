@@ -38,6 +38,12 @@ except ImportError:
     from fsm import ResponseBuilder
 from shared.ai_handler import AIHandler
 from shared.infrastructure.vector_repository import VectorRepository
+try:
+    from shared.limit_service import TenantLimitService
+except ImportError:
+    # Fallback for local dev if shared lib structure differs
+    TenantLimitService = None
+
 import os
 
 
@@ -56,7 +62,8 @@ class ChatAgentService:
         availability_repo: IAvailabilityRepository,
         faq_repo: IFAQRepository,
         workflow_repo: IWorkflowRepository,
-        tenant_repo: ITenantRepository
+        tenant_repo: ITenantRepository,
+        limit_service: Optional[TenantLimitService] = None
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -66,6 +73,7 @@ class ChatAgentService:
         self._faq_repo = faq_repo
         self._workflow_repo = workflow_repo
         self._tenant_repo = tenant_repo
+        self._limit_service = limit_service
         
         self.workflow_engine = WorkflowEngine(
             service_repo, provider_repo, faq_repo, availability_repo, booking_repo
@@ -142,7 +150,13 @@ class ChatAgentService:
         if not conversation:
             raise EntityNotFoundError("Conversation", conversation_id)
 
-        # 0. Check for AI Mode (Business/Enterprise)
+        # 0. Check Limits (Enforcement)
+        if self._limit_service:
+            # Block if message limit exceeded
+            if not self._limit_service.check_can_send_message(tenant_id):
+                 return conversation, ResponseBuilder.error_message("Has excedido el límite de mensajes de tu plan actual. Por favor contacta al administrador.")
+
+        # 1. Check for AI Mode (Business/Enterprise)
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
              raise EntityNotFoundError("Tenant", str(tenant_id))
@@ -165,6 +179,14 @@ class ChatAgentService:
                 
             if user_data_dict.get('force_rag'):
                 ai_enabled = True
+        
+        # Check AI Usage Limit (Degradation)
+        if self._limit_service and ai_enabled:
+            can_use_ai = self._limit_service.check_can_use_ai(tenant_id)
+            if not can_use_ai:
+                print(f"Tenant {tenant_id.value} AI limit exceeded. Falling back to FSM.")
+                ai_enabled = False
+
         # Fallback to metadata for testing override if needed, but prioritize DB
         ai_mode = 'BEDROCK_RAG' if ai_enabled else None
         
@@ -204,6 +226,9 @@ class ChatAgentService:
             except Exception as e:
                 print(f"AI Handler Exception: {e}. Falling back to FSM.")
                 # Fall through to FSM logic
+        else:
+            # Explicitly log if AI was skipped due to limits or settings
+            pass
 
         if not conversation.workflow_id:
             # Legacy conversation or broken state

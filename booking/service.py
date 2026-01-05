@@ -37,6 +37,10 @@ from shared.domain.exceptions import (
     ConflictError
 )
 from shared.utils import generate_id
+try:
+    from shared.limit_service import TenantLimitService
+except ImportError:
+    TenantLimitService = None
 
 
 class BookingService:
@@ -63,12 +67,14 @@ class BookingService:
         booking_repo: IBookingRepository,
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
-        tenant_repo: ITenantRepository
+        tenant_repo: ITenantRepository,
+        limit_service: Optional[TenantLimitService] = None
     ):
         self._booking_repo = booking_repo
         self._service_repo = service_repo
         self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
+        self._limit_service = limit_service
     
     def create_booking(
         self,
@@ -127,6 +133,11 @@ class BookingService:
                 f"Status: {tenant.status.value}"
             )
         
+        # Check Booking Limits
+        if self._limit_service:
+            if not self._limit_service.check_can_create_booking(tenant_id):
+                 raise ValidationError("Has excedido el límite de reservas de tu plan actual.")
+
         # Validate service
         service = self._service_repo.get_by_id(tenant_id, service_id)
         if not service:
@@ -204,6 +215,236 @@ class BookingService:
             )
         
         return booking
+    
+    def _is_slot_available(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        start: datetime,
+        end: datetime,
+        exclude_booking_id: Optional[str] = None
+    ) -> bool:
+        """
+        Check if time slot is available
+        
+        Args:
+            tenant_id: Tenant identifier
+            provider_id: Provider identifier
+            start: Slot start datetime
+            end: Slot end datetime
+            exclude_booking_id: Booking ID to exclude from check (for updates)
+        
+        Returns:
+            True if slot is available, False otherwise
+        """
+        # Get existing bookings for provider in date range
+        bookings = self._booking_repo.list_by_provider(
+            tenant_id,
+            provider_id,
+            start,
+            end
+        )
+        
+        # Check for overlaps with active bookings
+        for booking in bookings:
+            # Skip the booking being updated
+            if exclude_booking_id and booking.booking_id == exclude_booking_id:
+                continue
+            
+            # Only consider active bookings (not cancelled/completed)
+            if booking.is_active():
+                # Check if time ranges overlap
+                if not (end <= booking.start_time or start >= booking.end_time):
+                    return False
+        
+        return True
+    
+    def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
+        """
+        Get booking by ID
+        
+        Args:
+            tenant_id: Tenant identifier
+            booking_id: Booking identifier
+        
+        Returns:
+            Booking entity
+        
+        Raises:
+            EntityNotFoundError: If booking not found
+        """
+        booking = self._booking_repo.get_by_id(tenant_id, booking_id)
+        if not booking:
+            raise EntityNotFoundError("Booking", booking_id)
+        return booking
+    
+    def confirm_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
+        """
+        Confirm a pending booking
+        
+        Args:
+            tenant_id: Tenant identifier
+            booking_id: Booking identifier
+        
+        Returns:
+            Updated Booking entity
+        
+        Raises:
+            EntityNotFoundError: If booking not found
+            ValidationError: If booking cannot be confirmed
+        """
+        booking = self.get_booking(tenant_id, booking_id)
+        booking.confirm()
+        self._booking_repo.update(booking)
+        return booking
+    
+    def cancel_booking(
+        self,
+        tenant_id: TenantId,
+        booking_id: str,
+        reason: Optional[str] = None
+    ) -> Booking:
+        """
+        Cancel a booking
+        
+        Args:
+            tenant_id: Tenant identifier
+            booking_id: Booking identifier
+            reason: Cancellation reason (optional)
+        
+        Returns:
+            Updated Booking entity
+        
+        Raises:
+            EntityNotFoundError: If booking not found
+            ValidationError: If booking cannot be cancelled
+        """
+        booking = self.get_booking(tenant_id, booking_id)
+        booking.cancel()
+        
+        # TODO: Store cancellation reason in a separate CancellationReason value object
+        # or in booking metadata if needed
+        
+        self._booking_repo.update(booking)
+        return booking
+
+    def mark_as_no_show(self, tenant_id: TenantId, booking_id: str) -> Booking:
+        """
+        Mark a booking as no show
+        
+        Args:
+            tenant_id: Tenant identifier
+            booking_id: Booking identifier
+        
+        Returns:
+            Updated Booking entity
+        
+        Raises:
+            EntityNotFoundError: If booking not found
+            ValidationError: If booking cannot be marked as no show
+        """
+        booking = self.get_booking(tenant_id, booking_id)
+        booking.mark_as_no_show()
+        self._booking_repo.update(booking)
+        return booking
+
+
+class BookingQueryService:
+    """
+    Service for querying bookings
+    
+    Responsibilities:
+    - List bookings with filters
+    - Get booking details
+    - Check booking status
+    
+    SOLID:
+    - SRP: Only handles booking queries (read-only)
+    - OCP: Extensible for new query filters
+    - LSP: Uses repository interfaces
+    - ISP: Depends only on booking repository
+    - DIP: Depends on abstractions
+    """
+    
+    def __init__(
+        self,
+        booking_repo: IBookingRepository,
+        conversation_repo: IConversationRepository
+    ):
+        self._booking_repo = booking_repo
+        self._conversation_repo = conversation_repo
+    
+    def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
+        """Get booking by ID"""
+        booking = self._booking_repo.get_by_id(tenant_id, booking_id)
+        if not booking:
+            raise EntityNotFoundError("Booking", booking_id)
+        return booking
+    
+    def list_by_provider(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        start_date: datetime,
+        end_date: datetime
+    ) -> list[Booking]:
+        """
+        List bookings for a provider in date range
+        
+        Args:
+            tenant_id: Tenant identifier
+            provider_id: Provider identifier
+            start_date: Range start
+            end_date: Range end
+        
+        Returns:
+            List of bookings
+        """
+        return self._booking_repo.list_by_provider(
+            tenant_id,
+            provider_id,
+            start_date,
+            end_date
+        )
+    
+    def list_by_client(
+        self,
+        tenant_id: TenantId,
+        client_email: str
+    ) -> list[Booking]:
+        """
+        List bookings for a client
+        
+        Args:
+            tenant_id: Tenant identifier
+            client_email: Client email
+        
+        Returns:
+            List of bookings
+        """
+        return self._booking_repo.list_by_customer_email(tenant_id, client_email)
+    def get_booking_by_conversation(
+        self,
+        tenant_id: TenantId,
+        conversation_id: str
+    ) -> Optional[Booking]:
+        """
+        Get booking associated with a conversation
+        
+        Args:
+            tenant_id: Tenant identifier
+            conversation_id: Conversation identifier
+        
+        Returns:
+            Booking entity or None
+        """
+        # 1. Get conversation to find booking_id
+        conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
+        if not conversation or not conversation.booking_id:
+            return None
+            
+        # 2. Get booking by ID
+        return self._booking_repo.get_by_id(tenant_id, conversation.booking_id)
     
     def _is_slot_available(
         self,

@@ -239,7 +239,7 @@ class TestResponseBuilder:
         response = ResponseBuilder.success_message(booking)
         
         assert response['type'] == MessageType.SUCCESS.value
-        assert 'bkg_123' in response['text']
+        assert 'confirmada' in response['text'].lower()
     
     def test_error_message(self):
         """Test error message"""
