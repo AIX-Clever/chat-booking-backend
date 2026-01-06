@@ -87,9 +87,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'status': tenant.status.value,
             'plan': tenant.plan.value,
             'billingEmail': tenant.billing_email,
-            'createdAt': tenant.created_at.isoformat() + 'Z'
-            # Note: Return settings if needed, but schema didn't define settings in Tenant type yet.
-            # I should add 'settings: AWSJSON' to Tenant type in schema for consistency.
+            'settings': json.dumps(tenant.settings) if tenant.settings else None,
+            'createdAt': tenant.created_at.isoformat() + 'Z',
+            'updatedAt': tenant.updated_at.isoformat() + 'Z'
         }
 
     except Exception as e:
