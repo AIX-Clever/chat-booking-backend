@@ -228,6 +228,19 @@ type Conversation @aws_api_key {
   updatedAt: AWSDateTime!
 }
 
+# Types - Rooms
+type Room @aws_api_key @aws_cognito_user_pools {
+  roomId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  capacity: Int!
+  status: String! # ACTIVE, INACTIVE, MAINTENANCE
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 type ChatResponse @aws_api_key {
   conversation: Conversation!
   response: AWSJSON!
@@ -439,6 +452,24 @@ input CreateWorkflowInput {
   isActive: Boolean
 }
 
+# Inputs - Rooms
+input CreateRoomInput {
+  name: String!
+  description: String
+  capacity: Int
+  status: String
+  metadata: AWSJSON
+}
+
+input UpdateRoomInput {
+  roomId: ID!
+  name: String
+  description: String
+  capacity: Int
+  status: String
+  metadata: AWSJSON
+}
+
 input UpdateWorkflowInput {
   workflowId: ID!
   name: String
@@ -469,6 +500,11 @@ type Query {
   
   # Chat
   getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
+  
+  # Rooms
+  listRooms: [Room!]! @aws_cognito_user_pools
+  getRoom(roomId: ID!): Room @aws_cognito_user_pools
+
   getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
   listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
   
@@ -522,6 +558,11 @@ type Mutation {
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
+  
+  # Rooms
+  createRoom(input: CreateRoomInput!): Room! @aws_cognito_user_pools
+  updateRoom(input: UpdateRoomInput!): Room! @aws_cognito_user_pools
+  deleteRoom(roomId: ID!): Room! @aws_cognito_user_pools
   
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
