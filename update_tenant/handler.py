@@ -81,6 +81,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         tenant_repo.save(tenant)
         
         # 7. Return Result
+        # 7. Return Result
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        
         return {
             'tenantId': str(tenant.tenant_id),
             'name': tenant.name,
@@ -89,7 +93,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'billingEmail': tenant.billing_email,
             'settings': json.dumps(tenant.settings) if tenant.settings else None,
             'createdAt': tenant.created_at.isoformat() + 'Z',
-            'updatedAt': tenant.updated_at.isoformat() + 'Z'
+            'updatedAt': now.isoformat() + 'Z'
         }
 
     except Exception as e:
