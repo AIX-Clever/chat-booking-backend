@@ -428,6 +428,9 @@ def provider_to_dict(provider) -> dict:
     }
 
 
+
+def category_to_dict(category) -> dict:
+    """Convert Category entity to dict"""
     return {
         'categoryId': category.category_id,
         'tenantId': str(category.tenant_id),
