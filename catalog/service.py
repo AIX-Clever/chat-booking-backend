@@ -687,8 +687,8 @@ class RoomManagementService:
         if metadata is not None:
             room.metadata = metadata
 
-        from datetime import datetime
-        room.updated_at = datetime.now()
+        from datetime import datetime, timezone
+        room.updated_at = datetime.now(timezone.utc)
 
         self.room_repo.save(room)
         return room
