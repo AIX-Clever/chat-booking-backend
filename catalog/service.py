@@ -22,7 +22,8 @@ class CatalogService:
         self,
         service_repository: IServiceRepository,
         provider_repository: IProviderRepository,
-        category_repository: ICategoryRepository
+        category_repository: ICategoryRepository,
+        room_repository: IRoomRepository
     ):
         """
         Dependency Injection: depends on abstractions
