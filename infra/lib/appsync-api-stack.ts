@@ -798,6 +798,27 @@ schema {
       responseMappingTemplate: responseTemplate,
     });
 
+    // Room Resolvers (Catalog)
+    const roomQueryFields = ['listRooms', 'getRoom'];
+    roomQueryFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomQuery${field}Resolver`, {
+        typeName: 'Query',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
+    const roomMutationFields = ['createRoom', 'updateRoom', 'deleteRoom'];
+    roomMutationFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomMutation${field}Resolver`, {
+        typeName: 'Mutation',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
     catalogDataSource.createResolver('UpdateServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'updateService',

@@ -9,7 +9,8 @@ import json
 
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
-    DynamoDBProviderRepository
+    DynamoDBProviderRepository,
+    DynamoDBRoomRepository
 )
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
 from shared.domain.entities import TenantId
@@ -20,7 +21,8 @@ from service import (
     CatalogService,
     ServiceManagementService,
     ProviderManagementService,
-    CategoryManagementService
+    CategoryManagementService,
+    RoomManagementService
 )
 
 
@@ -28,11 +30,13 @@ from service import (
 service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 category_repo = DynamoDBCategoryRepository()
+room_repo = DynamoDBRoomRepository()
 
-catalog_service = CatalogService(service_repo, provider_repo, category_repo)
+catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo)
 provider_mgmt_service = ProviderManagementService(provider_repo)
 category_mgmt_service = CategoryManagementService(category_repo)
+room_mgmt_service = RoomManagementService(room_repo)
 
 logger = Logger()
 
@@ -118,6 +122,21 @@ def lambda_handler(event: dict, context) -> dict:
         
         elif field == 'deleteProvider':
             return handle_delete_provider(tenant_id, input_data)
+
+        elif field == 'listRooms':
+            return handle_list_rooms(tenant_id)
+
+        elif field == 'getRoom':
+            return handle_get_room(tenant_id, input_data)
+
+        elif field == 'createRoom':
+            return handle_create_room(tenant_id, input_data)
+
+        elif field == 'updateRoom':
+            return handle_update_room(tenant_id, input_data)
+
+        elif field == 'deleteRoom':
+            return handle_delete_room(tenant_id, input_data)
         
         else:
             return error_response(f"Unknown operation: {field}", 400)
@@ -409,8 +428,6 @@ def provider_to_dict(provider) -> dict:
     }
 
 
-def category_to_dict(category) -> dict:
-    """Convert Category entity to dict"""
     return {
         'categoryId': category.category_id,
         'tenantId': str(category.tenant_id),
@@ -422,3 +439,75 @@ def category_to_dict(category) -> dict:
         'createdAt': category.created_at.isoformat(),
         'updatedAt': category.updated_at.isoformat()
     }
+
+
+def room_to_dict(room) -> dict:
+    """Convert Room entity to dict"""
+    return {
+        'roomId': room.room_id,
+        'tenantId': str(room.tenant_id),
+        'name': room.name,
+        'description': room.description,
+        'capacity': room.capacity,
+        'status': room.status,
+        'metadata': room.metadata,
+        'createdAt': room.created_at.isoformat(),
+        'updatedAt': room.updated_at.isoformat()
+    }
+
+
+def handle_list_rooms(tenant_id: TenantId) -> dict:
+    """List all rooms"""
+    rooms = catalog_service.list_rooms(tenant_id)
+    return success_response([room_to_dict(r) for r in rooms])
+
+
+def handle_get_room(tenant_id: TenantId, input_data: dict) -> dict:
+    """Get specific room"""
+    room_id = input_data.get('roomId')
+    if not room_id:
+        return error_response("Missing roomId", 400)
+    
+    room = catalog_service.get_room(tenant_id, room_id)
+    return success_response(room_to_dict(room))
+
+
+def handle_create_room(tenant_id: TenantId, input_data: dict) -> dict:
+    """Create new room"""
+    room = room_mgmt_service.create_room(
+        tenant_id=tenant_id,
+        room_id=generate_id('rm'),
+        name=input_data['name'],
+        description=input_data.get('description'),
+        capacity=input_data.get('capacity'),
+        status=input_data.get('status', 'ACTIVE'),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(room_to_dict(room))
+
+
+def handle_update_room(tenant_id: TenantId, input_data: dict) -> dict:
+    """Update existing room"""
+    room = room_mgmt_service.update_room(
+        tenant_id=tenant_id,
+        room_id=input_data['roomId'],
+        name=input_data.get('name'),
+        description=input_data.get('description'),
+        capacity=input_data.get('capacity'),
+        status=input_data.get('status'),
+        metadata=input_data.get('metadata')
+    )
+    return success_response(room_to_dict(room))
+
+
+def handle_delete_room(tenant_id: TenantId, input_data: dict) -> dict:
+    """Delete room"""
+    room_id = input_data.get('roomId')
+    if not room_id:
+        return error_response("Missing roomId", 400)
+    
+    # Get room before deleting
+    room = catalog_service.get_room(tenant_id, room_id)
+    
+    room_mgmt_service.delete_room(tenant_id, room_id)
+    return success_response(room_to_dict(room))

@@ -29,6 +29,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly workflowsTable: dynamodb.Table;
   public readonly faqsTable: dynamodb.Table;
   public readonly documentsTable: dynamodb.Table;
+  public readonly roomsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -393,6 +394,34 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DocumentsTableName', {
       value: this.documentsTable.tableName,
       description: 'Documents table name',
+    });
+
+    // 13. Rooms Table
+    this.roomsTable = new dynamodb.Table(this, 'RoomsTable', {
+      tableName: 'ChatBooking-Rooms',
+      partitionKey: {
+        name: 'roomId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
+    // GSI: tenantId index for listing by tenant
+    this.roomsTable.addGlobalSecondaryIndex({
+      indexName: 'byTenant',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    new cdk.CfnOutput(this, 'RoomsTableName', {
+      value: this.roomsTable.tableName,
+      description: 'Rooms table name',
     });
   }
 }

@@ -6,8 +6,8 @@ Following Clean Architecture / Hexagonal Architecture
 """
 
 from typing import List, Optional, Dict, Any
-from shared.domain.entities import TenantId, Service, Provider, Category
-from shared.domain.repositories import IServiceRepository, IProviderRepository, ICategoryRepository
+from shared.domain.entities import TenantId, Service, Provider, Category, Room
+from shared.domain.repositories import IServiceRepository, IProviderRepository, ICategoryRepository, IRoomRepository
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger
 
@@ -30,6 +30,7 @@ class CatalogService:
         self.service_repo = service_repository
         self.provider_repo = provider_repository
         self.category_repo = category_repository
+        self.room_repo = room_repository
         self.logger = Logger()
 
     def search_services(
@@ -211,6 +212,19 @@ class CatalogService:
         )
         
         return self.category_repo.list_by_tenant(tenant_id, active_only)
+
+    def list_rooms(self, tenant_id: TenantId) -> List[Room]:
+        """List all rooms for tenant"""
+        self.logger.info("Listing rooms", tenant_id=str(tenant_id))
+        return self.room_repo.list_by_tenant(tenant_id)
+
+    def get_room(self, tenant_id: TenantId, room_id: str) -> Room:
+        """Get room by ID"""
+        self.logger.info("Getting room", tenant_id=str(tenant_id), room_id=room_id)
+        room = self.room_repo.get_by_id(tenant_id, room_id)
+        if not room:
+            raise EntityNotFoundError("Room", room_id)
+        return room
 
 
 class ServiceManagementService:
@@ -610,3 +624,81 @@ class CategoryManagementService:
             tenant_id=str(tenant_id),
             category_id=category_id
         )
+
+
+class RoomManagementService:
+    """Service for managing rooms."""
+
+    def __init__(self, room_repository: IRoomRepository):
+        self.room_repo = room_repository
+        self.logger = Logger()
+
+    def create_room(
+        self,
+        tenant_id: TenantId,
+        room_id: str,
+        name: str,
+        description: Optional[str] = None,
+        capacity: Optional[int] = None,
+        status: str = "ACTIVE",
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Room:
+        """Create new room"""
+        self.logger.info("Creating room", tenant_id=str(tenant_id), name=name)
+
+        room = Room(
+            room_id=room_id,
+            tenant_id=tenant_id,
+            name=name,
+            description=description,
+            capacity=capacity,
+            status=status,
+            metadata=metadata or {}
+        )
+        self.room_repo.save(room)
+        return room
+
+    def update_room(
+        self,
+        tenant_id: TenantId,
+        room_id: str,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        capacity: Optional[int] = None,
+        status: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> Room:
+        """Update existing room"""
+        self.logger.info("Updating room", tenant_id=str(tenant_id), room_id=room_id)
+
+        room = self.room_repo.get_by_id(tenant_id, room_id)
+        if not room:
+            raise EntityNotFoundError("Room", room_id)
+
+        if name is not None:
+            room.name = name
+        if description is not None:
+            room.description = description
+        if capacity is not None:
+            room.capacity = capacity
+        if status is not None:
+            room.status = status
+        if metadata is not None:
+            room.metadata = metadata
+
+        from datetime import datetime
+        room.updated_at = datetime.now()
+
+        self.room_repo.save(room)
+        return room
+
+    def delete_room(self, tenant_id: TenantId, room_id: str) -> None:
+        """Delete room"""
+        self.logger.info("Deleting room", tenant_id=str(tenant_id), room_id=room_id)
+        
+        # Verify exists
+        room = self.room_repo.get_by_id(tenant_id, room_id)
+        if not room:
+            raise EntityNotFoundError("Room", room_id)
+
+        self.room_repo.delete(tenant_id, room_id)
