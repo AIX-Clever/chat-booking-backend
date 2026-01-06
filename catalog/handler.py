@@ -139,7 +139,9 @@ def lambda_handler(event: dict, context) -> dict:
             return handle_delete_room(tenant_id, input_data)
         
         else:
-            return error_response(f"Unknown operation: {field}", 400)
+            # For unknown operations, raise exception directly or return error dict?
+            # Since we want AppSync to see error, raise it.
+            raise ValueError(f"Unknown operation: {field}")
 
     except EntityNotFoundError as e:
         logger.warning("Entity not found", error=str(e))
@@ -176,13 +178,13 @@ def handle_get_service(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Missing serviceId", 400)
     
     service = catalog_service.get_service(tenant_id, service_id)
-    return success_response(service_to_dict(service))
+    return service_to_dict(service)
 
 
 def handle_list_services(tenant_id: TenantId) -> dict:
     """List all services"""
     services = catalog_service.list_all_services(tenant_id)
-    return success_response([service_to_dict(s) for s in services])
+    return [service_to_dict(s) for s in services]
 
 
 def handle_list_providers_by_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -192,7 +194,7 @@ def handle_list_providers_by_service(tenant_id: TenantId, input_data: dict) -> d
         return error_response("Missing serviceId", 400)
     
     providers = catalog_service.list_providers_by_service(tenant_id, service_id)
-    return success_response([provider_to_dict(p) for p in providers])
+    return [provider_to_dict(p) for p in providers]
 
 
 def handle_get_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -202,13 +204,13 @@ def handle_get_provider(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Missing providerId", 400)
     
     provider = catalog_service.get_provider(tenant_id, provider_id)
-    return success_response(provider_to_dict(provider))
+    return provider_to_dict(provider)
 
 
 def handle_list_providers(tenant_id: TenantId) -> dict:
     """List all providers"""
     providers = catalog_service.list_all_providers(tenant_id)
-    return success_response([provider_to_dict(p) for p in providers])
+    return [provider_to_dict(p) for p in providers]
 
 
 
@@ -216,7 +218,7 @@ def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
     """List categories"""
     active_only = input_data.get('activeOnly', False)
     categories = catalog_service.list_categories(tenant_id, active_only)
-    return success_response([category_to_dict(c) for c in categories])
+    return [category_to_dict(c) for c in categories]
 
 
 # Admin operation handlers
@@ -232,7 +234,7 @@ def handle_create_category(tenant_id: TenantId, input_data: dict) -> dict:
         display_order=input_data.get('displayOrder', 0),
         metadata=input_data.get('metadata')
     )
-    return success_response(category_to_dict(category))
+    return category_to_dict(category)
 
 
 def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
@@ -246,7 +248,7 @@ def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
         display_order=input_data.get('displayOrder'),
         metadata=input_data.get('metadata')
     )
-    return success_response(category_to_dict(category))
+    return category_to_dict(category)
 
 
 def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
@@ -261,7 +263,7 @@ def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Category not found", 404)
 
     category_mgmt_service.delete_category(tenant_id, category_id)
-    return success_response(category_to_dict(category))
+    return category_to_dict(category)
 
 
 def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -276,7 +278,7 @@ def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
         price=input_data.get('price'),
         active=input_data.get('active', True)
     )
-    return success_response(service_to_dict(service))
+    return service_to_dict(service)
 
 
 def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -293,7 +295,7 @@ def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
         active=input_data.get('active') if 'active' in input_data else input_data.get('available')
     )
     logger.info(f"Service updated result: {service}")
-    return success_response(service_to_dict(service))
+    return service_to_dict(service)
 
 
 def handle_delete_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -305,7 +307,7 @@ def handle_delete_service(tenant_id: TenantId, input_data: dict) -> dict:
     # Get service before deleting (to return it)
     service = catalog_service.get_service(tenant_id, service_id)
     service_mgmt_service.delete_service(tenant_id, service_id)
-    return success_response(service_to_dict(service))
+    return service_to_dict(service)
 
 
 def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -320,7 +322,7 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         metadata=input_data.get('metadata'),
         active=input_data.get('active', True)
     )
-    return success_response(provider_to_dict(provider))
+    return provider_to_dict(provider)
 
 
 def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -335,7 +337,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         metadata=input_data.get('metadata'), # Added metadata
         active=input_data.get('active') if 'active' in input_data else input_data.get('available')
     )
-    return success_response(provider_to_dict(provider))
+    return provider_to_dict(provider)
 
 
 def handle_delete_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -347,7 +349,7 @@ def handle_delete_provider(tenant_id: TenantId, input_data: dict) -> dict:
     # Get provider before deleting (to return it)
     provider = catalog_service.get_provider(tenant_id, provider_id)
     provider_mgmt_service.delete_provider(tenant_id, provider_id)
-    return success_response(provider_to_dict(provider))
+    return provider_to_dict(provider)
 
 
 def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
@@ -462,7 +464,7 @@ def room_to_dict(room) -> dict:
 def handle_list_rooms(tenant_id: TenantId) -> dict:
     """List all rooms"""
     rooms = catalog_service.list_rooms(tenant_id)
-    return success_response([room_to_dict(r) for r in rooms])
+    return [room_to_dict(r) for r in rooms]
 
 
 def handle_get_room(tenant_id: TenantId, input_data: dict) -> dict:
