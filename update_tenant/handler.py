@@ -91,7 +91,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'status': tenant.status.value,
             'plan': tenant.plan.value,
             'billingEmail': tenant.billing_email,
-            'settings': json.dumps(tenant.settings) if tenant.settings else None,
+            'settings': tenant.settings if tenant.settings else None,
             'createdAt': tenant.created_at.isoformat() + 'Z',
             'updatedAt': now.isoformat() + 'Z'
         }
