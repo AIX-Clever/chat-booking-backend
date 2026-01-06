@@ -198,6 +198,18 @@ enum ConversationState {
 
 
 # Types - Tenant
+type Room @aws_api_key @aws_cognito_user_pools {
+  roomId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  capacity: Int!
+  status: String!
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 enum TenantStatus {
   ACTIVE
   SUSPENDED
@@ -428,6 +440,23 @@ input RegisterTenantInput {
   password: String!
 }
 
+input CreateRoomInput {
+  name: String!
+  description: String
+  capacity: Int
+  status: String
+  metadata: AWSJSON
+}
+
+input UpdateRoomInput {
+  roomId: ID!
+  name: String
+  description: String
+  capacity: Int
+  status: String
+  metadata: AWSJSON
+}
+
 input UpdateTenantInput {
   name: String
   billingEmail: String
@@ -623,6 +652,9 @@ type Query {
   getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools
   listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools
   listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools
+
+  listRooms: [Room!]! @aws_cognito_user_pools
+  getRoom(roomId: ID!): Room @aws_cognito_user_pools
   
   # Availability
   getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
@@ -666,6 +698,10 @@ type Mutation {
   createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
   updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
   deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
+
+  createRoom(input: CreateRoomInput!): Room! @aws_cognito_user_pools
+  updateRoom(input: UpdateRoomInput!): Room! @aws_cognito_user_pools
+  deleteRoom(roomId: ID!): Room! @aws_cognito_user_pools
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
