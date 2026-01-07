@@ -219,7 +219,6 @@ type Booking @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   start: AWSDateTime!
   end: AWSDateTime!
-  end: AWSDateTime!
   roomId: ID
   status: BookingStatus!
   clientName: String!

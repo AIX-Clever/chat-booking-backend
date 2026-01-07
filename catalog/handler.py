@@ -466,7 +466,7 @@ def room_to_dict(room) -> dict:
 def handle_list_rooms(tenant_id: TenantId) -> dict:
     """List all rooms"""
     rooms = catalog_service.list_rooms(tenant_id)
-    return success_response([room_to_dict(r) for r in rooms])
+    return [room_to_dict(r) for r in rooms]
 
 
 def handle_get_room(tenant_id: TenantId, input_data: dict) -> dict:
