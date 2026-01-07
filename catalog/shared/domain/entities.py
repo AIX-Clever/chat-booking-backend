@@ -173,6 +173,8 @@ class Service:
     duration_minutes: int
     price: Optional[float]
     currency: str = "USD"
+    required_room_ids: Optional[List[str]] = None
+    location_type: List[str] = field(default_factory=lambda: ["PHYSICAL"])
     active: bool = True
 
     def is_available(self) -> bool:
@@ -268,6 +270,7 @@ class Booking:
     end_time: datetime
     status: BookingStatus
     payment_status: PaymentStatus = PaymentStatus.NONE
+    room_id: Optional[str] = None
     conversation_id: Optional[str] = None
     notes: Optional[str] = None
     # Payment fields
@@ -450,6 +453,10 @@ class Room:
     description: Optional[str] = None
     capacity: Optional[int] = None
     status: str = "ACTIVE"  # ACTIVE, INACTIVE
+    is_virtual: bool = False
+    min_duration: Optional[int] = None
+    max_duration: Optional[int] = None
+    operating_hours: Optional[List[Dict[str, Any]]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

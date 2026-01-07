@@ -205,6 +205,12 @@ class DynamoDBServiceRepository(IServiceRepository):
             'active': service.active
         }
         
+        if service.required_room_ids:
+             item['requiredRoomIds'] = service.required_room_ids
+        
+        if service.location_type:
+             item['locationType'] = service.location_type
+        
         if service.description:
             item['description'] = service.description
         if service.price is not None:
@@ -226,6 +232,8 @@ class DynamoDBServiceRepository(IServiceRepository):
             category=item['category'],
             duration_minutes=int(item['durationMinutes']),
             price=float(item['price']) if item.get('price') else None,
+            required_room_ids=item.get('requiredRoomIds'),
+            location_type=item.get('locationType', ["PHYSICAL"]),
             active=item.get('active', True)
         )
 
@@ -390,6 +398,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             'tenantId': str(booking.tenant_id),
             'serviceId': booking.service_id,
             'providerId': booking.provider_id,
+            'roomId': booking.room_id,
             # GSI Attributes
             'tenantId_providerId': f"{str(booking.tenant_id)}_{booking.provider_id}",
             'start': sk,
@@ -481,6 +490,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             tenant_id=TenantId(item['tenantId']),
             service_id=item['serviceId'],
             provider_id=item['providerId'],
+            room_id=item.get('roomId'),
             customer_info=customer_info,
             start_time=datetime.fromisoformat(item.get('start') or item['SK']),
             end_time=datetime.fromisoformat(item['endTime']),
@@ -705,3 +715,81 @@ class DynamoDBWorkflowRepository:
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
 
+
+class DynamoDBRoomRepository(IRoomRepository):
+    """DynamoDB implementation of Room repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('ROOMS_TABLE', 'ChatBooking-Rooms')
+        )
+
+    def list_by_tenant(self, tenant_id: TenantId) -> List[Room]:
+        try:
+            response = self.table.query(
+                IndexName='byTenant',
+                KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
+            )
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing rooms: {e}")
+            return []
+
+    def get_by_id(self, tenant_id: TenantId, room_id: str) -> Optional[Room]:
+        try:
+            response = self.table.get_item(
+                Key={'roomId': room_id}
+            )
+            item = response.get('Item')
+            if not item:
+                return None
+            
+            # Verify tenant ownership
+            if item['tenantId'] != str(tenant_id):
+                return None
+
+            return self._item_to_entity(item)
+        except ClientError as e:
+            print(f"Error getting room: {e}")
+            return None
+
+    def save(self, room: Room) -> None:
+        item = {
+            'tenantId': str(room.tenant_id),
+            'roomId': room.room_id,
+            'name': room.name,
+            'description': room.description,
+            'capacity': room.capacity,
+            'status': room.status,
+            'isVirtual': room.is_virtual,
+            'minDuration': room.min_duration,
+            'maxDuration': room.max_duration,
+            'operatingHours': room.operating_hours,
+            'metadata': room.metadata,
+            'createdAt': room.created_at.isoformat(),
+            'updatedAt': room.updated_at.isoformat()
+        }
+        self.table.put_item(Item=item)
+
+    def delete(self, tenant_id: TenantId, room_id: str) -> None:
+        self.table.delete_item(
+            Key={'roomId': room_id}
+        )
+
+    def _item_to_entity(self, item: dict) -> Room:
+        return Room(
+            room_id=item['roomId'],
+            tenant_id=TenantId(item['tenantId']),
+            name=item['name'],
+            description=item.get('description'),
+            capacity=int(item['capacity']) if item.get('capacity') else None,
+            status=item['status'],
+            is_virtual=item.get('isVirtual', False),
+            min_duration=int(item['minDuration']) if item.get('minDuration') else None,
+            max_duration=int(item['maxDuration']) if item.get('maxDuration') else None,
+            operating_hours=item.get('operatingHours'),
+            metadata=item.get('metadata', {}),
+            created_at=datetime.fromisoformat(item['createdAt']),
+            updated_at=datetime.fromisoformat(item['updatedAt'])
+        )
