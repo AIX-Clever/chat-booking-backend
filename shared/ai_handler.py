@@ -6,16 +6,13 @@ from shared.infrastructure.vector_repository import VectorRepository
 
 logger = logging.getLogger()
 
-import os
-
 class AIHandler:
-
     def __init__(self, vector_repo: VectorRepository):
         self.bedrock_runtime = boto3.client('bedrock-runtime')
         self.vector_repo = vector_repo
         # Models
-        self.embedding_model_id = os.environ.get('EMBEDDING_MODEL_ID', 'amazon.titan-embed-text-v2:0')
-        self.llm_model_id = os.environ.get('LLM_MODEL_ID', 'amazon.titan-text-express-v1') 
+        self.embedding_model_id = 'amazon.titan-embed-text-v2:0'
+        self.llm_model_id = 'anthropic.claude-3-sonnet-20240229-v1:0' 
 
     def get_embedding(self, text: str) -> List[float]:
         """Generate embedding using Titan v2"""
@@ -42,7 +39,7 @@ class AIHandler:
         1. Embed user query.
         2. Retrieve relevant context from Aurora (Vector Search).
         3. Construct Prompt with Context + History.
-        4. Invoke Model (Claude 3 or Titan).
+        4. Invoke Claude for answer.
         """
         
         # 1. Embed
@@ -61,60 +58,32 @@ class AIHandler:
         {context_str}
         """
 
+        # Format messages for Claude 3 (Messages API)
+        # Convert history format if needed. Assuming history is list of {role, content}
+        messages = []
+        for msg in history[-5:]: # Keep last 5 turns
+            role = 'user' if msg.get('role') == 'user' else 'assistant'
+            messages.append({"role": role, "content": msg.get('content')})
+        
+        # Add current user message
+        messages.append({"role": "user", "content": user_message})
+
         # 4. Invoke LLM
+        body = json.dumps({
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 1000,
+            "system": system_prompt,
+            "messages": messages,
+            "temperature": 0.7
+        })
+
         try:
-            if "amazon" in self.llm_model_id:
-                # Titan Text Express Format
-                # Construct a single prompt string from history
-                conversation_text = ""
-                for msg in history[-5:]:
-                    role = "User" if msg.get('role') == 'user' else "Bot"
-                    conversation_text += f"{role}: {msg.get('content')}\n"
-                
-                conversation_text += f"User: {user_message}\nBot:"
-                
-                full_prompt = f"{system_prompt}\n\nCurrent Conversation:\n{conversation_text}"
-                
-                body = json.dumps({
-                    "inputText": full_prompt,
-                    "textGenerationConfig": {
-                        "maxTokenCount": 512,
-                        "temperature": 0.7,
-                        "topP": 0.9
-                    }
-                })
-                
-                response = self.bedrock_runtime.invoke_model(
-                    modelId=self.llm_model_id,
-                    body=body
-                )
-                response_body = json.loads(response['body'].read())
-                return response_body['results'][0]['outputText']
-                
-            else:
-                # Anthropic Claude 3 Format (Messages API)
-                messages = []
-                for msg in history[-5:]:
-                    role = 'user' if msg.get('role') == 'user' else 'assistant'
-                    messages.append({"role": role, "content": msg.get('content')})
-                
-                messages.append({"role": "user", "content": user_message})
-
-                body = json.dumps({
-                    "anthropic_version": "bedrock-2023-05-31",
-                    "max_tokens": 1000,
-                    "system": system_prompt,
-                    "messages": messages,
-                    "temperature": 0.7
-                })
-
-                response = self.bedrock_runtime.invoke_model(
-                    modelId=self.llm_model_id,
-                    body=body
-                )
-                response_body = json.loads(response['body'].read())
-                return response_body['content'][0]['text']
-
+            response = self.bedrock_runtime.invoke_model(
+                modelId=self.llm_model_id,
+                body=body
+            )
+            response_body = json.loads(response['body'].read())
+            return response_body['content'][0]['text']
         except Exception as e:
-            logger.error(f"Error generating response from Bedrock (Model: {self.llm_model_id}): {str(e)}", exc_info=True)
+            logger.error(f"Error generating response: {str(e)}")
             return "I apologize, but I'm having trouble connecting to my brain right now."

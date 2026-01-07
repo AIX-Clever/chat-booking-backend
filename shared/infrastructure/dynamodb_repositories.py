@@ -16,12 +16,12 @@ from ..domain.entities import (
     Tenant, TenantId, Service, Provider, ProviderAvailability,
     Booking, Conversation, ApiKey, TimeSlot, CustomerInfo,
     BookingStatus, PaymentStatus, ConversationState, TenantStatus, TenantPlan,
-    TimeRange, FAQ, Workflow, WorkflowStep
+    TimeRange, FAQ, Workflow, WorkflowStep, Room
 )
 from ..domain.repositories import (
     ITenantRepository, IApiKeyRepository, IServiceRepository,
     IProviderRepository, IAvailabilityRepository, IBookingRepository,
-    IConversationRepository, IFAQRepository
+    IConversationRepository, IFAQRepository, IRoomRepository
 )
 from ..domain.exceptions import (
     EntityNotFoundError, ConflictError
@@ -205,6 +205,12 @@ class DynamoDBServiceRepository(IServiceRepository):
             'active': service.active
         }
         
+        if service.required_room_ids:
+             item['requiredRoomIds'] = service.required_room_ids
+        
+        if service.location_type:
+             item['locationType'] = service.location_type
+        
         if service.description:
             item['description'] = service.description
         if service.price is not None:
@@ -226,6 +232,8 @@ class DynamoDBServiceRepository(IServiceRepository):
             category=item['category'],
             duration_minutes=int(item['durationMinutes']),
             price=float(item['price']) if item.get('price') else None,
+            required_room_ids=item.get('requiredRoomIds'),
+            location_type=item.get('locationType', ["PHYSICAL"]),
             active=item.get('active', True)
         )
 
@@ -336,13 +344,11 @@ class DynamoDBBookingRepository(IBookingRepository):
         to_date: datetime
     ) -> List[Booking]:
         try:
-            # Use GSI providerId-start-index
-            # Key: tenantId_providerId (HASH), start (RANGE)
-            pk = f"{tenant_id}#{provider_id}"
+            # Query using Global Secondary Index (GSI)
             response = self.table.query(
                 IndexName='providerId-start-index',
                 KeyConditionExpression=
-                    Key('tenantId_providerId').eq(pk) &
+                    Key('tenantId_providerId').eq(f"{tenant_id}_{provider_id}") &
                     Key('start').between(from_date.isoformat(), to_date.isoformat())
             )
             
@@ -353,13 +359,26 @@ class DynamoDBBookingRepository(IBookingRepository):
 
     def list_by_customer_email(self, tenant_id: TenantId, customer_email: str) -> List[Booking]:
         try:
-            # Use GSI clientEmail-index
-            # Key: tenantId (HASH), clientEmail (RANGE)
             response = self.table.query(
                 IndexName='clientEmail-index',
                 KeyConditionExpression=
                     Key('tenantId').eq(str(tenant_id)) &
                     Key('clientEmail').eq(customer_email)
+            )
+            
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing customer bookings: {e}")
+            return []
+        try:
+            # Generate customer_id from email to query GSI
+            # Using MD5 for deterministic ID generation (same as create_booking)
+            customer_id = hashlib.md5(customer_email.lower().strip().encode()).hexdigest()
+            
+            gsi_pk = f"{tenant_id}#{customer_id}"
+            response = self.table.query(
+                IndexName='GSI1',
+                KeyConditionExpression=Key('GSI1PK').eq(gsi_pk)
             )
             
             return [self._item_to_entity(item) for item in response.get('Items', [])]
@@ -373,21 +392,26 @@ class DynamoDBBookingRepository(IBookingRepository):
         sk = booking.start_time.isoformat()
         
         item = {
-            'PK': pk,  # Kept for legacy/debug
-            'SK': sk,  # Kept for legacy/debug
+            'PK': pk,
+            'SK': sk,
             'bookingId': booking.booking_id,
             'tenantId': str(booking.tenant_id),
             'serviceId': booking.service_id,
             'providerId': booking.provider_id,
-            # GSI Attributes for providerId-start-index
-            'tenantId_providerId': pk, 
+            'roomId': booking.room_id,
+            # GSI Attributes
+            'tenantId_providerId': f"{str(booking.tenant_id)}_{booking.provider_id}",
             'start': sk,
-            
             'endTime': booking.end_time.isoformat(),
             'status': booking.status.value,
             'paymentStatus': booking.payment_status.value,
             'createdAt': booking.created_at.isoformat()
         }
+
+        if booking.payment_intent_id:
+            item['paymentIntentId'] = booking.payment_intent_id
+        if booking.total_amount is not None:
+             item['totalAmount'] = str(booking.total_amount) # Store as string for Decimal compatibility
         
         if booking.conversation_id:
             item['conversationId'] = booking.conversation_id
@@ -395,15 +419,14 @@ class DynamoDBBookingRepository(IBookingRepository):
         # Add customer info if available
         if booking.customer_info.customer_id:
             item['customerId'] = booking.customer_info.customer_id
-            # NOTE: Removed GSI1PK/GSI1SK as they don't match described schema 'clientEmail-index'
-            # which uses 'clientEmail' as RANGE key.
+            item['GSI1PK'] = f"{booking.tenant_id}#{booking.customer_info.customer_id}"
+            item['GSI1SK'] = sk
         if booking.customer_info.name:
-            item['customerName'] = booking.customer_info.name
+            item['clientName'] = booking.customer_info.name
         if booking.customer_info.email:
-            item['customerEmail'] = booking.customer_info.email
-            item['clientEmail'] = booking.customer_info.email # Redundant but ensures index match if needed
+            item['clientEmail'] = booking.customer_info.email
         if booking.customer_info.phone:
-            item['customerPhone'] = booking.customer_info.phone
+            item['clientPhone'] = booking.customer_info.phone
 
         try:
             self.table.put_item(
@@ -422,20 +445,44 @@ class DynamoDBBookingRepository(IBookingRepository):
         
         self.table.update_item(
             Key={'PK': pk, 'SK': sk},
-            UpdateExpression='SET #status = :status, paymentStatus = :payment_status',
-            ExpressionAttributeNames={'#status': 'status'},
             ExpressionAttributeValues={
                 ':status': booking.status.value,
-                ':payment_status': booking.payment_status.value
+                ':payment_status': booking.payment_status.value,
+                ':payment_id': booking.payment_intent_id,
+                ':total_amount': str(booking.total_amount) if booking.total_amount is not None else None
             }
+        )
+        # Note: Above update expression is incomplete for new fields.
+        # Ideally we should use a more dynamic update builder.
+        # For now, let's just create a fuller update expression.
+        
+        update_expr = 'SET #status = :status, paymentStatus = :payment_status'
+        expr_values = {
+            ':status': booking.status.value,
+            ':payment_status': booking.payment_status.value
+        }
+        
+        if booking.payment_intent_id:
+            update_expr += ', paymentIntentId = :payment_id'
+            expr_values[':payment_id'] = booking.payment_intent_id
+            
+        if booking.total_amount is not None:
+            update_expr += ', totalAmount = :total_amount'
+            expr_values[':total_amount'] = str(booking.total_amount)
+
+        self.table.update_item(
+            Key={'PK': pk, 'SK': sk},
+            UpdateExpression=update_expr,
+            ExpressionAttributeNames={'#status': 'status'},
+            ExpressionAttributeValues=expr_values
         )
 
     def _item_to_entity(self, item: dict) -> Booking:
         customer_info = CustomerInfo(
             customer_id=item.get('customerId'),
-            name=item.get('customerName'),
-            email=item.get('customerEmail'),
-            phone=item.get('customerPhone')
+            name=item.get('clientName') or item.get('customerName'),
+            email=item.get('clientEmail') or item.get('customerEmail'),
+            phone=item.get('clientPhone') or item.get('customerPhone')
         )
         
         return Booking(
@@ -443,12 +490,15 @@ class DynamoDBBookingRepository(IBookingRepository):
             tenant_id=TenantId(item['tenantId']),
             service_id=item['serviceId'],
             provider_id=item['providerId'],
+            room_id=item.get('roomId'),
             customer_info=customer_info,
-            start_time=datetime.fromisoformat(item.get('SK') or item['start']),
+            start_time=datetime.fromisoformat(item.get('start') or item['SK']),
             end_time=datetime.fromisoformat(item['endTime']),
             status=BookingStatus(item['status']),
-            payment_status=PaymentStatus(item['paymentStatus']),
+            payment_status=PaymentStatus(item.get('paymentStatus', 'NONE')),
             conversation_id=item.get('conversationId'),
+            payment_intent_id=item.get('paymentIntentId'),
+            total_amount=float(item['totalAmount']) if item.get('totalAmount') else None,
             created_at=datetime.fromisoformat(item['createdAt'])
         )
 
@@ -665,3 +715,81 @@ class DynamoDBWorkflowRepository:
             updated_at=datetime.fromisoformat(item['updatedAt'])
         )
 
+
+class DynamoDBRoomRepository(IRoomRepository):
+    """DynamoDB implementation of Room repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('ROOMS_TABLE', 'ChatBooking-Rooms')
+        )
+
+    def list_by_tenant(self, tenant_id: TenantId) -> List[Room]:
+        try:
+            response = self.table.query(
+                IndexName='byTenant',
+                KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
+            )
+            return [self._item_to_entity(item) for item in response.get('Items', [])]
+        except ClientError as e:
+            print(f"Error listing rooms: {e}")
+            return []
+
+    def get_by_id(self, tenant_id: TenantId, room_id: str) -> Optional[Room]:
+        try:
+            response = self.table.get_item(
+                Key={'roomId': room_id}
+            )
+            item = response.get('Item')
+            if not item:
+                return None
+            
+            # Verify tenant ownership
+            if item['tenantId'] != str(tenant_id):
+                return None
+
+            return self._item_to_entity(item)
+        except ClientError as e:
+            print(f"Error getting room: {e}")
+            return None
+
+    def save(self, room: Room) -> None:
+        item = {
+            'tenantId': str(room.tenant_id),
+            'roomId': room.room_id,
+            'name': room.name,
+            'description': room.description,
+            'capacity': room.capacity,
+            'status': room.status,
+            'isVirtual': room.is_virtual,
+            'minDuration': room.min_duration,
+            'maxDuration': room.max_duration,
+            'operatingHours': room.operating_hours,
+            'metadata': room.metadata,
+            'createdAt': room.created_at.isoformat(),
+            'updatedAt': room.updated_at.isoformat()
+        }
+        self.table.put_item(Item=item)
+
+    def delete(self, tenant_id: TenantId, room_id: str) -> None:
+        self.table.delete_item(
+            Key={'roomId': room_id}
+        )
+
+    def _item_to_entity(self, item: dict) -> Room:
+        return Room(
+            room_id=item['roomId'],
+            tenant_id=TenantId(item['tenantId']),
+            name=item['name'],
+            description=item.get('description'),
+            capacity=int(item['capacity']) if item.get('capacity') else None,
+            status=item['status'],
+            is_virtual=item.get('isVirtual', False),
+            min_duration=int(item['minDuration']) if item.get('minDuration') else None,
+            max_duration=int(item['maxDuration']) if item.get('maxDuration') else None,
+            operating_hours=item.get('operatingHours'),
+            metadata=item.get('metadata', {}),
+            created_at=datetime.fromisoformat(item['createdAt']),
+            updated_at=datetime.fromisoformat(item['updatedAt'])
+        )

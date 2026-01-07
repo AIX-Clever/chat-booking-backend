@@ -76,18 +76,19 @@ class TestLambdaResponses:
         assert response["headers"]["Content-Type"] == "application/json"
     
     def test_success_response(self):
-        """success_response now returns data directly for AppSync Direct Resolver"""
         response = success_response({"result": "ok"})
         
-        # AppSync Direct Resolver returns data directly
-        assert response == {"result": "ok"}
+        assert response["statusCode"] == 200
+        body = eval(response["body"])  # Parse JSON string
+        assert body["result"] == "ok"
     
     def test_error_response(self):
-        """error_response now raises an exception for AppSync Direct Resolver"""
-        with pytest.raises(Exception) as exc_info:
-            error_response("Something went wrong", 500)
+        response = error_response("Something went wrong", 500)
         
-        assert str(exc_info.value) == "Something went wrong"
+        assert response["statusCode"] == 500
+        body = eval(response["body"])
+        assert "error" in body
+        assert body["error"] == "Something went wrong"
 
 
 class TestDateTimeUtilities:

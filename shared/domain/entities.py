@@ -57,6 +57,35 @@ class TenantPlan(Enum):
     ENTERPRISE = "ENTERPRISE"
 
 
+# Definición de límites por plan (Hardcoded por ahora - Source of Truth)
+PLAN_LIMITS = {
+    TenantPlan.LITE: {
+        'messages': 500,
+        'bookings': 50,
+        'tokensIA': 0,        # No AI
+        'ai_enabled': False
+    },
+    TenantPlan.PRO: {
+        'messages': 2000,
+        'bookings': 200,
+        'tokensIA': 100000,   # ~100k tokens
+        'ai_enabled': True
+    },
+    TenantPlan.BUSINESS: {
+        'messages': 10000,
+        'bookings': 1000,
+        'tokensIA': 500000,   # ~500k tokens
+        'ai_enabled': True
+    },
+    TenantPlan.ENTERPRISE: {
+        'messages': 100000,
+        'bookings': 10000,
+        'tokensIA': 5000000,  # ~5m tokens
+        'ai_enabled': True
+    }
+}
+
+
 @dataclass
 class TenantId:
     """Value Object for Tenant ID"""
@@ -99,6 +128,24 @@ class Tenant:
         """Business rule: only active tenants can create bookings"""
         return self.is_active()
 
+    def get_plan_limits(self) -> Dict[str, Any]:
+        """Get limits for current plan"""
+        return PLAN_LIMITS.get(self.plan, PLAN_LIMITS[TenantPlan.LITE])
+
+    def check_limit(self, metric: str, current_usage: int) -> bool:
+        """
+        Check if usage is within limits
+        Returns True if ALLOWED (usage < limit), False if EXCEEDED
+        """
+        limits = self.get_plan_limits()
+        limit = limits.get(metric, 0)
+        
+        # If limit is -1, it means unlimited (future proofing)
+        if limit == -1:
+            return True
+            
+        return current_usage < limit
+
 
 
 @dataclass
@@ -125,6 +172,9 @@ class Service:
     category: str
     duration_minutes: int
     price: Optional[float]
+    currency: str = "USD"
+    required_room_ids: Optional[List[str]] = None
+    location_type: List[str] = field(default_factory=lambda: ["PHYSICAL"])
     active: bool = True
 
     def is_available(self) -> bool:
@@ -220,8 +270,12 @@ class Booking:
     end_time: datetime
     status: BookingStatus
     payment_status: PaymentStatus = PaymentStatus.NONE
+    room_id: Optional[str] = None
     conversation_id: Optional[str] = None
     notes: Optional[str] = None
+    # Payment fields
+    payment_intent_id: Optional[str] = None
+    payment_client_secret: Optional[str] = None # Not persisted usually, but needed for frontend
     total_amount: Optional[float] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -385,6 +439,24 @@ class Workflow:
     steps: Dict[str, WorkflowStep]
     description: Optional[str] = None
     is_active: bool = True
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+
+
+@dataclass
+class Room:
+    """Room (Box) entity"""
+    room_id: str
+    tenant_id: TenantId
+    name: str
+    description: Optional[str] = None
+    capacity: Optional[int] = None
+    status: str = "ACTIVE"  # ACTIVE, INACTIVE
+    is_virtual: bool = False
+    min_duration: Optional[int] = None
+    max_duration: Optional[int] = None
+    operating_hours: Optional[List[Dict[str, Any]]] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
