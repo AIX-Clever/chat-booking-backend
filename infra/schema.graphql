@@ -173,7 +173,6 @@ type Service @aws_api_key @aws_cognito_user_pools {
   description: String
   category: String!
   durationMinutes: Int!
-  durationMinutes: Int!
   price: Float
   available: Boolean!
   requiredRoomIds: [ID]
