@@ -57,6 +57,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly metricsFunction: lambda.Function;
   public readonly workflowManagerFunction: lambda.Function;
   public readonly faqManagerFunction: lambda.Function;
+  public readonly userManagementFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -352,10 +353,32 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions to Chat Agent to read FAQs
     props.faqsTable.grantReadData(this.chatAgentFunction);
 
-    // Grant permissions to Chat Agent to read FAQs
-    props.faqsTable.grantReadData(this.chatAgentFunction);
+    // 12. User Management Lambda
+    this.userManagementFunction = new lambda.Function(this, 'UserManagementFunction', {
+      ...commonProps,
+      description: 'User management operations (invite, list, update role, remove)',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'user_management')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        USER_POOL_ID: props.userPool.userPoolId,
+      },
+    });
 
-    // 12. Ingestion Function (Knowledge Base - S3 Trigger)
+    // Grant Cognito permissions for user management
+    props.userPool.grant(this.userManagementFunction,
+      'cognito-idp:AdminCreateUser',
+      'cognito-idp:AdminGetUser',
+      'cognito-idp:ListUsers',
+      'cognito-idp:AdminUpdateUserAttributes',
+      'cognito-idp:AdminDisableUser'
+    );
+
+    // Grant read access to tenants table for plan validation
+    props.tenantsTable.grantReadData(this.userManagementFunction);
+
+    // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
     this.documentsBucket = new s3.Bucket(this, 'DocumentsBucket', {
       versioned: true,

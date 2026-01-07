@@ -127,6 +127,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.faqManagerFunction
     );
 
+    const userManagementDataSource = this.api.addLambdaDataSource(
+      'UserManagementDataSource',
+      props.userManagementFunction
+    );
+
     const presignDataSource = this.api.addLambdaDataSource(
       'PresignDataSource',
       props.presignFunction
