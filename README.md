@@ -76,3 +76,5 @@ Ver `/plan/deployment/README.md` para instrucciones completas.
 - [Arquitectura de Lambdas](../plan/architecture/lambdas.md)
 - [Schema DynamoDB](../plan/architecture/dynamodb-schema.md)
 - [Deployment](../plan/deployment/README.md)
+
+<!-- Trigger Deploy: Sync with Layers -->
