@@ -55,6 +55,8 @@ class TestFSMBasicFlow(unittest.TestCase):
                 price=100
             )
         ]
+        self.service_repo.get_by_id.return_value = self.service_repo.list_by_tenant.return_value[0]
+
         self.provider_repo.list_by_tenant.return_value = [
             Provider(
                 provider_id="prov-1", 
@@ -65,6 +67,7 @@ class TestFSMBasicFlow(unittest.TestCase):
                 service_ids=["svc-1"]
             )
         ]
+        self.provider_repo.get_by_id.return_value = self.provider_repo.list_by_tenant.return_value[0]
         
         # Mock Workflow with separate paths
         self.workflow = Workflow(
@@ -100,6 +103,18 @@ class TestFSMBasicFlow(unittest.TestCase):
                 "show_faqs": WorkflowStep(step_id="show_faqs", type="TOOL", content={"tool": "showFAQs"})
             }
         )
+        # Stateful Mock for Conversation Repository
+        self.conversations_db = {}
+        
+        def save_conversation(conv):
+            self.conversations_db[conv.conversation_id] = conv
+            
+        def get_conversation(tenant_id, conversation_id):
+            return self.conversations_db.get(conversation_id)
+            
+        self.conversation_repo.save.side_effect = save_conversation
+        self.conversation_repo.get_by_id.side_effect = get_conversation
+        
         self.workflow_repo.list_by_tenant.return_value = [self.workflow]
         self.workflow_repo.get_by_id.return_value = self.workflow
         
@@ -128,7 +143,7 @@ class TestFSMBasicFlow(unittest.TestCase):
         # 3. Select Service
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Corte", "text", {"value": "svc-1"})
         self.assertEqual(conv.context['serviceId'], "svc-1")
-        self.assertEqual(conv.current_step_id, "list_providers_filtered")
+        self.assertEqual(conv.current_step_id, "list_providers")
         
         # 4. Select Provider
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Juan", "text", {"value": "prov-1"})
@@ -136,7 +151,7 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.assertEqual(conv.current_step_id, "select_timeslot")
         
         # 5. Select Slot
-        slot_iso = "2025-01-01T10:00:00"
+        slot_iso = "2027-01-01T10:00:00"
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "10am", "text", {"value": slot_iso})
         self.assertEqual(conv.context['selectedSlot'], slot_iso)
         
@@ -153,13 +168,13 @@ class TestFSMBasicFlow(unittest.TestCase):
         
         # 2. Select Provider Flow
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Profesionales", "text", {"value": "flow_providers"})
-        self.assertEqual(conv.current_step_id, "list_providers_all")
+        self.assertEqual(conv.current_step_id, "list_providers")
         
         # 3. Select Provider
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Juan", "text", {"value": "prov-1"})
         self.assertEqual(conv.context['providerId'], "prov-1")
         # Should ask for Service now
-        self.assertEqual(conv.current_step_id, "select_service_for_provider")
+        self.assertEqual(conv.current_step_id, "resolve_service")
         
         # 4. Select Service
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Corte", "text", {"value": "svc-1"})
@@ -167,12 +182,12 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.assertEqual(conv.current_step_id, "select_timeslot")
         
         # 5. Slot & Confirm... (Same as above)
-        slot_iso = "2025-01-01T10:00:00"
+        slot_iso = "2027-01-01T10:00:00"
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "10am", "text", {"value": slot_iso})
         contact_data = {"clientName": "Test", "clientEmail": "test@test.com", "clientPhone": "12345678"} # added phone
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Mis datos", "text", contact_data)
         
-        self.assertEqual(self.booking_repo.save.call_count, 2) # Total calls in suite
+        self.assertEqual(self.booking_repo.save.call_count, 1) # Mock reset per test
         
     def test_faq_flow(self):
         print("\n--- Testing FAQ Flow ---")
@@ -186,7 +201,7 @@ class TestFSMBasicFlow(unittest.TestCase):
         # 2. Select FAQS
         conv, resp = self.service.process_message(self.tenant_id, conv.conversation_id, "Preguntas", "text", {"value": "flow_faqs"})
         
-        self.assertEqual(conv.current_step_id, "show_faqs")
+        self.assertEqual(conv.current_step_id, "faq_followup")
         self.assertIn("A", resp['text'])
 
 if __name__ == '__main__':

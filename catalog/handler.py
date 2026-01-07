@@ -413,7 +413,9 @@ def service_to_dict(service) -> dict:
         'category': service.category,
         'durationMinutes': service.duration_minutes,
         'price': service.price,
-        'available': service.active
+        'available': service.active,
+        'requiredRoomIds': service.required_room_ids,
+        'locationType': service.location_type
     }
 
 

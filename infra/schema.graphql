@@ -29,6 +29,11 @@ enum ConversationState {
   BOOKING_CONFIRMED
 }
 
+enum LocationType {
+  ONLINE
+  PHYSICAL
+}
+
 
 # Types - Tenant
 type Room @aws_api_key @aws_cognito_user_pools {
@@ -38,6 +43,10 @@ type Room @aws_api_key @aws_cognito_user_pools {
   description: String
   capacity: Int!
   status: String!
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -164,8 +173,11 @@ type Service @aws_api_key @aws_cognito_user_pools {
   description: String
   category: String!
   durationMinutes: Int!
+  durationMinutes: Int!
   price: Float
   available: Boolean!
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 type Provider @aws_api_key @aws_cognito_user_pools {
@@ -208,6 +220,8 @@ type Booking @aws_api_key @aws_cognito_user_pools {
   providerId: ID!
   start: AWSDateTime!
   end: AWSDateTime!
+  end: AWSDateTime!
+  roomId: ID
   status: BookingStatus!
   clientName: String!
   clientEmail: String!
@@ -278,6 +292,10 @@ input CreateRoomInput {
   description: String
   capacity: Int
   status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
 }
 
@@ -287,6 +305,10 @@ input UpdateRoomInput {
   description: String
   capacity: Int
   status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
 }
 
@@ -335,7 +357,10 @@ input CreateServiceInput {
   description: String
   category: String!
   durationMinutes: Int!
+  durationMinutes: Int!
   price: Float
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input UpdateServiceInput {
@@ -345,7 +370,11 @@ input UpdateServiceInput {
   category: String
   durationMinutes: Int
   price: Float
+  durationMinutes: Int
+  price: Float
   available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input CreateProviderInput {

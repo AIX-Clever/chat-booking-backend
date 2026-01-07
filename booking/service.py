@@ -25,7 +25,8 @@ from shared.domain.repositories import (
     IServiceRepository,
     IProviderRepository,
     ITenantRepository,
-    IConversationRepository
+    IConversationRepository,
+    IRoomRepository
 )
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -77,14 +78,18 @@ class BookingService:
         booking_repo: IBookingRepository,
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
+        provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
+        room_repo: Optional[IRoomRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
         email_service: Optional[EmailService] = None
     ):
         self._booking_repo = booking_repo
         self._service_repo = service_repo
         self._provider_repo = provider_repo
+        self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
+        self._room_repo = room_repo
         self._limit_service = limit_service
         self._email_service = email_service
     
@@ -177,6 +182,13 @@ class BookingService:
         # Validate time slot is not in the past
         if start < datetime.now(UTC):
             raise ValidationError("Cannot create booking in the past")
+        
+        # Check Room Availability (if service requires it)
+        assigned_room_id = None
+        if service.required_room_ids and self._room_repo:
+             assigned_room_id = self._check_and_assign_room(
+                 tenant_id, service, start, end
+             )
         
         # Check slot availability (prevent overbooking)
         if not self._is_slot_available(tenant_id, provider_id, start, end):
