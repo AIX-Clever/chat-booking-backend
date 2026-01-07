@@ -27,6 +27,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   metricsFunction: lambda.IFunction;
   workflowManagerFunction: lambda.IFunction;
   faqManagerFunction: lambda.IFunction;
+  userManagementFunction: lambda.IFunction;
   presignFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
