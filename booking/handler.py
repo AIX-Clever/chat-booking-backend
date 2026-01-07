@@ -297,19 +297,18 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
     try:
         start_date = parse_iso_datetime(start_str)
         end_date = parse_iso_datetime(end_str)
+        bookings = booking_query_service.list_by_provider(
+            tenant_id,
+            provider_id,
+            parse_iso_datetime(start_str),
+            parse_iso_datetime(end_str)
+        )
     except ValueError as e:
         return error_response(f"Invalid date format: {e}", 400)
 
-    bookings = booking_query_service.list_by_provider(
-        tenant_id,
-        provider_id,
-        start_date,
-        end_date
-    )
-
     serialized_bookings = [booking_to_dict(b) for b in bookings]
     logger.info("Serialized Bookings Result", count=len(serialized_bookings), sample=serialized_bookings[0] if serialized_bookings else None)
-    return success_response(serialized_bookings)
+    return serialized_bookings
 
 
 def handle_list_by_client(tenant_id: TenantId, input_data: dict) -> dict:
