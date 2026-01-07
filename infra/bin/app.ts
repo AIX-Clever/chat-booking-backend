@@ -108,6 +108,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   metricsFunction: lambdaStack.metricsFunction,
   workflowManagerFunction: lambdaStack.workflowManagerFunction,
   faqManagerFunction: lambdaStack.faqManagerFunction,
+  userManagementFunction: lambdaStack.userManagementFunction,
   presignFunction: lambdaStack.presignFunction,
   userPool: authStack.userPool,
 });
