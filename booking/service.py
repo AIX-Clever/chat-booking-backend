@@ -78,7 +78,6 @@ class BookingService:
         booking_repo: IBookingRepository,
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
-        provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
         room_repo: Optional[IRoomRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
@@ -86,7 +85,6 @@ class BookingService:
     ):
         self._booking_repo = booking_repo
         self._service_repo = service_repo
-        self._provider_repo = provider_repo
         self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
         self._room_repo = room_repo
