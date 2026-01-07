@@ -248,6 +248,30 @@ type ApiKey {
   expiresAt: AWSDateTime!
 }
 
+# User Management Types
+type TenantUser @aws_cognito_user_pools {
+  userId: ID!
+  tenantId: ID!
+  email: String!
+  name: String
+  role: UserRole!
+  status: UserStatus!
+  createdAt: AWSDateTime!
+  lastLogin: AWSDateTime
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_INVITATION
+}
+
 type FAQ @aws_api_key @aws_cognito_user_pools {
   faqId: ID!
   tenantId: ID!
@@ -650,6 +674,18 @@ input UpdateWorkflowInput {
   isActive: Boolean
 }
 
+# User Management Inputs
+input InviteUserInput {
+  email: String!
+  name: String
+  role: UserRole!
+}
+
+input UpdateUserRoleInput {
+  userId: ID!
+  role: UserRole!
+}
+
 # Queries
 type Query {
   # Catalog
@@ -684,6 +720,10 @@ type Query {
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
   getPlanUsage: PlanUsage @aws_cognito_user_pools
+
+  # User Management (Admin)
+  listTenantUsers: [TenantUser!]! @aws_cognito_user_pools
+  getTenantUser(userId: ID!): TenantUser @aws_cognito_user_pools
 }
 
 # Mutations
@@ -732,6 +772,11 @@ type Mutation {
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
   
+  # User Management (Admin)
+  inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
+  updateUserRole(input: UpdateUserRoleInput!): TenantUser! @aws_cognito_user_pools
+  removeUser(userId: ID!): TenantUser! @aws_cognito_user_pools
+
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
   sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
