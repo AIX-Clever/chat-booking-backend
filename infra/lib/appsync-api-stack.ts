@@ -196,6 +196,10 @@ enum ConversationState {
   BOOKING_CONFIRMED
 }
 
+enum LocationType {
+  ONLINE
+  PHYSICAL
+}
 
 # Types - Tenant
 type Room @aws_api_key @aws_cognito_user_pools {
@@ -333,6 +337,8 @@ type Service @aws_api_key @aws_cognito_user_pools {
   durationMinutes: Int!
   price: Float
   available: Boolean!
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 type Provider @aws_api_key @aws_cognito_user_pools {
