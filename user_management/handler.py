@@ -11,7 +11,10 @@ from shared.domain.entities import TenantId
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
 from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
 from shared.plan_limits import PlanLimitExceeded
-from user_management.service import UserManagementService
+try:
+    from user_management.service import UserManagementService
+except ImportError:
+    from service import UserManagementService
 
 # Configure logging
 logger = logging.getLogger()
