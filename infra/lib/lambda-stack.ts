@@ -358,7 +358,6 @@ export class LambdaStack extends cdk.Stack {
     // 12. User Management Lambda
     this.userManagementFunction = new lambda.Function(this, 'UserManagementFunction', {
       ...commonProps,
-      functionName: `ChatBooking-${props.envName}-Backend-UserManagementFunction`,
       description: 'User management operations (invite, list, update role, remove)',
       code: lambda.Code.fromAsset(path.join(backendPath, 'user_management')),
       handler: 'handler.lambda_handler',
