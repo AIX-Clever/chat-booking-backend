@@ -150,7 +150,8 @@ export class AppSyncApiStack extends cdk.Stack {
       metricsDataSource,
       workflowManagerDataSource,
       faqManagerDataSource,
-      presignDataSource
+      presignDataSource,
+      userManagementDataSource
     );
 
     // Outputs
