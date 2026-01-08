@@ -30,6 +30,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly faqsTable: dynamodb.Table;
   public readonly documentsTable: dynamodb.Table;
   public readonly roomsTable: dynamodb.Table;
+  public readonly userRolesTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -422,6 +423,38 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'RoomsTableName', {
       value: this.roomsTable.tableName,
       description: 'Rooms table name',
+    });
+
+    // 14. User Roles Table
+    this.userRolesTable = new dynamodb.Table(this, 'UserRolesTable', {
+      tableName: 'ChatBooking-UserRoles',
+      partitionKey: {
+        name: 'userId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+    });
+
+    // GSI: tenantId index for listing all users in a tenant
+    this.userRolesTable.addGlobalSecondaryIndex({
+      indexName: 'byTenant',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'createdAt',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    new cdk.CfnOutput(this, 'UserRolesTableName', {
+      value: this.userRolesTable.tableName,
+      description: 'User Roles table name',
     });
   }
 }

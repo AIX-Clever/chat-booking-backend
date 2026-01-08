@@ -35,6 +35,7 @@ interface LambdaStackProps extends cdk.StackProps {
   faqsTable: dynamodb.ITable;
   documentsTable: dynamodb.ITable;
   roomsTable: dynamodb.ITable;
+  userRolesTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
   vpc?: cdk.aws_ec2.IVpc;
   dbSecurityGroup?: cdk.aws_ec2.ISecurityGroup;
@@ -377,6 +378,9 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant read access to tenants table for plan validation
     props.tenantsTable.grantReadData(this.userManagementFunction);
+
+    // Grant read/write access to user roles table
+    props.userRolesTable.grantReadWriteData(this.userManagementFunction);
 
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
