@@ -93,7 +93,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Any:
     
     except Exception as e:
         logger.error(f"Error in user management handler: {str(e)}", exc_info=True)
-        return error_response(str(e), 500)
+        raise e
 
 
 def handle_list_users(tenant_id: TenantId) -> list:
