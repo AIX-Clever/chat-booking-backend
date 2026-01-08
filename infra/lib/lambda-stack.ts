@@ -364,6 +364,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         USER_POOL_ID: props.userPool.userPoolId,
+        USER_ROLES_TABLE: props.userRolesTable.tableName,
       },
     });
 
