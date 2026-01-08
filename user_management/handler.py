@@ -31,14 +31,14 @@ user_service = UserManagementService(
 )
 
 
-def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def lambda_handler(event: Dict[str, Any], context: Any) -> Any:
     """
     Main Lambda handler for user management operations.
     
     Routes to appropriate handler based on field name.
     """
     try:
-        logger.info("User Management Event", extra={"event": event})
+        logger.info(f"Event: {json.dumps(event)}")
         
         # Extract tenant ID from identity claims
         identity = event.get('identity', {})
