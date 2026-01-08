@@ -47,18 +47,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # Get user role from DynamoDB (not from claims anymore)
         user_id = claims.get('sub') or claims.get('cognito:username')
-        caller_user_role = user_role_repo.get(user_id)
         
-        if not caller_user_role:
-            return error_response("User role not found", 403)
-        
-        caller_role = caller_user_role.role.value
+        # For listTenantUsers, we can proceed without role check
+        # (role check happens inside service for mutations)
+        caller_role = None
+        try:
+            caller_user_role = user_role_repo.get(user_id)
+            if caller_user_role:
+                caller_role = caller_user_role.role.value
+        except Exception as role_err:
+            logger.warning(f"Could not fetch user role: {role_err}")
+            # Continue anyway for queries
         
         # Get field name to determine operation
         field_name = event.get('info', {}).get('fieldName')
         arguments = event.get('arguments', {})
         
-        logger.info(f"Field: {field_name}, TenantId: {tenant_id}, CallerRole: {caller_role}")
+        logger.info(f"Field: {field_name}, TenantId: {tenant_id}, CallerRole: {caller_role or 'UNKNOWN'}")
         
         # Route to appropriate handler
         if field_name == 'listTenantUsers':
