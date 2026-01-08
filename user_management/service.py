@@ -1,33 +1,47 @@
 """
-User Management Service for multi-tenant user administration.
+User Management Service
 
-Handles user invitations, role management, and Cognito integration.
+Handles user invitation, role management, and removal using:
+- AWS Cognito for authentication
+- DynamoDB for role storage (flexible & auditable)
 """
 
-import os
 import boto3
-from datetime import datetime
-from typing import List, Dict, Optional
-from shared.domain.entities import TenantId
-from shared.domain.repositories import ITenantRepository
+import secrets
+import string
+from typing import List, Dict, Any, Optional
+from datetime import datetime, timezone
+
+from shared.domain.entities import TenantId, UserRole, UserStatus
+from shared.domain.user_role import UserRoleEntity
+from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
 from shared.plan_limits import check_plan_limit, PlanLimitExceeded
 
 
 class UserManagementService:
-    """Service for managing tenant users via AWS Cognito."""
+    """Service for managing tenant users with Cognito + DynamoDB"""
     
     def __init__(
         self,
-        tenant_repo: ITenantRepository,
+        tenant_repo: Optional[DynamoDBTenantRepository] = None,
+        user_role_repo: Optional[DynamoDBUserRoleRepository] = None,
         cognito_client=None,
         user_pool_id: Optional[str] = None
     ):
-        self._tenant_repo = tenant_repo
-        self._cognito = cognito_client or boto3.client('cognito-idp')
-        self._user_pool_id = user_pool_id or os.environ.get('USER_POOL_ID')
-        
-        if not self._user_pool_id:
-            raise ValueError("USER_POOL_ID environment variable is required")
+        """Initialize service with repositories"""
+        self.tenant_repo = tenant_repo or DynamoDBTenantRepository()
+        self.user_role_repo = user_role_repo or DynamoDBUserRoleRepository()
+        self.cognito = cognito_client or boto3.client('cognito-idp')
+        self.user_pool_id = user_pool_id or self._get_user_pool_id()
+    
+    def _get_user_pool_id(self) -> str:
+        """Get user pool ID from environment"""
+        import os
+        pool_id = os.environ.get('USER_POOL_ID')
+        if not pool_id:
+            raise ValueError("USER_POOL_ID environment variable not set")
+        return pool_id
     
     def invite_user(
         self,
@@ -35,214 +49,167 @@ class UserManagementService:
         email: str,
         name: Optional[str],
         role: str
-    ) -> Dict:
+    ) -> Dict[str, Any]:
         """
-        Invite a new user to the tenant with Cognito temporary password.
+        Invite a new user to the tenant.
         
-        Args:
-            tenant_id: Tenant ID
-            email: User email
-            name: User display name (optional)
-            role: User role (OWNER, ADMIN, USER)
-        
-        Returns:
-            Dictionary with user information
-        
-        Raises:
-            PlanLimitExceeded: If tenant has reached user limit for their plan
+        Creates user in Cognito and stores role in DynamoDB.
         """
-        # 1. Get tenant to check plan
-        tenant = self._tenant_repo.get(tenant_id)
+        # 1. Validate plan limits
+        tenant = self.tenant_repo.get_by_id(tenant_id)
+        if not tenant:
+            raise ValueError(f"Tenant {tenant_id} not found")
         
-        # 2. Count current users for this tenant
-        current_users = self._count_tenant_users(tenant_id)
+        # Count active users
+        active_users = self.user_role_repo.count_active_users(tenant_id)
         
-        # 3. Check plan limits
-        is_within_limit, max_allowed = check_plan_limit(
-            tenant.plan,
-            "max_users",
-            current_users
+        # Check plan limit
+        check_plan_limit(
+            plan=tenant.plan.value,
+            metric='max_users',
+            current_usage=active_users
         )
         
-        if not is_within_limit:
-            raise PlanLimitExceeded(
-                f"Plan {tenant.plan} allows max {max_allowed} users. Currently have {current_users}.",
-                plan=tenant.plan,
-                limit_key="max_users",
-                current=current_users,
-                max_allowed=max_allowed
-            )
+        # 2. Create user in Cognito
+        temp_password = self._generate_temp_password()
         
-        # 4. Create Cognito user with custom attributes
         user_attributes = [
             {'Name': 'email', 'Value': email},
             {'Name': 'email_verified', 'Value': 'true'},
-            {'Name': 'custom:tenantId', 'Value': str(tenant_id)},
-            {'Name': 'custom:role', 'Value': role},
+            {'Name': 'custom:tenantId', 'Value': str(tenant_id)}
         ]
         
         if name:
             user_attributes.append({'Name': 'name', 'Value': name})
         
         try:
-            response = self._cognito.admin_create_user(
-                UserPoolId=self._user_pool_id,
+            response = self.cognito.admin_create_user(
+                UserPoolId=self.user_pool_id,
                 Username=email,
                 UserAttributes=user_attributes,
-                DesiredDeliveryMediums=['EMAIL'],  # Send email with temp password
-                MessageAction='SUPPRESS' if os.environ.get('SUPPRESS_INVITE_EMAIL') else 'RESEND'
+                TemporaryPassword=temp_password,
+                MessageAction='SUPPRESS',  # We'll send custom email later
+                DesiredDeliveryMediums=['EMAIL']
             )
             
-            user = response['User']
+            user_sub = self._extract_user_sub(response['User'])
             
-            return {
-                "userId": user['Username'],
-                "tenantId": str(tenant_id),
-                "email": email,
-                "name": name,
-                "role": role,
-                "status": "PENDING_INVITATION",
-                "createdAt": user['UserCreateDate'].isoformat(),
-                "lastLogin": None
-            }
-            
-        except self._cognito.exceptions.UsernameExistsException:
-            # User already exists in this user pool
+        except self.cognito.exceptions.UsernameExistsException:
             raise ValueError(f"User with email {email} already exists")
+        
+        # 3. Create role record in DynamoDB
+        user_role = UserRoleEntity(
+            user_id=user_sub or email,  # Use sub if available, fallback to email
+            tenant_id=tenant_id,
+            email=email,
+            name=name,
+            role=UserRole(role),
+            status=UserStatus.PENDING_INVITATION,
+            created_at=datetime.now(timezone.utc)
+        )
+        
+        self.user_role_repo.create(user_role)
+        
+        return user_role.to_dict()
     
-    def list_users(self, tenant_id: TenantId) -> List[Dict]:
+    def list_users(self, tenant_id: TenantId) -> List[Dict[str, Any]]:
         """
-        List all users for a tenant from Cognito.
+        List all users in a tenant.
         
-        Args:
-            tenant_id: Tenant ID
-        
-        Returns:
-            List of user dictionaries
+        Returns combined data from Cognito + DynamoDB roles.
         """
-        users = []
-        pagination_token = None
+        # Get all user roles from DynamoDB
+        user_roles = self.user_role_repo.list_by_tenant(tenant_id)
         
-        # Query Cognito with filter for custom:tenantId
-        filter_str = f'custom:tenantId = "{str(tenant_id)}"'
+        # Enrich with Cognito data (last login, etc)
+        results = []
+        for user_role in user_roles:
+            user_data = user_role.to_dict()
+            
+            # Try to get additional info from Cognito
+            try:
+                cognito_user = self.cognito.admin_get_user(
+                    UserPoolId=self.user_pool_id,
+                    Username=user_role.user_id
+                )
+                
+                # Add last login if available
+                user_data['lastLogin'] = cognito_user.get('UserLastModifiedDate')
+                
+            except Exception as e:
+                # User might be deleted from Cognito but still in DynamoDB
+                print(f"Could not fetch Cognito data for {user_role.user_id}: {e}")
+            
+            results.append(user_data)
         
-        while True:
-            kwargs = {
-                'UserPoolId': self._user_pool_id,
-                'Filter': filter_str,
-                'Limit': 60  # Max per page
-            }
-            
-            if pagination_token:
-                kwargs['PaginationToken'] = pagination_token
-            
-            response = self._cognito.list_users(**kwargs)
-            
-            for user in response.get('Users', []):
-                users.append(self._cognito_user_to_dict(user))
-            
-            pagination_token = response.get('PaginationToken')
-            if not pagination_token:
-                break
-        
-        return users
+        return results
     
-    def get_user(self, user_id: str) -> Optional[Dict]:
-        """
-        Get a specific user by ID from Cognito.
+    def get_user(self, user_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific user by ID"""
+        user_role = self.user_role_repo.get(user_id)
         
-        Args:
-            user_id: Cognito username (usually email)
-        
-        Returns:
-            User dictionary or None if not found
-        """
-        try:
-            response = self._cognito.admin_get_user(
-                UserPoolId=self._user_pool_id,
-                Username=user_id
-            )
-            
-            return self._cognito_user_to_dict(response)
-            
-        except self._cognito.exceptions.UserNotFoundException:
+        if not user_role:
             return None
+        
+        return user_role.to_dict()
     
-    def update_role(self, user_id: str, new_role: str) -> Dict:
+    def update_role(self, user_id: str, new_role: str) -> Dict[str, Any]:
         """
         Update a user's role.
         
-        Args:
-            user_id: Cognito username
-            new_role: New role value (OWNER, ADMIN, USER)
-        
-        Returns:
-            Updated user dictionary
+        Only updates DynamoDB (not Cognito).
         """
-        # Update custom:role attribute
-        self._cognito.admin_update_user_attributes(
-            UserPoolId=self._user_pool_id,
-            Username=user_id,
-            UserAttributes=[
-                {'Name': 'custom:role', 'Value': new_role}
-            ]
-        )
+        # Get existing user role
+        user_role = self.user_role_repo.get(user_id)
         
-        # Return updated user
-        return self.get_user(user_id)
-    
-    def remove_user(self, user_id: str) -> Dict:
-        """
-        Remove a user by disabling their account.
-        
-        Args:
-            user_id: Cognito username
-        
-        Returns:
-            Removed user dictionary
-        """
-        # Get user info before disabling
-        user = self.get_user(user_id)
-        
-        if not user:
+        if not user_role:
             raise ValueError(f"User {user_id} not found")
         
-        # Disable the user (soft delete)
-        self._cognito.admin_disable_user(
-            UserPoolId=self._user_pool_id,
-            Username=user_id
-        )
+        # Update role
+        user_role.role = UserRole(new_role)
         
-        user['status'] = 'INACTIVE'
-        return user
+        # Save to DynamoDB
+        updated = self.user_role_repo.update(user_role)
+        
+        return updated.to_dict()
     
-    def _count_tenant_users(self, tenant_id: TenantId) -> int:
-        """Count active users for a tenant."""
-        users = self.list_users(tenant_id)
-        # Count only active users (not disabled)
-        return sum(1 for u in users if u.get('status') != 'INACTIVE')
+    def remove_user(self, user_id: str) -> Dict[str, Any]:
+        """
+        Remove a user (soft delete).
+        
+        Disables in Cognito and marks as INACTIVE in DynamoDB.
+        """
+        # Get user role
+        user_role = self.user_role_repo.get(user_id)
+        
+        if not user_role:
+            raise ValueError(f"User {user_id} not found")
+        
+        # Disable in Cognito
+        try:
+            self.cognito.admin_disable_user(
+                UserPoolId=self.user_pool_id,
+                Username=user_id
+            )
+        except Exception as e:
+            print(f"Could not disable Cognito user {user_id}: {e}")
+            # Continue anyway - we'll mark as inactive in DynamoDB
+        
+        # Mark as inactive in DynamoDB
+        user_role.status = UserStatus.INACTIVE
+        updated = self.user_role_repo.update(user_role)
+        
+        return updated.to_dict()
     
-    def _cognito_user_to_dict(self, cognito_user: Dict) -> Dict:
-        """Convert Cognito user object to our TenantUser format."""
-        attributes = {
-            attr['Name']: attr['Value']
-            for attr in cognito_user.get('Attributes', [])
-        }
-        
-        # Determine status
-        status = 'ACTIVE'
-        if not cognito_user.get('Enabled', True):
-            status = 'INACTIVE'
-        elif cognito_user.get('UserStatus') == 'FORCE_CHANGE_PASSWORD':
-            status = 'PENDING_INVITATION'
-        
-        return {
-            "userId": cognito_user.get('Username'),
-            "tenantId": attributes.get('custom:tenantId'),
-            "email": attributes.get('email'),
-            "name": attributes.get('name'),
-            "role": attributes.get('custom:role', 'USER'),
-            "status": status,
-            "createdAt": cognito_user.get('UserCreateDate', datetime.now()).isoformat(),
-            "lastLogin": cognito_user.get('UserLastModifiedDate', datetime.now()).isoformat()
-        }
+    def _generate_temp_password(self) -> str:
+        """Generate a secure temporary password"""
+        alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
+        return ''.join(secrets.choice(alphabet) for _ in range(12))
+    
+    def _extract_user_sub(self, cognito_user: Dict) -> Optional[str]:
+        """Extract user sub from Cognito response"""
+        attributes = cognito_user.get('Attributes', [])
+        for attr in attributes:
+            if attr['Name'] == 'sub':
+                return attr['Value']
+        return None

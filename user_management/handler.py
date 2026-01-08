@@ -9,6 +9,7 @@ import logging
 from typing import Any, Dict
 from shared.domain.entities import TenantId
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
 from shared.plan_limits import PlanLimitExceeded
 from user_management.service import UserManagementService
 
@@ -18,9 +19,13 @@ logger.setLevel(logging.INFO)
 
 # Initialize repositories
 tenant_repo = DynamoDBTenantRepository()
+user_role_repo = DynamoDBUserRoleRepository()
 
 # Initialize service
-user_service = UserManagementService(tenant_repo=tenant_repo)
+user_service = UserManagementService(
+    tenant_repo=tenant_repo,
+    user_role_repo=user_role_repo
+)
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -40,11 +45,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if not tenant_id:
             return error_response("Unauthorized: No tenant ID in claims", 401)
         
+        # Get user role from DynamoDB (not from claims anymore)
+        user_id = claims.get('sub') or claims.get('cognito:username')
+        caller_user_role = user_role_repo.get(user_id)
+        
+        if not caller_user_role:
+            return error_response("User role not found", 403)
+        
+        caller_role = caller_user_role.role.value
+        
         # Get field name to determine operation
         field_name = event.get('info', {}).get('fieldName')
         arguments = event.get('arguments', {})
         
-        logger.info(f"Field: {field_name}, TenantId: {tenant_id}")
+        logger.info(f"Field: {field_name}, TenantId: {tenant_id}, CallerRole: {caller_role}")
         
         # Route to appropriate handler
         if field_name == 'listTenantUsers':
@@ -56,15 +70,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         elif field_name == 'inviteUser':
             input_data = arguments.get('input', {})
-            return handle_invite_user(tenant_id, input_data, claims)
+            return handle_invite_user(tenant_id, input_data, caller_role)
         
         elif field_name == 'updateUserRole':
             input_data = arguments.get('input', {})
-            return handle_update_role(tenant_id, input_data, claims)
+            return handle_update_role(tenant_id, input_data, caller_role)
         
         elif field_name == 'removeUser':
             user_id = arguments.get('userId')
-            return handle_remove_user(tenant_id, user_id, claims)
+            return handle_remove_user(tenant_id, user_id, caller_role, claims)
         
         else:
             return error_response(f"Unknown field: {field_name}", 400)
@@ -109,7 +123,7 @@ def handle_get_user(tenant_id: TenantId, user_id: str) -> Dict:
         raise
 
 
-def handle_invite_user(tenant_id: TenantId, input_data: Dict, claims: Dict) -> Dict:
+def handle_invite_user(tenant_id: TenantId, input_data: Dict, caller_role: str) -> Dict:
     """
     Invite a new user to the tenant.
     
@@ -117,7 +131,6 @@ def handle_invite_user(tenant_id: TenantId, input_data: Dict, claims: Dict) -> D
     """
     try:
         # Check if caller has OWNER role
-        caller_role = claims.get('custom:role', 'USER')
         if caller_role != 'OWNER':
             raise ValueError("Only OWNER can invite users")
         
@@ -147,7 +160,7 @@ def handle_invite_user(tenant_id: TenantId, input_data: Dict, claims: Dict) -> D
         raise
 
 
-def handle_update_role(tenant_id: TenantId, input_data: Dict, claims: Dict) -> Dict:
+def handle_update_role(tenant_id: TenantId, input_data: Dict, caller_role: str) -> Dict:
     """
     Update a user's role.
     
@@ -155,7 +168,6 @@ def handle_update_role(tenant_id: TenantId, input_data: Dict, claims: Dict) -> D
     """
     try:
         # Check if caller has OWNER role
-        caller_role = claims.get('custom:role', 'USER')
         if caller_role != 'OWNER':
             raise ValueError("Only OWNER can change user roles")
         
@@ -180,7 +192,7 @@ def handle_update_role(tenant_id: TenantId, input_data: Dict, claims: Dict) -> D
         raise
 
 
-def handle_remove_user(tenant_id: TenantId, user_id: str, claims: Dict) -> Dict:
+def handle_remove_user(tenant_id: TenantId, user_id: str, caller_role: str, claims: Dict) -> Dict:
     """
     Remove a user (disable their account).
     
@@ -188,7 +200,6 @@ def handle_remove_user(tenant_id: TenantId, user_id: str, claims: Dict) -> Dict:
     """
     try:
         # Check if caller has OWNER role
-        caller_role = claims.get('custom:role', 'USER')
         if caller_role != 'OWNER':
             raise ValueError("Only OWNER can remove users")
         
