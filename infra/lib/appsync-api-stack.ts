@@ -814,7 +814,8 @@ schema {
     metricsDataSource: appsync.LambdaDataSource,
     workflowManagerDataSource: appsync.LambdaDataSource,
     faqManagerDataSource: appsync.LambdaDataSource,
-    presignDataSource: appsync.LambdaDataSource
+    presignDataSource: appsync.LambdaDataSource,
+    userManagementDataSource: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -831,6 +832,42 @@ schema {
     }`);
 
     const responseTemplate = appsync.MappingTemplate.lambdaResult();
+
+    // User Management Resolvers
+    userManagementDataSource.createResolver('ListTenantUsersResolver', {
+      typeName: 'Query',
+      fieldName: 'listTenantUsers',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('GetTenantUserResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenantUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('InviteUserResolver', {
+      typeName: 'Mutation',
+      fieldName: 'inviteUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('UpdateUserRoleResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateUserRole',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('RemoveUserResolver', {
+      typeName: 'Mutation',
+      fieldName: 'removeUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
 
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
