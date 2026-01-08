@@ -88,6 +88,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   roomsTable: databaseStack.roomsTable,
   userRolesTable: databaseStack.userRolesTable,
   userPool: authStack.userPool,
+  envName: env,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);

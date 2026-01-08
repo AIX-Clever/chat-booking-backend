@@ -41,6 +41,7 @@ interface LambdaStackProps extends cdk.StackProps {
   dbSecurityGroup?: cdk.aws_ec2.ISecurityGroup;
   dbSecret?: cdk.aws_secretsmanager.ISecret;
   dbEndpoint?: string; // Cluster ARN for Data API
+  envName: string;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -357,6 +358,7 @@ export class LambdaStack extends cdk.Stack {
     // 12. User Management Lambda
     this.userManagementFunction = new lambda.Function(this, 'UserManagementFunction', {
       ...commonProps,
+      functionName: `ChatBooking-${props.envName}-Backend-UserManagementFunction`,
       description: 'User management operations (invite, list, update role, remove)',
       code: lambda.Code.fromAsset(path.join(backendPath, 'user_management')),
       handler: 'handler.lambda_handler',
