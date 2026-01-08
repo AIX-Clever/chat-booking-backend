@@ -134,7 +134,9 @@ class UserManagementService:
                 )
                 
                 # Add last login if available
-                user_data['lastLogin'] = cognito_user.get('UserLastModifiedDate')
+                last_modified = cognito_user.get('UserLastModifiedDate')
+                if last_modified:
+                    user_data['lastLogin'] = last_modified.isoformat()
                 
             except Exception as e:
                 # User might be deleted from Cognito but still in DynamoDB
