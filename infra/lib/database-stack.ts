@@ -45,7 +45,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: slug index for tenant lookup by URL slug
@@ -68,7 +68,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: tenantId index for listing tenant's API keys
@@ -95,7 +95,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: category index for service search by category
@@ -126,7 +126,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: serviceId index for provider lookup by service
@@ -157,7 +157,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // 6. Bookings Table
@@ -174,7 +174,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: providerId-start index for provider's bookings by date
@@ -233,7 +233,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: state index for conversation queries by state
@@ -264,7 +264,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // 9. TenantUsage Table - Pre-aggregated metrics for dashboard
@@ -281,7 +281,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
       timeToLiveAttribute: 'ttl', // Auto-cleanup old metrics
     });
 
@@ -299,7 +299,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // 11. FAQs Table
@@ -316,7 +316,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // 12. Documents Table (Knowledge Base)
@@ -333,7 +333,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // Output table names and ARNs
@@ -407,7 +407,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: tenantId index for listing by tenant
@@ -435,7 +435,7 @@ export class DatabaseStack extends cdk.Stack {
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
       pointInTimeRecovery: true,
       removalPolicy: cdk.RemovalPolicy.RETAIN,
-      encryption: dynamodb.TableEncryption.AWS_MANAGED,
+
     });
 
     // GSI: tenantId index for listing all users in a tenant
