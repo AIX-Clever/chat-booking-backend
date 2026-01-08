@@ -366,6 +366,7 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         USER_POOL_ID: props.userPool.userPoolId,
         USER_ROLES_TABLE: props.userRolesTable.tableName,
+        FROM_EMAIL: 'no-reply@mail.holalucia.cl', // Subdomain for transactional emails
       },
     });
 
@@ -383,6 +384,12 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant read/write access to user roles table
     props.userRolesTable.grantReadWriteData(this.userManagementFunction);
+
+    // Grant SES permissions for sending invitations
+    this.userManagementFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'], // In production, restrict to specific identity ARNs
+    }));
 
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)

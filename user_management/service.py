@@ -12,12 +12,7 @@ import string
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
-from shared.domain.entities import TenantId, UserRole, UserStatus
-from shared.domain.user_role import UserRoleEntity
-from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
-from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
-from shared.plan_limits import check_plan_limit, PlanLimitExceeded
-
+from shared.infrastructure.notifications import EmailService
 
 class UserManagementService:
     """Service for managing tenant users with Cognito + DynamoDB"""
@@ -26,12 +21,14 @@ class UserManagementService:
         self,
         tenant_repo: Optional[DynamoDBTenantRepository] = None,
         user_role_repo: Optional[DynamoDBUserRoleRepository] = None,
+        email_service: Optional[EmailService] = None,
         cognito_client=None,
         user_pool_id: Optional[str] = None
     ):
         """Initialize service with repositories"""
         self.tenant_repo = tenant_repo or DynamoDBTenantRepository()
         self.user_role_repo = user_role_repo or DynamoDBUserRoleRepository()
+        self.email_service = email_service or EmailService()
         self.cognito = cognito_client or boto3.client('cognito-idp')
         self.user_pool_id = user_pool_id or self._get_user_pool_id()
     
@@ -110,7 +107,63 @@ class UserManagementService:
         
         self.user_role_repo.create(user_role)
         
+        # 4. Send invitation email
+        self._send_invitation_email(email, temp_password, name or email)
+        
         return user_role.to_dict()
+
+    def _send_invitation_email(self, email: str, temp_password: str, name: str):
+        """Send welcome email with temporary credentials"""
+        try:
+            # Login URL (could be from env)
+            login_url = "https://admin.holalucia.cl"
+            
+            subject = "Bienvenido a Lucia - Tu Asistente de Reservas"
+            
+            body_html = f"""
+            <html>
+                <body>
+                    <h2>Hola {name},</h2>
+                    <p>Has sido invitado a administrar la cuenta de tu empresa en Lucia.</p>
+                    <p>Tus credenciales temporales son:</p>
+                    <ul>
+                        <li><strong>Usuario:</strong> {email}</li>
+                        <li><strong>Contraseña:</strong> {temp_password}</li>
+                    </ul>
+                    <p>Por favor inicia sesión y cambia tu contraseña inmediatamente:</p>
+                    <p><a href="{login_url}">{login_url}</a></p>
+                    <br>
+                    <p>Saludos,<br>El equipo de Lucia</p>
+                </body>
+            </html>
+            """
+            
+            body_text = f"""
+            Hola {name},
+            
+            Has sido invitado a administrar la cuenta de tu empresa en Lucia.
+            
+            Tus credenciales temporales son:
+            Usuario: {email}
+            Contraseña: {temp_password}
+            
+            Inicia sesión aquí: {login_url}
+            """
+            
+            # Send from verified domain
+            import os
+            sender = os.environ.get('FROM_EMAIL', 'no-reply@holalucia.cl')
+            
+            self.email_service.send_email(
+                source=sender,
+                to_addresses=[email],
+                subject=subject,
+                body_html=body_html,
+                body_text=body_text
+            )
+        except Exception as e:
+            # Log but don't fail the transaction
+            print(f"Failed to send invitation email: {e}")
     
     def list_users(self, tenant_id: TenantId) -> List[Dict[str, Any]]:
         """
