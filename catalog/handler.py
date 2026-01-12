@@ -13,16 +13,20 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBRoomRepository
 )
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
+from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, generate_id, extract_appsync_event
+import os
+import boto3
 
 from service import (
     CatalogService,
     ServiceManagementService,
     ProviderManagementService,
     CategoryManagementService,
-    RoomManagementService
+    RoomManagementService,
+    AssetService
 )
 
 
@@ -31,6 +35,18 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 category_repo = DynamoDBCategoryRepository()
 room_repo = DynamoDBRoomRepository()
+
+# Determine bucket name dynamically
+try:
+    account_id = boto3.client('sts').get_caller_identity().get('Account')
+    env = os.environ.get('ENV', 'dev')
+    bucket_name = f"chat-booking-assets-{env}-{account_id}"
+    s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
+    asset_service = AssetService(s3_repo)
+except Exception as e:
+    # Fallback or log error if STS fails (e.g. local test)
+    # logger not initialized yet, but will be used later
+    asset_service = None 
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo)
@@ -61,6 +77,7 @@ def lambda_handler(event: dict, context) -> dict:
     - createProvider (admin)
     - updateProvider (admin)
     - deleteProvider (admin)
+    - generatePresignedUrl (assets)
     """
     try:
         field, tenant_id_str, input_data = extract_appsync_event(event)
@@ -137,6 +154,9 @@ def lambda_handler(event: dict, context) -> dict:
 
         elif field == 'deleteRoom':
             return handle_delete_room(tenant_id, input_data)
+            
+        elif field == 'generatePresignedUrl':
+             return handle_generate_presigned_url(tenant_id, input_data)
         
         else:
             # For unknown operations, raise exception directly or return error dict?
@@ -518,3 +538,28 @@ def handle_delete_room(tenant_id: TenantId, input_data: dict) -> dict:
     
     room_mgmt_service.delete_room(tenant_id, room_id)
     return success_response(room_to_dict(room))
+
+
+def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> dict:
+    """Generate presigned URL for file upload"""
+    if not asset_service:
+        return error_response("Asset service not initialized", 500)
+        
+    file_name = input_data.get('fileName')
+    content_type = input_data.get('contentType')
+    
+    if not file_name or not content_type:
+        return error_response("Missing fileName or contentType", 400)
+    
+    try:
+        url = asset_service.generate_upload_url(
+            tenant_id=tenant_id,
+            file_name=file_name,
+            content_type=content_type
+        )
+        return str(url) # Return raw string as per schema
+    except ValidationError as e:
+        return error_response(str(e), 400)
+    except Exception as e:
+        logger.error("Error generating url", error=str(e))
+        return error_response("Failed to generate URL", 500)

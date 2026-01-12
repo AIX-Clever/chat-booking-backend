@@ -277,6 +277,12 @@ class IRoomRepository(ABC):
 
     @abstractmethod
     def delete(self, tenant_id: TenantId, room_id: str) -> None:
-        """Delete room"""
+
+class FileStorageRepository(ABC):
+    """Port for file storage operations"""
+    
+    @abstractmethod
+    def generate_presigned_url(self, file_name: str, content_type: str, operation: str = 'put_object', expiration: int = 3600) -> str:
+        """Generate a presigned URL for file operations"""
         pass
 

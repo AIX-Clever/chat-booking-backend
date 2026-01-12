@@ -191,6 +191,8 @@ class Provider:
     bio: Optional[str]
     service_ids: List[str]
     timezone: str
+    photo_url: Optional[str] = None
+    photo_url_thumbnail: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
 
