@@ -267,8 +267,22 @@ class BookingService:
         # Send confirmation email
         if self._email_service and client_email:
             try:
+                # Convert to Provider's Timezone for email
+                # Assuming provider.timezone is like 'America/Santiago' or 'UTC'
+                # Default to UTC if not set
+                try:
+                    from zoneinfo import ZoneInfo
+                    tz = ZoneInfo(provider.timezone or "UTC")
+                except ImportError:
+                    # Fallback for older python or missing zoneinfo
+                    from datetime import timezone, timedelta
+                    # Simple fallback to UTC if ZoneInfo fails (shouldn't in Python 3.9+)
+                    tz = timezone.utc
+                
+                local_start = start.astimezone(tz)
+                
                 subject = f"Reserva Confirmada: {service.name}"
-                body_text = f"Hola {client_name},\n\nTu reserva para {service.name} con {provider.name} ha sido confirmada para el {start.strftime('%Y-%m-%d %H:%M')}.\n\nGracias!"
+                body_text = f"Hola {client_name},\n\nTu reserva para {service.name} con {provider.name} ha sido confirmada para el {local_start.strftime('%Y-%m-%d %H:%M')}.\n\nGracias!"
                 body_html = f"""
                 <html>
                     <body>
@@ -278,8 +292,8 @@ class BookingService:
                         <ul>
                             <li><strong>Servicio:</strong> {service.name}</li>
                             <li><strong>Profesional:</strong> {provider.name}</li>
-                            <li><strong>Fecha:</strong> {start.strftime('%Y-%m-%d')}</li>
-                            <li><strong>Hora:</strong> {start.strftime('%H:%M')}</li>
+                            <li><strong>Fecha:</strong> {local_start.strftime('%Y-%m-%d')}</li>
+                            <li><strong>Hora:</strong> {local_start.strftime('%H:%M')}</li>
                         </ul>
                         <p>Gracias por confiar en nosotros.</p>
                     </body>

@@ -1,0 +1,13 @@
+{
+    "identity": {
+        "claims": {
+            "custom:tenantId": "e9624300",
+            "sub": "74d88488-b0e1-708f-a617-45da8240a9e5",
+            "cognito:username": "74d88488-b0e1-708f-a617-45da8240a9e5"
+        }
+    },
+    "info": {
+        "fieldName": "listTenantUsers"
+    },
+    "arguments": {}
+}
