@@ -710,7 +710,7 @@ class AssetService:
     Service for managing assets (files/images)
     """
 
-    def __init__(self, file_storage_repository: Any): # utilizing Any to avoid circular imports if generic not available, but should be imported
+    def __init__(self, file_storage_repository: FileStorageRepository): 
         self.storage_repo = file_storage_repository
         self.logger = Logger()
 
