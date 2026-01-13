@@ -1031,12 +1031,6 @@ schema {
       responseMappingTemplate: responseTemplate,
     });
 
-    catalogDataSource.createResolver('GeneratePresignedUrlResolver', {
-      typeName: 'Mutation',
-      fieldName: 'generatePresignedUrl',
-      requestMappingTemplate: requestTemplate,
-      responseMappingTemplate: responseTemplate,
-    });
 
     // Availability resolvers
     availabilityDataSource.createResolver('GetAvailableSlotsResolver', {
