@@ -13,12 +13,12 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBRoomRepository
 )
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
-from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository
+# from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository # Temporarily removed
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, generate_id, extract_appsync_event
 import os
-import boto3
+# import boto3 # Temporarily commented for layer fix
 
 from service import (
     CatalogService,
@@ -26,7 +26,7 @@ from service import (
     ProviderManagementService,
     CategoryManagementService,
     RoomManagementService,
-    AssetService
+    # AssetService # Temporarily commented
 )
 
 
@@ -36,17 +36,16 @@ provider_repo = DynamoDBProviderRepository()
 category_repo = DynamoDBCategoryRepository()
 room_repo = DynamoDBRoomRepository()
 
-# Determine bucket name dynamically
-try:
-    account_id = boto3.client('sts').get_caller_identity().get('Account')
-    env = os.environ.get('ENV', 'dev')
-    bucket_name = f"chat-booking-assets-{env}-{account_id}"
-    s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
-    asset_service = AssetService(s3_repo)
-except Exception as e:
-    # Fallback or log error if STS fails (e.g. local test)
-    # logger not initialized yet, but will be used later
-    asset_service = None 
+# Temporarily disable asset service until s3_storage_adapter is in layer
+# try:
+#     account_id = boto3.client('sts').get_caller_identity().get('Account')
+#     env = os.environ.get('ENV', 'dev')
+#     bucket_name = f"chat-booking-assets-{env}-{account_id}"
+#     s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
+#     asset_service = AssetService(s3_repo)
+# except Exception as e:
+#     asset_service = None 
+asset_service = None  # Disabled until layer is updated
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo)
