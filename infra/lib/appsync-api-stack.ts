@@ -71,6 +71,11 @@ export class AppSyncApiStack extends cdk.Stack {
         ],
       },
       xrayEnabled: true,
+      corsConfig: {
+        allowOrigins: ['*'], // Allow all origins for the public widget
+        allowMethods: ['POST', 'OPTIONS'], // Standard GraphQL methods
+        allowHeaders: ['Content-Type', 'x-api-key', 'authorization'], // Required headers
+      },
       logConfig: {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
