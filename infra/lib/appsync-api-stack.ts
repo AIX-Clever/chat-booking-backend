@@ -379,6 +379,8 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
   available: Boolean!
 }
 
@@ -744,6 +746,8 @@ type Mutation {
   updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
   deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
 
+  generatePresignedUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+
   createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
   updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
   deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
@@ -1016,8 +1020,15 @@ schema {
     catalogDataSource.createResolver('DeleteProviderResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteProvider',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    catalogDataSource.createResolver('GeneratePresignedUrlResolver', {
+      typeName: 'Mutation',
+      fieldName: 'generatePresignedUrl',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Availability resolvers

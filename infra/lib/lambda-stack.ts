@@ -127,9 +127,16 @@ export class LambdaStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(backendPath, 'catalog')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        ASSETS_BUCKET: `chat-booking-assets-${props.envName}-${cdk.Aws.ACCOUNT_ID}`,
+      }
     });
 
     // Grant permissions
+    const assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', `chat-booking-assets-${props.envName}-${cdk.Aws.ACCOUNT_ID}`);
+    assetsBucket.grantPut(this.catalogFunction);
+
     props.servicesTable.grantReadWriteData(this.catalogFunction);
     props.providersTable.grantReadWriteData(this.catalogFunction);
     props.categoriesTable.grantReadWriteData(this.catalogFunction);
