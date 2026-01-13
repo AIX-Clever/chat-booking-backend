@@ -27,8 +27,8 @@ class UserManagementService:
     
     def __init__(
         self,
-        tenant_repo: Optional[DynamoDBTenantRepository] = None,
-        user_role_repo: Optional[DynamoDBUserRoleRepository] = None,
+        tenant_repo: Optional['DynamoDBTenantRepository'] = None,
+        user_role_repo: Optional['DynamoDBUserRoleRepository'] = None,
         email_service: Optional[EmailService] = None,
         cognito_client=None,
         user_pool_id: Optional[str] = None
