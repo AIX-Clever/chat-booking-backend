@@ -996,6 +996,13 @@ schema {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+
+    presignDataSource.createResolver('GeneratePresignedUrlResolver', {
+      typeName: 'Mutation',
+      fieldName: 'generatePresignedUrl',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
     catalogDataSource.createResolver('DeleteCategoryResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteCategory',
