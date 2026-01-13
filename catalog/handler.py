@@ -339,7 +339,9 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         service_ids=input_data['serviceIds'],
         timezone=input_data['timezone'],
         metadata=input_data.get('metadata'),
-        active=input_data.get('active', True)
+        active=input_data.get('active', True),
+        photo_url=input_data.get('photoUrl'),
+        photo_url_thumbnail=input_data.get('photoUrlThumbnail')
     )
     return provider_to_dict(provider)
 
@@ -354,7 +356,9 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         service_ids=input_data.get('serviceIds'),
         timezone=input_data.get('timezone'),
         metadata=input_data.get('metadata'), # Added metadata
-        active=input_data.get('active') if 'active' in input_data else input_data.get('available')
+        active=input_data.get('active') if 'active' in input_data else input_data.get('available'),
+        photo_url=input_data.get('photoUrl'),
+        photo_url_thumbnail=input_data.get('photoUrlThumbnail')
     )
     return provider_to_dict(provider)
 
@@ -447,7 +451,9 @@ def provider_to_dict(provider) -> dict:
         'serviceIds': provider.service_ids,
         'timezone': provider.timezone,
         'metadata': provider.metadata,
-        'available': provider.active
+        'available': provider.active,
+        'photoUrl': provider.photo_url,
+        'photoUrlThumbnail': provider.photo_url_thumbnail
     }
 
 
