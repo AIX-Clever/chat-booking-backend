@@ -65,6 +65,14 @@ const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase
   tags,
 });
 
+// 2.6 Assets Stack - S3 for User Uploads
+const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
+  env: { account, region },
+  description: 'S3 + CloudFront for Assets',
+  tags,
+  stage: env,
+});
+
 // 3. Backend Stack - Business Logic
 const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
