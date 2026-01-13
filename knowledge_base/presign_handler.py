@@ -31,6 +31,8 @@ def lambda_handler(event: dict, context) -> dict:
         
         if field == 'getUploadUrl':
              return handle_get_upload_url(tenant_id, input_data)
+        elif field == 'generatePresignedUrl':
+             return handle_generate_presigned_url(tenant_id, input_data)
         else:
             return error_response(f"Unknown operation: {field}", 400)
             
@@ -95,3 +97,43 @@ def handle_get_upload_url(tenant_id: TenantId, input_data: dict) -> dict:
         'key': key,
         'documentId': document_id
     })
+
+def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> str:
+    """
+    Generate presigned URL for generic assets (images).
+    Returns raw string URL (as defined in schema).
+    """
+    assets_bucket = os.environ.get('ASSETS_BUCKET')
+    if not assets_bucket:
+        # Fallback to documents bucket if assets not configured, though not ideal
+        assets_bucket = DOCUMENTS_BUCKET
+    
+    if not assets_bucket:
+         return error_response("Asset Storage not configured", 503)
+
+    file_name = input_data.get('fileName')
+    content_type = input_data.get('contentType')
+
+    if not file_name or not content_type:
+        return error_response("Missing fileName or contentType", 400)
+
+    # Key format: raw/tenantId/uuid-filename
+    # using 'raw' prefix for unprocessed uploads
+    unique_id = str(uuid.uuid4())
+    key = f"raw/{tenant_id}/{unique_id}-{file_name}"
+    
+    try:
+        url = s3_client.generate_presigned_url(
+            'put_object',
+            Params={
+                'Bucket': assets_bucket,
+                'Key': key,
+                'ContentType': content_type
+            },
+            ExpiresIn=300
+        )
+        return url # Schema expects String!
+        
+    except ClientError as e:
+        logger.error("Presign Asset failed", error=str(e))
+        raise Exception(f"S3 Error: {str(e)}")

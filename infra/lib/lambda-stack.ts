@@ -42,6 +42,7 @@ interface LambdaStackProps extends cdk.StackProps {
   dbSecret?: cdk.aws_secretsmanager.ISecret;
   dbEndpoint?: string; // Cluster ARN for Data API
   envName: string;
+  assetsBucketName?: string;
 }
 
 export class LambdaStack extends cdk.Stack {
