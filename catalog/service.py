@@ -705,43 +705,43 @@ class RoomManagementService:
         self.room_repo.delete(tenant_id, room_id)
 
 
-# class AssetService:
-#     """
-#     Service for managing assets (files/images)
-#     """
-#
-#     def __init__(self, file_storage_repository: FileStorageRepository): 
-#         self.storage_repo = file_storage_repository
-#         self.logger = Logger()
-#
-#     def generate_upload_url(
-#         self,
-#         tenant_id: TenantId,
-#         file_name: str,
-#         content_type: str
-#     ) -> str:
-#         """
-#         Generate presigned URL for uploading a file
-#         """
-#         self.logger.info(
-#             "Generating upload URL",
-#             tenant_id=str(tenant_id),
-#             file_name=file_name
-#         )
-#
-#         # Validate content type
-#         if not content_type.startswith('image/'):
-#              raise ValidationError("Only image uploads are allowed")
-#
-#         # Generate unique filename to prevent collisions (or rely on client?)
-#         # For professional photos, maybe use a prefix?
-#         # Ideally, we should receive the entity ID (provider_id) to organize folders.
-#         # For now, just pass the filename (S3 adapter handles raw/ prefix).
-#         
-#         url = self.storage_repo.generate_presigned_url(
-#             file_name=file_name,
-#             content_type=content_type,
-#             operation='put_object'
-#         )
-#
-#         return url
+class AssetService:
+    """
+    Service for managing assets (files/images)
+    """
+
+    def __init__(self, file_storage_repository): 
+        self.storage_repo = file_storage_repository
+        self.logger = Logger()
+
+    def generate_upload_url(
+        self,
+        tenant_id: TenantId,
+        file_name: str,
+        content_type: str
+    ) -> str:
+        """
+        Generate presigned URL for uploading a file
+        """
+        self.logger.info(
+            "Generating upload URL",
+            tenant_id=str(tenant_id),
+            file_name=file_name
+        )
+
+        # Validate content type
+        if not content_type.startswith('image/'):
+             raise ValidationError("Only image uploads are allowed")
+
+        # Generate unique filename to prevent collisions (or rely on client?)
+        # For professional photos, maybe use a prefix?
+        # Ideally, we should receive the entity ID (provider_id) to organize folders.
+        # For now, just pass the filename (S3 adapter handles raw/ prefix).
+        
+        url = self.storage_repo.generate_presigned_url(
+            file_name=file_name,
+            content_type=content_type,
+            operation='put_object'
+        )
+
+        return url

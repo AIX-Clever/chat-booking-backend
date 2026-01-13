@@ -13,12 +13,12 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBRoomRepository
 )
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
-# from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository # Temporarily removed
+from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, generate_id, extract_appsync_event
 import os
-# import boto3 # Temporarily commented for layer fix
+import boto3
 
 from service import (
     CatalogService,
@@ -26,7 +26,7 @@ from service import (
     ProviderManagementService,
     CategoryManagementService,
     RoomManagementService,
-    # AssetService # Temporarily commented
+    AssetService
 )
 
 
@@ -36,16 +36,16 @@ provider_repo = DynamoDBProviderRepository()
 category_repo = DynamoDBCategoryRepository()
 room_repo = DynamoDBRoomRepository()
 
-# Temporarily disable asset service until s3_storage_adapter is in layer
-# try:
-#     account_id = boto3.client('sts').get_caller_identity().get('Account')
-#     env = os.environ.get('ENV', 'dev')
-#     bucket_name = f"chat-booking-assets-{env}-{account_id}"
-#     s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
-#     asset_service = AssetService(s3_repo)
-# except Exception as e:
-#     asset_service = None 
-asset_service = None  # Disabled until layer is updated
+# Initialize asset service for S3 uploads
+try:
+    account_id = boto3.client('sts').get_caller_identity().get('Account')
+    env = os.environ.get('ENV', 'dev')
+    bucket_name = f"chat-booking-assets-{env}-{account_id}"
+    s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
+    asset_service = AssetService(s3_repo)
+except Exception as e:
+    logger.error("Failed to initialize AssetService", error=str(e))
+    asset_service = None
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo)
