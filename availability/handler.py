@@ -154,8 +154,8 @@ def handle_get_available_slots(tenant_id: TenantId, input_data: dict) -> dict:
         {
             'providerId': provider_id,
             'serviceId': service_id,
-            'start': slot.start.isoformat() + 'Z',
-            'end': slot.end.isoformat() + 'Z',
+            'start': to_iso_string(slot.start),
+            'end': to_iso_string(slot.end),
             'isAvailable': slot.is_available
         }
         for slot in slots
