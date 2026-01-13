@@ -468,10 +468,17 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         DOCUMENTS_BUCKET: this.documentsBucket.bucketName,
         DOCUMENTS_TABLE: props.documentsTable.tableName,
+        ASSETS_BUCKET: props.assetsBucketName || '',
       }
     });
 
     this.documentsBucket.grantWrite(this.presignFunction); // Allow putting objects (presigning)
+
+    // Grant write to Assets Bucket if provided
+    if (props.assetsBucketName) {
+      const assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', props.assetsBucketName);
+      assetsBucket.grantPut(this.presignFunction);
+    }
     // cdk grantWrite actually allows PutObject*
     props.tenantsTable.grantReadData(this.presignFunction); // To check plan/limits
     props.documentsTable.grantReadWriteData(this.presignFunction); // Create PENDING record
