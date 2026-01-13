@@ -68,6 +68,11 @@ export class LambdaStack extends cdk.Stack {
     // Get backend code path (relative to infra/lib)
     const backendPath = path.join(__dirname, '../../');
 
+    let assetsBucket: s3.IBucket | undefined;
+    if (props.assetsBucketName) {
+      assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', props.assetsBucketName);
+    }
+
     // Common Lambda configuration
     const commonProps = {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -130,13 +135,14 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        ASSETS_BUCKET: `chat-booking-assets-${props.envName}-${cdk.Aws.ACCOUNT_ID}`,
+        ASSETS_BUCKET: props.assetsBucketName || '',
       }
     });
 
     // Grant permissions
-    const assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', `chat-booking-assets-${props.envName}-${cdk.Aws.ACCOUNT_ID}`);
-    assetsBucket.grantPut(this.catalogFunction);
+    if (assetsBucket) {
+      assetsBucket.grantPut(this.catalogFunction);
+    }
 
     props.servicesTable.grantReadWriteData(this.catalogFunction);
     props.providersTable.grantReadWriteData(this.catalogFunction);
@@ -475,8 +481,7 @@ export class LambdaStack extends cdk.Stack {
     this.documentsBucket.grantWrite(this.presignFunction); // Allow putting objects (presigning)
 
     // Grant write to Assets Bucket if provided
-    if (props.assetsBucketName) {
-      const assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', props.assetsBucketName);
+    if (assetsBucket) {
       assetsBucket.grantPut(this.presignFunction);
     }
     // cdk grantWrite actually allows PutObject*
