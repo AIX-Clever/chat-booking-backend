@@ -8,6 +8,7 @@ import { LambdaStack } from '../lib/lambda-stack';
 import { AppSyncApiStack } from '../lib/appsync-api-stack';
 import { AuthStack } from '../lib/auth-stack';
 import { VectorDatabaseStack } from '../lib/vector-database-stack';
+import { AssetsStack } from '../lib/assets-stack';
 
 /**
  * CDK App Entry Point
@@ -93,6 +94,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
 lambdaStack.addDependency(vectorDbStack);
+// lambdaStack.addDependency(assetsStack); // If lambda needs to read/write, passed as prop?
 
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
