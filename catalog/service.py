@@ -391,7 +391,9 @@ class ProviderManagementService:
         service_ids: List[str],
         timezone: str,
         metadata: Optional[Dict[str, Any]] = None,
-        active: bool = True
+        active: bool = True,
+        photo_url: Optional[str] = None,
+        photo_url_thumbnail: Optional[str] = None
     ) -> Provider:
         """
         Create new provider
@@ -415,7 +417,9 @@ class ProviderManagementService:
             service_ids=service_ids,
             timezone=timezone,
             metadata=metadata or {},
-            active=active
+            active=active,
+            photo_url=photo_url,
+            photo_url_thumbnail=photo_url_thumbnail
         )
 
         # Persist
@@ -438,7 +442,9 @@ class ProviderManagementService:
         service_ids: Optional[List[str]] = None,
         timezone: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
-        active: Optional[bool] = None
+        active: Optional[bool] = None,
+        photo_url: Optional[str] = None,
+        photo_url_thumbnail: Optional[str] = None
     ) -> Provider:
         """
         Update existing provider
@@ -469,6 +475,10 @@ class ProviderManagementService:
             provider.metadata = metadata
         if active is not None:
             provider.active = active
+        if photo_url is not None:
+            provider.photo_url = photo_url
+        if photo_url_thumbnail is not None:
+            provider.photo_url_thumbnail = photo_url_thumbnail
 
         # Persist
         self.provider_repo.save(provider)
