@@ -204,9 +204,9 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   bio: String
   serviceIds: [ID!]!
   timezone: String!
+  metadata: AWSJSON
   photoUrl: String
   photoUrlThumbnail: String
-  metadata: AWSJSON
   available: Boolean!
 }
 
@@ -385,9 +385,9 @@ input CreateProviderInput {
   bio: String
   serviceIds: [ID!]!
   timezone: String!
+  metadata: AWSJSON
   photoUrl: String
   photoUrlThumbnail: String
-  metadata: AWSJSON
 }
 
 input UpdateProviderInput {
@@ -396,10 +396,10 @@ input UpdateProviderInput {
   bio: String
   serviceIds: [ID!]
   timezone: String
-  photoUrl: String
-  photoUrlThumbnail: String
   metadata: AWSJSON
   available: Boolean
+  photoUrl: String
+  photoUrlThumbnail: String
 }
 
 # Inputs - Availability
@@ -576,6 +576,8 @@ type Mutation {
   updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
   deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
 
+  generatePresignedUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+
   createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
   updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
   deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
@@ -604,7 +606,6 @@ type Mutation {
 
   # Documents (Knowledge Base)
   getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
-  generatePresignedUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
 
   # Bookings
   createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
