@@ -560,6 +560,8 @@ input CreateProviderInput {
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
 }
 
 input UpdateProviderInput {
@@ -570,6 +572,8 @@ input UpdateProviderInput {
   timezone: String
   metadata: AWSJSON
   available: Boolean
+  photoUrl: String
+  photoUrlThumbnail: String
 }
 
 # Inputs - Availability
