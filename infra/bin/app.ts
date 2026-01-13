@@ -96,7 +96,6 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   documentsTable: databaseStack.documentsTable,
   roomsTable: databaseStack.roomsTable,
   userRolesTable: databaseStack.userRolesTable,
-  userRolesTable: databaseStack.userRolesTable,
   userPool: authStack.userPool,
   envName: env,
   assetsBucketName: assetsStack.assetsBucket.bucketName,
