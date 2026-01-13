@@ -13,6 +13,10 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 
 from shared.infrastructure.notifications import EmailService
+from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
+from shared.domain.entities import TenantId, UserRoleEntity, UserRole, UserStatus
+from shared.utils import check_plan_limit
 
 class UserManagementService:
     """Service for managing tenant users with Cognito + DynamoDB"""
