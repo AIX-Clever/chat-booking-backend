@@ -9,7 +9,7 @@ Handles user invitation, role management, and removal using:
 import boto3
 import secrets
 import string
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from datetime import datetime, timezone
 
 from shared.infrastructure.notifications import EmailService
@@ -17,6 +17,10 @@ from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
 from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
 from shared.domain.entities import TenantId, UserRoleEntity, UserRole, UserStatus
 from shared.utils import check_plan_limit
+
+if TYPE_CHECKING:
+    from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+    from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
 
 class UserManagementService:
     """Service for managing tenant users with Cognito + DynamoDB"""
