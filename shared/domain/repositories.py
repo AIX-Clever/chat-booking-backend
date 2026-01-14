@@ -277,6 +277,7 @@ class IRoomRepository(ABC):
 
     @abstractmethod
     def delete(self, tenant_id: TenantId, room_id: str) -> None:
+        pass
 
 class FileStorageRepository(ABC):
     """Port for file storage operations"""
