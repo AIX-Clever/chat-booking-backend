@@ -178,7 +178,7 @@ export class LambdaStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60), // More time for booking validation
       environment: {
         ...commonProps.environment,
-        SES_SENDER_EMAIL: 'noreply@example.com', // Override with actual verified email
+        SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl', // Verified SES identity
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
       }
     });
