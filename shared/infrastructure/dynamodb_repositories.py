@@ -69,11 +69,11 @@ class DynamoDBTenantRepository(ITenantRepository):
         return Tenant(
             tenant_id=TenantId(item['tenantId']),
             name=item['name'],
-            slug=item['slug'],
+            slug=item.get('slug', ''),
             status=TenantStatus(item['status']),
             plan=TenantPlan(item['plan']),
             owner_user_id=item['ownerUserId'],
-            billing_email=item['billingEmail'],
+            billing_email=item.get('billingEmail'),
             settings=item.get('settings', {}),
             created_at=datetime.fromisoformat(item['createdAt'])
         )
