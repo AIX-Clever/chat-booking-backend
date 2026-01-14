@@ -198,6 +198,8 @@ class AvailabilityService:
 
         return slots
 
+        return slots
+
     def _generate_slots_in_range(
         self,
         date: datetime,
@@ -208,6 +210,13 @@ class AvailabilityService:
         """
         Generate slots within a specific time range, avoiding breaks
         """
+        try:
+            from datetime import timezone
+            UTC = timezone.utc
+        except ImportError:
+            import pytz
+            UTC = pytz.UTC
+
         slots = []
         
         # Parse start and end times
@@ -225,10 +234,20 @@ class AvailabilityService:
         if date.tzinfo:
             current_slot_start = current_slot_start.replace(tzinfo=date.tzinfo)
             range_end = range_end.replace(tzinfo=date.tzinfo)
+        elif not current_slot_start.tzinfo:
+             # If naive, assume UTC for comparison safety (though ideally strictly typed)
+             current_slot_start = current_slot_start.replace(tzinfo=UTC)
+             range_end = range_end.replace(tzinfo=UTC)
 
         # Generate slots at regular intervals
         while current_slot_start + timedelta(minutes=duration_minutes) <= range_end:
             slot_end = current_slot_start + timedelta(minutes=duration_minutes)
+
+            # Check if slot is in the past
+            # Add a small buffer (e.g. 5 mins) or strict comparison
+            if current_slot_start < datetime.now(UTC):
+                 current_slot_start += timedelta(minutes=self.slot_interval_minutes)
+                 continue
 
             # Check if slot overlaps with any break
             overlaps_break = False
@@ -240,6 +259,11 @@ class AvailabilityService:
                 break_end_parts = break_range.end_time.split(':')
                 break_end = time(int(break_end_parts[0]), int(break_end_parts[1]))
                 break_end_dt = datetime.combine(date.date(), break_end)
+
+                # Ensure break datetimes are also aware if needed
+                if current_slot_start.tzinfo:
+                    break_start_dt = break_start_dt.replace(tzinfo=current_slot_start.tzinfo)
+                    break_end_dt = break_end_dt.replace(tzinfo=current_slot_start.tzinfo)
 
                 # Check overlap
                 if not (slot_end <= break_start_dt or current_slot_start >= break_end_dt):
