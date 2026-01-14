@@ -272,7 +272,7 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     Input:
     {
         "providerId": "pro_456",
-        "exceptions": ["2024-12-25", "2024-12-31"]
+        "exceptions": [{"date": "2024-12-25", "timeRanges": []}]
     }
     """
     provider_id = input_data.get('providerId')
@@ -281,20 +281,15 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     if not provider_id:
         return error_response("Missing required field: providerId", 400)
 
-    logger.info(
-        "Setting provider exceptions",
-        tenant_id=str(tenant_id),
-        provider_id=provider_id,
-        exceptions_count=len(exceptions)
+    # Use Service Layer
+    updated_exceptions = availability_mgmt_service.set_provider_exceptions(
+        tenant_id,
+        provider_id,
+        exceptions
     )
 
-    # Save exceptions to dedicated storage
-    availability_repo.save_provider_exceptions(tenant_id, provider_id, exceptions)
-
-    return success_response({
-        'providerId': provider_id,
-        'exceptions': exceptions
-    })
+    # Return list directly to match GraphQL schema [ProviderException!]!
+    return success_response(updated_exceptions)
 
 
 def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dict:
@@ -311,9 +306,8 @@ def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     if not provider_id:
         return error_response("Missing required field: providerId", 400)
 
-    exceptions = availability_repo.get_provider_exceptions(tenant_id, provider_id)
+    # Use Service Layer
+    exceptions = availability_mgmt_service.get_provider_exceptions(tenant_id, provider_id)
 
-    return success_response({
-        'providerId': provider_id,
-        'exceptions': exceptions
-    })
+    # Return list directly to match GraphQL schema [ProviderException!]!
+    return success_response(exceptions)

@@ -424,3 +424,38 @@ class AvailabilityManagementService:
         )
 
         return availability
+
+    def set_provider_exceptions(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        exceptions: List[dict]
+    ) -> List[dict]:
+        """
+        Set provider exception rules (days off or partial availability)
+        
+        Args:
+            tenant_id: Tenant identifier
+            provider_id: Provider identifier
+            exceptions: List of exception rules
+        """
+        self.logger.info(
+            "Setting provider exceptions",
+            tenant_id=str(tenant_id),
+            provider_id=provider_id,
+            exceptions_count=len(exceptions)
+        )
+
+        self.availability_repo.save_provider_exceptions(tenant_id, provider_id, exceptions)
+
+        return exceptions
+
+    def get_provider_exceptions(
+        self,
+        tenant_id: TenantId,
+        provider_id: str
+    ) -> List[dict]:
+        """
+        Get provider exception rules
+        """
+        return self.availability_repo.get_provider_exceptions(tenant_id, provider_id)
