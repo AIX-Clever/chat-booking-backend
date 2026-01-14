@@ -148,13 +148,13 @@ class IAvailabilityRepository(ABC):
         pass
 
     @abstractmethod
-    def get_provider_exceptions(self, tenant_id: TenantId, provider_id: str) -> List[str]:
-        """Get provider exception dates"""
+    def get_provider_exceptions(self, tenant_id: TenantId, provider_id: str) -> List[dict]:
+        """Get provider exception rules"""
         pass
 
     @abstractmethod
-    def save_provider_exceptions(self, tenant_id: TenantId, provider_id: str, exceptions: List[str]) -> None:
-        """Save provider exception dates"""
+    def save_provider_exceptions(self, tenant_id: TenantId, provider_id: str, exceptions: List[dict]) -> None:
+        """Save provider exception rules"""
         pass
 
 
