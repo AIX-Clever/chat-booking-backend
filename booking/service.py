@@ -10,7 +10,9 @@ try:
 except ImportError:
     from datetime import timezone
     UTC = timezone.utc
+    UTC = timezone.utc
 import hashlib
+import os
 from typing import Optional
 from shared.domain.entities import (
     TenantId,
@@ -304,7 +306,7 @@ class BookingService:
                 # or passed by the handler.
                 # Actually, EmailService needs a 'source'. 
                 # We can use a noreply address from the tenant domain if valid, or a verified single sender.
-                sender = "noreply@antigravity.com" # TODO: Configure in env
+                sender = os.environ.get('SES_SENDER_EMAIL', "noreply@antigravity.com")
                 
                 self._email_service.send_email(
                     source=sender,
