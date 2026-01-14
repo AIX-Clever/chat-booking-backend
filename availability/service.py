@@ -154,13 +154,13 @@ class AvailabilityService:
         to_date: datetime,
         duration_minutes: int,
         availability_map: Dict[str, ProviderAvailability],
-        exceptions: List[str] = None
+        exceptions: List[Dict] = None
     ) -> List[TimeSlot]:
         """
         Generate all possible slots based on provider availability
         
         Args:
-            exceptions: Provider-level exception dates (YYYY-MM-DD format)
+            exceptions: List of exception rules [{'date': 'YYYY-MM-DD', 'timeRanges': [...]}]
         
         Returns slots at regular intervals (slot_interval_minutes)
         within provider's working hours
@@ -168,18 +168,53 @@ class AvailabilityService:
         if exceptions is None:
             exceptions = []
             
+        # Create quick lookup map for exceptions
+        # Format: "YYYY-MM-DD" -> ExceptionRule
+        exception_map = {ex.get('date'): ex for ex in exceptions if ex.get('date')}
+
+        from shared.domain.entities import TimeRange
+        
         slots = []
         current_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
         while current_date < to_date:
+            date_str = current_date.date().isoformat()
             day_name = current_date.strftime('%a').upper()  # MON, TUE, etc.
             
-            # Check if date is in exceptions list (provider-level)
-            date_str = current_date.date().isoformat()
-            if date_str in exceptions:
+            # 1. Check for Exception (Override)
+            if date_str in exception_map:
+                rule = exception_map[date_str]
+                # If timeRanges provided, use them. If empty/None, treat as Day Off.
+                raw_ranges = rule.get('timeRanges', [])
+                
+                if raw_ranges:
+                    # Convert dicts to TimeRange objects
+                    try:
+                        exception_ranges = [
+                            TimeRange(r['startTime'], r['endTime']) 
+                            for r in raw_ranges
+                        ]
+                        
+                        for tr in exception_ranges:
+                            # Note: Exceptions override everything, including breaks. 
+                            # If a break is needed, define multiple ranges.
+                            slots.extend(
+                                self._generate_slots_in_range(
+                                    current_date,
+                                    tr,
+                                    duration_minutes,
+                                    breaks=[]
+                                )
+                            )
+                    except (KeyError, ValueError) as e:
+                        self.logger.warning(f"Invalid exception range for {date_str}: {e}")
+                
+                # If no ranges, it's a blocked day (Day Off) -> Do nothing
+                
                 current_date += timedelta(days=1)
                 continue
-            
+
+            # 2. Standard Weekly Availability
             if day_name in availability_map:
                 availability = availability_map[day_name]
 

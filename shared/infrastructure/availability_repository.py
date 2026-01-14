@@ -48,8 +48,8 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
         self,
         tenant_id: TenantId,
         provider_id: str
-    ) -> List[str]:
-        """Get exception dates for provider (stored in dedicated EXCEPTIONS item)"""
+    ) -> List[dict]:
+        """Get exception rules for provider"""
         try:
             pk = f"{tenant_id}#{provider_id}"
             response = self.table.get_item(
@@ -61,7 +61,8 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
             
             item = response.get('Item')
             if item:
-                return item.get('exceptionDates', [])
+                # Support new format first, fallback to old if needed (though unlikely)
+                return item.get('exceptionRules', [])
             return []
         except ClientError as e:
             print(f"Error getting exceptions: {e}")
@@ -71,15 +72,15 @@ class DynamoDBAvailabilityRepository(IAvailabilityRepository):
         self,
         tenant_id: TenantId,
         provider_id: str,
-        exception_dates: List[str]
+        exceptions: List[dict]
     ) -> None:
-        """Save exception dates for provider in dedicated EXCEPTIONS item"""
+        """Save exception rules for provider"""
         pk = f"{tenant_id}#{provider_id}"
         
         item = {
             'tenantId_providerId': pk,
-            'dayOfWeek': 'EXCEPTIONS',  # Special SK for exceptions
-            'exceptionDates': exception_dates
+            'dayOfWeek': 'EXCEPTIONS',
+            'exceptionRules': exceptions
         }
         
         self.table.put_item(Item=item)
