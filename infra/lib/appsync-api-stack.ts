@@ -77,13 +77,6 @@ export class AppSyncApiStack extends cdk.Stack {
       },
     });
 
-    // Fix for CORS (L2 construct might not support it in this version)
-    const cfnApi = this.api.node.defaultChild as appsync.CfnGraphQLApi;
-    cfnApi.addPropertyOverride('Cors', {
-      AllowOrigins: ['*'],
-      AllowMethods: ['POST', 'OPTIONS'],
-      AllowHeaders: ['Content-Type', 'x-api-key', 'authorization'],
-    });
 
     // Create Lambda data sources
     const catalogDataSource = this.api.addLambdaDataSource(
