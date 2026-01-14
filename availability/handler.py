@@ -21,7 +21,7 @@ from shared.domain.exceptions import (
     ProviderNotAvailableError,
     ValidationError
 )
-from shared.utils import Logger, success_response, error_response, parse_iso_datetime, extract_appsync_event
+from shared.utils import Logger, success_response, error_response, parse_iso_datetime, extract_appsync_event, to_iso_string
 
 from service import AvailabilityService, AvailabilityManagementService
 
