@@ -410,6 +410,7 @@ def booking_to_dict(booking) -> dict:
         'clientPhone': booking.customer_info.phone,
         'notes': booking.notes,
         'conversationId': booking.conversation_id,
+        'roomId': booking.room_id,
         'paymentStatus': booking.payment_status.value,
         'paymentIntentId': booking.payment_intent_id,
         'clientSecret': booking.payment_client_secret,
