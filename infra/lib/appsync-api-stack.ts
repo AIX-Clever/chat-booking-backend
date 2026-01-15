@@ -75,18 +75,6 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
-      corsConfig: {
-        allowOrigins: ['*'],
-        allowMethods: ['GET', 'POST', 'OPTIONS'],
-        allowHeaders: [
-          'Content-Type',
-          'X-Amz-Date',
-          'Authorization',
-          'X-Api-Key',
-          'X-Amz-Security-Token',
-          'x-tenant-id'
-        ],
-      },
     });
 
 
