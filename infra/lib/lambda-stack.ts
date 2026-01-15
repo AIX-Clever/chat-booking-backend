@@ -66,7 +66,8 @@ export class LambdaStack extends cdk.Stack {
     super(scope, id, props);
 
     // Get backend code path (relative to infra/lib)
-    const backendPath = path.join(__dirname, '../../');
+    // Get backend code path (relative to infra root, assuming cdk runs from infra)
+    const backendPath = path.join(process.cwd(), '../');
 
     let assetsBucket: s3.IBucket | undefined;
     if (props.assetsBucketName) {
