@@ -12,6 +12,7 @@
     "synth": "cdk synth"
   },
   "devDependencies": {
+    "@jridgewell/sourcemap-codec": "^1.5.5",
     "@jridgewell/trace-mapping": "^0.3.31",
     "@types/node": "^20.0.0",
     "aws-cdk": "^2.130.0",
