@@ -237,7 +237,9 @@ type Booking @aws_api_key @aws_cognito_user_pools {
   bookingId: ID!
   tenantId: ID!
   serviceId: ID!
+  serviceId: ID!
   providerId: ID!
+  roomId: ID
   start: AWSDateTime!
   end: AWSDateTime!
   status: BookingStatus!
@@ -415,11 +417,6 @@ input TimeRangeInput {
   endTime: String!
 }
 
-input ExceptionRuleInput {
-  date: String!
-  timeRanges: [TimeRangeInput!]
-}
-
 input SetAvailabilityInput {
   providerId: ID!
   dayOfWeek: String!
@@ -429,12 +426,12 @@ input SetAvailabilityInput {
 
 input SetExceptionsInput {
   providerId: ID!
-  exceptions: [ExceptionRuleInput!]!
+  exceptions: [String!]!
 }
 
 type ProviderExceptions @aws_cognito_user_pools {
   providerId: ID!
-  exceptions: [ProviderException!]!
+  exceptions: [String!]!
 }
 
 # Inputs - Bookings
@@ -448,6 +445,7 @@ input CreateBookingInput {
   clientPhone: String
   notes: String
   conversationId: ID
+  roomId: ID
 }
 
 input ConfirmBookingInput {
