@@ -413,6 +413,7 @@ type Booking @aws_api_key @aws_cognito_user_pools {
   tenantId: ID!
   serviceId: ID!
   providerId: ID!
+  roomId: ID
   start: AWSDateTime!
   end: AWSDateTime!
   status: BookingStatus!
@@ -618,6 +619,7 @@ input CreateBookingInput {
   clientPhone: String
   notes: String
   conversationId: ID
+  roomId: ID
 }
 
 input ConfirmBookingInput {
