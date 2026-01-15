@@ -225,7 +225,8 @@ class BookingService:
             payment_status=PaymentStatus.PENDING,
             conversation_id=conversation_id,
             notes=notes,
-            total_amount=service.price
+            total_amount=service.price,
+            room_id=assigned_room_id
         )
 
         # Process Payment Intent (Strategy Pattern)
@@ -320,6 +321,28 @@ class BookingService:
                 print(f"Failed to send confirmation email: {e}")
 
         return booking
+    
+    def _check_and_assign_room(
+        self,
+        tenant_id: TenantId,
+        service: 'Service',
+        start: datetime,
+        end: datetime
+    ) -> Optional[str]:
+        """
+        Assign a room for the booking
+        """
+        if not service.required_room_ids or not self._room_repo:
+            return None
+            
+        # Naive allocation: Pick first valid room
+        # TODO: Implement full availability check (requires room booking index)
+        for room_id in service.required_room_ids:
+            room = self._room_repo.get_by_id(tenant_id, room_id)
+            if room:
+                return room_id
+                
+        return None
     
     def _is_slot_available(
         self,
