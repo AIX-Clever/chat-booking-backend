@@ -13,12 +13,12 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "aws-cdk": "^2.100.0",
+    "aws-cdk": "^2.130.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.100.0",
+    "aws-cdk-lib": "^2.130.0",
     "constructs": "^10.3.0",
     "dotenv": "^17.2.3"
   }

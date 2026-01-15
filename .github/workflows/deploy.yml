@@ -58,7 +58,7 @@ jobs:
 
       - name: Install CDK dependencies
         working-directory: infra
-        run: npm ci
+        run: npm install
 
       - name: Sanitize Environment Name
         id: sanitize_env

@@ -415,6 +415,11 @@ input TimeRangeInput {
   endTime: String!
 }
 
+input ExceptionRuleInput {
+  date: String!
+  timeRanges: [TimeRangeInput!]
+}
+
 input SetAvailabilityInput {
   providerId: ID!
   dayOfWeek: String!
@@ -424,12 +429,12 @@ input SetAvailabilityInput {
 
 input SetExceptionsInput {
   providerId: ID!
-  exceptions: [String!]!
+  exceptions: [ExceptionRuleInput!]!
 }
 
 type ProviderExceptions @aws_cognito_user_pools {
   providerId: ID!
-  exceptions: [String!]!
+  exceptions: [ProviderException!]!
 }
 
 # Inputs - Bookings
