@@ -237,7 +237,7 @@ type Booking @aws_api_key @aws_cognito_user_pools {
   bookingId: ID!
   tenantId: ID!
   serviceId: ID!
-  serviceId: ID!
+
   providerId: ID!
   roomId: ID
   start: AWSDateTime!
