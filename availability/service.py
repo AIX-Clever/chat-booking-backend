@@ -6,7 +6,7 @@ Generates available time slots based on provider availability and existing booki
 
 from typing import List, Dict
 from datetime import datetime, timedelta, time
-from shared.domain.entities import TenantId, TimeSlot, ProviderAvailability, Booking
+from shared.domain.entities import TenantId, TimeSlot, ProviderAvailability, Booking, ExceptionRule
 from shared.domain.repositories import (
     IAvailabilityRepository,
     IBookingRepository,
