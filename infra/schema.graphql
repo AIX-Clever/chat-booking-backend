@@ -229,214 +229,12 @@ type ProviderAvailability @aws_cognito_user_pools {
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
-  exceptions: [String!]
+  exceptions: [ExceptionRule!]
 }
 
-# Types - Bookings
-type Booking @aws_api_key @aws_cognito_user_pools {
-  bookingId: ID!
-  tenantId: ID!
-  serviceId: ID!
-
-  providerId: ID!
-  roomId: ID
-  start: AWSDateTime!
-  end: AWSDateTime!
-  status: BookingStatus!
-  clientName: String!
-  clientEmail: String!
-  clientPhone: String
-  notes: String
-  conversationId: ID
-  paymentStatus: PaymentStatus!
-  totalAmount: Float!
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-# Types - Chat
-type Message @aws_api_key {
-  role: String!
-  content: String!
-  type: String!
-  timestamp: String!
-}
-
-type Conversation @aws_api_key {
-  conversationId: ID!
-  tenantId: ID!
-  state: ConversationState!
-  context: AWSJSON
-  messages: [Message!]!
-  channel: String!
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-type ChatResponse @aws_api_key {
-  conversation: Conversation!
-  response: AWSJSON!
-}
-
-# Types - Workflow
-type WorkflowStep @aws_cognito_user_pools {
-  stepId: String!
-  type: String!
-  content: AWSJSON
-  next: String
-}
-
-type Workflow @aws_cognito_user_pools {
-  workflowId: ID!
-  tenantId: ID!
-  name: String!
-  description: String
-  isActive: Boolean!
-  steps: AWSJSON! # JSON object with map of steps
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-
-# Inputs - Tenant
-input RegisterTenantInput {
-  companyName: String!
-  email: String!
-  password: String!
-}
-
-input CreateRoomInput {
-  name: String!
-  description: String
-  capacity: Int
-  status: String
-  metadata: AWSJSON
-}
-
-input UpdateRoomInput {
-  roomId: ID!
-  name: String
-  description: String
-  capacity: Int
-  status: String
-  metadata: AWSJSON
-}
-
-input UpdateTenantInput {
-  name: String
-  billingEmail: String
-  settings: AWSJSON
-}
-
-# Inputs - FAQs
-input CreateFAQInput {
-  question: String!
-  answer: String!
-  category: String
-  active: Boolean
-}
-
-input UpdateFAQInput {
-  faqId: ID!
-  question: String
-  answer: String
-  category: String
-  active: Boolean
-}
-
-# Inputs - Catalog
-input CreateCategoryInput {
-  name: String!
-  description: String
-  isActive: Boolean
-  displayOrder: Int
-  metadata: AWSJSON
-}
-
-input UpdateCategoryInput {
-  categoryId: ID!
-  name: String
-  description: String
-  isActive: Boolean
-  displayOrder: Int
-  metadata: AWSJSON
-}
-
-input CreateServiceInput {
-  name: String!
-  description: String
-  category: String!
-  durationMinutes: Int!
-  price: Float
-  # Trigger schema update 2026-01-16
-  requiredRoomIds: [ID]
-  locationType: [LocationType]
-}
-
-input UpdateServiceInput {
-  serviceId: ID!
-  name: String
-  description: String
-  category: String
-  durationMinutes: Int
-  price: Float
-  available: Boolean
-  requiredRoomIds: [ID]
-  locationType: [LocationType]
-}
-
-input CreateProviderInput {
-  name: String!
-  bio: String
-  serviceIds: [ID!]!
-  timezone: String!
-  metadata: AWSJSON
-  photoUrl: String
-  photoUrlThumbnail: String
-}
-
-input UpdateProviderInput {
-  providerId: ID!
-  name: String
-  bio: String
-  serviceIds: [ID!]
-  timezone: String
-  metadata: AWSJSON
-  available: Boolean
-  photoUrl: String
-  photoUrlThumbnail: String
-}
-
-# Inputs - Availability
-input GetAvailableSlotsInput {
-  serviceId: ID!
-  providerId: ID!
-  from: AWSDateTime!
-  to: AWSDateTime!
-}
-
-input TimeRangeInput {
-  startTime: String!
-  endTime: String!
-}
-
-input SetAvailabilityInput {
-  providerId: ID!
-  dayOfWeek: String!
-  timeRanges: [TimeRangeInput!]!
-  breaks: [TimeRangeInput!]
-}
-
-input SetExceptionsInput {
-  providerId: ID!
-  exceptions: [String!]!
-}
-
-type ProviderExceptions @aws_cognito_user_pools {
-  providerId: ID!
-  exceptions: [String!]!
+type ExceptionRule @aws_api_key @aws_cognito_user_pools {
+  date: String!
+  timeRanges: [TimeRange!]!
 }
 
 # Inputs - Bookings
@@ -630,6 +428,21 @@ type Mutation {
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
   sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
   confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
+}
+
+input ExceptionRuleInput {
+  date: String!
+  timeRanges: [TimeRangeInput!]!
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [ExceptionRuleInput!]!
+}
+
+type ProviderExceptions @aws_cognito_user_pools {
+  providerId: ID!
+  exceptions: [ExceptionRule!]!
 }
 
 schema {

@@ -154,13 +154,13 @@ class AvailabilityService:
         to_date: datetime,
         duration_minutes: int,
         availability_map: Dict[str, ProviderAvailability],
-        exceptions: List[Dict] = None
+        exceptions: List[ExceptionRule] = None
     ) -> List[TimeSlot]:
         """
         Generate all possible slots based on provider availability
         
         Args:
-            exceptions: List of exception rules [{'date': 'YYYY-MM-DD', 'timeRanges': [...]}]
+            exceptions: List of ExceptionRule entities
         
         Returns slots at regular intervals (slot_interval_minutes)
         within provider's working hours
@@ -170,9 +170,8 @@ class AvailabilityService:
             
         # Create quick lookup map for exceptions
         # Format: "YYYY-MM-DD" -> ExceptionRule
-        exception_map = {ex.get('date'): ex for ex in exceptions if ex.get('date')}
+        exception_map = {ex.date: ex for ex in exceptions if ex.date}
 
-        from shared.domain.entities import TimeRange
         
         slots = []
         current_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
@@ -185,29 +184,20 @@ class AvailabilityService:
             if date_str in exception_map:
                 rule = exception_map[date_str]
                 # If timeRanges provided, use them. If empty/None, treat as Day Off.
-                raw_ranges = rule.get('timeRanges', [])
+                exception_ranges = rule.time_ranges
                 
-                if raw_ranges:
-                    # Convert dicts to TimeRange objects
-                    try:
-                        exception_ranges = [
-                            TimeRange(r['startTime'], r['endTime']) 
-                            for r in raw_ranges
-                        ]
-                        
-                        for tr in exception_ranges:
-                            # Note: Exceptions override everything, including breaks. 
-                            # If a break is needed, define multiple ranges.
-                            slots.extend(
-                                self._generate_slots_in_range(
-                                    current_date,
-                                    tr,
-                                    duration_minutes,
-                                    breaks=[]
-                                )
+                if exception_ranges:
+                    for tr in exception_ranges:
+                        # Note: Exceptions override everything, including breaks. 
+                        # If a break is needed, define multiple ranges.
+                        slots.extend(
+                            self._generate_slots_in_range(
+                                current_date,
+                                tr,
+                                duration_minutes,
+                                breaks=[]
                             )
-                    except (KeyError, ValueError) as e:
-                        self.logger.warning(f"Invalid exception range for {date_str}: {e}")
+                        )
                 
                 # If no ranges, it's a blocked day (Day Off) -> Do nothing
                 
@@ -230,8 +220,6 @@ class AvailabilityService:
                     )
 
             current_date += timedelta(days=1)
-
-        return slots
 
         return slots
 
@@ -388,7 +376,7 @@ class AvailabilityManagementService:
             exceptions_count=len(exceptions) if exceptions else 0
         )
 
-        from shared.domain.entities import TimeRange
+        
 
         # Convert to TimeRange objects
         time_range_objects = [
@@ -437,7 +425,7 @@ class AvailabilityManagementService:
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
-            exceptions: List of exception rules
+            exceptions: List of exception rules [{'date': '...', 'timeRanges': [...]}]
         """
         self.logger.info(
             "Setting provider exceptions",
@@ -446,7 +434,24 @@ class AvailabilityManagementService:
             exceptions_count=len(exceptions)
         )
 
-        self.availability_repo.save_provider_exceptions(tenant_id, provider_id, exceptions)
+        
+
+        # Convert simple dict inputs to Domain Entities
+        exception_rules = []
+        for ex in exceptions:
+            time_ranges = []
+            if 'timeRanges' in ex:
+                time_ranges = [
+                    TimeRange(tr['startTime'], tr['endTime'])
+                    for tr in ex['timeRanges']
+                ]
+            
+            exception_rules.append(ExceptionRule(
+                date=ex['date'],
+                time_ranges=time_ranges
+            ))
+
+        self.availability_repo.save_provider_exceptions(tenant_id, provider_id, exception_rules)
 
         return exceptions
 

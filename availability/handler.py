@@ -243,7 +243,14 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
     schedule = availability_repo.get_provider_availability(tenant_id, provider_id)
     
     # Get exceptions separately (now stored in dedicated item)
-    exceptions = availability_repo.get_provider_exceptions(tenant_id, provider_id)
+    exception_entities = availability_repo.get_provider_exceptions(tenant_id, provider_id)
+    serialized_exceptions = [
+        {
+            'date': ex.date,
+            'timeRanges': [{'startTime': tr.start_time, 'endTime': tr.end_time} for tr in ex.time_ranges]
+        }
+        for ex in exception_entities
+    ]
     
     # Convert to response format
     response_data = []
@@ -259,7 +266,7 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
                 {'startTime': br.start_time, 'endTime': br.end_time}
                 for br in avail.breaks
             ],
-            'exceptions': exceptions  # Include provider-level exceptions in first item
+            'exceptions': serialized_exceptions  # Include provider-level exceptions in first item
         })
         
     return success_response(response_data)
@@ -309,5 +316,14 @@ def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     # Use Service Layer
     exceptions = availability_mgmt_service.get_provider_exceptions(tenant_id, provider_id)
 
+    # Deserialize entities for response
+    serialized_exceptions = [
+        {
+            'date': ex.date,
+            'timeRanges': [{'startTime': tr.start_time, 'endTime': tr.end_time} for tr in ex.time_ranges]
+        }
+        for ex in exceptions
+    ]
+
     # Return list directly to match GraphQL schema [ProviderException!]!
-    return success_response(exceptions)
+    return success_response(serialized_exceptions)
