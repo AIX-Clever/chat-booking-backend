@@ -370,6 +370,7 @@ input CreateServiceInput {
   category: String!
   durationMinutes: Int!
   price: Float
+  # Trigger schema update 2026-01-16
   requiredRoomIds: [ID]
   locationType: [LocationType]
 }
