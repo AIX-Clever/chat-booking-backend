@@ -247,7 +247,9 @@ class ServiceManagementService:
         category: str,
         duration_minutes: int,
         price: Optional[float],
-        active: bool = True
+        active: bool = True,
+        required_room_ids: Optional[List[str]] = None,
+        location_type: Optional[List[str]] = None
     ) -> Service:
         """
         Create new service
@@ -276,7 +278,9 @@ class ServiceManagementService:
             category=category,
             duration_minutes=duration_minutes,
             price=price,
-            active=active
+            active=active,
+            required_room_ids=required_room_ids,
+            location_type=location_type or ["PHYSICAL"]
         )
 
         # Persist
@@ -299,7 +303,9 @@ class ServiceManagementService:
         category: Optional[str] = None,
         duration_minutes: Optional[int] = None,
         price: Optional[float] = None,
-        active: Optional[bool] = None
+        active: Optional[bool] = None,
+        required_room_ids: Optional[List[str]] = None,
+        location_type: Optional[List[str]] = None
     ) -> Service:
         """
         Update existing service
@@ -332,6 +338,10 @@ class ServiceManagementService:
             service.price = price
         if active is not None:
             service.active = active
+        if required_room_ids is not None:
+            service.required_room_ids = required_room_ids
+        if location_type is not None:
+            service.location_type = location_type
 
         # Persist
         self.service_repo.save(service)

@@ -295,7 +295,9 @@ def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
         category=input_data['category'],
         duration_minutes=input_data['durationMinutes'],
         price=input_data.get('price'),
-        active=input_data.get('active', True)
+        active=input_data.get('active', True),
+        required_room_ids=input_data.get('requiredRoomIds'),
+        location_type=input_data.get('locationType')
     )
     return service_to_dict(service)
 
@@ -311,7 +313,9 @@ def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
         category=input_data.get('category'),
         duration_minutes=input_data.get('durationMinutes'),
         price=input_data.get('price'),
-        active=input_data.get('active') if 'active' in input_data else input_data.get('available')
+        active=input_data.get('active') if 'active' in input_data else input_data.get('available'),
+        required_room_ids=input_data.get('requiredRoomIds'),
+        location_type=input_data.get('locationType')
     )
     logger.info(f"Service updated result: {service}")
     return service_to_dict(service)

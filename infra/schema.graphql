@@ -370,6 +370,8 @@ input CreateServiceInput {
   category: String!
   durationMinutes: Int!
   price: Float
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input UpdateServiceInput {
@@ -380,6 +382,8 @@ input UpdateServiceInput {
   durationMinutes: Int
   price: Float
   available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input CreateProviderInput {
