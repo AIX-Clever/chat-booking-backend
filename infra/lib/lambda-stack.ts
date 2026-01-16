@@ -119,7 +119,7 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 256, // Less memory for simple validation
       environment: {
         ...commonProps.environment,
-        ALLOWED_IPS: process.env.ALLOWED_IPS || '181.166.197.80,191.113.67.147', // Use env var if available
+        ALLOWED_IPS: process.env.ALLOWED_IPS || '181.166.197.80,191.113.67.147,191.113.66.51', // Use env var if available
       },
     });
 
