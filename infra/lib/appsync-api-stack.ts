@@ -42,7 +42,7 @@ export class AppSyncApiStack extends cdk.Stack {
     // Create AppSync API
     this.api = new appsync.GraphqlApi(this, 'ChatBookingApi', {
       name: 'ChatBookingGraphQLApi',
-      schema: appsync.SchemaFile.fromAsset(path.join(__dirname, '../../schema.graphql')),
+      schema: appsync.SchemaFile.fromAsset(path.join(__dirname, '../schema.graphql')),
       authorizationConfig: {
         defaultAuthorization: {
           authorizationType: appsync.AuthorizationType.LAMBDA,
