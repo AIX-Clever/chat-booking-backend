@@ -37,7 +37,8 @@ class CatalogService:
     def search_services(
         self,
         tenant_id: TenantId,
-        query: Optional[str] = None
+        query: Optional[str] = None,
+        active_only: bool = False
     ) -> List[Service]:
         """
         Search services for a tenant
@@ -45,17 +46,19 @@ class CatalogService:
         Args:
             tenant_id: Tenant identifier
             query: Optional search text (searches name, description, category)
+            active_only: If True, only return active services
             
         Returns:
-            List of active services matching criteria
+            List of matching services
         """
         self.logger.info(
             "Searching services",
             tenant_id=str(tenant_id),
-            query=query
+            query=query,
+            active_only=active_only
         )
 
-        services = self.service_repo.search(tenant_id, query)
+        services = self.service_repo.search(tenant_id, query, active_only)
 
         self.logger.info(
             "Services found",

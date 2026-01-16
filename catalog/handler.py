@@ -186,7 +186,8 @@ def lambda_handler(event: dict, context) -> dict:
 def handle_search_services(tenant_id: TenantId, input_data: dict) -> dict:
     """Search services with optional query text"""
     query = input_data.get('text')
-    services = catalog_service.search_services(tenant_id, query)
+    active_only = input_data.get('availableOnly', False)
+    services = catalog_service.search_services(tenant_id, query, active_only)
     return success_response([service_to_dict(s) for s in services])
 
 
