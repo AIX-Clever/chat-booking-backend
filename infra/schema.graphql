@@ -94,7 +94,7 @@ type ApiKey @aws_cognito_user_pools {
   name: String
   keyPreview: String
   status: String!
-  status: String!
+
   createdAt: AWSDateTime!
   lastUsedAt: AWSDateTime
   apiKey: String # Only populated on creation
