@@ -295,8 +295,11 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
         exceptions
     )
 
-    # Return list directly to match GraphQL schema [ProviderException!]!
-    return success_response(updated_exceptions)
+    # Return object matches GraphQL schema ProviderExceptions!
+    return success_response({
+        'providerId': provider_id,
+        'exceptions': updated_exceptions
+    })
 
 
 def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dict:
