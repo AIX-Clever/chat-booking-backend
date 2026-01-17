@@ -487,6 +487,10 @@ def room_to_dict(room) -> dict:
         'description': room.description,
         'capacity': room.capacity,
         'status': room.status,
+        'isVirtual': room.is_virtual,
+        'minDuration': room.min_duration,
+        'maxDuration': room.max_duration,
+        'operatingHours': room.operating_hours,
         'metadata': room.metadata,
         'createdAt': room.created_at.isoformat(),
         'updatedAt': room.updated_at.isoformat()
@@ -511,6 +515,15 @@ def handle_get_room(tenant_id: TenantId, input_data: dict) -> dict:
 
 def handle_create_room(tenant_id: TenantId, input_data: dict) -> dict:
     """Create new room"""
+    # Parse AWSJSON fields if strings
+    op_hours = input_data.get('operatingHours')
+    if isinstance(op_hours, str):
+        op_hours = json.loads(op_hours)
+        
+    meta = input_data.get('metadata')
+    if isinstance(meta, str):
+        meta = json.loads(meta)
+
     room = room_mgmt_service.create_room(
         tenant_id=tenant_id,
         room_id=generate_id('rm'),
@@ -518,13 +531,26 @@ def handle_create_room(tenant_id: TenantId, input_data: dict) -> dict:
         description=input_data.get('description'),
         capacity=input_data.get('capacity'),
         status=input_data.get('status', 'ACTIVE'),
-        metadata=input_data.get('metadata')
+        is_virtual=input_data.get('isVirtual', False),
+        min_duration=input_data.get('minDuration'),
+        max_duration=input_data.get('maxDuration'),
+        operating_hours=op_hours,
+        metadata=meta
     )
     return success_response(room_to_dict(room))
 
 
 def handle_update_room(tenant_id: TenantId, input_data: dict) -> dict:
     """Update existing room"""
+    # Parse AWSJSON fields if strings
+    op_hours = input_data.get('operatingHours')
+    if isinstance(op_hours, str):
+        op_hours = json.loads(op_hours)
+        
+    meta = input_data.get('metadata')
+    if isinstance(meta, str):
+        meta = json.loads(meta)
+
     room = room_mgmt_service.update_room(
         tenant_id=tenant_id,
         room_id=input_data['roomId'],
@@ -532,7 +558,11 @@ def handle_update_room(tenant_id: TenantId, input_data: dict) -> dict:
         description=input_data.get('description'),
         capacity=input_data.get('capacity'),
         status=input_data.get('status'),
-        metadata=input_data.get('metadata')
+        is_virtual=input_data.get('isVirtual'),
+        min_duration=input_data.get('minDuration'),
+        max_duration=input_data.get('maxDuration'),
+        operating_hours=op_hours,
+        metadata=meta
     )
     return success_response(room_to_dict(room))
 

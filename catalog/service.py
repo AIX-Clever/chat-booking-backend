@@ -665,6 +665,10 @@ class RoomManagementService:
         description: Optional[str] = None,
         capacity: Optional[int] = None,
         status: str = "ACTIVE",
+        is_virtual: bool = False,
+        min_duration: Optional[int] = None,
+        max_duration: Optional[int] = None,
+        operating_hours: Optional[List[Dict[str, Any]]] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Room:
         """Create new room"""
@@ -677,6 +681,10 @@ class RoomManagementService:
             description=description,
             capacity=capacity,
             status=status,
+            is_virtual=is_virtual,
+            min_duration=min_duration,
+            max_duration=max_duration,
+            operating_hours=operating_hours,
             metadata=metadata or {}
         )
         self.room_repo.save(room)
@@ -690,6 +698,10 @@ class RoomManagementService:
         description: Optional[str] = None,
         capacity: Optional[int] = None,
         status: Optional[str] = None,
+        is_virtual: Optional[bool] = None,
+        min_duration: Optional[int] = None,
+        max_duration: Optional[int] = None,
+        operating_hours: Optional[List[Dict[str, Any]]] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> Room:
         """Update existing room"""
@@ -707,6 +719,14 @@ class RoomManagementService:
             room.capacity = capacity
         if status is not None:
             room.status = status
+        if is_virtual is not None:
+            room.is_virtual = is_virtual
+        if min_duration is not None:
+            room.min_duration = min_duration
+        if max_duration is not None:
+            room.max_duration = max_duration
+        if operating_hours is not None:
+            room.operating_hours = operating_hours
         if metadata is not None:
             room.metadata = metadata
 
