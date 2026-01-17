@@ -114,6 +114,62 @@ type FAQ @aws_api_key @aws_cognito_user_pools {
   active: Boolean!
 }
 
+type Conversation @aws_api_key @aws_cognito_user_pools {
+  conversationId: ID!
+  tenantId: ID!
+  state: String!
+  context: AWSJSON
+  messages: [Message!]
+  channel: String
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Message @aws_api_key @aws_cognito_user_pools {
+  role: String!
+  content: String!
+  timestamp: String!
+  metadata: AWSJSON
+}
+
+type ChatResponse @aws_api_key @aws_cognito_user_pools {
+  conversation: Conversation!
+  response: String
+}
+
+type Booking @aws_api_key @aws_cognito_user_pools {
+  bookingId: ID!
+  tenantId: ID!
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  status: BookingStatus!
+  paymentStatus: PaymentStatus
+  clientName: String
+  clientEmail: String
+  clientPhone: String
+  notes: String
+  roomId: ID
+  conversationId: ID
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Workflow @aws_cognito_user_pools {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  steps: AWSJSON!
+  metadata: AWSJSON
+  isActive: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 # Types - Dashboard Metrics
 type DashboardSummary @aws_cognito_user_pools {
   revenue: Float!
