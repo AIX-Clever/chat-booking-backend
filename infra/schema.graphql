@@ -237,6 +237,127 @@ type ExceptionRule @aws_api_key @aws_cognito_user_pools {
   timeRanges: [TimeRange!]!
 }
 
+# Inputs - Shared
+input TimeRangeInput {
+  startTime: String!
+  endTime: String!
+}
+
+# Inputs - Tenant & Catalog
+input RegisterTenantInput {
+  name: String!
+  slug: String!
+  billingEmail: String!
+  plan: TenantPlan
+}
+
+input UpdateTenantInput {
+  name: String
+  billingEmail: String
+  settings: AWSJSON
+}
+
+input CreateCategoryInput {
+  name: String!
+  description: String
+  metadata: AWSJSON
+  displayOrder: Int
+}
+
+input UpdateCategoryInput {
+  categoryId: ID!
+  name: String
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input CreateServiceInput {
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+  available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
+}
+
+input UpdateServiceInput {
+  serviceId: ID!
+  name: String
+  description: String
+  category: String
+  durationMinutes: Int
+  price: Float
+  available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
+}
+
+input CreateProviderInput {
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+}
+
+input UpdateProviderInput {
+  providerId: ID!
+  name: String
+  bio: String
+  serviceIds: [ID!]
+  timezone: String
+  metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+  available: Boolean
+}
+
+input CreateRoomInput {
+  name: String!
+  description: String
+  capacity: Int!
+  status: String
+  metadata: AWSJSON
+}
+
+input UpdateRoomInput {
+  roomId: ID!
+  name: String
+  description: String
+  capacity: Int
+  status: String
+  metadata: AWSJSON
+}
+
+# Inputs - Availability & FAQs
+input SetAvailabilityInput {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRangeInput!]!
+  breaks: [TimeRangeInput!]
+}
+
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
+}
+
 # Inputs - Bookings
 input CreateBookingInput {
   serviceId: ID!
