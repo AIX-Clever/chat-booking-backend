@@ -392,6 +392,13 @@ input UpdateRoomInput {
 }
 
 # Inputs - Availability & FAQs
+input GetAvailableSlotsInput {
+  serviceId: ID!
+  providerId: ID!
+  from: AWSDateTime!
+  to: AWSDateTime!
+}
+
 input SetAvailabilityInput {
   providerId: ID!
   dayOfWeek: String!
