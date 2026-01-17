@@ -107,7 +107,7 @@ export class LambdaStack extends cdk.Stack {
       this, '/chatbooking/layers/python-layer-arn'
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
-    // Force backend redeploy to pick up latest layer version
+    // Force backend redeploy to pick up latest layer version - 2026-01-17
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
