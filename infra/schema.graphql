@@ -320,9 +320,9 @@ input TimeRangeInput {
 
 # Inputs - Tenant & Catalog
 input RegisterTenantInput {
-  name: String!
-  slug: String!
-  billingEmail: String!
+  email: String!
+  password: String!
+  companyName: String!
   plan: TenantPlan
 }
 
