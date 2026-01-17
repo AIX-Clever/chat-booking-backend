@@ -42,6 +42,10 @@ type Room @aws_api_key @aws_cognito_user_pools {
   description: String
   capacity: Int!
   status: String!
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -379,6 +383,10 @@ input CreateRoomInput {
   description: String
   capacity: Int!
   status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
 }
 
@@ -388,6 +396,10 @@ input UpdateRoomInput {
   description: String
   capacity: Int
   status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
   metadata: AWSJSON
 }
 
