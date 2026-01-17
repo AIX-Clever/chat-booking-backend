@@ -18,6 +18,17 @@ enum PaymentStatus {
   FAILED
 }
 
+type SubscriptionResponse {
+  subscriptionId: String!
+  initPoint: String!
+  message: String
+}
+
+type DowngradeResponse {
+  message: String!
+  effectiveDate: String!
+}
+
 enum ConversationState {
   INIT
   SERVICE_PENDING
@@ -630,6 +641,10 @@ type Mutation {
   # API Keys
   createApiKey(name: String): ApiKey! @aws_cognito_user_pools
   revokeApiKey(apiKeyId: ID!): ApiKey! @aws_cognito_user_pools
+
+  # Subscription Mutations
+  subscribe(planId: String!, email: String, backUrl: String): SubscriptionResponse! @aws_cognito_user_pools
+  downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! @aws_cognito_user_pools
 
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key

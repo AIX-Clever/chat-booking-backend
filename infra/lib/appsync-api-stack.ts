@@ -30,6 +30,8 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   userManagementFunction: lambda.IFunction;
   presignFunction: lambda.IFunction;
   apiKeyManagerFunction: lambda.IFunction;
+  subscribeFunction: lambda.IFunction;
+  downgradeFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -142,6 +144,16 @@ export class AppSyncApiStack extends cdk.Stack {
       props.apiKeyManagerFunction
     );
 
+    const subscribeDataSource = this.api.addLambdaDataSource(
+      'SubscribeDataSource',
+      props.subscribeFunction
+    );
+
+    const downgradeDataSource = this.api.addLambdaDataSource(
+      'DowngradeDataSource',
+      props.downgradeFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -156,8 +168,12 @@ export class AppSyncApiStack extends cdk.Stack {
       faqManagerDataSource,
       presignDataSource,
       userManagementDataSource,
-      apiKeyManagerDataSource
+      apiKeyManagerDataSource,
+      subscribeDataSource,
+      downgradeDataSource
     );
+
+
 
     // Outputs
     new cdk.CfnOutput(this, 'GraphQLApiUrl', {
@@ -191,7 +207,9 @@ export class AppSyncApiStack extends cdk.Stack {
     faqManagerDataSource: appsync.LambdaDataSource,
     presignDataSource: appsync.LambdaDataSource,
     userManagementDataSource: appsync.LambdaDataSource,
-    apiKeyManagerDataSource: appsync.LambdaDataSource
+    apiKeyManagerDataSource: appsync.LambdaDataSource,
+    subscribeDataSource: appsync.LambdaDataSource,
+    downgradeDataSource: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -620,6 +638,21 @@ export class AppSyncApiStack extends cdk.Stack {
       fieldName: 'getPlanUsage',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Subscription Resolvers
+    subscribeDataSource.createResolver('SubscribeResolver', {
+      typeName: 'Mutation',
+      fieldName: 'subscribe',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    downgradeDataSource.createResolver('DowngradeResolver', {
+      typeName: 'Mutation',
+      fieldName: 'downgrade',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
   }
 }
