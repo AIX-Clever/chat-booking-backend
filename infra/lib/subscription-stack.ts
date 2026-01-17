@@ -24,6 +24,7 @@ export class SubscriptionStack extends cdk.Stack {
     public readonly webhookIngestorFunction: lambda.Function;
     public readonly webhookProcessorFunction: lambda.Function;
     public readonly subscriptionWorkerFunction: lambda.Function;
+    public readonly listInvoicesFunction: lambda.Function;
 
     constructor(scope: Construct, id: string, props: SubscriptionStackProps) {
         super(scope, id, props);
@@ -145,6 +146,15 @@ export class SubscriptionStack extends cdk.Stack {
             handler: 'subscription_worker.lambda_handler',
         });
         this.subscriptionsTable.grantReadWriteData(this.subscriptionWorkerFunction);
+
+        // F. List Invoices Handler
+        this.listInvoicesFunction = new lambda.Function(this, 'ListInvoicesFunction', {
+            ...commonProps,
+            description: 'List tenant invoices',
+            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
+            handler: 'list_invoices.lambda_handler',
+        });
+        this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
 
         // 5. IAM Role for EventBridge Scheduler
         const schedulerRole = new iam.Role(this, 'SchedulerRole', {

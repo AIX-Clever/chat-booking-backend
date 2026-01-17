@@ -248,6 +248,32 @@ type PlanUsage @aws_cognito_user_pools {
   tokensIA: Int!
 }
 
+# Billing & Invoices
+enum InvoiceStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+type Invoice @aws_cognito_user_pools {
+  invoiceId: ID!
+  tenantId: ID!
+  amount: Float!
+  currency: String!
+  status: InvoiceStatus!
+  date: AWSDateTime!
+  pdfUrl: String
+  metadata: AWSJSON
+}
+
+type BillingDetails @aws_cognito_user_pools {
+  companyName: String
+  rut: String
+  address: String
+  city: String
+}
+
 # Types - Catalog
 type Category @aws_api_key @aws_cognito_user_pools {
   categoryId: ID!
@@ -583,6 +609,9 @@ type Query {
 
   # API Keys (Admin)
   listApiKeys: [ApiKey!]! @aws_cognito_user_pools
+
+  # Billing (Admin)
+  listInvoices: [Invoice!]! @aws_cognito_user_pools
 }
 
 # Mutations
