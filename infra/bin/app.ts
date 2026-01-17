@@ -73,6 +73,17 @@ const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
   stage: env,
 });
 
+// 2.7 Subscription Stack - Billing & Payments (Secure)
+import { SubscriptionStack } from '../lib/subscription-stack';
+const subscriptionStack = new SubscriptionStack(app, `${stackPrefix}-Subscriptions`, {
+  env: { account, region },
+  description: 'SaaS Subscriptions Core (DynamoDB + SQS + Lambdas)',
+  tags,
+  tenantsTable: databaseStack.tenantsTable,
+  envName: env,
+});
+subscriptionStack.addDependency(databaseStack);
+
 // 3. Backend Stack - Business Logic
 const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
@@ -124,6 +135,8 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   userManagementFunction: lambdaStack.userManagementFunction,
   presignFunction: lambdaStack.presignFunction,
   apiKeyManagerFunction: lambdaStack.apiKeyManagerFunction,
+  subscribeFunction: subscriptionStack.subscribeFunction,
+  downgradeFunction: subscriptionStack.downgradeFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);
