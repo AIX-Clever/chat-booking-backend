@@ -15,6 +15,7 @@ from shared.utils import lambda_response, Logger, generate_api_key, hash_api_key
 # Lazy-initialized clients to avoid NoRegionError during test collection
 cognito = None
 workflows_table = None
+user_roles_table = None
 
 # Load Default Flow
 try:
@@ -31,13 +32,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Args:
         event: AppSync event with arguments
     """
-    global cognito, workflows_table
+    global cognito, workflows_table, user_roles_table
     
     # Lazy initialization of boto3 clients
     if cognito is None:
         cognito = boto3.client('cognito-idp')
     if workflows_table is None:
         workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
+    if user_roles_table is None:
+        user_roles_table = boto3.resource('dynamodb').Table(os.environ.get('USER_ROLES_TABLE', 'ChatBooking-UserRoles'))
     
     logger = Logger()
     logger.info("Starting tenant registration", event=event)
@@ -154,8 +157,27 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             except Exception as w_error:
                 # Don't fail registration if workflow creation fails, just log it
                 logger.error(f"Failed to create default workflow: {w_error}")
+
+        # 8. Create User Role (For Admin Panel Visibility)
+        try:
+             current_time = datetime.now(timezone.utc).isoformat()
+             user_role_item = {
+                 'userId': email,  # Using email as userId for now, aligning with frontend assumption if any
+                 'tenantId': str(tenant_id),
+                 'email': email,
+                 'name': company_name,
+                 'role': 'OWNER',
+                 'status': 'ACTIVE',
+                 'createdAt': current_time,
+                 'updatedAt': current_time
+             }
+             logger.info(f"Creating owner user role for {email}")
+             user_roles_table.put_item(Item=user_role_item)
+        except Exception as u_error:
+             # Don't fail registration, but log critical error
+             logger.error(f"Failed to create user role for owner: {u_error}")
         
-        # 7. Return Result
+        # 9. Return Result
         # Map entity to GraphQL type
         return {
             'tenantId': str(tenant.tenant_id),
