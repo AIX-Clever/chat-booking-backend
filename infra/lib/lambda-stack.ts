@@ -61,6 +61,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly workflowManagerFunction: lambda.Function;
   public readonly faqManagerFunction: lambda.Function;
   public readonly userManagementFunction: lambda.Function;
+  public readonly apiKeyManagerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -407,6 +408,19 @@ export class LambdaStack extends cdk.Stack {
       actions: ['ses:SendEmail', 'ses:SendRawEmail'],
       resources: ['*'], // In production, restrict to specific identity ARNs
     }));
+
+    // 14. API Key Manager Lambda
+    this.apiKeyManagerFunction = new lambda.Function(this, 'ApiKeyManagerFunction', {
+      ...commonProps,
+      description: 'API Key management operations',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'apikey_manager')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.apiKeysTable.grantReadWriteData(this.apiKeyManagerFunction);
+    props.tenantsTable.grantReadData(this.apiKeyManagerFunction);
 
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)

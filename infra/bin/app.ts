@@ -123,6 +123,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   faqManagerFunction: lambdaStack.faqManagerFunction,
   userManagementFunction: lambdaStack.userManagementFunction,
   presignFunction: lambdaStack.presignFunction,
+  apiKeyManagerFunction: lambdaStack.apiKeyManagerFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);

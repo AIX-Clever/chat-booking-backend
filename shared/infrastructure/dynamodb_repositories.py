@@ -115,6 +115,10 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
             'createdAt': api_key.created_at.isoformat()
         }
         
+        if api_key.name:
+            item['name'] = api_key.name
+        if api_key.key_preview:
+            item['keyPreview'] = api_key.key_preview
         if api_key.last_used_at:
             item['lastUsedAt'] = api_key.last_used_at.isoformat()
 
@@ -137,6 +141,8 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
             tenant_id=TenantId(item['tenantId']),
             api_key_hash=item['apiKeyHash'],
             status=item['status'],
+            name=item.get('name'),
+            key_preview=item.get('keyPreview'),
             allowed_origins=item.get('allowedOrigins', []),
             rate_limit=item.get('rateLimit', 100),
             created_at=datetime.fromisoformat(item['createdAt']),

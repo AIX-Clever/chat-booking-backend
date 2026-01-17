@@ -400,9 +400,11 @@ class ApiKey:
     tenant_id: TenantId
     api_key_hash: str
     status: str  # ACTIVE, REVOKED
-    allowed_origins: List[str]
-    rate_limit: int
-    created_at: datetime
+    name: Optional[str] = None
+    key_preview: Optional[str] = None  # e.g. "sk_live_12..."
+    allowed_origins: List[str] = field(default_factory=list)
+    rate_limit: int = 100
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_used_at: Optional[datetime] = None
 
     def is_valid(self) -> bool:

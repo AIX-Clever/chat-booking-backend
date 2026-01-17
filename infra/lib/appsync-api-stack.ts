@@ -29,6 +29,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   faqManagerFunction: lambda.IFunction;
   userManagementFunction: lambda.IFunction;
   presignFunction: lambda.IFunction;
+  apiKeyManagerFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -136,6 +137,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.presignFunction
     );
 
+    const apiKeyManagerDataSource = this.api.addLambdaDataSource(
+      'ApiKeyManagerDataSource',
+      props.apiKeyManagerFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -149,7 +155,8 @@ export class AppSyncApiStack extends cdk.Stack {
       workflowManagerDataSource,
       faqManagerDataSource,
       presignDataSource,
-      userManagementDataSource
+      userManagementDataSource,
+      apiKeyManagerDataSource
     );
 
     // Outputs
@@ -183,7 +190,8 @@ export class AppSyncApiStack extends cdk.Stack {
     workflowManagerDataSource: appsync.LambdaDataSource,
     faqManagerDataSource: appsync.LambdaDataSource,
     presignDataSource: appsync.LambdaDataSource,
-    userManagementDataSource: appsync.LambdaDataSource
+    userManagementDataSource: appsync.LambdaDataSource,
+    apiKeyManagerDataSource: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -249,6 +257,28 @@ export class AppSyncApiStack extends cdk.Stack {
     updateTenantDataSource.createResolver('UpdateTenantResolver', {
       typeName: 'Mutation',
       fieldName: 'updateTenant',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // API Key Resolvers
+    apiKeyManagerDataSource.createResolver('ListApiKeysResolver', {
+      typeName: 'Query',
+      fieldName: 'listApiKeys',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    apiKeyManagerDataSource.createResolver('CreateApiKeyResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createApiKey',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    apiKeyManagerDataSource.createResolver('RevokeApiKeyResolver', {
+      typeName: 'Mutation',
+      fieldName: 'revokeApiKey',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });

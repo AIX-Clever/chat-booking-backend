@@ -77,12 +77,16 @@ type Tenant @aws_api_key @aws_cognito_user_pools {
   updatedAt: AWSDateTime!
 }
 
-type ApiKey {
-  apiKey: String!
+type ApiKey @aws_cognito_user_pools {
+  apiKeyId: ID!
   tenantId: ID!
+  name: String
+  keyPreview: String
+  status: String!
   status: String!
   createdAt: AWSDateTime!
-  expiresAt: AWSDateTime!
+  lastUsedAt: AWSDateTime
+  apiKey: String # Only populated on creation
 }
 
 # User Management Types
@@ -565,6 +569,9 @@ type Query {
   # User Management (Admin)
   listTenantUsers: [TenantUser!]! @aws_cognito_user_pools
   getTenantUser(userId: ID!): TenantUser @aws_cognito_user_pools
+
+  # API Keys (Admin)
+  listApiKeys: [ApiKey!]! @aws_cognito_user_pools
 }
 
 # Mutations
@@ -619,6 +626,10 @@ type Mutation {
   inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
   updateUserRole(input: UpdateUserRoleInput!): TenantUser! @aws_cognito_user_pools
   removeUser(userId: ID!): TenantUser! @aws_cognito_user_pools
+  
+  # API Keys
+  createApiKey(name: String): ApiKey! @aws_cognito_user_pools
+  revokeApiKey(apiKeyId: ID!): ApiKey! @aws_cognito_user_pools
 
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
