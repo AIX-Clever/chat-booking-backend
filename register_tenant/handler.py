@@ -81,6 +81,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         # 4. Create Cognito User
         logger.info(f"Creating Cognito user for {email}")
+        user_sub = email # Default fallback
         try:
             response = cognito.admin_create_user(
                 UserPoolId=user_pool_id,
@@ -94,6 +95,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 MessageAction='SUPPRESS' # Don't send default email
             )
             
+            # Extract User Sub (UUID)
+            for attr in response.get('User', {}).get('Attributes', []):
+                if attr['Name'] == 'sub':
+                    user_sub = attr['Value']    
+                    break
+            
+            logger.info(f"Created Cognito user {email} with sub {user_sub}")
+
             # Set permanent password
             cognito.admin_set_user_password(
                 UserPoolId=user_pool_id,
@@ -109,6 +118,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         except Exception as e:
             logger.error("Cognito creation failed", error=e)
             raise e
+
+        # Update Tenant with real owner_user_id (Sub)
+        tenant.owner_user_id = user_sub
 
         # 5. Save Tenant
         logger.info(f"Saving tenant {tenant_id}")
@@ -162,7 +174,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         try:
              current_time = datetime.now(timezone.utc).isoformat()
              user_role_item = {
-                 'userId': email,  # Using email as userId for now, aligning with frontend assumption if any
+                 'userId': user_sub,  # Use Cognito Sub (UUID)
                  'tenantId': str(tenant_id),
                  'email': email,
                  'name': company_name,
@@ -171,7 +183,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                  'createdAt': current_time,
                  'updatedAt': current_time
              }
-             logger.info(f"Creating owner user role for {email}")
+             logger.info(f"Creating owner user role for {email} (sub: {user_sub})")
              user_roles_table.put_item(Item=user_role_item)
         except Exception as u_error:
              # Don't fail registration, but log critical error
@@ -185,7 +197,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'slug': tenant.slug,
             'status': tenant.status.value,
             'plan': tenant.plan.value,
-            'ownerUserId': tenant.owner_user_id,
+            'ownerUserId': user_sub,
             'billingEmail': tenant.billing_email,
             'settings': json.dumps(tenant.settings) if tenant.settings else None,
             'createdAt': tenant.created_at.isoformat(),
