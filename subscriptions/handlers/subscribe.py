@@ -2,8 +2,7 @@ import json
 import os
 import boto3
 from datetime import datetime, timedelta
-from shared.utils import lambda_response, error_response, success_response, extract_tenant_id
-from shared.decorators import require_tenant_context
+from shared.utils import extract_tenant_id
 from shared.subscriptions.mercadopago_client import MercadoPagoClient
 from shared.subscriptions.config import SubscriptionConfig
 from shared.subscriptions.entities import Subscription, SubscriptionStatus, PlanType
@@ -17,10 +16,12 @@ SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
 WORKER_ARN = os.getenv('WORKER_ARN', '') # To be passed by CDK
 SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '') # To be passed by CDK
 
-@require_tenant_context
 def lambda_handler(event, context):
     try:
-        tenant_id = event['tenant_id']
+        # Extract tenant_id from AppSync event
+        tenant_id = extract_tenant_id(event)
+        if not tenant_id:
+            raise Exception('Missing tenantId in request context')
         
         # Extract arguments from AppSync event
         args = event.get('arguments', {})
