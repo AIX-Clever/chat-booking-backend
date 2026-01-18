@@ -92,15 +92,7 @@ export class SubscriptionStack extends cdk.Stack {
         this.subscribeFunction = new lambda.Function(this, 'SubscribeFunction', {
             ...commonProps,
             description: 'Handle new subscription creation',
-            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers'), {
-                bundling: {
-                    image: lambda.Runtime.PYTHON_3_11.bundlingImage,
-                    command: [
-                        'bash', '-c',
-                        'pip install -r requirements.txt -t /asset-output && cp -au . /asset-output'
-                    ],
-                },
-            }),
+            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
             handler: 'subscribe.lambda_handler',
         });
         this.subscriptionsTable.grantReadWriteData(this.subscribeFunction);
