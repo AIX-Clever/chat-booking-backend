@@ -21,20 +21,21 @@ SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '') # To be passed by CDK
 def lambda_handler(event, context):
     try:
         tenant_id = event['tenant_id']
-        body = json.loads(event.get('body', '{}'))
         
-        plan_id_str = body.get('planId', 'lite')
-        payer_email = body.get('email')
-        back_url = body.get('backUrl', 'https://admin.holalucia.cl') # Default or from body
+        # Extract arguments from AppSync event
+        args = event.get('arguments', {})
+        plan_id_str = args.get('planId', 'lite')
+        payer_email = args.get('email')
+        back_url = args.get('backUrl', 'https://control.holalucia.cl')
         
         # Validate inputs
         if not payer_email:
-            return lambda_response(400, {'message': 'Missing email'})
+            raise Exception('Missing email')
             
         try:
             plan_enum = PlanType(plan_id_str)
         except ValueError:
-            return lambda_response(400, {'message': 'Invalid planId'})
+            raise Exception('Invalid planId')
 
         # Business Logic
         # 1. Determine Price (Promo logic: first 3 months $1 if new?)
@@ -53,7 +54,7 @@ def lambda_handler(event, context):
             )
         except Exception as e:
             print(f"MP Error: {str(e)}")
-            return lambda_response(500, {'message': 'Payment Provider Error'})
+            raise Exception('Payment Provider Error')
 
         preapproval_id = preapproval['id']
         init_point = preapproval['init_point'] # URL for frontend redirect
@@ -102,12 +103,14 @@ def lambda_handler(event, context):
         
         SUBSCRIPTIONS_TABLE.put_item(Item=sub.to_item())
 
-        return lambda_response(200, {
+        # Return data directly for AppSync (not wrapped in HTTP response)
+        return {
             'subscriptionId': preapproval_id,
             'initPoint': init_point,
             'message': 'Subscription initialized'
-        })
+        }
 
     except Exception as e:
         print(f"Error: {str(e)}")
-        return lambda_response(500, {'message': 'Internal Server Error'})
+        raise Exception(f'Internal Server Error: {str(e)}')
+
