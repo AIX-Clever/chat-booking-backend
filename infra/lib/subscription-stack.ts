@@ -83,6 +83,7 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
                 MP_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretVal', 'ChatBooking/MercadoPago')
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
+                LAST_UPDATED: new Date().toISOString(), // Force update to pick up new Secret value
             },
         };
 
