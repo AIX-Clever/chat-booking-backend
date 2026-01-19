@@ -194,4 +194,3 @@ export class SubscriptionStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'SchedulerRoleArn', { value: schedulerRole.roleArn });
     }
 }
-# Force redeploy to use layer v53
