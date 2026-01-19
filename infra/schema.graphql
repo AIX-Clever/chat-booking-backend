@@ -18,13 +18,13 @@ enum PaymentStatus {
   FAILED
 }
 
-type SubscriptionResponse {
+type SubscriptionResponse @aws_cognito_user_pools {
   subscriptionId: String!
   initPoint: String!
   message: String
 }
 
-type DowngradeResponse {
+type DowngradeResponse @aws_cognito_user_pools {
   message: String!
   effectiveDate: String!
 }
