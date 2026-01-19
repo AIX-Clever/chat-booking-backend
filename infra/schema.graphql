@@ -666,6 +666,7 @@ type Mutation {
   inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
   updateUserRole(input: UpdateUserRoleInput!): TenantUser! @aws_cognito_user_pools
   removeUser(userId: ID!): TenantUser! @aws_cognito_user_pools
+  resetUserPassword(userId: ID!): Boolean! @aws_cognito_user_pools
   
   # API Keys
   createApiKey(name: String): ApiKey! @aws_cognito_user_pools

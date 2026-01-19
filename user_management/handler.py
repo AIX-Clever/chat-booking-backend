@@ -87,6 +87,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Any:
         elif field_name == 'removeUser':
             user_id = arguments.get('userId')
             return handle_remove_user(tenant_id, user_id, caller_role, claims)
+
+        elif field_name == 'resetUserPassword':
+            user_id = arguments.get('userId')
+            return handle_reset_password(tenant_id, user_id, caller_role)
         
         else:
             return error_response(f"Unknown field: {field_name}", 400)
@@ -231,9 +235,46 @@ def handle_remove_user(tenant_id: TenantId, user_id: str, caller_role: str, clai
         raise
 
 
+def handle_reset_password(tenant_id: TenantId, user_id: str, caller_role: str) -> bool:
+    """
+    Trigger password reset for a user.
+    
+    Only OWNER or ADMIN (if not resetting another owner) can reset passwords.
+    """
+    try:
+        # Check caller permissions
+        if caller_role not in ['OWNER', 'ADMIN']:
+             raise ValueError("Insufficient permissions to reset password")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get('tenantId') != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+        
+        # Prevent taking over OWNER account if you are just ADMIN
+        if caller_role == 'ADMIN' and user.get('role') == 'OWNER':
+            raise ValueError("Admins cannot reset Owner passwords")
+
+        # Call service to reset password
+        # Since we haven't updated user_service yet, we might need a direct boto3 call or update service too.
+        # Assuming user_service will have this method or we add it now.
+        # For minimal change, we can add it here if `reset_user_password` is not in service.
+        # But better to keep architecture clean. Let's assume we update service or allow accessing cognito.
+        
+        success = user_service.reset_user_password(user_id)
+        
+        logger.info(f"Triggered password reset for user {user_id}")
+        return success
+        
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}", exc_info=True)
+        raise
+
+
 def error_response(message: str, status_code: int = 400) -> Dict:
     """Create error response for AppSync."""
     return {
         "errorMessage": message,
         "errorType": "HandlerError"
     }
+

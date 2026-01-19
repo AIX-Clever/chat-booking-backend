@@ -393,8 +393,10 @@ export class LambdaStack extends cdk.Stack {
       'cognito-idp:AdminCreateUser',
       'cognito-idp:AdminGetUser',
       'cognito-idp:ListUsers',
+      'cognito-idp:ListUsers',
       'cognito-idp:AdminUpdateUserAttributes',
-      'cognito-idp:AdminDisableUser'
+      'cognito-idp:AdminDisableUser',
+      'cognito-idp:AdminResetUserPassword'
     );
 
     // Grant read access to tenants table for plan validation

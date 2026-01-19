@@ -264,11 +264,29 @@ class UserManagementService:
         
         return updated.to_dict()
     
+    def reset_user_password(self, user_id: str) -> bool:
+        """
+        Reset a user's password via Cognito Admin flow.
+        
+        This triggers an email to the user with a code to reset their password.
+        """
+        try:
+            self.cognito.admin_reset_user_password(
+                UserPoolId=self.user_pool_id,
+                Username=user_id
+            )
+            return True
+        except self.cognito.exceptions.UserNotFoundException:
+            raise ValueError(f"User {user_id} not found in Cognito")
+        except Exception as e:
+            print(f"Error resetting password for {user_id}: {e}")
+            raise
+
     def _generate_temp_password(self) -> str:
         """Generate a secure temporary password"""
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"
         return ''.join(secrets.choice(alphabet) for _ in range(12))
-    
+
     def _extract_user_sub(self, cognito_user: Dict) -> Optional[str]:
         """Extract user sub from Cognito response"""
         attributes = cognito_user.get('Attributes', [])

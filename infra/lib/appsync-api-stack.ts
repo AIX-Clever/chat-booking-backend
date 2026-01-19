@@ -276,6 +276,13 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: responseTemplate,
     });
 
+    userManagementDataSource.createResolver('ResetUserPasswordResolver', {
+      typeName: 'Mutation',
+      fieldName: 'resetUserPassword',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
       typeName: 'Mutation',
