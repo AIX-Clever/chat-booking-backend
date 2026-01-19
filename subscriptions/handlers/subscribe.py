@@ -41,8 +41,13 @@ def lambda_handler(event, context):
         # Business Logic
         # 1. Determine Price (Promo logic: first 3 months $1 if new?)
         # For simplicity, we apply promo price if configured
-        price = SubscriptionConfig.PROMO_PRICE
-        full_price = SubscriptionConfig.PLAN_PRICES.get(plan_id_str, 9.00)
+        full_price = SubscriptionConfig.PLAN_PRICES.get(plan_id_str, 15000)
+        
+        # 1. Determine Price (Promo logic: first 3 months $1000 CLP for LITE only)
+        if plan_id_str == 'lite':
+            price = SubscriptionConfig.PROMO_PRICE
+        else:
+            price = full_price
         
         # 2. Create Preapproval in MP
         try:
