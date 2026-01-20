@@ -296,6 +296,12 @@ class DynamoDBProviderRepository(IProviderRepository):
         
         if provider.bio:
             item['bio'] = provider.bio
+        
+        if provider.photo_url:
+            item['photoUrl'] = provider.photo_url
+            
+        if provider.photo_url_thumbnail:
+            item['photoUrlThumbnail'] = provider.photo_url_thumbnail
 
         self.table.put_item(Item=item)
 
@@ -313,7 +319,9 @@ class DynamoDBProviderRepository(IProviderRepository):
             service_ids=item.get('services', []),
             timezone=item['timezone'],
             metadata=item.get('metadata', {}),
-            active=item.get('active', True)
+            active=item.get('active', True),
+            photo_url=item.get('photoUrl'),
+            photo_url_thumbnail=item.get('photoUrlThumbnail')
         )
 
 
