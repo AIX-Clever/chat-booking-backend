@@ -163,7 +163,9 @@ class ChatAgentService:
              
         # Check settings for AI Mode
         ai_settings = tenant.settings.get('ai', {}) or {}
-        ai_enabled = ai_settings.get('enabled', False)
+        # HOTFIX: Temporarily disable AI to prevent Bedrock 'Model not submitted' errors
+        # ai_enabled = ai_settings.get('enabled', False)
+        ai_enabled = False
 
         # Allow override via user_data (for testing)
         if user_data:
