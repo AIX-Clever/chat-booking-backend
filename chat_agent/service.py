@@ -13,7 +13,7 @@ from shared.domain.entities import (
     ConversationState,
     Booking,
     BookingStatus,
-    CustomerInfo
+    CustomerInfo,
 )
 from shared.domain.repositories import (
     IConversationRepository,
@@ -23,13 +23,11 @@ from shared.domain.repositories import (
     IAvailabilityRepository,
     IFAQRepository,
     IWorkflowRepository,
-    ITenantRepository
+    ITenantRepository,
 )
-from shared.domain.exceptions import (
-    EntityNotFoundError,
-    ValidationError
-)
+from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import generate_id, parse_iso_datetime
+
 try:
     from .workflow_engine import WorkflowEngine
     from .fsm import ResponseBuilder
@@ -38,6 +36,7 @@ except ImportError:
     from fsm import ResponseBuilder
 from shared.ai_handler import AIHandler
 from shared.infrastructure.vector_repository import VectorRepository
+
 try:
     from shared.limit_service import TenantLimitService
 except ImportError:
@@ -47,12 +46,11 @@ except ImportError:
 import os
 
 
-
 class ChatAgentService:
     """
     Service for managing conversational booking flow using WorkflowEngine
     """
-    
+
     def __init__(
         self,
         conversation_repo: IConversationRepository,
@@ -63,7 +61,7 @@ class ChatAgentService:
         faq_repo: IFAQRepository,
         workflow_repo: IWorkflowRepository,
         tenant_repo: ITenantRepository,
-        limit_service: Optional[TenantLimitService] = None
+        limit_service: Optional[TenantLimitService] = None,
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -74,46 +72,48 @@ class ChatAgentService:
         self._workflow_repo = workflow_repo
         self._tenant_repo = tenant_repo
         self._limit_service = limit_service
-        
+
         self.workflow_engine = WorkflowEngine(
             service_repo, provider_repo, faq_repo, availability_repo, booking_repo
         )
 
         # Initialize AI Handler if infrastructure is available
         self.ai_handler = None
-        db_cluster_arn = os.environ.get('DB_ENDPOINT') # Mapped to Cluster ARN in infra
-        db_secret_arn = os.environ.get('DB_SECRET_ARN')
-        
+        db_cluster_arn = os.environ.get("DB_ENDPOINT")  # Mapped to Cluster ARN in infra
+        db_secret_arn = os.environ.get("DB_SECRET_ARN")
+
         if db_cluster_arn and db_secret_arn:
             vector_repo = VectorRepository(db_cluster_arn, db_secret_arn)
             self.ai_handler = AIHandler(vector_repo)
-    
+
     def start_conversation(
         self,
         tenant_id: TenantId,
-        channel: str = 'widget',
-        metadata: Optional[Dict[str, Any]] = None
+        channel: str = "widget",
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> tuple[Conversation, dict]:
-        conversation_id = generate_id('conv')
-        
+        conversation_id = generate_id("conv")
+
         # 1. Load active workflow for tenant
         workflows = self._workflow_repo.list_by_tenant(tenant_id)
         active_workflow = next((w for w in workflows if w.is_active), None)
-        
+
         if not active_workflow:
-             # Legacy/Migration: Create default workflow for existing tenant
-             # Logic inlined to avoid dependencies on workflow_manager package
-             active_workflow = self._create_default_workflow(tenant_id)
-             self._workflow_repo.save(active_workflow)
-        
+            # Legacy/Migration: Create default workflow for existing tenant
+            # Logic inlined to avoid dependencies on workflow_manager package
+            active_workflow = self._create_default_workflow(tenant_id)
+            self._workflow_repo.save(active_workflow)
+
         # Self-healing: Repair broken default workflow if missing critical steps or corrupted
         # Check for 'select_timeslot' (basic), 'request_contact_info' (v2 flow), or corrupted 'list_providers'
         needs_repair = False
-        
+
         if active_workflow.name == "Default Booking Flow":
             # FORCE UPDATE: Always update default workflow to ensure latest code changes (FSM fixes) are applied
             # This is critical to propagate fixes to existing tenants without manual intervention
-            print(f"Enforcing update for Default Booking Flow {active_workflow.workflow_id}...")
+            print(
+                f"Enforcing update for Default Booking Flow {active_workflow.workflow_id}..."
+            )
             updated_default = self._create_default_workflow(tenant_id)
             active_workflow.steps = updated_default.steps
             self._workflow_repo.save(active_workflow)
@@ -123,18 +123,18 @@ class ChatAgentService:
             conversation_id=conversation_id,
             tenant_id=tenant_id,
             state=ConversationState.INIT,
-            workflow_id=active_workflow.workflow_id
+            workflow_id=active_workflow.workflow_id,
         )
-        
+
         self._conversation_repo.save(conversation)
-        
+
         # 3. Execute first step
         response = self.workflow_engine.process_step(
             conversation, active_workflow, "start"
         )
-        
+
         self._conversation_repo.save(conversation)
-        
+
         return conversation, response
 
     def process_message(
@@ -142,9 +142,9 @@ class ChatAgentService:
         tenant_id: TenantId,
         conversation_id: str,
         message: str,
-        message_type: str = 'text',
+        message_type: str = "text",
         user_data: Optional[Dict[str, Any]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> tuple[Conversation, dict]:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation:
@@ -154,15 +154,17 @@ class ChatAgentService:
         if self._limit_service:
             # Block if message limit exceeded
             if not self._limit_service.check_can_send_message(tenant_id):
-                 return conversation, ResponseBuilder.error_message("Has excedido el límite de mensajes de tu plan actual. Por favor contacta al administrador.")
+                return conversation, ResponseBuilder.error_message(
+                    "Has excedido el límite de mensajes de tu plan actual. Por favor contacta al administrador."
+                )
 
         # 1. Check for AI Mode (Business/Enterprise)
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
-             raise EntityNotFoundError("Tenant", str(tenant_id))
-             
+            raise EntityNotFoundError("Tenant", str(tenant_id))
+
         # Check settings for AI Mode
-        ai_settings = tenant.settings.get('ai', {}) or {}
+        ai_settings = tenant.settings.get("ai", {}) or {}
         # HOTFIX: Temporarily disable AI to prevent Bedrock 'Model not submitted' errors
         # ai_enabled = ai_settings.get('enabled', False)
         ai_enabled = False
@@ -172,58 +174,63 @@ class ChatAgentService:
             # Parse if string (AWSJSON)
             if isinstance(user_data, str):
                 import json
+
                 try:
                     user_data_dict = json.loads(user_data)
                 except:
                     user_data_dict = {}
             else:
                 user_data_dict = user_data
-                
-            if user_data_dict.get('force_rag'):
+
+            if user_data_dict.get("force_rag"):
                 ai_enabled = True
-        
+
         # Check AI Usage Limit (Degradation)
         if self._limit_service and ai_enabled:
             can_use_ai = self._limit_service.check_can_use_ai(tenant_id)
             if not can_use_ai:
-                print(f"Tenant {tenant_id.value} AI limit exceeded. Falling back to FSM.")
+                print(
+                    f"Tenant {tenant_id.value} AI limit exceeded. Falling back to FSM."
+                )
                 ai_enabled = False
 
         # Fallback to metadata for testing override if needed, but prioritize DB
-        ai_mode = 'BEDROCK_RAG' if ai_enabled else None
-        
-        if ai_mode == 'BEDROCK_RAG' and self.ai_handler:
+        ai_mode = "BEDROCK_RAG" if ai_enabled else None
+
+        if ai_mode == "BEDROCK_RAG" and self.ai_handler:
             # RAG FLOW
-            
+
             # 1. Get History (Last 10 messages)
             # conversation.history is needed. Assuming conversation entity has it or we query it.
             # Only existing messages are relevant.
-            
+
             # 2. Get Response from AI
             try:
                 ai_response_text = self.ai_handler.generate_response(
-                    tenant_id, 
-                    conversation.get_history(), # Assuming get_history() exists or property
-                    message
+                    tenant_id,
+                    conversation.get_history(),  # Assuming get_history() exists or property
+                    message,
                 )
 
                 # Check for specific error from AI Handler
                 if "trouble connecting to my brain" in ai_response_text:
-                    print(f"AI Handler reported error: {ai_response_text}. Falling back to FSM.")
+                    print(
+                        f"AI Handler reported error: {ai_response_text}. Falling back to FSM."
+                    )
                     # Do NOT return here, let it fall through to FSM logic
                 else:
                     # 3. Wrap in standard response format
                     response = {
-                        'type': 'text',
-                        'text': ai_response_text,
-                        'ai_generated': True
+                        "type": "text",
+                        "text": ai_response_text,
+                        "ai_generated": True,
                     }
-                    
+
                     # 4. Save User Message & AI Response to History
-                    conversation.add_message('user', message)
-                    conversation.add_message('assistant', ai_response_text)
+                    conversation.add_message("user", message)
+                    conversation.add_message("assistant", ai_response_text)
                     self._conversation_repo.save(conversation)
-                    
+
                     return conversation, response
             except Exception as e:
                 print(f"AI Handler Exception: {e}. Falling back to FSM.")
@@ -235,100 +242,126 @@ class ChatAgentService:
         if not conversation.workflow_id:
             # Legacy conversation or broken state
             return self._fallback_process(tenant_id, conversation, message, user_data)
-            
+
         workflow = self._workflow_repo.get_by_id(tenant_id, conversation.workflow_id)
         if not workflow:
-             return conversation, ResponseBuilder.error_message("Workflow active not found")
+            return conversation, ResponseBuilder.error_message(
+                "Workflow active not found"
+            )
 
         # Global Intent Detection (Greeting / Reset)
-        if message and message_type == 'text':
-             normalized = message.lower().strip()
-             if normalized in ['hola', 'buenos dias', 'buenas tardes', 'inicio', 'menu']:
-                 # Reset to start/menu
-                 response = self.workflow_engine.process_step(
-                     conversation, workflow, "start" # Or "initial_menu" if we want to skip hello
-                 )
-                 self._conversation_repo.save(conversation)
-                 return conversation, response
+        if message and message_type == "text":
+            normalized = message.lower().strip()
+            if normalized in ["hola", "buenos dias", "buenas tardes", "inicio", "menu"]:
+                # Reset to start/menu
+                response = self.workflow_engine.process_step(
+                    conversation,
+                    workflow,
+                    "start",  # Or "initial_menu" if we want to skip hello
+                )
+                self._conversation_repo.save(conversation)
+                return conversation, response
 
         # Process Step
         response = self.workflow_engine.process_step(
             conversation, workflow, message, user_data
         )
-        
+
         conversation.updated_at = datetime.now(UTC)
         self._conversation_repo.save(conversation)
-        
+
         return conversation, response
 
     def _fallback_start(self, tenant_id, conversation_id):
         # ... logic for when no workflow exists ...
         # For now return error or simple message
-        conversation = Conversation(conversation_id=conversation_id, tenant_id=tenant_id, state=ConversationState.INIT)
+        conversation = Conversation(
+            conversation_id=conversation_id,
+            tenant_id=tenant_id,
+            state=ConversationState.INIT,
+        )
         self._conversation_repo.save(conversation)
-        return conversation, {'type': 'text', 'text': 'System Error: No workflow configured.'}
+        return conversation, {
+            "type": "text",
+            "text": "System Error: No workflow configured.",
+        }
 
     def _fallback_process(self, tenant_id, conversation, message, user_data):
-         return conversation, {'type': 'text', 'text': 'Legacy conversation not supported in v2 engine.'}
+        return conversation, {
+            "type": "text",
+            "text": "Legacy conversation not supported in v2 engine.",
+        }
 
     # ... Keep confirm_booking as it might be used by a TOOL ...
-    def confirm_booking(self, tenant_id: TenantId, conversation_id: str) -> tuple[Conversation, dict]:
+    def confirm_booking(
+        self, tenant_id: TenantId, conversation_id: str
+    ) -> tuple[Conversation, dict]:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation:
-             raise EntityNotFoundError("Conversation", conversation_id)
+            raise EntityNotFoundError("Conversation", conversation_id)
 
         try:
             ctx = conversation.context
-            
+
             # Validate required fields
-            required = ['serviceId', 'providerId', 'selectedSlot', 'clientName', 'clientEmail']
+            required = [
+                "serviceId",
+                "providerId",
+                "selectedSlot",
+                "clientName",
+                "clientEmail",
+            ]
             missing = [f for f in required if not ctx.get(f)]
             if missing:
-                 return conversation, ResponseBuilder.error_message(f"Faltan datos para la reserva: {', '.join(missing)}")
-            
-            booking_id = generate_id('bk')
-            
+                return conversation, ResponseBuilder.error_message(
+                    f"Faltan datos para la reserva: {', '.join(missing)}"
+                )
+
+            booking_id = generate_id("bk")
+
             booking = Booking(
                 booking_id=booking_id,
                 tenant_id=tenant_id,
-                service_id=ctx['serviceId'],
-                provider_id=ctx['providerId'],
+                service_id=ctx["serviceId"],
+                provider_id=ctx["providerId"],
                 customer_info=CustomerInfo(
-                    name=ctx['clientName'],
-                    email=ctx['clientEmail'],
-                    phone=ctx.get('clientPhone')
+                    name=ctx["clientName"],
+                    email=ctx["clientEmail"],
+                    phone=ctx.get("clientPhone"),
                 ),
-                start_time=ctx['selectedSlot'],
+                start_time=ctx["selectedSlot"],
                 status=BookingStatus.CONFIRMED,
                 created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC)
+                updated_at=datetime.now(UTC),
             )
-            
+
             self._booking_repo.save(booking)
-            
+
             # Store booking id in context
-            conversation.context['bookingId'] = booking_id
+            conversation.context["bookingId"] = booking_id
             self._conversation_repo.save(conversation)
-            
+
             # Construct booking dict for response
             booking_dict = {
-                'bookingId': booking.booking_id,
-                'clientEmail': booking.customer_info.email,
-                'serviceName': ctx.get('serviceName', 'Servicio'),
-                'providerName': ctx.get('providerName', 'Profesional'),
-                'startTime': booking.start_time
+                "bookingId": booking.booking_id,
+                "clientEmail": booking.customer_info.email,
+                "serviceName": ctx.get("serviceName", "Servicio"),
+                "providerName": ctx.get("providerName", "Profesional"),
+                "startTime": booking.start_time,
             }
-            
+
             return conversation, ResponseBuilder.success_message(booking_dict)
-            
+
         except Exception as e:
             print(f"Booking Error: {e}")
-            return conversation, ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
+            return conversation, ResponseBuilder.error_message(
+                "No pudimos procesar tu reserva. Intenta nuevamente."
+            )
 
     def _create_default_workflow(self, tenant_id: TenantId):
         import json
         from shared.domain.entities import Workflow, WorkflowStep
-        
+
         # Hardcoded default workflow (copy of base_workflow.json)
         # Used as fallback and initial setup for self-healing
         data = {
@@ -341,65 +374,81 @@ class ChatAgentService:
                         "text": "¿En qué te puedo ayudar hoy?",
                         "sources": ["SERVICES", "PROVIDERS", "FAQS"],
                         "options_mapping": {
-                            "SERVICES": {"label": "Reservar Servicio", "value": "flow_booking", "next": "search_service"},
-                            "PROVIDERS": {"label": "Ver Profesionales", "value": "flow_providers", "next": "list_providers"},
-                            "FAQS": {"label": "Preguntas Frecuentes", "value": "flow_faqs", "next": "show_faqs"}
+                            "SERVICES": {
+                                "label": "Reservar Servicio",
+                                "value": "flow_booking",
+                                "next": "search_service",
+                            },
+                            "PROVIDERS": {
+                                "label": "Ver Profesionales",
+                                "value": "flow_providers",
+                                "next": "list_providers",
+                            },
+                            "FAQS": {
+                                "label": "Preguntas Frecuentes",
+                                "value": "flow_faqs",
+                                "next": "show_faqs",
+                            },
                         },
-                        "empty_text": "No hay servicios disponibles por el momento."
-                    }
+                        "empty_text": "No hay servicios disponibles por el momento.",
+                    },
                 },
                 "search_service": {
                     "stepId": "search_service",
                     "type": "TOOL",
                     "content": {"tool": "searchServices"},
-                    "next": "list_providers"
+                    "next": "list_providers",
                 },
                 "list_providers": {
                     "stepId": "list_providers",
                     "type": "TOOL",
                     "content": {"tool": "listProviders"},
-                    "next": "select_timeslot"
+                    "next": "select_timeslot",
                 },
                 "resolve_service": {
                     "stepId": "resolve_service",
                     "type": "TOOL",
                     "content": {"tool": "searchServices"},
-                    "next": "select_timeslot"
+                    "next": "select_timeslot",
                 },
                 "select_timeslot": {
                     "stepId": "select_timeslot",
                     "type": "TOOL",
                     "content": {"tool": "checkAvailability"},
-                    "next": "request_contact_info"
+                    "next": "request_contact_info",
                 },
                 "request_contact_info": {
                     "stepId": "request_contact_info",
                     "type": "MESSAGE",
-                    "content": {"text": "Perfecto. Para confirmar tu reserva, necesito algunos datos."},
-                    "next": "collect_contact_info"
+                    "content": {
+                        "text": "Perfecto. Para confirmar tu reserva, necesito algunos datos."
+                    },
+                    "next": "collect_contact_info",
                 },
                 "collect_contact_info": {
                     "stepId": "collect_contact_info",
                     "type": "TOOL",
                     "content": {"tool": "collectContactInfo"},
-                    "next": "confirm_booking"
+                    "next": "confirm_booking",
                 },
                 "confirm_booking": {
                     "stepId": "confirm_booking",
                     "type": "TOOL",
                     "content": {"tool": "confirmBooking"},
-                    "next": "booking_success"
+                    "next": "booking_success",
                 },
                 "booking_success": {
                     "stepId": "booking_success",
                     "type": "MESSAGE",
-                    "content": {"text": "¡Reserva confirmada! 🎉 Te hemos enviado un email de confirmación."}
+                    "content": {
+                        "text": "¡Reserva confirmada! 🎉 Te hemos enviado un email de confirmación."
+                    },
                 },
                 "show_faqs": {
                     "stepId": "show_faqs",
                     "type": "TOOL",
                     "content": {"tool": "showFAQs", "auto_advance": True},
-                    "next": "faq_followup"
+                    "next": "faq_followup",
                 },
                 "faq_followup": {
                     "stepId": "faq_followup",
@@ -408,32 +457,38 @@ class ChatAgentService:
                         "text": "¿Te gustaría agendar una cita ahora?",
                         "sources": ["SERVICES", "PROVIDERS"],
                         "options_mapping": {
-                            "SERVICES": {"label": "📅 Ver Servicios", "value": "flow_booking", "next": "search_service"},
-                            "PROVIDERS": {"label": "👨‍⚕️ Ver Profesionales", "value": "flow_providers", "next": "list_providers"}
-                        }
-                    }
-                }
-            }
+                            "SERVICES": {
+                                "label": "📅 Ver Servicios",
+                                "value": "flow_booking",
+                                "next": "search_service",
+                            },
+                            "PROVIDERS": {
+                                "label": "👨‍⚕️ Ver Profesionales",
+                                "value": "flow_providers",
+                                "next": "list_providers",
+                            },
+                        },
+                    },
+                },
+            },
         }
-            
+
         steps = {}
-        for sid, content in data['steps'].items():
+        for sid, content in data["steps"].items():
             steps[sid] = WorkflowStep(
-                step_id=content['stepId'],
-                type=content['type'],
-                content=content.get('content', {}),
-                next_step=content.get('next')
+                step_id=content["stepId"],
+                type=content["type"],
+                content=content.get("content", {}),
+                next_step=content.get("next"),
             )
-            
+
         return Workflow(
-            workflow_id=generate_id('wf'),
+            workflow_id=generate_id("wf"),
             tenant_id=tenant_id,
-            name=data.get('name', 'Default Workflow'),
+            name=data.get("name", "Default Workflow"),
             description="Auto-generated default workflow",
             steps=steps,
             is_active=True,
             created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC)
+            updated_at=datetime.now(UTC),
         )
-
-
