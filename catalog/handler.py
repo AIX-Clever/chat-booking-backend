@@ -353,6 +353,7 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
 
 def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
     """Update existing provider"""
+    logger.info(f"handle_update_provider input: {input_data}") # DEBUG LOG
     provider = provider_mgmt_service.update_provider(
         tenant_id=tenant_id,
         provider_id=input_data['providerId'],
@@ -365,6 +366,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         photo_url=input_data.get('photoUrl'),
         photo_url_thumbnail=input_data.get('photoUrlThumbnail')
     )
+    logger.info(f"Updated provider result: {provider_to_dict(provider)}") # DEBUG LOG
     return provider_to_dict(provider)
 
 
@@ -582,6 +584,7 @@ def handle_delete_room(tenant_id: TenantId, input_data: dict) -> dict:
 
 def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> dict:
     """Generate presigned URL for file upload"""
+    logger.info(f"handle_generate_presigned_url input: {input_data}") # DEBUG LOG
     if not asset_service:
         return error_response("Asset service not initialized", 500)
         
@@ -597,6 +600,7 @@ def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> dict
             file_name=file_name,
             content_type=content_type
         )
+        logger.info(f"Generated URL: {url}") # DEBUG LOG
         return str(url) # Return raw string as per schema
     except ValidationError as e:
         return error_response(str(e), 400)
