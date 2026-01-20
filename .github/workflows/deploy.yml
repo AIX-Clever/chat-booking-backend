@@ -64,18 +64,8 @@ jobs:
         working-directory: infra
         run: npm run build
 
-      - name: Sanitize Environment Name
-        id: sanitize_env
-        run: |
-          # Get branch name (head_ref for PRs, ref_name for dispatch)
-          RAW_BRANCH=${{ github.head_ref || github.ref_name }}
-          # Replace slashes with hyphens
-          SANITIZED_BRANCH=${RAW_BRANCH//\//-}
-          echo "ENV_NAME=${SANITIZED_BRANCH}" >> $GITHUB_ENV
-
       - name: Deploy with CDK
         working-directory: infra
-        run: npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ env.ENV_NAME }}
+        run: npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
-          ENV: ${{ env.ENV_NAME }} # Uses sanitized branch name
-
+          ENV: dev # Always deploy to dev environment in current AWS account
