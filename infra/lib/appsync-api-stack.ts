@@ -616,6 +616,13 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    bookingDataSource.createResolver('UpdateBookingStatusResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateBookingStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     // Chat Agent resolvers
     chatAgentDataSource.createResolver('StartConversationResolver', {
       typeName: 'Mutation',

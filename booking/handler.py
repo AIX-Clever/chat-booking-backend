@@ -96,6 +96,9 @@ def lambda_handler(event: dict, context) -> dict:
         elif field == 'markAsNoShow':
             return handle_mark_as_no_show(tenant_id, input_data)
         
+        elif field == 'updateBookingStatus':
+            return handle_update_booking_status(tenant_id, input_data)
+        
         elif field == 'getBooking':
             return handle_get_booking(tenant_id, input_data)
         

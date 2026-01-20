@@ -661,6 +661,7 @@ type Mutation {
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
+  updateBookingStatus(bookingId: ID!, status: String!): Booking! @aws_cognito_user_pools
   
   # User Management (Admin)
   inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
