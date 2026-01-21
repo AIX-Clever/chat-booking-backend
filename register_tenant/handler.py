@@ -19,10 +19,10 @@ user_roles_table = None
 
 # Load Default Flow
 try:
-    with open(os.path.join(os.path.dirname(__file__), '../workflow_manager/base_workflow.json'), 'r') as f:
+    with open(os.path.join(os.path.dirname(__file__), 'base_workflow.json'), 'r') as f:
         DEFAULT_FLOW = json.load(f)
 except Exception as e:
-    print(f"Warning: Could not load default flow: {e}")
+    print(f"Warning: Could not load default flow from local file: {e}")
     DEFAULT_FLOW = {}
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
