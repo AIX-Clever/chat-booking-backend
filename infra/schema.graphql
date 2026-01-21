@@ -354,6 +354,7 @@ input RegisterTenantInput {
 
 input UpdateTenantInput {
   name: String
+  slug: String
   billingEmail: String
   settings: AWSJSON
 }
@@ -611,7 +612,21 @@ type Query {
   listApiKeys: [ApiKey!]! @aws_cognito_user_pools
 
   # Billing (Admin)
+  # Billing (Admin)
   listInvoices: [Invoice!]! @aws_cognito_user_pools
+
+  # Public Profile (Microsites)
+  getTenantPublicProfile(slug: String!): PublicProfile @aws_api_key
+}
+
+type PublicProfile @aws_api_key {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  bio: String
+  photoUrl: String
+  themeColor: String
+  primaryServiceId: String
 }
 
 # Mutations

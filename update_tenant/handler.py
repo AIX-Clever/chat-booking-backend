@@ -72,6 +72,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             tenant.name = inputs['name']
         if 'billingEmail' in inputs:
             tenant.billing_email = inputs['billingEmail']
+        if 'slug' in inputs:
+             tenant.slug = inputs['slug']
+             # TODO: Check for uniqueness if slug is changed (future improvement)
         if 'settings' in inputs:
             # Merge settings
             new_settings = json.loads(inputs['settings']) if isinstance(inputs['settings'], str) else inputs['settings']
