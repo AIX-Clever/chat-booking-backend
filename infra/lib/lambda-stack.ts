@@ -62,6 +62,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly faqManagerFunction: lambda.Function;
   public readonly userManagementFunction: lambda.Function;
   public readonly apiKeyManagerFunction: lambda.Function;
+  public readonly getPublicProfileFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -424,6 +425,18 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.apiKeysTable.grantReadWriteData(this.apiKeyManagerFunction);
     props.tenantsTable.grantReadData(this.apiKeyManagerFunction);
+
+    // 15. Get Public Profile Lambda
+    this.getPublicProfileFunction = new lambda.Function(this, 'GetPublicProfileFunction', {
+      ...commonProps,
+      description: 'Get public tenant profile by slug',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'get_public_profile')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.tenantsTable.grantReadData(this.getPublicProfileFunction);
 
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)

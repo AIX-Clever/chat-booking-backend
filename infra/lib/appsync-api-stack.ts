@@ -33,6 +33,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   subscribeFunction: lambda.IFunction;
   downgradeFunction: lambda.IFunction;
   listInvoicesFunction: lambda.IFunction;
+  getPublicProfileFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -179,9 +180,21 @@ export class AppSyncApiStack extends cdk.Stack {
       props.listInvoicesFunction
     );
 
+    const getPublicProfileDataSource = this.api.addLambdaDataSource(
+      'GetPublicProfileDataSource',
+      props.getPublicProfileFunction
+    );
+
     listInvoicesDataSource.createResolver('ListInvoicesResolver', {
       typeName: 'Query',
       fieldName: 'listInvoices',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenantPublicProfile',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
