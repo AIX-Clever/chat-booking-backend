@@ -42,10 +42,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             }
         )
         
+        logger.info(f"DynamoDB query response", response_count=response.get('Count', 0), items_count=len(response.get('Items', [])))
+        
         items = response.get('Items', [])
         
         if not items:
             logger.warning(f"No tenant found for slug: {slug}")
+            logger.info(f"Query details - Table: {table_name}, Index: slug-index, Slug: {slug}")
             return None # AppSync handles null return as valid for nullable type, or error if !
             
         tenant_data = items[0]
