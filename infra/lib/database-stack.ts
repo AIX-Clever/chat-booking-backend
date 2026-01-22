@@ -48,7 +48,7 @@ export class DatabaseStack extends cdk.Stack {
 
     });
 
-    // GSI: slug index for tenant lookup by URL slug
+    // GSI: slug index for tenant lookup by URL slug (deployed 2026-01-22)
     this.tenantsTable.addGlobalSecondaryIndex({
       indexName: 'slug-index',
       partitionKey: {
