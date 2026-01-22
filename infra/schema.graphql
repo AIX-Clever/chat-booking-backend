@@ -78,7 +78,7 @@ enum TenantPlan {
 type Tenant @aws_api_key @aws_cognito_user_pools {
   tenantId: ID!
   name: String!
-  slug: String!
+  slug: String
   status: TenantStatus!
   plan: TenantPlan!
   ownerUserId: String!
