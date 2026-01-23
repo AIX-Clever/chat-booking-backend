@@ -90,8 +90,9 @@ class TestAvailabilityService(unittest.TestCase):
         self.mock_availability_repo.get_provider_availability.return_value = [availability]
         
         # Exception: 2026-01-19 is OFF
+        from shared.domain.entities import ExceptionRule
         self.mock_availability_repo.get_provider_exceptions.return_value = [
-            {'date': '2026-01-19', 'timeRanges': []}
+            ExceptionRule(date='2026-01-19', time_ranges=[])
         ]
 
         from_date = datetime(2026, 1, 19, 0, 0)
@@ -116,8 +117,9 @@ class TestAvailabilityService(unittest.TestCase):
         self.mock_availability_repo.get_provider_availability.return_value = [availability]
         
         # Exception: 2026-01-19 Only work 10:00-12:00
+        from shared.domain.entities import ExceptionRule
         self.mock_availability_repo.get_provider_exceptions.return_value = [
-            {'date': '2026-01-19', 'timeRanges': [{'startTime': '10:00', 'endTime': '12:00'}]}
+            ExceptionRule(date='2026-01-19', time_ranges=[TimeRange(start_time='10:00', end_time='12:00')])
         ]
 
         from_date = datetime(2026, 1, 19, 0, 0)

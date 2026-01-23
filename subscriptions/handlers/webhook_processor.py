@@ -84,18 +84,105 @@ def process_payment(payment_id, raw_data):
     if status == 'approved':
         # Extend validity / Unpause
         # Need to find the subscription associated with this tenant
-        # Simplified: We assume 1 active sub per tenant. 
-        # Ideally, MP payment has 'preapproval_id' in 'metadata' usually?
         
         # update_expression="set #s = :s, #u = :u",
         SUBSCRIPTIONS_TABLE.update_item(
             Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'}, # Or lookup logic
-             # For this prototype we assume SK is stored or we blindly update status
             UpdateExpression="set #s = :s",
             ExpressionAttributeNames={'#s': 'status'},
             ExpressionAttributeValues={':s': SubscriptionStatus.AUTHORIZED.value}
         )
 
+        # 4. Sync Plan to Tenant Entity
+        try:
+            from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+            from shared.domain.entities import TenantPlan
+            
+            # Fetch Subscription to get the Plan
+            sub_resp = SUBSCRIPTIONS_TABLE.get_item(Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'})
+            sub_item = sub_resp.get('Item')
+            
+            if sub_item and 'planId' in sub_item:
+                new_plan_str = sub_item['planId']
+                
+                # Update Tenant
+                repo = DynamoDBTenantRepository()
+                tenant = repo.get_by_id(tenant_id)
+                if tenant:
+                    # Update local entity
+                    if new_plan_str.upper() in TenantPlan._member_names_:
+                         tenant.plan = TenantPlan[new_plan_str.upper()]
+                         repo.save(tenant)
+                         print(f"Updated tenant {tenant_id} plan to {tenant.plan}")
+                    else:
+                        print(f"Warning: Unknown plan {new_plan_str}")
+        except Exception as e:
+            print(f"Failed to sync tenant plan: {e}")
+            
+    elif status == 'rejected' or status == 'cancelled':
+        print(f"Payment {payment_id} was rejected/cancelled. Not activating plan.")
+    elif status == 'refunded' or status == 'charged_back':
+        print(f"Payment {payment_id} was {status}. Downgrading tenant to LITE.")
+        try:
+            from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+            from shared.domain.entities import TenantPlan
+
+            tenant_repo = DynamoDBTenantRepository()
+            tenant = tenant_repo.get_by_id(tenant_id)
+            if tenant:
+                tenant.plan = TenantPlan.LITE
+                tenant_repo.save(tenant)
+                print(f"Downgraded tenant {tenant_id} to LITE (Reason: {status})")
+            else:
+                print(f"Tenant {tenant_id} not found for {status} payment.")
+        except Exception as e:
+            print(f"Failed to process {status} payment: {e}")
+
+
 def process_subscription_update(preapproval_id):
     # Logic to sync status if subscription is cancelled/paused in MP dashboard directly
-    pass
+    print(f"Processing subscription update for {preapproval_id}")
+    try:
+        # 1. Fetch current status from MP
+        preapproval_info = mp_client.get_preapproval(preapproval_id)
+        status = preapproval_info.get('status')
+        tenant_id = preapproval_info.get('external_reference')
+        
+        print(f"Subscription {preapproval_id} status: {status} for tenant {tenant_id}")
+        
+        if not tenant_id:
+            print("No tenant_id found in preapproval.")
+            return
+
+        # 2. Handle Cancelled/Paused Status
+        if status in ['cancelled', 'paused']:
+            # Downgrade Logic
+            print(f"Downgrading tenant {tenant_id} due to status: {status}")
+            
+            # Map status to Enum
+            new_sub_status = SubscriptionStatus.CANCELLED.value if status == 'cancelled' else SubscriptionStatus.PAUSED.value
+            
+            # Update Subscription
+            SUBSCRIPTIONS_TABLE.update_item(
+                Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'},
+                UpdateExpression="set #s = :s",
+                ExpressionAttributeNames={'#s': 'status'},
+                ExpressionAttributeValues={':s': new_sub_status}
+            )
+            
+            # Update Tenant to LITE
+            try:
+                from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+                from shared.domain.entities import TenantPlan
+                
+                repo = DynamoDBTenantRepository()
+                tenant = repo.get_by_id(tenant_id)
+                if tenant:
+                    tenant.plan = TenantPlan.LITE
+                    repo.save(tenant)
+                    print(f"Downgraded tenant {tenant_id} to LITE (Reason: {status})")
+            except Exception as e:
+                 print(f"Failed to downgrade tenant: {e}")
+                
+    except Exception as e:
+        print(f"Error processing subscription update: {e}")

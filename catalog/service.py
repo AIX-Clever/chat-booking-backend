@@ -140,10 +140,23 @@ class CatalogService:
         )
 
         # Verify service exists
-        service = self.get_service(tenant_id, service_id)
+        self.get_service(tenant_id, service_id)
 
         # Get providers
-        providers = self.provider_repo.list_by_service(tenant_id, service_id)
+        # We manually filter here to add debug logging
+        all_providers = self.provider_repo.list_by_tenant(tenant_id)
+        
+        self.logger.info(f"DEBUG: Found {len(all_providers)} providers for tenant")
+        
+        providers = []
+        for p in all_providers:
+            can_provide = p.can_provide_service(service_id)
+            self.logger.info(
+                f"DEBUG: Provider {p.provider_id} - "
+                f"Services: {p.service_ids} - Active: {p.active} - Match: {can_provide}"
+            )
+            if can_provide:
+                providers.append(p)
 
         self.logger.info(
             "Providers found",

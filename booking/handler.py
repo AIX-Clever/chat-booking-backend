@@ -425,3 +425,52 @@ def booking_to_dict(booking) -> dict:
         'createdAt': created_at.isoformat(),
         'updatedAt': updated_at.isoformat()
     }
+
+def handle_update_booking_status(tenant_id: TenantId, input_data: dict) -> dict:
+    """
+    Update booking status to any valid status
+    
+    Input:
+    {
+        "bookingId": "bkg_123",
+        "status": "CONFIRMED"
+    }
+    """
+    booking_id = input_data.get('bookingId')
+    new_status = input_data.get('status')
+    
+    if not booking_id:
+        return error_response("Missing bookingId", 400)
+    if not new_status:
+        return error_response("Missing status", 400)
+    
+    # Validate status
+    from shared.domain.entities import BookingStatus
+    valid_statuses = [s.value for s in BookingStatus]
+    if new_status not in valid_statuses:
+        return error_response(f"Invalid status. Must be one of: {', '.join(valid_statuses)}", 400)
+    
+    # Get old status before update
+    old_booking = booking_query_service.get_booking(tenant_id, booking_id)
+    old_status = old_booking.status.value if old_booking else None
+    
+    # Update status based on target status
+    if new_status == BookingStatus.CONFIRMED.value:
+        booking = booking_service.confirm_booking(tenant_id, booking_id)
+    elif new_status == BookingStatus.CANCELLED.value:
+        booking = booking_service.cancel_booking(tenant_id, booking_id, reason="Admin update")
+    elif new_status == BookingStatus.NO_SHOW.value:
+        booking = booking_service.mark_as_no_show(tenant_id, booking_id)
+    else:
+        # For other statuses, we need to update directly
+        booking = booking_query_service.get_booking(tenant_id, booking_id)
+        booking.status = BookingStatus(new_status)
+        booking_repo.save(booking)
+    
+    # Track status change
+    try:
+        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+    except Exception as e:
+        logger.warning("Failed to track booking status change", error=str(e))
+    
+    return success_response(booking_to_dict(booking))

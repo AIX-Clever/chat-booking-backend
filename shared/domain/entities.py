@@ -429,6 +429,12 @@ class FAQ:
     active: bool = True
 
 @dataclass
+class ExceptionRule:
+    """Exception rule for provider availability (e.g. day off)"""
+    date: str  # ISO date YYYY-MM-DD
+    time_ranges: List[TimeRange]
+
+@dataclass
 class WorkflowStep:
     step_id: str
     type: str  # MESSAGE, QUESTION, TOOL, CONDITION, DYNAMIC_OPTIONS
