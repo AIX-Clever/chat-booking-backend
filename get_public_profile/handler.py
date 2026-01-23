@@ -150,7 +150,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if not isinstance(settings, dict):
             settings = {} 
 
-        profile_settings = settings.get('profile', {})
+        profile_settings = settings.get('profile') or {}
 
         # Address Logic
         address_data = tenant_data.get('address', {})
