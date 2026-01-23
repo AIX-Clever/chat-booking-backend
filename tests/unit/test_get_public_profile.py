@@ -79,3 +79,35 @@ def test_get_public_profile_not_found(mock_dynamodb):
     response = lambda_handler(event, {})
     
     assert response is None
+
+def test_get_public_profile_with_null_settings(mock_dynamodb):
+    # Mocking tables
+    mock_service_table = MagicMock()
+    mock_provider_table = MagicMock()
+    
+    def mock_table_side_effect(name):
+        return mock_service_table if name == 'ChatBooking-Services' else (mock_provider_table if name in ['ChatBooking-Providers'] else mock_dynamodb)
+    
+    with patch('boto3.resource') as resource_mock:
+         resource_mock.return_value.Table.side_effect = mock_table_side_effect
+         
+         # Tenant with settings="null"
+         mock_dynamodb.query.return_value = {
+             'Items': [{
+                 'tenantId': 't1', 
+                 'name': 'Test', 
+                 'slug': 'test',
+                 'settings': 'null' # This simulates the string "null" from DB
+             }], 
+             'Count': 1
+         }
+         mock_service_table.scan.return_value = {'Items': []}
+         mock_provider_table.scan.return_value = {'Items': []}
+
+         event = {'slug': 'test'}
+         response = lambda_handler(event, {})
+         
+         # Should not raise exception
+         assert response['name'] == 'Test'
+         assert response['profession'] == '' # Default
+         assert response['specializations'] == [] # Default

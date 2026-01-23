@@ -145,7 +145,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 settings = json.loads(settings)
             except:
                 settings = {}
-        elif not isinstance(settings, dict):
+                
+        # Double check settings is not None (json.loads can return None) and is a dict
+        if not isinstance(settings, dict):
             settings = {} 
 
         profile_settings = settings.get('profile', {})
