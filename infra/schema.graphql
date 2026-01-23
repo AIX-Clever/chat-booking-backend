@@ -628,6 +628,7 @@ type PublicProfile @aws_api_key {
   photoUrl: String
   themeColor: String
   primaryServiceId: String
+  services: [Service]
 }
 
 # Mutations
