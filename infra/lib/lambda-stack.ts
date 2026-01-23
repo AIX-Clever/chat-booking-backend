@@ -437,6 +437,7 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions
     props.tenantsTable.grantReadData(this.getPublicProfileFunction);
+    props.servicesTable.grantReadData(this.getPublicProfileFunction);
 
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)

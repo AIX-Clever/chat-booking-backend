@@ -84,6 +84,7 @@ type Tenant @aws_api_key @aws_cognito_user_pools {
   ownerUserId: String!
   billingEmail: String!
   settings: AWSJSON
+  services: [Service]
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
