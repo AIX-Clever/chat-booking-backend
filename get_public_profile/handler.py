@@ -107,6 +107,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # ONLY return safe, public data
         
         # Parse settings safely
+        # Parse settings safely
         settings = tenant_data.get('settings', {})
         if isinstance(settings, str):
             try:
@@ -114,17 +115,36 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             except:
                 settings = {}
         elif not isinstance(settings, dict):
-            settings = {} # handle Decimal or other types if necessary
-            
+            settings = {} 
+
+        # Address Logic
+        address_data = tenant_data.get('address', {})
+        # If address is stored in settings, merge/override
+        if not address_data and settings.get('address'):
+             address_data = settings.get('address')
+        
+        full_address = ""
+        if isinstance(address_data, dict):
+            parts = [
+                address_data.get('street', ''),
+                address_data.get('city', ''),
+                address_data.get('state', '')
+            ]
+            full_address = ", ".join([str(p) for p in parts if p])
+
         public_profile = {
             'tenantId': tenant_data.get('tenantId'),
             'name': tenant_data.get('name'),
             'slug': tenant_data.get('slug'),
-            'bio': settings.get('bio', ''), # Assuming bio is in settings
-            'photoUrl': settings.get('avatarUrl', ''), # Assuming avatarUrl is in settings
-            'themeColor': settings.get('themeColor', '#1976d2'),
-            'primaryServiceId': settings.get('primaryServiceId'),
-            'services': services # Include services
+            'bio': tenant_data.get('bio') or settings.get('bio', ''), 
+            'photoUrl': tenant_data.get('photoUrl') or settings.get('logoUrl', ''),
+            'themeColor': tenant_data.get('themeColor') or settings.get('primaryColor', '#1976d2'),
+            'primaryServiceId': tenant_data.get('primaryServiceId') or settings.get('primaryServiceId'),
+            'services': services,
+            'profession': settings.get('profession', ''),
+            'specializations': settings.get('specializations', []),
+            'operatingHours': settings.get('operatingHours', ''),
+            'fullAddress': full_address or settings.get('fullAddress', '')
         }
         
         logger.info(f"Found public profile for {slug} with {len(services)} services", profile=public_profile)

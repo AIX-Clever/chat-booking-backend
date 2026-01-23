@@ -629,6 +629,10 @@ type PublicProfile @aws_api_key {
   themeColor: String
   primaryServiceId: String
   services: [Service]
+  profession: String
+  specializations: [String]
+  operatingHours: String
+  fullAddress: String
 }
 
 # Mutations
