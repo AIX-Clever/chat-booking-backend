@@ -127,7 +127,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'bio': prov.get('bio'),
                     'photoUrl': prov.get('photoUrl'),
                     'timezone': prov.get('timezone', 'America/Santiago'),
-                    'serviceIds': prov.get('services', []) # Correct field name in DB is services
+                    'serviceIds': prov.get('services', []), # Correct field name in DB is services
+                    'available': prov.get('active', True) # distinct from specific availability logic, just means "active provider"
                     # Exclude metadata for public
                 })
         except Exception as e:
