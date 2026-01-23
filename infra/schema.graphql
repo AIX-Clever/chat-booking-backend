@@ -633,6 +633,7 @@ type PublicProfile @aws_api_key {
   specializations: [String]
   operatingHours: String
   fullAddress: String
+  providers: [Provider]
 }
 
 # Mutations

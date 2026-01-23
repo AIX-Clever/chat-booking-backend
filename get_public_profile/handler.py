@@ -103,6 +103,37 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             # Don't fail the whole profile load if services fail
             services = []
         
+        # 3.1 Fetch Providers
+        providers = []
+        try:
+            providers_table_name = os.environ.get('PROVIDERS_TABLE', 'ChatBooking-Providers')
+            providers_table = dynamodb.Table(providers_table_name)
+            
+            # Use Scan with filter for now (low volume)
+            providers_response = providers_table.scan(
+                FilterExpression='tenantId = :tid AND active = :active',
+                ExpressionAttributeValues={
+                    ':tid': tenant_id,
+                    ':active': True
+                }
+            )
+            
+            raw_providers = providers_response.get('Items', [])
+            
+            for prov in raw_providers:
+                providers.append({
+                    'providerId': prov.get('providerId'),
+                    'name': prov.get('name'),
+                    'bio': prov.get('bio'),
+                    'photoUrl': prov.get('photoUrl'),
+                    'timezone': prov.get('timezone', 'America/Santiago'),
+                    'serviceIds': prov.get('services', []) # Correct field name in DB is services
+                    # Exclude metadata for public
+                })
+        except Exception as e:
+            logger.error("Failed to fetch providers", error=str(e))
+            providers = []
+        
         # 4. Construct Public Profile
         # ONLY return safe, public data
         
@@ -145,7 +176,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'profession': profile_settings.get('profession', ''),
             'specializations': profile_settings.get('specializations', []),
             'operatingHours': profile_settings.get('operatingHours', ''),
-            'fullAddress': full_address or profile_settings.get('fullAddress', '')
+            'fullAddress': full_address or profile_settings.get('fullAddress', ''),
+            'providers': providers
         }
         
         logger.info(f"Found public profile for {slug} with {len(services)} services", profile=public_profile)
