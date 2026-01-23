@@ -173,7 +173,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'slug': tenant_data.get('slug'),
             'bio': tenant_data.get('bio') or profile_settings.get('bio', ''), 
             'photoUrl': tenant_data.get('photoUrl') or profile_settings.get('logoUrl', ''),
-            'themeColor': tenant_data.get('themeColor') or settings.get('widgetConfig', {}).get('primaryColor', '#1976d2'),
+            'themeColor': tenant_data.get('themeColor') or (settings.get('widgetConfig') or {}).get('primaryColor', '#1976d2'),
             'primaryServiceId': tenant_data.get('primaryServiceId') or settings.get('primaryServiceId'), # This usually stays at root or needs check
             'services': services,
             'profession': profile_settings.get('profession', ''),
