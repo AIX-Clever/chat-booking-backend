@@ -213,3 +213,32 @@ class Logger:
         import json
         log_data = {'level': 'WARNING', 'message': message, **kwargs}
         print(json.dumps(log_data))
+
+
+def check_plan_limit(plan: str, metric: str, current_usage: int) -> None:
+    """
+    Check if a usage metric exceeds the limits for a given plan.
+    
+    Args:
+        plan: The plan name (e.g. 'LITE', 'PRO', 'ENTERPRISE')
+        metric: The metric to check (e.g. 'max_users')
+        current_usage: The current usage count
+        
+    Raises:
+        PlanLimitExceeded: If limit is exceeded
+    """
+    # Define Limits (Mock/Simple version)
+    # in real app this might come from config or DB
+    LIMITS = {
+        'LITE': {'max_users': 1},
+        'PRO': {'max_users': 5},
+        'ENTERPRISE': {'max_users': 9999}
+    }
+    
+    plan_limits = LIMITS.get(plan, {})
+    limit = plan_limits.get(metric)
+    
+    if limit is not None and current_usage >= limit:
+        from shared.domain.exceptions import PlanLimitExceeded
+        raise PlanLimitExceeded(f"Plan {plan} limit exceeded for {metric}. Limit: {limit}, Current: {current_usage}")
+

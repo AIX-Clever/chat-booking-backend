@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime
 from shared.domain.entities import TenantId
-from shared.plan_limits import PlanLimitExceeded
+from shared.domain.exceptions import PlanLimitExceeded
 from user_management.service import UserManagementService
 
 
