@@ -81,3 +81,8 @@ class RateLimitExceededError(DomainException):
     
     def __init__(self):
         super().__init__("Rate limit exceeded")
+
+
+class PlanLimitExceeded(DomainException):
+    """Plan limit exceeded (e.g. max users)"""
+    pass

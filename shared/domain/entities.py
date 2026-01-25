@@ -470,3 +470,43 @@ class Room:
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class UserRole(Enum):
+    """User roles within a tenant"""
+    ADMIN = "ADMIN"
+    USER = "USER"
+    VIEWER = "VIEWER"
+
+
+class UserStatus(Enum):
+    """User status"""
+    PENDING_INVITATION = "PENDING_INVITATION"
+    ACTIVE = "ACTIVE"
+    INACTIVE = "INACTIVE"
+
+
+@dataclass
+class UserRoleEntity:
+    """User Role entity (Mapping Cognito User <-> Tenant Role)"""
+    user_id: str  # Cognito Sub or Email
+    tenant_id: TenantId
+    email: str
+    role: UserRole
+    status: UserStatus
+    name: Optional[str] = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'userId': self.user_id,
+            'tenantId': str(self.tenant_id),
+            'email': self.email,
+            'role': self.role.value,
+            'status': self.status.value,
+            'name': self.name,
+            'createdAt': self.created_at.isoformat(),
+            'updatedAt': self.updated_at.isoformat()
+        }
+
