@@ -474,6 +474,7 @@ class Room:
 
 class UserRole(Enum):
     """User roles within a tenant"""
+    OWNER = "OWNER"
     ADMIN = "ADMIN"
     USER = "USER"
     VIEWER = "VIEWER"

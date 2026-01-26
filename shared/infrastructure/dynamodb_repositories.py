@@ -186,16 +186,20 @@ class DynamoDBServiceRepository(IServiceRepository):
             print(f"Error listing services: {e}")
             return []
 
-    def search(self, tenant_id: TenantId, query: Optional[str] = None) -> List[Service]:
+    def search(self, tenant_id: TenantId, query: Optional[str] = None, active_only: bool = False) -> List[Service]:
         services = self.list_by_tenant(tenant_id)
         
+        # Filter by active status if requested
+        if active_only:
+            services = [s for s in services if s.active]
+
         if not query:
-            return [s for s in services if s.active]
+            return services
         
         query_lower = query.lower()
         return [
             s for s in services
-            if s.active and (
+            if (
                 query_lower in s.name.lower() or
                 (s.description and query_lower in s.description.lower()) or
                 query_lower in s.category.lower()

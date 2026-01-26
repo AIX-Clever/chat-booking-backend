@@ -54,7 +54,7 @@ class DynamoDBUserRoleRepository:
         try:
             # Assuming GSI on tenantId
             response = self.table.query(
-                IndexName='tenantId-index',
+                IndexName='byTenant',
                 KeyConditionExpression=Key('tenantId').eq(str(tenant_id))
             )
             return [self._item_to_entity(item) for item in response.get('Items', [])]
