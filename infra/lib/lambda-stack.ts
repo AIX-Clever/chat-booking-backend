@@ -62,7 +62,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly faqManagerFunction: lambda.Function;
   public readonly userManagementFunction: lambda.Function;
   public readonly apiKeyManagerFunction: lambda.Function;
-  public readonly apiKeyManagerFunction: lambda.Function;
+
   public readonly getPublicProfileFunction: lambda.Function;
   public readonly googleIntegrationFunction: lambda.Function;
 
