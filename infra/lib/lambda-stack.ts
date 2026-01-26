@@ -458,8 +458,8 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        GOOGLE_CLIENT_ID: ssm.StringParameter.valueForStringParameter(this, '/chatbooking/google/client-id'),
-        GOOGLE_CLIENT_SECRET: ssm.StringParameter.valueForStringParameter(this, '/chatbooking/google/client-secret'),
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
         // We will need the Redirect URI here too? 
         // Actually the handler constructs it from the request event (Host header) usually for Lambda URLs
         // But for correctness let's pass it if we knew it, but circular dependency.

@@ -69,3 +69,5 @@ jobs:
         run: npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
           ENV: dev # Always deploy to dev environment in current AWS account
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
