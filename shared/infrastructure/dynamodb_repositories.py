@@ -326,7 +326,8 @@ class DynamoDBProviderRepository(IProviderRepository):
             metadata=item.get('metadata', {}),
             active=item.get('active', True),
             photo_url=item.get('photoUrl'),
-            photo_url_thumbnail=item.get('photoUrlThumbnail')
+            photo_url_thumbnail=item.get('photoUrlThumbnail'),
+            google_integration=item.get('googleIntegration')
         )
 
 

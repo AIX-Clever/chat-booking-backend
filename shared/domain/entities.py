@@ -195,6 +195,7 @@ class Provider:
     photo_url_thumbnail: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
+    google_integration: Optional[Dict[str, Any]] = None
 
     def can_provide_service(self, service_id: str) -> bool:
         """Check if provider offers specific service"""

@@ -460,7 +460,8 @@ def provider_to_dict(provider) -> dict:
         'metadata': provider.metadata,
         'available': provider.active,
         'photoUrl': provider.photo_url,
-        'photoUrlThumbnail': provider.photo_url_thumbnail
+        'photoUrlThumbnail': provider.photo_url_thumbnail,
+        'hasGoogleCalendar': provider.google_integration is not None
     }
 
 

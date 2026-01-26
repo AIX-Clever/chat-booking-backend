@@ -310,6 +310,7 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   photoUrl: String
   photoUrlThumbnail: String
   available: Boolean!
+  hasGoogleCalendar: Boolean
 }
 
 # Types - Availability
