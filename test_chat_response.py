@@ -112,6 +112,7 @@ def send_message(config, conversation_id, message_text):
     
     result = make_request(config, query, variables)
     raw_response = result['sendMessage']['response']
+    print(f"DEBUG: RAW RESPONSE: {raw_response}")
     
     # response is AWSJSON (string), so parse it
     try:

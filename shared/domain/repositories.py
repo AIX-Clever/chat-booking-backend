@@ -287,3 +287,22 @@ class FileStorageRepository(ABC):
         """Generate a presigned URL for file operations"""
         pass
 
+
+class IProviderIntegrationRepository(ABC):
+    """Port for Provider Integration operations (e.g. Google Calendar)"""
+
+    @abstractmethod
+    def save_google_creds(self, tenant_id: TenantId, provider_id: str, credentials: dict) -> None:
+        """Save Google Calendar credentials"""
+        pass
+
+    @abstractmethod
+    def get_google_creds(self, tenant_id: TenantId, provider_id: str) -> Optional[dict]:
+        """Get Google Calendar credentials"""
+        pass
+
+    @abstractmethod
+    def delete_google_creds(self, tenant_id: TenantId, provider_id: str) -> None:
+        """Delete Google Calendar credentials"""
+        pass
+

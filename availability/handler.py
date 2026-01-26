@@ -11,7 +11,10 @@ from datetime import datetime
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
-    DynamoDBBookingRepository
+    DynamoDBServiceRepository,
+    DynamoDBProviderRepository,
+    DynamoDBBookingRepository,
+    DynamoDBProviderIntegrationRepository
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
@@ -31,6 +34,7 @@ availability_repo = DynamoDBAvailabilityRepository()
 booking_repo = DynamoDBBookingRepository()
 service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
+provider_integration_repo = DynamoDBProviderIntegrationRepository()
 
 # Read slot interval from environment (default 15 minutes)
 slot_interval = int(os.environ.get('SLOT_INTERVAL_MINUTES', '15'))
@@ -40,6 +44,7 @@ availability_service = AvailabilityService(
     booking_repo,
     service_repo,
     provider_repo,
+    provider_integration_repo,
     slot_interval_minutes=slot_interval
 )
 

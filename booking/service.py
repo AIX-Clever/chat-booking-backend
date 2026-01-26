@@ -28,8 +28,11 @@ from shared.domain.repositories import (
     IProviderRepository,
     ITenantRepository,
     IConversationRepository,
-    IRoomRepository
+    IConversationRepository,
+    IRoomRepository,
+    IProviderIntegrationRepository
 )
+from shared.domain.exceptions import (
 from shared.domain.exceptions import (
     EntityNotFoundError,
     ValidationError,
@@ -56,6 +59,12 @@ except ImportError:
     PaymentGatewayFactory = None
 
 
+except ImportError:
+    PaymentGatewayFactory = None
+
+from shared.infrastructure.google_auth_service import GoogleAuthService
+import os
+
 class BookingService:
     """
     Service for creating and managing bookings
@@ -81,7 +90,9 @@ class BookingService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
+        tenant_repo: ITenantRepository,
         room_repo: Optional[IRoomRepository] = None,
+        provider_integration_repo: Optional[IProviderIntegrationRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
         email_service: Optional[EmailService] = None
     ):
@@ -90,8 +101,18 @@ class BookingService:
         self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
         self._room_repo = room_repo
+        self._provider_integration_repo = provider_integration_repo
         self._limit_service = limit_service
         self._email_service = email_service
+        
+        # Initialize Google Service
+        self.google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
+        self.google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+        self.google_auth_service = GoogleAuthService(
+            self.google_client_id, 
+            self.google_client_secret, 
+            "" 
+        ) if self.google_client_id else None
     
     def create_booking(
         self,
@@ -265,7 +286,19 @@ class BookingService:
             # Another booking was created in the meantime
             raise SlotNotAvailableError(
                 f"Time slot {start.isoformat()} - {end.isoformat()} was just booked"
+                f"Time slot {start.isoformat()} - {end.isoformat()} was just booked"
             )
+        
+        # [NEW] Sync to Google Calendar
+        if self.google_auth_service and self._provider_integration_repo:
+             self._sync_to_google_calendar(
+                 tenant_id,
+                 provider_id,
+                 booking,
+                 client_name,
+                 client_email,
+                 service.name
+             )
         
         # Send confirmation email
         if self._email_service and client_email:
@@ -705,6 +738,60 @@ class BookingQueryService:
         booking.mark_as_no_show()
         self._booking_repo.update(booking)
         return booking
+
+    def _sync_to_google_calendar(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        booking: Booking,
+        client_name: str,
+        client_email: str,
+        service_name: str
+    ):
+        """
+        Create event in Google Calendar
+        """
+        try:
+             # 1. Get Creds
+             creds = self._provider_integration_repo.get_google_creds(tenant_id, provider_id)
+             if not creds:
+                 return
+
+             # 2. Get Service
+             service = self.google_auth_service.get_calendar_service(
+                 creds.get('access_token'), 
+                 creds.get('refresh_token')
+             )
+             
+             # 3. Create Event
+             description = f"Cliente: {client_name}\nEmail: {client_email}\nNotas: {booking.notes or ''}"
+             
+             event_body = {
+                 'summary': f"{service_name} - {client_name}",
+                 'description': description,
+                 'start': {'dateTime': booking.start_time.isoformat(), 'timeZone': 'UTC'},
+                 'end': {'dateTime': booking.end_time.isoformat(), 'timeZone': 'UTC'},
+                 'attendees': [{'email': client_email}] if client_email else [],
+                 'reminders': {
+                     'useDefault': False,
+                     'overrides': [
+                         {'method': 'email', 'minutes': 24 * 60},
+                         {'method': 'popup', 'minutes': 10},
+                     ],
+                 },
+             }
+             
+             created_event = service.events().insert(calendarId='primary', body=event_body).execute()
+             
+             # 4. Save Google Event ID (Optional, for updates)
+             booking.google_event_id = created_event.get('id')
+             self._booking_repo.update(booking)
+             
+             print(f"Synced to Google Calendar: {created_event.get('id')}")
+
+        except Exception as e:
+            print(f"Failed to sync to Google Calendar: {e}")
+            # Do NOT fail the booking
 
 
 class BookingQueryService:

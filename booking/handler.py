@@ -14,8 +14,12 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBProviderRepository,
     DynamoDBTenantRepository,
     DynamoDBConversationRepository,
-    DynamoDBRoomRepository
+    DynamoDBTenantRepository,
+    DynamoDBConversationRepository,
+    DynamoDBRoomRepository,
+    DynamoDBProviderIntegrationRepository
 )
+from shared.domain.entities import TenantId
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -40,7 +44,9 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 tenant_repo = DynamoDBTenantRepository()
 conversation_repo = DynamoDBConversationRepository()
+conversation_repo = DynamoDBConversationRepository()
 room_repo = DynamoDBRoomRepository()
+provider_integration_repo = DynamoDBProviderIntegrationRepository()
 metrics_service = MetricsService()
 email_service = EmailService(region_name=os.environ.get('AWS_REGION', 'us-east-1'))
 
@@ -49,7 +55,9 @@ booking_service = BookingService(
     service_repo,
     provider_repo,
     tenant_repo,
+    tenant_repo,
     room_repo=room_repo,
+    provider_integration_repo=provider_integration_repo,
     limit_service=None, # TenantLimitService is opt-in for now or injected if available
     email_service=email_service
 )

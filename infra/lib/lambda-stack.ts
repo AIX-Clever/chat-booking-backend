@@ -62,7 +62,9 @@ export class LambdaStack extends cdk.Stack {
   public readonly faqManagerFunction: lambda.Function;
   public readonly userManagementFunction: lambda.Function;
   public readonly apiKeyManagerFunction: lambda.Function;
+  public readonly apiKeyManagerFunction: lambda.Function;
   public readonly getPublicProfileFunction: lambda.Function;
+  public readonly googleIntegrationFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -162,6 +164,8 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         SLOT_INTERVAL_MINUTES: '15', // Default slot interval
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
       },
     });
 
@@ -169,7 +173,10 @@ export class LambdaStack extends cdk.Stack {
     props.availabilityTable.grantReadWriteData(this.availabilityFunction);
     props.bookingsTable.grantReadData(this.availabilityFunction); // Read for conflict detection
     props.servicesTable.grantReadData(this.availabilityFunction);
-    props.providersTable.grantReadData(this.availabilityFunction);
+    props.providersTable.grantReadWriteData(this.availabilityFunction); // Write for token refresh? Or just Read? Authenticator updates token. Read is enough if we trust refresh logic is not storing back always.
+    // Actually, refresh_access_token operation updates the token. So we might need write if we store the new access token.
+    // DynamoDBProviderIntegrationRepository.save_google_creds does write.
+    // So yes, ReadWrite.
 
     // 4. Booking Lambda
     this.bookingFunction = new lambda.Function(this, 'BookingFunction', {
@@ -183,6 +190,8 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl', // Verified SES identity
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
       }
     });
 
@@ -228,6 +237,7 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadData(this.bookingFunction);
     props.conversationsTable.grantReadData(this.bookingFunction);
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
+    props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
 
     // 5. Chat Agent Lambda
     this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {

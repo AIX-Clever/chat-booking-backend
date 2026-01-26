@@ -20,8 +20,9 @@ from ..domain.entities import (
 )
 from ..domain.repositories import (
     ITenantRepository, IApiKeyRepository, IServiceRepository,
-    IProviderRepository, IAvailabilityRepository, IBookingRepository,
-    IConversationRepository, IFAQRepository, IRoomRepository
+    IConversationRepository, IFAQRepository, IRoomRepository,
+    IProviderIntegrationRepository, IProviderRepository,
+    IBookingRepository, IAvailabilityRepository
 )
 from ..domain.exceptions import (
     EntityNotFoundError, ConflictError
@@ -800,10 +801,47 @@ class DynamoDBRoomRepository(IRoomRepository):
             capacity=int(item['capacity']) if item.get('capacity') else None,
             status=item['status'],
             is_virtual=item.get('isVirtual', False),
-            min_duration=int(item['minDuration']) if item.get('minDuration') else None,
-            max_duration=int(item['maxDuration']) if item.get('maxDuration') else None,
-            operating_hours=item.get('operatingHours'),
+            min_duration=int(item['minDuration']) if item.get('minDuration') else 15,
+            max_duration=int(item['maxDuration']) if item.get('maxDuration') else 60,
+            operating_hours=item.get('operatingHours', {}),
             metadata=item.get('metadata', {}),
             created_at=datetime.fromisoformat(item['createdAt']),
             updated_at=datetime.fromisoformat(item['updatedAt'])
+        )
+
+
+class DynamoDBProviderIntegrationRepository(IProviderIntegrationRepository):
+    """DynamoDB implementation of Provider Integration repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource('dynamodb')
+        # Reusing Providers Table as it allows flexible schema or we could use a separate one.
+        # Ideally, we should use the same table as Providers with a different SK.
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get('PROVIDERS_TABLE', 'ChatBooking-Providers')
+        )
+
+    def save_google_creds(self, tenant_id: TenantId, provider_id: str, credentials: dict) -> None:
+        self.table.update_item(
+             Key={'tenantId': str(tenant_id), 'providerId': provider_id},
+             UpdateExpression="SET googleIntegration = :c",
+             ExpressionAttributeValues={':c': credentials}
+        )
+
+    def get_google_creds(self, tenant_id: TenantId, provider_id: str) -> Optional[dict]:
+        try:
+            response = self.table.get_item(
+                Key={'tenantId': str(tenant_id), 'providerId': provider_id},
+                ProjectionExpression='googleIntegration'
+            )
+            item = response.get('Item')
+            return item.get('googleIntegration') if item else None
+        except ClientError as e:
+            print(f"Error getting google creds: {e}")
+            return None
+
+    def delete_google_creds(self, tenant_id: TenantId, provider_id: str) -> None:
+        self.table.update_item(
+             Key={'tenantId': str(tenant_id), 'providerId': provider_id},
+             UpdateExpression="REMOVE googleIntegration"
         )

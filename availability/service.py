@@ -11,14 +11,22 @@ from shared.domain.repositories import (
     IAvailabilityRepository,
     IBookingRepository,
     IServiceRepository,
-    IProviderRepository
+    IBookingRepository,
+    IServiceRepository,
+    IProviderRepository,
+    IProviderIntegrationRepository
 )
+from shared.domain.exceptions import (
 from shared.domain.exceptions import (
     EntityNotFoundError,
     ServiceNotAvailableError,
     ProviderNotAvailableError
 )
+    ProviderNotAvailableError
+)
 from shared.utils import Logger
+from shared.infrastructure.google_auth_service import GoogleAuthService
+import os
 
 
 class AvailabilityService:
@@ -33,6 +41,7 @@ class AvailabilityService:
         booking_repo: IBookingRepository,
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
+        provider_integration_repo: IProviderIntegrationRepository,
         slot_interval_minutes: int = 15
     ):
         """
@@ -45,8 +54,21 @@ class AvailabilityService:
         self.booking_repo = booking_repo
         self.service_repo = service_repo
         self.provider_repo = provider_repo
+        self.provider_integration_repo = provider_integration_repo
         self.slot_interval_minutes = slot_interval_minutes
         self.logger = Logger()
+        
+        # Initialize Google Service mostly for helper methods or if we need to instantiate it per request?
+        # Actually we need client_id/secret to instantiate it. 
+        # Typically these are env vars.
+        self.google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
+        self.google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+        # Redirect URI not needed for backend API calls (refresh token flow)
+        self.google_auth_service = GoogleAuthService(
+            self.google_client_id, 
+            self.google_client_secret, 
+            "" # Redirect URI unused for refresh 
+        ) if self.google_client_id else None
 
     def get_available_slots(
         self,
@@ -133,11 +155,27 @@ class AvailabilityService:
             provider_exceptions
         )
 
-        # Filter out occupied slots
+        # Filter out occupied slots (Internal Bookings)
         available_slots = self._filter_occupied_slots(
             candidate_slots,
             existing_bookings
         )
+        
+        # [NEW] Filter out Google Calendar Busy Slots
+        if self.google_auth_service:
+            try:
+                available_slots = self._filter_google_busy_slots(
+                    tenant_id,
+                    provider_id,
+                    available_slots,
+                    from_date,
+                    to_date
+                )
+            except Exception as e:
+                self.logger.error(f"Error checking Google Calendar: {str(e)}")
+                # Fail open or closed? Typically fail open (allow booking) or closed (safer)?
+                # Let's log but NOT block for now to avoid outages if token expired and not refreshed properly
+                pass
 
         self.logger.info(
             "Slots calculated",
@@ -334,6 +372,103 @@ class AvailabilityService:
 
             if is_available:
                 available_slots.append(slot)
+
+        return available_slots
+
+    def _filter_google_busy_slots(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        candidate_slots: List[TimeSlot],
+        from_date: datetime,
+        to_date: datetime
+    ) -> List[TimeSlot]:
+        """
+        Filters slots that overlap with Google Calendar busy periods
+        """
+        # 1. Get Credentials
+        creds = self.provider_integration_repo.get_google_creds(tenant_id, provider_id)
+        if not creds:
+            return candidate_slots # No integration, return as is
+
+        try:
+            # 2. Refresh Token if needed (implicit in GoogleAuthService logic or explicit here?)
+            # GoogleAuthService.get_calendar_service handles credentials object creation
+            # which usually auto-refreshes if using google.oauth2.credentials
+            
+            # We need to construct the Credentials object.
+            # Our repo returns a dict {'access_token': ..., 'refresh_token': ...}
+            
+            # Using the helper to get the service (which builds creds)
+            service = self.google_auth_service.get_calendar_service(
+                creds.get('access_token'),
+                creds.get('refresh_token')
+            )
+            
+            # 3. Query FreeBusy
+            filters = [
+                {'id': 'primary'} # Check primary calendar
+            ]
+            
+            # Format times
+            time_min = from_date.isoformat() + 'Z' # Ensure UTC
+            time_max = to_date.isoformat() + 'Z'
+            
+            busy_periods = self.google_auth_service.list_busy_slots(
+                service, 
+                time_min, 
+                time_max
+            )
+            
+            if not busy_periods:
+                return candidate_slots
+                
+            # 4. Filter
+            available_slots = []
+            
+            # Parse busy periods into comparable objects
+            # Format from Google: [{'start': '...', 'end': '...'}]
+            parsed_busy = []
+            for period in busy_periods:
+                # Remove Z and parse
+                start_str = period['start'].replace('Z', '+00:00')
+                end_str = period['end'].replace('Z', '+00:00')
+                parsed_busy.append({
+                    'start': datetime.fromisoformat(start_str),
+                    'end': datetime.fromisoformat(end_str)
+                })
+                
+            for slot in candidate_slots:
+                is_free = True
+                # Slot is naive or aware? Base logic sets it.
+                # Ensure we compare aware to aware.
+                
+                slot_start = slot.start
+                slot_end = slot.end
+                
+                if not slot_start.tzinfo:
+                     # Assume UTC if naive (legacy safety)
+                     from datetime import timezone
+                     slot_start = slot_start.replace(tzinfo=timezone.utc)
+                     slot_end = slot_end.replace(tzinfo=timezone.utc)
+                
+                for busy in parsed_busy:
+                    # Google usually returns UTC (Z)
+                    
+                    # Logic: If slot overlaps busy
+                    # Not (End <= Start OR Start >= End)
+                    if not (slot_end <= busy['start'] or slot_start >= busy['end']):
+                        is_free = False
+                        break
+                
+                if is_free:
+                    available_slots.append(slot)
+                    
+            return available_slots
+
+        except Exception as e:
+            self.logger.error(f"Google Calc Logic Error: {e}")
+            raise e # Propagate to let main try/catch handle it (failsafe)
 
         return available_slots
 
