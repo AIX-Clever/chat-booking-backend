@@ -449,6 +449,32 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadData(this.getPublicProfileFunction);
     props.servicesTable.grantReadData(this.getPublicProfileFunction);
 
+    // 16. Google Integration Lambda
+    this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {
+      ...commonProps,
+      description: 'Google Calendar OAuth Handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'google_integration')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+        // We will need the Redirect URI here too? 
+        // Actually the handler constructs it from the request event (Host header) usually for Lambda URLs
+        // But for correctness let's pass it if we knew it, but circular dependency.
+        // The handler should use the 'Host' header to build the redirect URI.
+      }
+    });
+
+    // Add Function URL
+    const googleIntegrationUrl = this.googleIntegrationFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    // Grant permissions
+    props.providersTable.grantReadWriteData(this.googleIntegrationFunction); // To store tokens
+
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
     this.documentsBucket = new s3.Bucket(this, 'DocumentsBucket', {
@@ -575,6 +601,11 @@ export class LambdaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'IngestionFunctionArn', {
       value: this.ingestionFunction.functionArn,
       description: 'Ingestion Lambda ARN',
+    });
+
+    new cdk.CfnOutput(this, 'GoogleIntegrationUrl', {
+      value: googleIntegrationUrl.url,
+      description: 'Google Integration Callback URL',
     });
   }
 
