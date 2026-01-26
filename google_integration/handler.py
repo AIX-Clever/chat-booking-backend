@@ -24,9 +24,23 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     # Function URL domain (supplied by Lambda env or computed)
     # We might need to pass the Function URL explicitly or deduce it headers
     # For now, let's assume we pass it as env var or it is configured in Google Console
-    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI') 
+    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI')
+    
+    # Fallback to deduce from Host header if not in env
+    if not redirect_uri:
+        headers = event.get('headers', {})
+        host = headers.get('host') or headers.get('Host')
+        if host:
+            redirect_uri = f"https://{host}/callback"
     
     if not client_id or not client_secret or not redirect_uri:
+        debug_info = {
+            "client_id_set": bool(client_id),
+            "client_secret_set": bool(client_secret),
+            "redirect_uri_set": bool(redirect_uri),
+            "redirect_uri_val": redirect_uri
+        }
+        print(f"Missing config: {json.dumps(debug_info)}")
         return _response(500, "Missing configuration")
 
     auth_service = GoogleAuthService(client_id, client_secret, redirect_uri)
