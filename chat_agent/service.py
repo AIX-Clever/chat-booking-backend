@@ -25,8 +25,9 @@ from shared.domain.repositories import (
     IWorkflowRepository,
     ITenantRepository,
 )
-from shared.domain.exceptions import EntityNotFoundError, ValidationError
-from shared.utils import generate_id, parse_iso_datetime
+from shared.domain.exceptions import EntityNotFoundError
+from shared.utils import generate_id
+from shared.metrics import MetricsService
 
 try:
     from .workflow_engine import WorkflowEngine
@@ -62,6 +63,7 @@ class ChatAgentService:
         workflow_repo: IWorkflowRepository,
         tenant_repo: ITenantRepository,
         limit_service: Optional[TenantLimitService] = None,
+        metrics_service: Optional[MetricsService] = None,
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -72,6 +74,7 @@ class ChatAgentService:
         self._workflow_repo = workflow_repo
         self._tenant_repo = tenant_repo
         self._limit_service = limit_service
+        self._metrics_service = metrics_service
 
         self.workflow_engine = WorkflowEngine(
             service_repo, provider_repo, faq_repo, availability_repo, booking_repo
@@ -106,7 +109,6 @@ class ChatAgentService:
 
         # Self-healing: Repair broken default workflow if missing critical steps or corrupted
         # Check for 'select_timeslot' (basic), 'request_contact_info' (v2 flow), or corrupted 'list_providers'
-        needs_repair = False
 
         if active_workflow.name == "Default Booking Flow":
             # FORCE UPDATE: Always update default workflow to ensure latest code changes (FSM fixes) are applied
@@ -164,7 +166,6 @@ class ChatAgentService:
             raise EntityNotFoundError("Tenant", str(tenant_id))
 
         # Check settings for AI Mode
-        ai_settings = tenant.settings.get("ai", {}) or {}
         # HOTFIX: Temporarily disable AI to prevent Bedrock 'Model not submitted' errors
         # ai_enabled = ai_settings.get('enabled', False)
         ai_enabled = False
@@ -177,7 +178,7 @@ class ChatAgentService:
 
                 try:
                     user_data_dict = json.loads(user_data)
-                except:
+                except Exception:
                     user_data_dict = {}
             else:
                 user_data_dict = user_data
@@ -263,12 +264,32 @@ class ChatAgentService:
                 return conversation, response
 
         # Process Step
+        previous_state = conversation.state
+
         response = self.workflow_engine.process_step(
             conversation, workflow, message, user_data
         )
 
         conversation.updated_at = datetime.now(UTC)
         self._conversation_repo.save(conversation)
+
+        # Track Funnel Steps
+        if self._metrics_service and conversation.state != previous_state:
+            try:
+                funnel_step = None
+                if conversation.state == ConversationState.SERVICE_SELECTED:
+                    funnel_step = "service_selected"
+                elif conversation.state == ConversationState.PROVIDER_SELECTED:
+                    funnel_step = "provider_selected"
+                elif conversation.state == ConversationState.SLOT_PENDING:
+                    funnel_step = "date_selected"
+
+                if funnel_step:
+                    self._metrics_service.increment_funnel_step(
+                        tenant_id.value, funnel_step
+                    )
+            except Exception as e:
+                print(f"Metrics Error: {e}")
 
         return conversation, response
 
@@ -359,7 +380,6 @@ class ChatAgentService:
             )
 
     def _create_default_workflow(self, tenant_id: TenantId):
-        import json
         from shared.domain.entities import Workflow, WorkflowStep
 
         # Hardcoded default workflow (copy of base_workflow.json)

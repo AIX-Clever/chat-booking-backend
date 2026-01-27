@@ -14,37 +14,39 @@ from shared.metrics import MetricsService
 def lambda_handler(event, context):
     """Main Lambda handler for metrics operations"""
     print(f"Metrics handler invoked with event: {json.dumps(event)}")
-    
+
     # Extract field name
     field_name = None
-    if 'info' in event and 'fieldName' in event['info']:
-        field_name = event['info']['fieldName']
-    elif 'field' in event:
-        field_name = event['field']
-    
+    if "info" in event and "fieldName" in event["info"]:
+        field_name = event["info"]["fieldName"]
+    elif "field" in event:
+        field_name = event["field"]
+
     if not field_name:
         raise ValueError("Could not determine operation field name")
-    
+
     # Extract tenant ID
     tenant_id = extract_tenant_id(event)
     if not tenant_id:
         raise ValueError("Missing tenantId in request context")
-    
+
     print(f"Processing field: {field_name} for tenant: {tenant_id}")
-    
+
     # Initialize metrics service
     metrics_service = MetricsService()
-    
+
     # Route to appropriate handler
     handlers = {
-        'getDashboardMetrics': lambda: get_dashboard_metrics(metrics_service, tenant_id),
-        'getPlanUsage': lambda: get_plan_usage(metrics_service, tenant_id),
+        "getDashboardMetrics": lambda: get_dashboard_metrics(
+            metrics_service, tenant_id
+        ),
+        "getPlanUsage": lambda: get_plan_usage(metrics_service, tenant_id),
     }
-    
+
     handler = handlers.get(field_name)
     if not handler:
         raise ValueError(f"Unknown field: {field_name}")
-    
+
     result = handler()
     print(f"Returning result: {json.dumps(result, default=str)}")
     return result

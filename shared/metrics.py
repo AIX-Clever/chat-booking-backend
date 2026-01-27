@@ -17,7 +17,7 @@ Usage:
 import os
 import boto3
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 
@@ -42,6 +42,7 @@ class MetricsService:
             "month": now.strftime("%Y-%m"),
             "day": now.strftime("%Y-%m-%d"),
             "week": f"{now.year}-W{now.isocalendar()[1]:02d}",
+            "hour": f"{now.hour:02d}",  # 00-23
         }
 
     def _calculate_ttl(self, months: int = 13) -> int:
@@ -130,14 +131,28 @@ class MetricsService:
             extra_attrs={"name": provider_name} if provider_name else None,
         )
 
-        # Revenue tracking if amount provided
-        if amount > 0:
-            self._atomic_increment(
-                tenant_id,
-                f"MONTH#{periods['month']}",
-                "revenue",
-                count=0,  # Don't increment, we're using ADD for revenue
-            )
+        # Hour of day (for peak hours heatmap)
+        self._atomic_increment(
+            tenant_id,
+            f"HOUR#{periods['hour']}#{periods['month']}",
+            "bookings",
+        )
+
+    def increment_funnel_step(self, tenant_id: str, step_name: str) -> None:
+        """
+        Track a step in the booking funnel.
+        Steps: service_selected -> provider_selected -> date_selected -> booking_completed
+        """
+        periods = self._get_periods()
+
+        # Monthly funnel stats
+        self._atomic_increment(
+            tenant_id,
+            f"FUNNEL#{step_name}#{periods['month']}",
+            "count",
+        )
+
+        # Also generic month/day stats if needed, but specific FUNNEL keys are better for query
 
     def increment_message(self, tenant_id: str, is_ai_response: bool = False) -> None:
         """Track a chat message"""
@@ -229,8 +244,18 @@ class MetricsService:
                 "CANCELLED": 0,
                 "NO_SHOW": 0,
             },
+            "peakHours": [],
+            "funnel": {
+                "service_selected": 0,
+                "provider_selected": 0,
+                "date_selected": 0,
+                "booking_completed": 0,
+            },
             "errors": [],
         }
+
+        # Maps for aggregation
+        peak_hours_map = {}  # "14": 5
 
         # Sort items into categories
         for item in items:
@@ -290,6 +315,21 @@ class MetricsService:
                     if status in result["bookingStatus"]:
                         result["bookingStatus"][status] = int(item.get("count", 0))
 
+            elif sk.startswith("HOUR#") and current_month in sk:
+                # Peak hours
+                parts = sk.split("#")
+                if len(parts) >= 3:  # HOUR#HH#MONTH
+                    hour = parts[1]
+                    peak_hours_map[hour] = int(item.get("bookings", 0))
+
+            elif sk.startswith("FUNNEL#") and current_month in sk:
+                # Funnel steps
+                parts = sk.split("#")
+                if len(parts) >= 2:
+                    step = parts[1]
+                    # We might have steps that are not in our initial map, but we'll collect them all
+                    result["funnel"][step] = int(item.get("count", 0))
+
             elif sk.startswith("ERR#") and current_month in sk:
                 # Error tracking
                 parts = sk.split("#")
@@ -313,6 +353,13 @@ class MetricsService:
 
         # Sort daily data
         result["daily"] = sorted(result["daily"], key=lambda x: x["date"])
+
+        # Process Peak Hours
+        for hour in range(24):
+            hour_str = f"{hour:02d}"
+            result["peakHours"].append(
+                {"hour": hour_str, "bookings": peak_hours_map.get(hour_str, 0)}
+            )
 
         # Calculate derived metrics
         total_bookings = sum(result["bookingStatus"].values())

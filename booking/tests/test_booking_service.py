@@ -80,6 +80,7 @@ class TestBookingService:
             "service": Mock(),
             "provider": Mock(),
             "tenant": Mock(),
+            "metrics": Mock(),
         }
 
     @pytest.fixture
@@ -89,6 +90,7 @@ class TestBookingService:
             mock_repos["service"],
             mock_repos["provider"],
             mock_repos["tenant"],
+            metrics_service=mock_repos["metrics"],
         )
 
     def test_create_booking_success(

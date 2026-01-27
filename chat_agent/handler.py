@@ -5,14 +5,7 @@ AWS Lambda function for conversational booking flow
 """
 
 import json
-from datetime import datetime
-
 from shared.infrastructure.dynamodb_repositories import (
-    DynamoDBConversationRepository,
-    DynamoDBServiceRepository,
-    DynamoDBProviderRepository,
-    DynamoDBBookingRepository,
-    DynamoDBFAQRepository,
     DynamoDBConversationRepository,
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
@@ -61,6 +54,7 @@ chat_agent_service = ChatAgentService(
     workflow_repo=workflow_repo,
     tenant_repo=tenant_repo,
     limit_service=limit_service,
+    metrics_service=metrics_service,
 )
 
 logger = Logger()
@@ -144,7 +138,10 @@ def handle_start_conversation(tenant_id: TenantId, input_data: dict) -> dict:
         logger.warning("Failed to track start conversation metrics", error=str(e))
 
     return success_response(
-        {"conversation": conversation_to_dict(conversation), "response": json.dumps(response)}
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
     )
 
 
@@ -188,7 +185,10 @@ def handle_send_message(tenant_id: TenantId, input_data: dict) -> dict:
         logger.warning("Failed to track message metrics", error=str(e))
 
     return success_response(
-        {"conversation": conversation_to_dict(conversation), "response": json.dumps(response)}
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
     )
 
 
@@ -217,7 +217,10 @@ def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
         logger.warning("Failed to track chat conversion metrics", error=str(e))
 
     return success_response(
-        {"conversation": conversation_to_dict(conversation), "response": json.dumps(response)}
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
     )
 
 
@@ -255,5 +258,3 @@ def conversation_to_dict(conversation) -> dict:
         "createdAt": conversation.created_at.isoformat() + "Z",
         "updatedAt": conversation.updated_at.isoformat() + "Z",
     }
-
-
