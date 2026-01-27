@@ -1,5 +1,6 @@
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
@@ -607,6 +608,57 @@ export class LambdaStack extends cdk.Stack {
       value: googleIntegrationUrl.url,
       description: 'Google Integration Callback URL',
     });
+
+    // 17. Profile Baker Lambda (SEO Generator)
+    // Import Link resources from SSM
+    const linkBucketName = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/link-bucket-name`
+    );
+
+    // Note: Distribution ID might be empty during first deploy if not yet created, 
+    // but usually SSM parameters resolve at deploy time.
+    const linkDistributionId = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/link-distribution-id`
+    );
+
+    const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
+      ...commonProps,
+      description: 'Generates SEO-optimized HTML for tenant profiles (triggered by DynamoDB)',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'profile_baker')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        ...commonProps.environment,
+        LINK_BUCKET: linkBucketName,
+        DISTRIBUTION_ID: linkDistributionId,
+      }
+    });
+
+    // Grant permissions
+    // 1. DynamoDB Stream Trigger
+    profileBakerFunction.addEventSource(new lambdaEventSources.DynamoEventSource(props.tenantsTable, {
+      startingPosition: lambda.StartingPosition.LATEST,
+      retryAttempts: 2,
+      filters: [
+        lambda.FilterCriteria.filter({
+          eventName: lambda.FilterRule.or('INSERT', 'MODIFY'),
+        }),
+      ],
+    }));
+
+    // Grant read access to the stream source table (required for stream processing + item lookup)
+    props.tenantsTable.grantReadData(profileBakerFunction);
+
+    // 2. S3 Write Access to Link Bucket
+    const linkBucket = s3.Bucket.fromBucketName(this, 'ImportedLinkBucket', linkBucketName);
+    linkBucket.grantReadWrite(profileBakerFunction);
+
+    // 3. CloudFront Invalidation Permission
+    profileBakerFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
+      actions: ['cloudfront:CreateInvalidation'],
+      resources: [`arn:aws:cloudfront::${this.account}:distribution/${linkDistributionId}`],
+    }));
   }
 
   private createAlarms(): void {
