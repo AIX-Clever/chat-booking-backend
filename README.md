@@ -38,6 +38,10 @@ backend-lambdas/
 │   ├── api_keys.py
 │   └── requirements.txt
 │
+├── profile_baker/           # Lambda de SEO (pre-render static HTML)
+│   ├── handler.py
+│   └── requirements.txt
+│
 ├── shared/                  # Código compartido
 │   ├── dynamodb.py
 │   ├── utils.py
