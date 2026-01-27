@@ -5,6 +5,7 @@ AWS Lambda function for booking operations
 """
 
 import json
+
 # Trigger deploy 2026-01-15
 from datetime import datetime
 
@@ -14,12 +15,9 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBProviderRepository,
     DynamoDBTenantRepository,
     DynamoDBConversationRepository,
-    DynamoDBTenantRepository,
-    DynamoDBConversationRepository,
     DynamoDBRoomRepository,
-    DynamoDBProviderIntegrationRepository
+    DynamoDBProviderIntegrationRepository,
 )
-from shared.domain.entities import TenantId
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
     EntityNotFoundError,
@@ -28,9 +26,15 @@ from shared.domain.exceptions import (
     ServiceNotAvailableError,
     ProviderNotAvailableError,
     SlotNotAvailableError,
-    ConflictError
+    ConflictError,
 )
-from shared.utils import Logger, success_response, error_response, parse_iso_datetime, extract_appsync_event
+from shared.utils import (
+    Logger,
+    success_response,
+    error_response,
+    parse_iso_datetime,
+    extract_appsync_event,
+)
 from shared.metrics import MetricsService
 from shared.infrastructure.notifications import EmailService
 import os
@@ -44,22 +48,20 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 tenant_repo = DynamoDBTenantRepository()
 conversation_repo = DynamoDBConversationRepository()
-conversation_repo = DynamoDBConversationRepository()
 room_repo = DynamoDBRoomRepository()
 provider_integration_repo = DynamoDBProviderIntegrationRepository()
 metrics_service = MetricsService()
-email_service = EmailService(region_name=os.environ.get('AWS_REGION', 'us-east-1'))
+email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
 booking_service = BookingService(
     booking_repo,
     service_repo,
     provider_repo,
     tenant_repo,
-    tenant_repo,
     room_repo=room_repo,
     provider_integration_repo=provider_integration_repo,
-    limit_service=None, # TenantLimitService is opt-in for now or injected if available
-    email_service=email_service
+    limit_service=None,  # TenantLimitService is opt-in for now or injected if available
+    email_service=email_service,
 )
 
 booking_query_service = BookingQueryService(booking_repo, conversation_repo)
@@ -70,7 +72,7 @@ logger = Logger()
 def lambda_handler(event: dict, context) -> dict:
     """
     Lambda handler for booking operations
-    
+
     Supports operations:
     - createBooking: Create new booking with validation
     - confirmBooking: Confirm pending booking
@@ -85,40 +87,36 @@ def lambda_handler(event: dict, context) -> dict:
 
         tenant_id = TenantId(tenant_id_str)
 
-        logger.info(
-            "Booking operation",
-            field=field,
-            tenant_id=tenant_id_str
-        )
+        logger.info("Booking operation", field=field, tenant_id=tenant_id_str)
 
         # Route to appropriate handler
-        if field == 'createBooking':
+        if field == "createBooking":
             return handle_create_booking(tenant_id, input_data)
-        
-        elif field == 'confirmBooking':
+
+        elif field == "confirmBooking":
             return handle_confirm_booking(tenant_id, input_data)
-        
-        elif field == 'cancelBooking':
+
+        elif field == "cancelBooking":
             return handle_cancel_booking(tenant_id, input_data)
-        
-        elif field == 'markAsNoShow':
+
+        elif field == "markAsNoShow":
             return handle_mark_as_no_show(tenant_id, input_data)
-        
-        elif field == 'updateBookingStatus':
+
+        elif field == "updateBookingStatus":
             return handle_update_booking_status(tenant_id, input_data)
-        
-        elif field == 'getBooking':
+
+        elif field == "getBooking":
             return handle_get_booking(tenant_id, input_data)
-        
-        elif field == 'listBookingsByProvider':
+
+        elif field == "listBookingsByProvider":
             return handle_list_by_provider(tenant_id, input_data)
-        
-        elif field == 'listBookingsByClient':
+
+        elif field == "listBookingsByClient":
             return handle_list_by_client(tenant_id, input_data)
-        
-        elif field == 'getBookingByConversation':
+
+        elif field == "getBookingByConversation":
             return handle_get_by_conversation(tenant_id, input_data)
-        
+
         else:
             return error_response(f"Unknown operation: {field}", 400)
 
@@ -130,7 +128,7 @@ def lambda_handler(event: dict, context) -> dict:
         TenantNotActiveError,
         ServiceNotAvailableError,
         ProviderNotAvailableError,
-        SlotNotAvailableError
+        SlotNotAvailableError,
     ) as e:
         logger.warning("Business rule violation", error=str(e))
         return error_response(str(e), 400)
@@ -150,6 +148,7 @@ def lambda_handler(event: dict, context) -> dict:
     except Exception as e:
         logger.error("Unexpected error", error=str(e))
         import traceback
+
         traceback.print_exc()
         return error_response(f"Internal server error: {str(e)}", 500)
 
@@ -157,7 +156,7 @@ def lambda_handler(event: dict, context) -> dict:
 def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Create a new booking
-    
+
     Input:
     {
         "serviceId": "svc_123",
@@ -172,41 +171,43 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
     }
     """
     # Validate required fields
-    required = ['serviceId', 'providerId', 'start', 'end', 'clientName', 'clientEmail']
+    required = ["serviceId", "providerId", "start", "end", "clientName", "clientEmail"]
     missing = [f for f in required if not input_data.get(f)]
     if missing:
         return error_response(f"Missing required fields: {', '.join(missing)}", 400)
 
     # Parse dates
     try:
-        start = parse_iso_datetime(input_data['start'])
-        end = parse_iso_datetime(input_data['end'])
+        start = parse_iso_datetime(input_data["start"])
+        end = parse_iso_datetime(input_data["end"])
     except ValueError as e:
         return error_response(f"Invalid date format: {e}", 400)
 
     # Create booking
     booking = booking_service.create_booking(
         tenant_id=tenant_id,
-        service_id=input_data['serviceId'],
-        provider_id=input_data['providerId'],
+        service_id=input_data["serviceId"],
+        provider_id=input_data["providerId"],
         start=start,
         end=end,
-        client_name=input_data['clientName'],
-        client_email=input_data['clientEmail'],
-        client_phone=input_data.get('clientPhone'),
-        notes=input_data.get('notes'),
-        conversation_id=input_data.get('conversationId')
+        client_name=input_data["clientName"],
+        client_email=input_data["clientEmail"],
+        client_phone=input_data.get("clientPhone"),
+        notes=input_data.get("notes"),
+        conversation_id=input_data.get("conversationId"),
     )
-    
+
     # Track booking metrics
     try:
         metrics_service.increment_booking(
             tenant_id=tenant_id.value,
-            service_id=input_data['serviceId'],
-            provider_id=input_data['providerId'],
-            amount=booking.total_amount or 0
+            service_id=input_data["serviceId"],
+            provider_id=input_data["providerId"],
+            amount=booking.total_amount or 0,
         )
-        metrics_service.update_booking_status(tenant_id.value, None, booking.status.value)
+        metrics_service.update_booking_status(
+            tenant_id.value, None, booking.status.value
+        )
     except Exception as e:
         logger.warning("Failed to track booking metrics", error=str(e))
 
@@ -216,13 +217,13 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
 def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Confirm a booking
-    
+
     Input:
     {
         "bookingId": "bkg_123"
     }
     """
-    booking_id = input_data.get('bookingId')
+    booking_id = input_data.get("bookingId")
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
@@ -231,27 +232,29 @@ def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
     old_status = old_booking.status.value if old_booking else None
 
     booking = booking_service.confirm_booking(tenant_id, booking_id)
-    
+
     # Track status change
     try:
-        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+        metrics_service.update_booking_status(
+            tenant_id.value, old_status, booking.status.value
+        )
     except Exception as e:
         logger.warning("Failed to track booking status change", error=str(e))
-    
+
     return success_response(booking_to_dict(booking))
 
 
 def handle_cancel_booking(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Cancel a booking
-    
+
     Input:
     {
         "bookingId": "bkg_123",
         "reason": "Client requested cancellation"
     }
     """
-    booking_id = input_data.get('bookingId')
+    booking_id = input_data.get("bookingId")
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
@@ -260,30 +263,30 @@ def handle_cancel_booking(tenant_id: TenantId, input_data: dict) -> dict:
     old_status = old_booking.status.value if old_booking else None
 
     booking = booking_service.cancel_booking(
-        tenant_id,
-        booking_id,
-        input_data.get('reason')
+        tenant_id, booking_id, input_data.get("reason")
     )
-    
+
     # Track status change (old_status -> CANCELLED)
     try:
-        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+        metrics_service.update_booking_status(
+            tenant_id.value, old_status, booking.status.value
+        )
     except Exception as e:
         logger.warning("Failed to track booking cancellation", error=str(e))
-    
+
     return success_response(booking_to_dict(booking))
 
 
 def handle_get_booking(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Get booking details
-    
+
     Input:
     {
         "bookingId": "bkg_123"
     }
     """
-    booking_id = input_data.get('bookingId')
+    booking_id = input_data.get("bookingId")
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
@@ -294,7 +297,7 @@ def handle_get_booking(tenant_id: TenantId, input_data: dict) -> dict:
 def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
     """
     List bookings for provider in date range
-    
+
     Input:
     {
         "providerId": "pro_456",
@@ -302,12 +305,14 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
         "endDate": "2025-12-31T23:59:59Z"
     }
     """
-    provider_id = input_data.get('providerId')
-    start_str = input_data.get('startDate')
-    end_str = input_data.get('endDate')
+    provider_id = input_data.get("providerId")
+    start_str = input_data.get("startDate")
+    end_str = input_data.get("endDate")
 
     if not all([provider_id, start_str, end_str]):
-        return error_response("Missing required fields: providerId, startDate, endDate", 400)
+        return error_response(
+            "Missing required fields: providerId, startDate, endDate", 400
+        )
 
     try:
         start_date = parse_iso_datetime(start_str)
@@ -316,26 +321,30 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
             tenant_id,
             provider_id,
             parse_iso_datetime(start_str),
-            parse_iso_datetime(end_str)
+            parse_iso_datetime(end_str),
         )
     except ValueError as e:
         return error_response(f"Invalid date format: {e}", 400)
 
     serialized_bookings = [booking_to_dict(b) for b in bookings]
-    logger.info("Serialized Bookings Result", count=len(serialized_bookings), sample=serialized_bookings[0] if serialized_bookings else None)
+    logger.info(
+        "Serialized Bookings Result",
+        count=len(serialized_bookings),
+        sample=serialized_bookings[0] if serialized_bookings else None,
+    )
     return serialized_bookings
 
 
 def handle_list_by_client(tenant_id: TenantId, input_data: dict) -> dict:
     """
     List bookings for client
-    
+
     Input:
     {
         "clientEmail": "john@example.com"
     }
     """
-    client_email = input_data.get('clientEmail')
+    client_email = input_data.get("clientEmail")
     if not client_email:
         return error_response("Missing clientEmail", 400)
 
@@ -346,17 +355,19 @@ def handle_list_by_client(tenant_id: TenantId, input_data: dict) -> dict:
 def handle_get_by_conversation(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Get booking by conversation ID
-    
+
     Input:
     {
         "conversationId": "conv_789"
     }
     """
-    conversation_id = input_data.get('conversationId')
+    conversation_id = input_data.get("conversationId")
     if not conversation_id:
         return error_response("Missing conversationId", 400)
 
-    booking = booking_query_service.get_booking_by_conversation(tenant_id, conversation_id)
+    booking = booking_query_service.get_booking_by_conversation(
+        tenant_id, conversation_id
+    )
     if not booking:
         return error_response("No booking found for this conversation", 404)
 
@@ -366,13 +377,13 @@ def handle_get_by_conversation(tenant_id: TenantId, input_data: dict) -> dict:
 def handle_mark_as_no_show(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Mark a booking as no show
-    
+
     Input:
     {
         "bookingId": "bkg_123"
     }
     """
-    booking_id = input_data.get('bookingId')
+    booking_id = input_data.get("bookingId")
     if not booking_id:
         return error_response("Missing bookingId", 400)
 
@@ -381,13 +392,15 @@ def handle_mark_as_no_show(tenant_id: TenantId, input_data: dict) -> dict:
     old_status = old_booking.status.value if old_booking else None
 
     booking = booking_service.mark_as_no_show(tenant_id, booking_id)
-    
+
     # Track status change
     try:
-        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+        metrics_service.update_booking_status(
+            tenant_id.value, old_status, booking.status.value
+        )
     except Exception as e:
         logger.warning("Failed to track booking status change", error=str(e))
-    
+
     return success_response(booking_to_dict(booking))
 
 
@@ -395,78 +408,86 @@ def booking_to_dict(booking) -> dict:
     """Convert Booking entity to dictionary"""
     # Ensure datetimes are timezone-aware for AppSync AWSDateTime compatibility
     from datetime import UTC
-    
+
     start_time = booking.start_time
     if start_time.tzinfo is None:
         start_time = start_time.replace(tzinfo=UTC)
-    
+
     end_time = booking.end_time
     if end_time.tzinfo is None:
         end_time = end_time.replace(tzinfo=UTC)
-    
+
     created_at = booking.created_at
     if created_at.tzinfo is None:
         created_at = created_at.replace(tzinfo=UTC)
-    
+
     updated_at = booking.updated_at if booking.updated_at else booking.created_at
     if updated_at.tzinfo is None:
         updated_at = updated_at.replace(tzinfo=UTC)
-    
+
     return {
-        'bookingId': booking.booking_id,
-        'tenantId': booking.tenant_id.value,
-        'serviceId': booking.service_id,
-        'providerId': booking.provider_id,
-        'start': start_time.isoformat(),
-        'end': end_time.isoformat(),
-        'status': booking.status.value,
-        'clientName': booking.customer_info.name or "Unknown Client",
-        'clientEmail': booking.customer_info.email or "no-email@example.com",
-        'clientPhone': booking.customer_info.phone,
-        'notes': booking.notes,
-        'conversationId': booking.conversation_id,
-        'roomId': booking.room_id,
-        'paymentStatus': booking.payment_status.value,
-        'paymentIntentId': booking.payment_intent_id,
-        'clientSecret': booking.payment_client_secret,
-        'totalAmount': booking.total_amount if booking.total_amount is not None else 0.0,
-        'createdAt': created_at.isoformat(),
-        'updatedAt': updated_at.isoformat()
+        "bookingId": booking.booking_id,
+        "tenantId": booking.tenant_id.value,
+        "serviceId": booking.service_id,
+        "providerId": booking.provider_id,
+        "start": start_time.isoformat(),
+        "end": end_time.isoformat(),
+        "status": booking.status.value,
+        "clientName": booking.customer_info.name or "Unknown Client",
+        "clientEmail": booking.customer_info.email or "no-email@example.com",
+        "clientPhone": booking.customer_info.phone,
+        "notes": booking.notes,
+        "conversationId": booking.conversation_id,
+        "roomId": booking.room_id,
+        "paymentStatus": booking.payment_status.value,
+        "paymentIntentId": booking.payment_intent_id,
+        "clientSecret": booking.payment_client_secret,
+        "totalAmount": (
+            booking.total_amount if booking.total_amount is not None else 0.0
+        ),
+        "createdAt": created_at.isoformat(),
+        "updatedAt": updated_at.isoformat(),
     }
+
 
 def handle_update_booking_status(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Update booking status to any valid status
-    
+
     Input:
     {
         "bookingId": "bkg_123",
         "status": "CONFIRMED"
     }
     """
-    booking_id = input_data.get('bookingId')
-    new_status = input_data.get('status')
-    
+    booking_id = input_data.get("bookingId")
+    new_status = input_data.get("status")
+
     if not booking_id:
         return error_response("Missing bookingId", 400)
     if not new_status:
         return error_response("Missing status", 400)
-    
+
     # Validate status
     from shared.domain.entities import BookingStatus
+
     valid_statuses = [s.value for s in BookingStatus]
     if new_status not in valid_statuses:
-        return error_response(f"Invalid status. Must be one of: {', '.join(valid_statuses)}", 400)
-    
+        return error_response(
+            f"Invalid status. Must be one of: {', '.join(valid_statuses)}", 400
+        )
+
     # Get old status before update
     old_booking = booking_query_service.get_booking(tenant_id, booking_id)
     old_status = old_booking.status.value if old_booking else None
-    
+
     # Update status based on target status
     if new_status == BookingStatus.CONFIRMED.value:
         booking = booking_service.confirm_booking(tenant_id, booking_id)
     elif new_status == BookingStatus.CANCELLED.value:
-        booking = booking_service.cancel_booking(tenant_id, booking_id, reason="Admin update")
+        booking = booking_service.cancel_booking(
+            tenant_id, booking_id, reason="Admin update"
+        )
     elif new_status == BookingStatus.NO_SHOW.value:
         booking = booking_service.mark_as_no_show(tenant_id, booking_id)
     else:
@@ -474,11 +495,13 @@ def handle_update_booking_status(tenant_id: TenantId, input_data: dict) -> dict:
         booking = booking_query_service.get_booking(tenant_id, booking_id)
         booking.status = BookingStatus(new_status)
         booking_repo.save(booking)
-    
+
     # Track status change
     try:
-        metrics_service.update_booking_status(tenant_id.value, old_status, booking.status.value)
+        metrics_service.update_booking_status(
+            tenant_id.value, old_status, booking.status.value
+        )
     except Exception as e:
         logger.warning("Failed to track booking status change", error=str(e))
-    
+
     return success_response(booking_to_dict(booking))

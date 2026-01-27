@@ -5,11 +5,12 @@ Use cases for booking management with overbooking prevention
 """
 
 from datetime import datetime
+
 try:
     from datetime import UTC
 except ImportError:
     from datetime import timezone
-    UTC = timezone.utc
+
     UTC = timezone.utc
 import hashlib
 import os
@@ -20,7 +21,7 @@ from shared.domain.entities import (
     BookingStatus,
     PaymentStatus,
     TimeSlot,
-    CustomerInfo
+    CustomerInfo,
 )
 from shared.domain.repositories import (
     IBookingRepository,
@@ -28,11 +29,9 @@ from shared.domain.repositories import (
     IProviderRepository,
     ITenantRepository,
     IConversationRepository,
-    IConversationRepository,
     IRoomRepository,
-    IProviderIntegrationRepository
+    IProviderIntegrationRepository,
 )
-from shared.domain.exceptions import (
 from shared.domain.exceptions import (
     EntityNotFoundError,
     ValidationError,
@@ -40,9 +39,10 @@ from shared.domain.exceptions import (
     ServiceNotAvailableError,
     ProviderNotAvailableError,
     SlotNotAvailableError,
-    ConflictError
+    ConflictError,
 )
 from shared.utils import generate_id
+
 try:
     from shared.limit_service import TenantLimitService
 except ImportError:
@@ -58,24 +58,21 @@ try:
 except ImportError:
     PaymentGatewayFactory = None
 
-
-except ImportError:
-    PaymentGatewayFactory = None
-
 from shared.infrastructure.google_auth_service import GoogleAuthService
 import os
+
 
 class BookingService:
     """
     Service for creating and managing bookings
-    
+
     Responsibilities:
     - Create bookings with slot validation
     - Check slot availability (prevent overbooking)
     - Confirm bookings
     - Cancel bookings
     - Get booking details
-    
+
     SOLID:
     - SRP: Only handles booking operations
     - OCP: Extensible for new booking types
@@ -83,18 +80,17 @@ class BookingService:
     - ISP: Depends only on needed repositories
     - DIP: Depends on abstractions (interfaces)
     """
-    
+
     def __init__(
         self,
         booking_repo: IBookingRepository,
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
-        tenant_repo: ITenantRepository,
         room_repo: Optional[IRoomRepository] = None,
         provider_integration_repo: Optional[IProviderIntegrationRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
-        email_service: Optional[EmailService] = None
+        email_service: Optional[EmailService] = None,
     ):
         self._booking_repo = booking_repo
         self._service_repo = service_repo
@@ -104,16 +100,16 @@ class BookingService:
         self._provider_integration_repo = provider_integration_repo
         self._limit_service = limit_service
         self._email_service = email_service
-        
+
         # Initialize Google Service
-        self.google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
-        self.google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
-        self.google_auth_service = GoogleAuthService(
-            self.google_client_id, 
-            self.google_client_secret, 
-            "" 
-        ) if self.google_client_id else None
-    
+        self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+        self.google_auth_service = (
+            GoogleAuthService(self.google_client_id, self.google_client_secret, "")
+            if self.google_client_id
+            else None
+        )
+
     def create_booking(
         self,
         tenant_id: TenantId,
@@ -125,18 +121,18 @@ class BookingService:
         client_email: str,
         client_phone: Optional[str] = None,
         notes: Optional[str] = None,
-        conversation_id: Optional[str] = None
+        conversation_id: Optional[str] = None,
     ) -> Booking:
         """
         Create a new booking with validation
-        
+
         Business rules:
         1. Tenant must be active and able to create bookings
         2. Service must exist and be available
         3. Provider must exist and can provide the service
         4. Time slot must not overlap with existing active bookings
         5. Booking duration must match service duration
-        
+
         Args:
             tenant_id: Tenant identifier
             service_id: Service identifier
@@ -148,10 +144,10 @@ class BookingService:
             client_phone: Client phone (optional)
             notes: Additional notes (optional)
             conversation_id: Associated conversation ID (optional)
-        
+
         Returns:
             Created Booking entity
-        
+
         Raises:
             EntityNotFoundError: If tenant/service/provider not found
             TenantNotActiveError: If tenant cannot create bookings
@@ -164,34 +160,36 @@ class BookingService:
         tenant = self._tenant_repo.get_by_id(tenant_id)
         if not tenant:
             raise EntityNotFoundError("Tenant", tenant_id.value)
-        
+
         if not tenant.can_create_booking():
             raise TenantNotActiveError(
                 f"Tenant {tenant_id.value} cannot create bookings. "
                 f"Status: {tenant.status.value}"
             )
-        
+
         # Check Booking Limits
         if self._limit_service:
             if not self._limit_service.check_can_create_booking(tenant_id):
-                 raise ValidationError("Has excedido el límite de reservas de tu plan actual.")
+                raise ValidationError(
+                    "Has excedido el límite de reservas de tu plan actual."
+                )
 
         # Validate service
         service = self._service_repo.get_by_id(tenant_id, service_id)
         if not service:
             raise EntityNotFoundError("Service", service_id)
-        
+
         if not service.is_available():
             raise ServiceNotAvailableError(f"Service {service_id} is not available")
-        
+
         # Validate provider
         provider = self._provider_repo.get_by_id(tenant_id, provider_id)
         if not provider:
             raise EntityNotFoundError("Provider", provider_id)
-        
+
         if not provider.can_provide_service(service_id):
             raise ProviderNotAvailableError(provider_id, service_id)
-        
+
         # Validate booking duration matches service duration
         booking_duration = int((end - start).total_seconds() / 60)
         if booking_duration != service.duration_minutes:
@@ -199,41 +197,41 @@ class BookingService:
                 f"Booking duration ({booking_duration} min) must match "
                 f"service duration ({service.duration_minutes} min)"
             )
-        
+
         # Validate time slot is not in the past
         if start < datetime.now(UTC):
             raise ValidationError("Cannot create booking in the past")
-        
+
         # Check Room Availability (if service requires it)
         assigned_room_id = None
         if service.required_room_ids and self._room_repo:
-             assigned_room_id = self._check_and_assign_room(
-                 tenant_id, service, start, end
-             )
-        
+            assigned_room_id = self._check_and_assign_room(
+                tenant_id, service, start, end
+            )
+
         # Check slot availability (prevent overbooking)
         if not self._is_slot_available(tenant_id, provider_id, start, end):
             raise SlotNotAvailableError(
                 f"Time slot {start.isoformat()} - {end.isoformat()} is not available"
             )
-        
+
         # Create booking entity
-        booking_id = generate_id('bkg')
-        
+        booking_id = generate_id("bkg")
+
         # Determine customer_id (generate hash if provided)
         customer_id = None
         if client_email:
-             # Deterministic ID for customer based on email
-             customer_id = hashlib.md5(client_email.lower().strip().encode()).hexdigest()
+            # Deterministic ID for customer based on email
+            customer_id = hashlib.md5(client_email.lower().strip().encode()).hexdigest()
 
         # Create customer info value object
         customer_info = CustomerInfo(
             customer_id=customer_id,
             name=client_name,
             email=client_email,
-            phone=client_phone
+            phone=client_phone,
         )
-        
+
         booking = Booking(
             booking_id=booking_id,
             tenant_id=tenant_id,
@@ -247,7 +245,7 @@ class BookingService:
             conversation_id=conversation_id,
             notes=notes,
             total_amount=service.price,
-            room_id=assigned_room_id
+            room_id=assigned_room_id,
         )
 
         # Process Payment Intent (Strategy Pattern)
@@ -256,28 +254,28 @@ class BookingService:
                 # Resolve gateway based on tenant (could be country-based)
                 # For now using default or checking tenant attributes if available
                 gateway = PaymentGatewayFactory.get_gateway()
-                
+
                 payment_metadata = {
                     "booking_id": booking_id,
                     "tenant_id": tenant_id.value,
-                    "service_name": service.name
+                    "service_name": service.name,
                 }
-                
+
                 # Create Intent
                 intent_data = gateway.create_payment_intent(
                     amount=service.price,
-                    currency=service.currency, # Assuming Service entity has currency
-                    metadata=payment_metadata
+                    currency=service.currency,  # Assuming Service entity has currency
+                    metadata=payment_metadata,
                 )
-                
-                booking.payment_intent_id = intent_data.get('payment_id')
-                booking.payment_client_secret = intent_data.get('client_secret')
-                
+
+                booking.payment_intent_id = intent_data.get("payment_id")
+                booking.payment_client_secret = intent_data.get("client_secret")
+
             except Exception as e:
                 # If payment initialization fails, we might want to block booking creation
                 # or create it as PENDING_APPROVAL. For now, log and proceed (booking is PENDING payment)
                 print(f"Failed to initialize payment: {e}")
-        
+
         # Save with conditional expression to prevent race conditions
         # The repository will use a condition to ensure no overlapping bookings
         try:
@@ -286,20 +284,14 @@ class BookingService:
             # Another booking was created in the meantime
             raise SlotNotAvailableError(
                 f"Time slot {start.isoformat()} - {end.isoformat()} was just booked"
-                f"Time slot {start.isoformat()} - {end.isoformat()} was just booked"
             )
-        
+
         # [NEW] Sync to Google Calendar
         if self.google_auth_service and self._provider_integration_repo:
-             self._sync_to_google_calendar(
-                 tenant_id,
-                 provider_id,
-                 booking,
-                 client_name,
-                 client_email,
-                 service.name
-             )
-        
+            self._sync_to_google_calendar(
+                tenant_id, provider_id, booking, client_name, client_email, service.name
+            )
+
         # Send confirmation email
         if self._email_service and client_email:
             try:
@@ -308,15 +300,17 @@ class BookingService:
                 # Default to UTC if not set
                 try:
                     from zoneinfo import ZoneInfo
+
                     tz = ZoneInfo(provider.timezone or "UTC")
                 except ImportError:
                     # Fallback for older python or missing zoneinfo
                     from datetime import timezone, timedelta
+
                     # Simple fallback to UTC if ZoneInfo fails (shouldn't in Python 3.9+)
                     tz = timezone.utc
-                
+
                 local_start = start.astimezone(tz)
-                
+
                 subject = f"Reserva Confirmada: {service.name}"
                 body_text = f"Hola {client_name},\n\nTu reserva para {service.name} con {provider.name} ha sido confirmada para el {local_start.strftime('%Y-%m-%d %H:%M')}.\n\nGracias!"
                 body_html = f"""
@@ -335,102 +329,95 @@ class BookingService:
                     </body>
                 </html>
                 """
-                # We use a default sender or configured one. 
+                # We use a default sender or configured one.
                 # For now using a placeholder that should be overridden by env var in infrastructure
                 # or passed by the handler.
-                # Actually, EmailService needs a 'source'. 
+                # Actually, EmailService needs a 'source'.
                 # We can use a noreply address from the tenant domain if valid, or a verified single sender.
-                sender = os.environ.get('SES_SENDER_EMAIL', "noreply@antigravity.com")
-                
+                sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
+
                 self._email_service.send_email(
                     source=sender,
                     to_addresses=[client_email],
                     subject=subject,
                     body_html=body_html,
-                    body_text=body_text
+                    body_text=body_text,
                 )
             except Exception as e:
                 # Log but don't fail the booking
                 print(f"Failed to send confirmation email: {e}")
 
         return booking
-    
+
     def _check_and_assign_room(
-        self,
-        tenant_id: TenantId,
-        service: 'Service',
-        start: datetime,
-        end: datetime
+        self, tenant_id: TenantId, service: "Service", start: datetime, end: datetime
     ) -> Optional[str]:
         """
         Assign a room for the booking
         """
         if not service.required_room_ids or not self._room_repo:
             return None
-            
+
         # Naive allocation: Pick first valid room
         # TODO: Implement full availability check (requires room booking index)
         for room_id in service.required_room_ids:
             room = self._room_repo.get_by_id(tenant_id, room_id)
             if room:
                 return room_id
-                
+
         return None
-    
+
     def _is_slot_available(
         self,
         tenant_id: TenantId,
         provider_id: str,
         start: datetime,
         end: datetime,
-        exclude_booking_id: Optional[str] = None
+        exclude_booking_id: Optional[str] = None,
     ) -> bool:
         """
         Check if time slot is available
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
             start: Slot start datetime
             end: Slot end datetime
             exclude_booking_id: Booking ID to exclude from check (for updates)
-        
+
         Returns:
             True if slot is available, False otherwise
         """
         # Get existing bookings for provider in date range
         bookings = self._booking_repo.list_by_provider(
-            tenant_id,
-            provider_id,
-            start,
-            end
+            tenant_id, provider_id, start, end
         )
-        
+
         # Check for overlaps with active bookings
         for booking in bookings:
             # Skip the booking being updated
             if exclude_booking_id and booking.booking_id == exclude_booking_id:
                 continue
-            
+
             # Only consider active bookings (not cancelled/completed)
             if booking.is_active():
                 # Check if time ranges overlap
                 if not (end <= booking.start_time or start >= booking.end_time):
                     return False
-        
+
         return True
-    
+
     def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Get booking by ID
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
         """
@@ -438,18 +425,18 @@ class BookingService:
         if not booking:
             raise EntityNotFoundError("Booking", booking_id)
         return booking
-    
+
     def confirm_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Confirm a pending booking
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be confirmed
@@ -458,48 +445,45 @@ class BookingService:
         booking.confirm()
         self._booking_repo.update(booking)
         return booking
-    
+
     def cancel_booking(
-        self,
-        tenant_id: TenantId,
-        booking_id: str,
-        reason: Optional[str] = None
+        self, tenant_id: TenantId, booking_id: str, reason: Optional[str] = None
     ) -> Booking:
         """
         Cancel a booking
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
             reason: Cancellation reason (optional)
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be cancelled
         """
         booking = self.get_booking(tenant_id, booking_id)
         booking.cancel()
-        
+
         # TODO: Store cancellation reason in a separate CancellationReason value object
         # or in booking metadata if needed
-        
+
         self._booking_repo.update(booking)
         return booking
 
     def mark_as_no_show(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Mark a booking as no show
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be marked as no show
@@ -513,12 +497,12 @@ class BookingService:
 class BookingQueryService:
     """
     Service for querying bookings
-    
+
     Responsibilities:
     - List bookings with filters
     - Get booking details
     - Check booking status
-    
+
     SOLID:
     - SRP: Only handles booking queries (read-only)
     - OCP: Extensible for new query filters
@@ -526,76 +510,68 @@ class BookingQueryService:
     - ISP: Depends only on booking repository
     - DIP: Depends on abstractions
     """
-    
+
     def __init__(
         self,
         booking_repo: IBookingRepository,
-        conversation_repo: IConversationRepository
+        conversation_repo: IConversationRepository,
     ):
         self._booking_repo = booking_repo
         self._conversation_repo = conversation_repo
-    
+
     def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """Get booking by ID"""
         booking = self._booking_repo.get_by_id(tenant_id, booking_id)
         if not booking:
             raise EntityNotFoundError("Booking", booking_id)
         return booking
-    
+
     def list_by_provider(
         self,
         tenant_id: TenantId,
         provider_id: str,
         start_date: datetime,
-        end_date: datetime
+        end_date: datetime,
     ) -> list[Booking]:
         """
         List bookings for a provider in date range
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
             start_date: Range start
             end_date: Range end
-        
+
         Returns:
             List of bookings
         """
         return self._booking_repo.list_by_provider(
-            tenant_id,
-            provider_id,
-            start_date,
-            end_date
+            tenant_id, provider_id, start_date, end_date
         )
-    
-    def list_by_client(
-        self,
-        tenant_id: TenantId,
-        client_email: str
-    ) -> list[Booking]:
+
+    def list_by_client(self, tenant_id: TenantId, client_email: str) -> list[Booking]:
         """
         List bookings for a client
-        
+
         Args:
             tenant_id: Tenant identifier
             client_email: Client email
-        
+
         Returns:
             List of bookings
         """
         return self._booking_repo.list_by_customer_email(tenant_id, client_email)
+
     def get_booking_by_conversation(
-        self,
-        tenant_id: TenantId,
-        conversation_id: str
+        self, tenant_id: TenantId, conversation_id: str
     ) -> Optional[Booking]:
         """
         Get booking associated with a conversation
-        
+
         Args:
             tenant_id: Tenant identifier
             conversation_id: Conversation identifier
-        
+
         Returns:
             Booking entity or None
         """
@@ -603,64 +579,61 @@ class BookingQueryService:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation or not conversation.booking_id:
             return None
-            
+
         # 2. Get booking by ID
         return self._booking_repo.get_by_id(tenant_id, conversation.booking_id)
-    
+
     def _is_slot_available(
         self,
         tenant_id: TenantId,
         provider_id: str,
         start: datetime,
         end: datetime,
-        exclude_booking_id: Optional[str] = None
+        exclude_booking_id: Optional[str] = None,
     ) -> bool:
         """
         Check if time slot is available
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
             start: Slot start datetime
             end: Slot end datetime
             exclude_booking_id: Booking ID to exclude from check (for updates)
-        
+
         Returns:
             True if slot is available, False otherwise
         """
         # Get existing bookings for provider in date range
         bookings = self._booking_repo.list_by_provider(
-            tenant_id,
-            provider_id,
-            start,
-            end
+            tenant_id, provider_id, start, end
         )
-        
+
         # Check for overlaps with active bookings
         for booking in bookings:
             # Skip the booking being updated
             if exclude_booking_id and booking.booking_id == exclude_booking_id:
                 continue
-            
+
             # Only consider active bookings (not cancelled/completed)
             if booking.is_active():
                 # Check if time ranges overlap
                 if not (end <= booking.start_time or start >= booking.end_time):
                     return False
-        
+
         return True
-    
+
     def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Get booking by ID
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
         """
@@ -668,18 +641,18 @@ class BookingQueryService:
         if not booking:
             raise EntityNotFoundError("Booking", booking_id)
         return booking
-    
+
     def confirm_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Confirm a pending booking
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be confirmed
@@ -688,48 +661,45 @@ class BookingQueryService:
         booking.confirm()
         self._booking_repo.update(booking)
         return booking
-    
+
     def cancel_booking(
-        self,
-        tenant_id: TenantId,
-        booking_id: str,
-        reason: Optional[str] = None
+        self, tenant_id: TenantId, booking_id: str, reason: Optional[str] = None
     ) -> Booking:
         """
         Cancel a booking
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
             reason: Cancellation reason (optional)
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be cancelled
         """
         booking = self.get_booking(tenant_id, booking_id)
         booking.cancel()
-        
+
         # TODO: Store cancellation reason in a separate CancellationReason value object
         # or in booking metadata if needed
-        
+
         self._booking_repo.update(booking)
         return booking
 
     def mark_as_no_show(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """
         Mark a booking as no show
-        
+
         Args:
             tenant_id: Tenant identifier
             booking_id: Booking identifier
-        
+
         Returns:
             Updated Booking entity
-        
+
         Raises:
             EntityNotFoundError: If booking not found
             ValidationError: If booking cannot be marked as no show
@@ -746,48 +716,54 @@ class BookingQueryService:
         booking: Booking,
         client_name: str,
         client_email: str,
-        service_name: str
+        service_name: str,
     ):
         """
         Create event in Google Calendar
         """
         try:
-             # 1. Get Creds
-             creds = self._provider_integration_repo.get_google_creds(tenant_id, provider_id)
-             if not creds:
-                 return
+            # 1. Get Creds
+            creds = self._provider_integration_repo.get_google_creds(
+                tenant_id, provider_id
+            )
+            if not creds:
+                return
 
-             # 2. Get Service
-             service = self.google_auth_service.get_calendar_service(
-                 creds.get('access_token'), 
-                 creds.get('refresh_token')
-             )
-             
-             # 3. Create Event
-             description = f"Cliente: {client_name}\nEmail: {client_email}\nNotas: {booking.notes or ''}"
-             
-             event_body = {
-                 'summary': f"{service_name} - {client_name}",
-                 'description': description,
-                 'start': {'dateTime': booking.start_time.isoformat(), 'timeZone': 'UTC'},
-                 'end': {'dateTime': booking.end_time.isoformat(), 'timeZone': 'UTC'},
-                 'attendees': [{'email': client_email}] if client_email else [],
-                 'reminders': {
-                     'useDefault': False,
-                     'overrides': [
-                         {'method': 'email', 'minutes': 24 * 60},
-                         {'method': 'popup', 'minutes': 10},
-                     ],
-                 },
-             }
-             
-             created_event = service.events().insert(calendarId='primary', body=event_body).execute()
-             
-             # 4. Save Google Event ID (Optional, for updates)
-             booking.google_event_id = created_event.get('id')
-             self._booking_repo.update(booking)
-             
-             print(f"Synced to Google Calendar: {created_event.get('id')}")
+            # 2. Get Service
+            service = self.google_auth_service.get_calendar_service(
+                creds.get("access_token"), creds.get("refresh_token")
+            )
+
+            # 3. Create Event
+            description = f"Cliente: {client_name}\nEmail: {client_email}\nNotas: {booking.notes or ''}"
+
+            event_body = {
+                "summary": f"{service_name} - {client_name}",
+                "description": description,
+                "start": {
+                    "dateTime": booking.start_time.isoformat(),
+                    "timeZone": "UTC",
+                },
+                "end": {"dateTime": booking.end_time.isoformat(), "timeZone": "UTC"},
+                "attendees": [{"email": client_email}] if client_email else [],
+                "reminders": {
+                    "useDefault": False,
+                    "overrides": [
+                        {"method": "email", "minutes": 24 * 60},
+                        {"method": "popup", "minutes": 10},
+                    ],
+                },
+            }
+
+            created_event = (
+                service.events().insert(calendarId="primary", body=event_body).execute()
+            )
+
+            # 4. Save Google Event ID (Optional, for updates)
+            booking.google_event_id = created_event.get("id")
+            self._booking_repo.update(booking)
+
+            print(f"Synced to Google Calendar: {created_event.get('id')}")
 
         except Exception as e:
             print(f"Failed to sync to Google Calendar: {e}")
@@ -797,12 +773,12 @@ class BookingQueryService:
 class BookingQueryService:
     """
     Service for querying bookings
-    
+
     Responsibilities:
     - List bookings with filters
     - Get booking details
     - Check booking status
-    
+
     SOLID:
     - SRP: Only handles booking queries (read-only)
     - OCP: Extensible for new query filters
@@ -810,76 +786,68 @@ class BookingQueryService:
     - ISP: Depends only on booking repository
     - DIP: Depends on abstractions
     """
-    
+
     def __init__(
         self,
         booking_repo: IBookingRepository,
-        conversation_repo: IConversationRepository
+        conversation_repo: IConversationRepository,
     ):
         self._booking_repo = booking_repo
         self._conversation_repo = conversation_repo
-    
+
     def get_booking(self, tenant_id: TenantId, booking_id: str) -> Booking:
         """Get booking by ID"""
         booking = self._booking_repo.get_by_id(tenant_id, booking_id)
         if not booking:
             raise EntityNotFoundError("Booking", booking_id)
         return booking
-    
+
     def list_by_provider(
         self,
         tenant_id: TenantId,
         provider_id: str,
         start_date: datetime,
-        end_date: datetime
+        end_date: datetime,
     ) -> list[Booking]:
         """
         List bookings for a provider in date range
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
             start_date: Range start
             end_date: Range end
-        
+
         Returns:
             List of bookings
         """
         return self._booking_repo.list_by_provider(
-            tenant_id,
-            provider_id,
-            start_date,
-            end_date
+            tenant_id, provider_id, start_date, end_date
         )
-    
-    def list_by_client(
-        self,
-        tenant_id: TenantId,
-        client_email: str
-    ) -> list[Booking]:
+
+    def list_by_client(self, tenant_id: TenantId, client_email: str) -> list[Booking]:
         """
         List bookings for a client
-        
+
         Args:
             tenant_id: Tenant identifier
             client_email: Client email
-        
+
         Returns:
             List of bookings
         """
         return self._booking_repo.list_by_customer_email(tenant_id, client_email)
+
     def get_booking_by_conversation(
-        self,
-        tenant_id: TenantId,
-        conversation_id: str
+        self, tenant_id: TenantId, conversation_id: str
     ) -> Optional[Booking]:
         """
         Get booking associated with a conversation
-        
+
         Args:
             tenant_id: Tenant identifier
             conversation_id: Conversation identifier
-        
+
         Returns:
             Booking entity or None
         """
@@ -887,6 +855,6 @@ class BookingQueryService:
         conversation = self._conversation_repo.get_by_id(tenant_id, conversation_id)
         if not conversation or not conversation.booking_id:
             return None
-            
+
         # 2. Get booking by ID
         return self._booking_repo.get_by_id(tenant_id, conversation.booking_id)

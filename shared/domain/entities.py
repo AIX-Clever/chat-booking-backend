@@ -15,6 +15,7 @@ from enum import Enum
 
 class BookingStatus(Enum):
     """Booking lifecycle states"""
+
     PENDING = "PENDING"
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
@@ -23,6 +24,7 @@ class BookingStatus(Enum):
 
 class PaymentStatus(Enum):
     """Payment states"""
+
     NONE = "NONE"
     PENDING = "PENDING"
     PAID = "PAID"
@@ -31,6 +33,7 @@ class PaymentStatus(Enum):
 
 class ConversationState(Enum):
     """FSM states for conversation flow"""
+
     INIT = "INIT"
     SERVICE_PENDING = "SERVICE_PENDING"
     SERVICE_SELECTED = "SERVICE_SELECTED"
@@ -43,6 +46,7 @@ class ConversationState(Enum):
 
 class TenantStatus(Enum):
     """Tenant account status"""
+
     ACTIVE = "ACTIVE"
     SUSPENDED = "SUSPENDED"
     TRIAL = "TRIAL"
@@ -51,6 +55,7 @@ class TenantStatus(Enum):
 
 class TenantPlan(Enum):
     """Subscription plans"""
+
     LITE = "LITE"
     PRO = "PRO"
     BUSINESS = "BUSINESS"
@@ -60,35 +65,36 @@ class TenantPlan(Enum):
 # Definición de límites por plan (Hardcoded por ahora - Source of Truth)
 PLAN_LIMITS = {
     TenantPlan.LITE: {
-        'messages': 500,
-        'bookings': 50,
-        'tokensIA': 0,        # No AI
-        'ai_enabled': False
+        "messages": 500,
+        "bookings": 50,
+        "tokensIA": 0,  # No AI
+        "ai_enabled": False,
     },
     TenantPlan.PRO: {
-        'messages': 2000,
-        'bookings': 200,
-        'tokensIA': 100000,   # ~100k tokens
-        'ai_enabled': True
+        "messages": 2000,
+        "bookings": 200,
+        "tokensIA": 100000,  # ~100k tokens
+        "ai_enabled": True,
     },
     TenantPlan.BUSINESS: {
-        'messages': 10000,
-        'bookings': 1000,
-        'tokensIA': 500000,   # ~500k tokens
-        'ai_enabled': True
+        "messages": 10000,
+        "bookings": 1000,
+        "tokensIA": 500000,  # ~500k tokens
+        "ai_enabled": True,
     },
     TenantPlan.ENTERPRISE: {
-        'messages': 100000,
-        'bookings': 10000,
-        'tokensIA': 5000000,  # ~5m tokens
-        'ai_enabled': True
-    }
+        "messages": 100000,
+        "bookings": 10000,
+        "tokensIA": 5000000,  # ~5m tokens
+        "ai_enabled": True,
+    },
 }
 
 
 @dataclass
 class TenantId:
     """Value Object for Tenant ID"""
+
     value: str
 
     def __post_init__(self):
@@ -110,6 +116,7 @@ class TenantId:
 @dataclass
 class Tenant:
     """Tenant aggregate root"""
+
     tenant_id: TenantId
     name: str
     slug: str
@@ -139,18 +146,18 @@ class Tenant:
         """
         limits = self.get_plan_limits()
         limit = limits.get(metric, 0)
-        
+
         # If limit is -1, it means unlimited (future proofing)
         if limit == -1:
             return True
-            
-        return current_usage < limit
 
+        return current_usage < limit
 
 
 @dataclass
 class Category:
     """Category entity"""
+
     category_id: str
     tenant_id: TenantId
     name: str
@@ -165,6 +172,7 @@ class Category:
 @dataclass
 class Service:
     """Service entity"""
+
     service_id: str
     tenant_id: TenantId
     name: str
@@ -185,6 +193,7 @@ class Service:
 @dataclass
 class Provider:
     """Provider (professional) entity"""
+
     provider_id: str
     tenant_id: TenantId
     name: str
@@ -205,27 +214,31 @@ class Provider:
 @dataclass
 class TimeRange:
     """Value Object for time ranges"""
+
     start_time: str  # Format: "HH:MM"
-    end_time: str    # Format: "HH:MM"
+    end_time: str  # Format: "HH:MM"
 
     def __post_init__(self):
         # Validate time format
         for time_str in [self.start_time, self.end_time]:
             try:
-                hours, minutes = map(int, time_str.split(':'))
+                hours, minutes = map(int, time_str.split(":"))
                 if not (0 <= hours < 24 and 0 <= minutes < 60):
                     raise ValueError
             except (ValueError, AttributeError):
                 raise ValueError(f"Invalid time format: {time_str}. Use HH:MM")
 
-    def overlaps_with(self, other: 'TimeRange') -> bool:
+    def overlaps_with(self, other: "TimeRange") -> bool:
         """Check if this time range overlaps with another"""
-        return not (self.end_time <= other.start_time or self.start_time >= other.end_time)
+        return not (
+            self.end_time <= other.start_time or self.start_time >= other.end_time
+        )
 
 
 @dataclass
 class ProviderAvailability:
     """Provider availability for a specific day"""
+
     tenant_id: TenantId
     provider_id: str
     day_of_week: str  # MON, TUE, WED, THU, FRI, SAT, SUN
@@ -237,6 +250,7 @@ class ProviderAvailability:
 @dataclass
 class TimeSlot:
     """Value Object for available time slot"""
+
     provider_id: str
     service_id: str
     start: datetime
@@ -251,6 +265,7 @@ class TimeSlot:
 @dataclass
 class CustomerInfo:
     """Value Object for customer information"""
+
     customer_id: Optional[str]
     name: Optional[str]
     email: Optional[str]
@@ -264,6 +279,7 @@ class CustomerInfo:
 @dataclass
 class Booking:
     """Booking aggregate root"""
+
     booking_id: str
     tenant_id: TenantId
     service_id: str
@@ -278,7 +294,9 @@ class Booking:
     notes: Optional[str] = None
     # Payment fields
     payment_intent_id: Optional[str] = None
-    payment_client_secret: Optional[str] = None # Not persisted usually, but needed for frontend
+    payment_client_secret: Optional[str] = (
+        None  # Not persisted usually, but needed for frontend
+    )
     total_amount: Optional[float] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
@@ -302,21 +320,25 @@ class Booking:
         if self.status == BookingStatus.CONFIRMED:
             self.status = BookingStatus.NO_SHOW
         else:
-            raise ValueError(f"Cannot mark as no show a booking with status {self.status}")
+            raise ValueError(
+                f"Cannot mark as no show a booking with status {self.status}"
+            )
 
     def is_active(self) -> bool:
         """Check if booking is active"""
         return self.status in [BookingStatus.PENDING, BookingStatus.CONFIRMED]
 
-    def overlaps_with(self, other: 'Booking') -> bool:
+    def overlaps_with(self, other: "Booking") -> bool:
         """Check if this booking overlaps with another"""
-        return (self.provider_id == other.provider_id and
-                not (self.end_time <= other.start_time or self.start_time >= other.end_time))
+        return self.provider_id == other.provider_id and not (
+            self.end_time <= other.start_time or self.start_time >= other.end_time
+        )
 
 
 @dataclass
 class Message:
     """Chat message entity"""
+
     message_id: str
     sender: str  # USER, AGENT, SYSTEM
     text: str
@@ -327,6 +349,7 @@ class Message:
 @dataclass
 class Conversation:
     """Conversation aggregate root"""
+
     conversation_id: str
     tenant_id: TenantId
     state: ConversationState
@@ -364,32 +387,27 @@ class Conversation:
 
     def is_ready_for_booking(self) -> bool:
         """Check if all required data is present"""
-        return all([
-            self.service_id,
-            self.provider_id,
-            self.slot_start,
-            self.slot_end
-        ])
+        return all([self.service_id, self.provider_id, self.slot_start, self.slot_end])
 
     def add_message(self, role: str, content: str, metadata: Dict[str, Any] = None):
         """Add a message to conversation history"""
-        if not hasattr(self, 'messages') or self.messages is None:
+        if not hasattr(self, "messages") or self.messages is None:
             self.messages = []
-            
+
         msg = {
-            'role': role,
-            'content': content,
-            'timestamp': datetime.now(timezone.utc).isoformat()
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         if metadata:
-            msg['metadata'] = metadata
-            
+            msg["metadata"] = metadata
+
         self.messages.append(msg)
         self.updated_at = datetime.now(timezone.utc)
 
     def get_history(self) -> List[Dict[str, Any]]:
         """Get conversation history in standardized format"""
-        if not hasattr(self, 'messages') or self.messages is None:
+        if not hasattr(self, "messages") or self.messages is None:
             return []
         return self.messages
 
@@ -397,6 +415,7 @@ class Conversation:
 @dataclass
 class ApiKey:
     """API Key entity"""
+
     api_key_id: str
     tenant_id: TenantId
     api_key_hash: str
@@ -422,6 +441,7 @@ class ApiKey:
 @dataclass
 class FAQ:
     """Frequently Asked Question entity"""
+
     faq_id: str
     tenant_id: TenantId
     question: str
@@ -429,11 +449,14 @@ class FAQ:
     category: str
     active: bool = True
 
+
 @dataclass
 class ExceptionRule:
     """Exception rule for provider availability (e.g. day off)"""
+
     date: str  # ISO date YYYY-MM-DD
     time_ranges: List[TimeRange]
+
 
 @dataclass
 class WorkflowStep:
@@ -441,6 +464,7 @@ class WorkflowStep:
     type: str  # MESSAGE, QUESTION, TOOL, CONDITION, DYNAMIC_OPTIONS
     content: Dict[str, Any]
     next_step: Optional[str] = None
+
 
 @dataclass
 class Workflow:
@@ -458,6 +482,7 @@ class Workflow:
 @dataclass
 class Room:
     """Room (Box) entity"""
+
     room_id: str
     tenant_id: TenantId
     name: str
@@ -475,6 +500,7 @@ class Room:
 
 class UserRole(Enum):
     """User roles within a tenant"""
+
     OWNER = "OWNER"
     ADMIN = "ADMIN"
     USER = "USER"
@@ -483,6 +509,7 @@ class UserRole(Enum):
 
 class UserStatus(Enum):
     """User status"""
+
     PENDING_INVITATION = "PENDING_INVITATION"
     ACTIVE = "ACTIVE"
     INACTIVE = "INACTIVE"
@@ -491,6 +518,7 @@ class UserStatus(Enum):
 @dataclass
 class UserRoleEntity:
     """User Role entity (Mapping Cognito User <-> Tenant Role)"""
+
     user_id: str  # Cognito Sub or Email
     tenant_id: TenantId
     email: str
@@ -502,13 +530,12 @@ class UserRoleEntity:
 
     def to_dict(self) -> Dict[str, Any]:
         return {
-            'userId': self.user_id,
-            'tenantId': str(self.tenant_id),
-            'email': self.email,
-            'role': self.role.value,
-            'status': self.status.value,
-            'name': self.name,
-            'createdAt': self.created_at.isoformat(),
-            'updatedAt': self.updated_at.isoformat()
+            "userId": self.user_id,
+            "tenantId": str(self.tenant_id),
+            "email": self.email,
+            "role": self.role.value,
+            "status": self.status.value,
+            "name": self.name,
+            "createdAt": self.created_at.isoformat(),
+            "updatedAt": self.updated_at.isoformat(),
         }
-

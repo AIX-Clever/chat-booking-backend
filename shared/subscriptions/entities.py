@@ -3,17 +3,20 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Optional, Dict, Any
 
+
 class SubscriptionStatus(Enum):
     PENDING = "PENDING"
     AUTHORIZED = "AUTHORIZED"
     PAUSED = "PAUSED"
     CANCELLED = "CANCELLED"
 
+
 class PlanType(Enum):
     LITE = "lite"
     PRO = "pro"
     BUSINESS = "business"
     ENTERPRISE = "enterprise"
+
 
 @dataclass
 class Subscription:
@@ -30,19 +33,24 @@ class Subscription:
 
     def to_item(self) -> Dict[str, Any]:
         item = {
-            'tenantId': self.tenant_id,
-            'subscriptionId': self.subscription_id,
-            'status': self.status.value,
-            'planId': self.plan_id.value if hasattr(self.plan_id, 'value') else str(self.plan_id),
-            'currentPrice': str(self.current_price),
-            'mpPreapprovalId': self.mp_preapproval_id,
-            'isPromoActive': self.is_promo_active,
-            'createdAt': self.created_at.isoformat(),
-            'updatedAt': self.updated_at.isoformat()
+            "tenantId": self.tenant_id,
+            "subscriptionId": self.subscription_id,
+            "status": self.status.value,
+            "planId": (
+                self.plan_id.value
+                if hasattr(self.plan_id, "value")
+                else str(self.plan_id)
+            ),
+            "currentPrice": str(self.current_price),
+            "mpPreapprovalId": self.mp_preapproval_id,
+            "isPromoActive": self.is_promo_active,
+            "createdAt": self.created_at.isoformat(),
+            "updatedAt": self.updated_at.isoformat(),
         }
         if self.promo_scheduler_arn:
-            item['promoSchedulerArn'] = self.promo_scheduler_arn
+            item["promoSchedulerArn"] = self.promo_scheduler_arn
         return item
+
 
 @dataclass
 class PaymentAudit:
@@ -55,10 +63,10 @@ class PaymentAudit:
 
     def to_item(self) -> Dict[str, Any]:
         return {
-            'tenantId': self.tenant_id,
-            'paymentId': self.payment_id, # Range Key
-            'amount': str(self.amount),
-            'status': self.status,
-            'processedAt': self.processed_at,
-            'rawData': self.raw_data
+            "tenantId": self.tenant_id,
+            "paymentId": self.payment_id,  # Range Key
+            "amount": str(self.amount),
+            "status": self.status,
+            "processedAt": self.processed_at,
+            "rawData": self.raw_data,
         }

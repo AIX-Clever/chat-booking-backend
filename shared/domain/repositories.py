@@ -11,8 +11,19 @@ from typing import List, Optional
 from datetime import datetime
 
 from .entities import (
-    Tenant, TenantId, Service, Provider, ProviderAvailability,
-    Booking, Conversation, ApiKey, TimeSlot, Category, FAQ, Workflow, Room
+    Tenant,
+    TenantId,
+    Service,
+    Provider,
+    ProviderAvailability,
+    Booking,
+    Conversation,
+    ApiKey,
+    TimeSlot,
+    Category,
+    FAQ,
+    Workflow,
+    Room,
 )
 
 
@@ -87,7 +98,9 @@ class ICategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def list_by_tenant(self, tenant_id: TenantId, active_only: bool = False) -> List[Category]:
+    def list_by_tenant(
+        self, tenant_id: TenantId, active_only: bool = False
+    ) -> List[Category]:
         """List all categories for tenant"""
         pass
 
@@ -100,6 +113,7 @@ class ICategoryRepository(ABC):
     def delete(self, tenant_id: TenantId, category_id: str) -> None:
         """Delete category"""
         pass
+
 
 class IProviderRepository(ABC):
     """Port for Provider operations"""
@@ -135,9 +149,7 @@ class IAvailabilityRepository(ABC):
 
     @abstractmethod
     def get_provider_availability(
-        self,
-        tenant_id: TenantId,
-        provider_id: str
+        self, tenant_id: TenantId, provider_id: str
     ) -> List[ProviderAvailability]:
         """Get weekly availability for provider"""
         pass
@@ -148,12 +160,16 @@ class IAvailabilityRepository(ABC):
         pass
 
     @abstractmethod
-    def get_provider_exceptions(self, tenant_id: TenantId, provider_id: str) -> List[dict]:
+    def get_provider_exceptions(
+        self, tenant_id: TenantId, provider_id: str
+    ) -> List[dict]:
         """Get provider exception rules"""
         pass
 
     @abstractmethod
-    def save_provider_exceptions(self, tenant_id: TenantId, provider_id: str, exceptions: List[dict]) -> None:
+    def save_provider_exceptions(
+        self, tenant_id: TenantId, provider_id: str, exceptions: List[dict]
+    ) -> None:
         """Save provider exception rules"""
         pass
 
@@ -172,16 +188,14 @@ class IBookingRepository(ABC):
         tenant_id: TenantId,
         provider_id: str,
         from_date: datetime,
-        to_date: datetime
+        to_date: datetime,
     ) -> List[Booking]:
         """List bookings for provider in date range"""
         pass
 
     @abstractmethod
     def list_by_customer_email(
-        self,
-        tenant_id: TenantId,
-        customer_email: str
+        self, tenant_id: TenantId, customer_email: str
     ) -> List[Booking]:
         """List bookings for customer by email"""
         pass
@@ -204,7 +218,9 @@ class IConversationRepository(ABC):
     """Port for Conversation state operations"""
 
     @abstractmethod
-    def get_by_id(self, tenant_id: TenantId, conversation_id: str) -> Optional[Conversation]:
+    def get_by_id(
+        self, tenant_id: TenantId, conversation_id: str
+    ) -> Optional[Conversation]:
         """Retrieve conversation state"""
         pass
 
@@ -279,11 +295,18 @@ class IRoomRepository(ABC):
     def delete(self, tenant_id: TenantId, room_id: str) -> None:
         pass
 
+
 class FileStorageRepository(ABC):
     """Port for file storage operations"""
-    
+
     @abstractmethod
-    def generate_presigned_url(self, file_name: str, content_type: str, operation: str = 'put_object', expiration: int = 3600) -> str:
+    def generate_presigned_url(
+        self,
+        file_name: str,
+        content_type: str,
+        operation: str = "put_object",
+        expiration: int = 3600,
+    ) -> str:
         """Generate a presigned URL for file operations"""
         pass
 
@@ -292,7 +315,9 @@ class IProviderIntegrationRepository(ABC):
     """Port for Provider Integration operations (e.g. Google Calendar)"""
 
     @abstractmethod
-    def save_google_creds(self, tenant_id: TenantId, provider_id: str, credentials: dict) -> None:
+    def save_google_creds(
+        self, tenant_id: TenantId, provider_id: str, credentials: dict
+    ) -> None:
         """Save Google Calendar credentials"""
         pass
 
@@ -305,4 +330,3 @@ class IProviderIntegrationRepository(ABC):
     def delete_google_creds(self, tenant_id: TenantId, provider_id: str) -> None:
         """Delete Google Calendar credentials"""
         pass
-

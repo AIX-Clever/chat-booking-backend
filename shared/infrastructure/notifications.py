@@ -5,20 +5,22 @@ from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 
+
 class EmailService:
     """
     Generic Infrastructure Adapter for sending emails via Amazon SES.
     """
-    def __init__(self, region_name: str = 'us-east-1'):
-        self.client = boto3.client('ses', region_name=region_name)
+
+    def __init__(self, region_name: str = "us-east-1"):
+        self.client = boto3.client("ses", region_name=region_name)
 
     def send_email(
-        self, 
-        source: str, 
-        to_addresses: List[str], 
-        subject: str, 
-        body_html: str, 
-        body_text: str
+        self,
+        source: str,
+        to_addresses: List[str],
+        subject: str,
+        body_html: str,
+        body_text: str,
     ) -> bool:
         """
         Sends an email using Amazon SES.
@@ -36,30 +38,23 @@ class EmailService:
         try:
             response = self.client.send_email(
                 Source=source,
-                Destination={
-                    'ToAddresses': to_addresses
-                },
+                Destination={"ToAddresses": to_addresses},
                 Message={
-                    'Subject': {
-                        'Data': subject,
-                        'Charset': 'UTF-8'
+                    "Subject": {"Data": subject, "Charset": "UTF-8"},
+                    "Body": {
+                        "Html": {"Data": body_html, "Charset": "UTF-8"},
+                        "Text": {"Data": body_text, "Charset": "UTF-8"},
                     },
-                    'Body': {
-                        'Html': {
-                            'Data': body_html,
-                            'Charset': 'UTF-8'
-                        },
-                        'Text': {
-                            'Data': body_text,
-                            'Charset': 'UTF-8'
-                        }
-                    }
-                }
+                },
             )
-            logger.info(f"Email sent successfully to {to_addresses}. MessageId: {response.get('MessageId')}")
+            logger.info(
+                f"Email sent successfully to {to_addresses}. MessageId: {response.get('MessageId')}"
+            )
             return True
         except ClientError as e:
-            logger.error(f"Failed to send email to {to_addresses}. Error: {e.response['Error']['Message']}")
+            logger.error(
+                f"Failed to send email to {to_addresses}. Error: {e.response['Error']['Message']}"
+            )
             return False
         except Exception as e:
             logger.error(f"Unexpected error sending email to {to_addresses}: {str(e)}")

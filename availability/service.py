@@ -6,23 +6,25 @@ Generates available time slots based on provider availability and existing booki
 
 from typing import List, Dict
 from datetime import datetime, timedelta, time
-from shared.domain.entities import TenantId, TimeSlot, ProviderAvailability, Booking, ExceptionRule, TimeRange
+from shared.domain.entities import (
+    TenantId,
+    TimeSlot,
+    ProviderAvailability,
+    Booking,
+    ExceptionRule,
+    TimeRange,
+)
 from shared.domain.repositories import (
     IAvailabilityRepository,
     IBookingRepository,
     IServiceRepository,
-    IBookingRepository,
-    IServiceRepository,
     IProviderRepository,
-    IProviderIntegrationRepository
+    IProviderIntegrationRepository,
 )
-from shared.domain.exceptions import (
 from shared.domain.exceptions import (
     EntityNotFoundError,
     ServiceNotAvailableError,
-    ProviderNotAvailableError
-)
-    ProviderNotAvailableError
+    ProviderNotAvailableError,
 )
 from shared.utils import Logger
 from shared.infrastructure.google_auth_service import GoogleAuthService
@@ -42,11 +44,11 @@ class AvailabilityService:
         service_repo: IServiceRepository,
         provider_repo: IProviderRepository,
         provider_integration_repo: IProviderIntegrationRepository,
-        slot_interval_minutes: int = 15
+        slot_interval_minutes: int = 15,
     ):
         """
         Dependency Injection
-        
+
         Args:
             slot_interval_minutes: Interval between slot start times (default 15 min)
         """
@@ -57,18 +59,22 @@ class AvailabilityService:
         self.provider_integration_repo = provider_integration_repo
         self.slot_interval_minutes = slot_interval_minutes
         self.logger = Logger()
-        
+
         # Initialize Google Service mostly for helper methods or if we need to instantiate it per request?
-        # Actually we need client_id/secret to instantiate it. 
+        # Actually we need client_id/secret to instantiate it.
         # Typically these are env vars.
-        self.google_client_id = os.environ.get('GOOGLE_CLIENT_ID')
-        self.google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET')
+        self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+        self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
         # Redirect URI not needed for backend API calls (refresh token flow)
-        self.google_auth_service = GoogleAuthService(
-            self.google_client_id, 
-            self.google_client_secret, 
-            "" # Redirect URI unused for refresh 
-        ) if self.google_client_id else None
+        self.google_auth_service = (
+            GoogleAuthService(
+                self.google_client_id,
+                self.google_client_secret,
+                "",  # Redirect URI unused for refresh
+            )
+            if self.google_client_id
+            else None
+        )
 
     def get_available_slots(
         self,
@@ -76,21 +82,21 @@ class AvailabilityService:
         service_id: str,
         provider_id: str,
         from_date: datetime,
-        to_date: datetime
+        to_date: datetime,
     ) -> List[TimeSlot]:
         """
         Calculate available time slots
-        
+
         Args:
             tenant_id: Tenant identifier
             service_id: Service identifier
             provider_id: Provider identifier
             from_date: Start of date range (inclusive)
             to_date: End of date range (exclusive)
-            
+
         Returns:
             List of available TimeSlot objects
-            
+
         Raises:
             EntityNotFoundError: Service or provider doesn't exist
             ServiceNotAvailableError: Service is not active
@@ -102,48 +108,40 @@ class AvailabilityService:
             service_id=service_id,
             provider_id=provider_id,
             from_date=from_date.isoformat(),
-            to_date=to_date.isoformat()
+            to_date=to_date.isoformat(),
         )
 
         # Validate entities exist and are available
         service = self.service_repo.get_by_id(tenant_id, service_id)
         if not service:
             raise EntityNotFoundError("Service", service_id)
-        
+
         if not service.is_available():
             raise ServiceNotAvailableError(service_id)
 
         provider = self.provider_repo.get_by_id(tenant_id, provider_id)
         if not provider:
             raise EntityNotFoundError("Provider", provider_id)
-        
+
         if not provider.can_provide_service(service_id):
             raise ProviderNotAvailableError(provider_id, service_id)
 
         # Get provider's weekly availability
         availability_schedule = self.availability_repo.get_provider_availability(
-            tenant_id,
-            provider_id
+            tenant_id, provider_id
         )
 
         # Build availability map by day of week
-        availability_map = {
-            avail.day_of_week: avail
-            for avail in availability_schedule
-        }
-        
+        availability_map = {avail.day_of_week: avail for avail in availability_schedule}
+
         # Get provider-level exceptions (now stored separately)
         provider_exceptions = self.availability_repo.get_provider_exceptions(
-            tenant_id,
-            provider_id
+            tenant_id, provider_id
         )
 
         # Get existing bookings in date range
         existing_bookings = self.booking_repo.list_by_provider(
-            tenant_id,
-            provider_id,
-            from_date,
-            to_date
+            tenant_id, provider_id, from_date, to_date
         )
 
         # Generate candidate slots
@@ -152,24 +150,19 @@ class AvailabilityService:
             to_date,
             service.duration_minutes,
             availability_map,
-            provider_exceptions
+            provider_exceptions,
         )
 
         # Filter out occupied slots (Internal Bookings)
         available_slots = self._filter_occupied_slots(
-            candidate_slots,
-            existing_bookings
+            candidate_slots, existing_bookings
         )
-        
+
         # [NEW] Filter out Google Calendar Busy Slots
         if self.google_auth_service:
             try:
                 available_slots = self._filter_google_busy_slots(
-                    tenant_id,
-                    provider_id,
-                    available_slots,
-                    from_date,
-                    to_date
+                    tenant_id, provider_id, available_slots, from_date, to_date
                 )
             except Exception as e:
                 self.logger.error(f"Error checking Google Calendar: {str(e)}")
@@ -181,7 +174,7 @@ class AvailabilityService:
             "Slots calculated",
             tenant_id=str(tenant_id),
             candidate_count=len(candidate_slots),
-            available_count=len(available_slots)
+            available_count=len(available_slots),
         )
 
         return available_slots
@@ -192,53 +185,49 @@ class AvailabilityService:
         to_date: datetime,
         duration_minutes: int,
         availability_map: Dict[str, ProviderAvailability],
-        exceptions: List[ExceptionRule] = None
+        exceptions: List[ExceptionRule] = None,
     ) -> List[TimeSlot]:
         """
         Generate all possible slots based on provider availability
-        
+
         Args:
             exceptions: List of ExceptionRule entities
-        
+
         Returns slots at regular intervals (slot_interval_minutes)
         within provider's working hours
         """
         if exceptions is None:
             exceptions = []
-            
+
         # Create quick lookup map for exceptions
         # Format: "YYYY-MM-DD" -> ExceptionRule
         exception_map = {ex.date: ex for ex in exceptions if ex.date}
 
-        
         slots = []
         current_date = from_date.replace(hour=0, minute=0, second=0, microsecond=0)
 
         while current_date < to_date:
             date_str = current_date.date().isoformat()
-            day_name = current_date.strftime('%a').upper()  # MON, TUE, etc.
-            
+            day_name = current_date.strftime("%a").upper()  # MON, TUE, etc.
+
             # 1. Check for Exception (Override)
             if date_str in exception_map:
                 rule = exception_map[date_str]
                 # If timeRanges provided, use them. If empty/None, treat as Day Off.
                 exception_ranges = rule.time_ranges
-                
+
                 if exception_ranges:
                     for tr in exception_ranges:
-                        # Note: Exceptions override everything, including breaks. 
+                        # Note: Exceptions override everything, including breaks.
                         # If a break is needed, define multiple ranges.
                         slots.extend(
                             self._generate_slots_in_range(
-                                current_date,
-                                tr,
-                                duration_minutes,
-                                breaks=[]
+                                current_date, tr, duration_minutes, breaks=[]
                             )
                         )
-                
+
                 # If no ranges, it's a blocked day (Day Off) -> Do nothing
-                
+
                 current_date += timedelta(days=1)
                 continue
 
@@ -253,7 +242,7 @@ class AvailabilityService:
                             current_date,
                             time_range,
                             duration_minutes,
-                            availability.breaks
+                            availability.breaks,
                         )
                     )
 
@@ -262,29 +251,27 @@ class AvailabilityService:
         return slots
 
     def _generate_slots_in_range(
-        self,
-        date: datetime,
-        time_range,
-        duration_minutes: int,
-        breaks: List
+        self, date: datetime, time_range, duration_minutes: int, breaks: List
     ) -> List[TimeSlot]:
         """
         Generate slots within a specific time range, avoiding breaks
         """
         try:
             from datetime import timezone
+
             UTC = timezone.utc
         except ImportError:
             import pytz
+
             UTC = pytz.UTC
 
         slots = []
-        
+
         # Parse start and end times
-        start_parts = time_range.start_time.split(':')
+        start_parts = time_range.start_time.split(":")
         start_time = time(int(start_parts[0]), int(start_parts[1]))
-        
-        end_parts = time_range.end_time.split(':')
+
+        end_parts = time_range.end_time.split(":")
         end_time = time(int(end_parts[0]), int(end_parts[1]))
 
         # Create datetime objects
@@ -296,9 +283,9 @@ class AvailabilityService:
             current_slot_start = current_slot_start.replace(tzinfo=date.tzinfo)
             range_end = range_end.replace(tzinfo=date.tzinfo)
         elif not current_slot_start.tzinfo:
-             # If naive, assume UTC for comparison safety (though ideally strictly typed)
-             current_slot_start = current_slot_start.replace(tzinfo=UTC)
-             range_end = range_end.replace(tzinfo=UTC)
+            # If naive, assume UTC for comparison safety (though ideally strictly typed)
+            current_slot_start = current_slot_start.replace(tzinfo=UTC)
+            range_end = range_end.replace(tzinfo=UTC)
 
         # Generate slots at regular intervals
         while current_slot_start + timedelta(minutes=duration_minutes) <= range_end:
@@ -307,38 +294,46 @@ class AvailabilityService:
             # Check if slot is in the past
             # Add a small buffer (e.g. 5 mins) or strict comparison
             if current_slot_start < datetime.now(UTC):
-                 current_slot_start += timedelta(minutes=self.slot_interval_minutes)
-                 continue
+                current_slot_start += timedelta(minutes=self.slot_interval_minutes)
+                continue
 
             # Check if slot overlaps with any break
             overlaps_break = False
             for break_range in breaks:
-                break_start_parts = break_range.start_time.split(':')
+                break_start_parts = break_range.start_time.split(":")
                 break_start = time(int(break_start_parts[0]), int(break_start_parts[1]))
                 break_start_dt = datetime.combine(date.date(), break_start)
-                
-                break_end_parts = break_range.end_time.split(':')
+
+                break_end_parts = break_range.end_time.split(":")
                 break_end = time(int(break_end_parts[0]), int(break_end_parts[1]))
                 break_end_dt = datetime.combine(date.date(), break_end)
 
                 # Ensure break datetimes are also aware if needed
                 if current_slot_start.tzinfo:
-                    break_start_dt = break_start_dt.replace(tzinfo=current_slot_start.tzinfo)
-                    break_end_dt = break_end_dt.replace(tzinfo=current_slot_start.tzinfo)
+                    break_start_dt = break_start_dt.replace(
+                        tzinfo=current_slot_start.tzinfo
+                    )
+                    break_end_dt = break_end_dt.replace(
+                        tzinfo=current_slot_start.tzinfo
+                    )
 
                 # Check overlap
-                if not (slot_end <= break_start_dt or current_slot_start >= break_end_dt):
+                if not (
+                    slot_end <= break_start_dt or current_slot_start >= break_end_dt
+                ):
                     overlaps_break = True
                     break
 
             if not overlaps_break:
-                slots.append(TimeSlot(
-                    provider_id="",  # Will be set later
-                    service_id="",   # Will be set later
-                    start=current_slot_start,
-                    end=slot_end,
-                    is_available=True
-                ))
+                slots.append(
+                    TimeSlot(
+                        provider_id="",  # Will be set later
+                        service_id="",  # Will be set later
+                        start=current_slot_start,
+                        end=slot_end,
+                        is_available=True,
+                    )
+                )
 
             # Move to next slot
             current_slot_start += timedelta(minutes=self.slot_interval_minutes)
@@ -346,13 +341,11 @@ class AvailabilityService:
         return slots
 
     def _filter_occupied_slots(
-        self,
-        candidate_slots: List[TimeSlot],
-        existing_bookings: List[Booking]
+        self, candidate_slots: List[TimeSlot], existing_bookings: List[Booking]
     ) -> List[TimeSlot]:
         """
         Filter out slots that overlap with existing bookings
-        
+
         Only includes active bookings (PENDING or CONFIRMED)
         """
         available_slots = []
@@ -366,7 +359,9 @@ class AvailabilityService:
                     continue
 
                 # Check if slot overlaps with booking
-                if not (slot.end <= booking.start_time or slot.start >= booking.end_time):
+                if not (
+                    slot.end <= booking.start_time or slot.start >= booking.end_time
+                ):
                     is_available = False
                     break
 
@@ -381,7 +376,7 @@ class AvailabilityService:
         provider_id: str,
         candidate_slots: List[TimeSlot],
         from_date: datetime,
-        to_date: datetime
+        to_date: datetime,
     ) -> List[TimeSlot]:
         """
         Filters slots that overlap with Google Calendar busy periods
@@ -389,86 +384,84 @@ class AvailabilityService:
         # 1. Get Credentials
         creds = self.provider_integration_repo.get_google_creds(tenant_id, provider_id)
         if not creds:
-            return candidate_slots # No integration, return as is
+            return candidate_slots  # No integration, return as is
 
         try:
             # 2. Refresh Token if needed (implicit in GoogleAuthService logic or explicit here?)
             # GoogleAuthService.get_calendar_service handles credentials object creation
             # which usually auto-refreshes if using google.oauth2.credentials
-            
+
             # We need to construct the Credentials object.
             # Our repo returns a dict {'access_token': ..., 'refresh_token': ...}
-            
+
             # Using the helper to get the service (which builds creds)
             service = self.google_auth_service.get_calendar_service(
-                creds.get('access_token'),
-                creds.get('refresh_token')
+                creds.get("access_token"), creds.get("refresh_token")
             )
-            
+
             # 3. Query FreeBusy
-            filters = [
-                {'id': 'primary'} # Check primary calendar
-            ]
-            
+            filters = [{"id": "primary"}]  # Check primary calendar
+
             # Format times
-            time_min = from_date.isoformat() + 'Z' # Ensure UTC
-            time_max = to_date.isoformat() + 'Z'
-            
+            time_min = from_date.isoformat() + "Z"  # Ensure UTC
+            time_max = to_date.isoformat() + "Z"
+
             busy_periods = self.google_auth_service.list_busy_slots(
-                service, 
-                time_min, 
-                time_max
+                service, time_min, time_max
             )
-            
+
             if not busy_periods:
                 return candidate_slots
-                
+
             # 4. Filter
             available_slots = []
-            
+
             # Parse busy periods into comparable objects
             # Format from Google: [{'start': '...', 'end': '...'}]
             parsed_busy = []
             for period in busy_periods:
                 # Remove Z and parse
-                start_str = period['start'].replace('Z', '+00:00')
-                end_str = period['end'].replace('Z', '+00:00')
-                parsed_busy.append({
-                    'start': datetime.fromisoformat(start_str),
-                    'end': datetime.fromisoformat(end_str)
-                })
-                
+                start_str = period["start"].replace("Z", "+00:00")
+                end_str = period["end"].replace("Z", "+00:00")
+                parsed_busy.append(
+                    {
+                        "start": datetime.fromisoformat(start_str),
+                        "end": datetime.fromisoformat(end_str),
+                    }
+                )
+
             for slot in candidate_slots:
                 is_free = True
                 # Slot is naive or aware? Base logic sets it.
                 # Ensure we compare aware to aware.
-                
+
                 slot_start = slot.start
                 slot_end = slot.end
-                
+
                 if not slot_start.tzinfo:
-                     # Assume UTC if naive (legacy safety)
-                     from datetime import timezone
-                     slot_start = slot_start.replace(tzinfo=timezone.utc)
-                     slot_end = slot_end.replace(tzinfo=timezone.utc)
-                
+                    # Assume UTC if naive (legacy safety)
+                    from datetime import timezone
+
+                    slot_start = slot_start.replace(tzinfo=timezone.utc)
+                    slot_end = slot_end.replace(tzinfo=timezone.utc)
+
                 for busy in parsed_busy:
                     # Google usually returns UTC (Z)
-                    
+
                     # Logic: If slot overlaps busy
                     # Not (End <= Start OR Start >= End)
-                    if not (slot_end <= busy['start'] or slot_start >= busy['end']):
+                    if not (slot_end <= busy["start"] or slot_start >= busy["end"]):
                         is_free = False
                         break
-                
+
                 if is_free:
                     available_slots.append(slot)
-                    
+
             return available_slots
 
         except Exception as e:
             self.logger.error(f"Google Calc Logic Error: {e}")
-            raise e # Propagate to let main try/catch handle it (failsafe)
+            raise e  # Propagate to let main try/catch handle it (failsafe)
 
         return available_slots
 
@@ -490,11 +483,11 @@ class AvailabilityManagementService:
         day_of_week: str,
         time_ranges: List[Dict[str, str]],
         breaks: List[Dict[str, str]] = None,
-        exceptions: List[str] = None
+        exceptions: List[str] = None,
     ) -> ProviderAvailability:
         """
         Set availability schedule for a specific day
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
@@ -508,23 +501,17 @@ class AvailabilityManagementService:
             tenant_id=str(tenant_id),
             provider_id=provider_id,
             day_of_week=day_of_week,
-            exceptions_count=len(exceptions) if exceptions else 0
+            exceptions_count=len(exceptions) if exceptions else 0,
         )
-
-        
 
         # Convert to TimeRange objects
         time_range_objects = [
-            TimeRange(tr['startTime'], tr['endTime'])
-            for tr in time_ranges
+            TimeRange(tr["startTime"], tr["endTime"]) for tr in time_ranges
         ]
 
         break_objects = []
         if breaks:
-            break_objects = [
-                TimeRange(br['startTime'], br['endTime'])
-                for br in breaks
-            ]
+            break_objects = [TimeRange(br["startTime"], br["endTime"]) for br in breaks]
 
         # Create entity
         availability = ProviderAvailability(
@@ -533,7 +520,7 @@ class AvailabilityManagementService:
             day_of_week=day_of_week.upper(),
             time_ranges=time_range_objects,
             breaks=break_objects,
-            exceptions=exceptions or []
+            exceptions=exceptions or [],
         )
 
         # Persist
@@ -543,20 +530,17 @@ class AvailabilityManagementService:
             "Provider availability set",
             tenant_id=str(tenant_id),
             provider_id=provider_id,
-            day_of_week=day_of_week
+            day_of_week=day_of_week,
         )
 
         return availability
 
     def set_provider_exceptions(
-        self,
-        tenant_id: TenantId,
-        provider_id: str,
-        exceptions: List[dict]
+        self, tenant_id: TenantId, provider_id: str, exceptions: List[dict]
     ) -> List[dict]:
         """
         Set provider exception rules (days off or partial availability)
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
@@ -566,34 +550,30 @@ class AvailabilityManagementService:
             "Setting provider exceptions",
             tenant_id=str(tenant_id),
             provider_id=provider_id,
-            exceptions_count=len(exceptions)
+            exceptions_count=len(exceptions),
         )
-
-        
 
         # Convert simple dict inputs to Domain Entities
         exception_rules = []
         for ex in exceptions:
             time_ranges = []
-            if 'timeRanges' in ex:
+            if "timeRanges" in ex:
                 time_ranges = [
-                    TimeRange(tr['startTime'], tr['endTime'])
-                    for tr in ex['timeRanges']
+                    TimeRange(tr["startTime"], tr["endTime"]) for tr in ex["timeRanges"]
                 ]
-            
-            exception_rules.append(ExceptionRule(
-                date=ex['date'],
-                time_ranges=time_ranges
-            ))
 
-        self.availability_repo.save_provider_exceptions(tenant_id, provider_id, exception_rules)
+            exception_rules.append(
+                ExceptionRule(date=ex["date"], time_ranges=time_ranges)
+            )
+
+        self.availability_repo.save_provider_exceptions(
+            tenant_id, provider_id, exception_rules
+        )
 
         return exceptions
 
     def get_provider_exceptions(
-        self,
-        tenant_id: TenantId,
-        provider_id: str
+        self, tenant_id: TenantId, provider_id: str
     ) -> List[dict]:
         """
         Get provider exception rules
