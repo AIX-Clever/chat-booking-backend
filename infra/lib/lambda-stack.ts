@@ -660,6 +660,11 @@ export class LambdaStack extends cdk.Stack {
       actions: ['cloudfront:CreateInvalidation'],
       resources: [`arn:aws:cloudfront::${this.account}:distribution/${linkDistributionId}`],
     }));
+
+    // Start Full Bake Permissions
+    props.servicesTable.grantReadData(profileBakerFunction);
+    props.providersTable.grantReadData(profileBakerFunction);
+    // End Full Bake Permissions
   }
 
   private createAlarms(): void {
