@@ -192,7 +192,7 @@ def bake_profile(slug, profile_data, context=None):
         template_html = template_html.replace("<head>", f"<head>{meta_tags}{script_injection}")
     
     # 5. Upload
-    target_key = slug 
+    target_key = f"{slug}/index.html"
     logger.info(f"Uploading baked HTML to {target_key}")
     
     s3.put_object(
