@@ -85,7 +85,8 @@ def bake_profile(slug, name, bio, photo_url, context=None):
         template_html = template_html.replace("<head>", f"<head>{meta_tags}")
     
     # 3. Upload the new HTML to slug/index.html
-    target_key = f"{slug}/index.html"
+    # 3. Upload the new HTML to slug (clean URL)
+    target_key = slug # No extension for clean URL behavior on CloudFront/S3
     logger.info(f"Uploading baked HTML to {target_key}")
     
     s3.put_object(

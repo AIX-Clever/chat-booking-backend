@@ -449,6 +449,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadData(this.getPublicProfileFunction);
     props.servicesTable.grantReadData(this.getPublicProfileFunction);
+    props.providersTable.grantReadData(this.getPublicProfileFunction);
 
     // 16. Google Integration Lambda
     this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {
