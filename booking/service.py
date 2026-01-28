@@ -208,7 +208,7 @@ class BookingService:
 
         # Validate time slot is not in the past
         if start < datetime.now(UTC):
-            raise ValidationError("Cannot create booking in the past")
+            raise ValidationError("No se pueden crear reservas en el pasado")
 
         # Check Room Availability (if service requires it)
         assigned_room_id = None
