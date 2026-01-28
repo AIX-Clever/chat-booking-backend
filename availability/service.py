@@ -151,6 +151,7 @@ class AvailabilityService:
             service.duration_minutes,
             availability_map,
             provider_exceptions,
+            provider.timezone,
         )
 
         # Filter out occupied slots (Internal Bookings)
@@ -186,6 +187,7 @@ class AvailabilityService:
         duration_minutes: int,
         availability_map: Dict[str, ProviderAvailability],
         exceptions: List[ExceptionRule] = None,
+        timezone_str: str = "UTC",
     ) -> List[TimeSlot]:
         """
         Generate all possible slots based on provider availability
@@ -222,7 +224,7 @@ class AvailabilityService:
                         # If a break is needed, define multiple ranges.
                         slots.extend(
                             self._generate_slots_in_range(
-                                current_date, tr, duration_minutes, breaks=[]
+                                current_date, tr, duration_minutes, breaks=[], timezone_str=timezone_str
                             )
                         )
 
@@ -243,6 +245,7 @@ class AvailabilityService:
                             time_range,
                             duration_minutes,
                             availability.breaks,
+                            timezone_str,
                         )
                     )
 
@@ -251,19 +254,35 @@ class AvailabilityService:
         return slots
 
     def _generate_slots_in_range(
-        self, date: datetime, time_range, duration_minutes: int, breaks: List
+        self,
+        date: datetime,
+        time_range,
+        duration_minutes: int,
+        breaks: List,
+        timezone_str: str = "UTC",
     ) -> List[TimeSlot]:
         """
         Generate slots within a specific time range, avoiding breaks
         """
         try:
-            from datetime import timezone
-
-            UTC = timezone.utc
+            from datetime import timezone as dt_timezone
+            from zoneinfo import ZoneInfo
+            UTC = dt_timezone.utc
+            
+            # Get provider timezone
+            try:
+                provider_tz = ZoneInfo(timezone_str)
+            except Exception:
+                # Fallback or if invalid, assume UTC
+                provider_tz = UTC
+                
         except ImportError:
             import pytz
-
             UTC = pytz.UTC
+            try:
+                provider_tz = pytz.timezone(timezone_str)
+            except Exception:
+                provider_tz = UTC
 
         slots = []
 
@@ -275,17 +294,30 @@ class AvailabilityService:
         end_time = time(int(end_parts[0]), int(end_parts[1]))
 
         # Create datetime objects
-        current_slot_start = datetime.combine(date.date(), start_time)
-        range_end = datetime.combine(date.date(), end_time)
+        # 1. Combine date + time (Naive)
+        current_slot_active_naive = datetime.combine(date.date(), start_time)
+        range_end_active_naive = datetime.combine(date.date(), end_time)
 
-        # Apply timezone from date if present to ensure slots are timezone-aware
-        if date.tzinfo:
-            current_slot_start = current_slot_start.replace(tzinfo=date.tzinfo)
-            range_end = range_end.replace(tzinfo=date.tzinfo)
-        elif not current_slot_start.tzinfo:
-            # If naive, assume UTC for comparison safety (though ideally strictly typed)
-            current_slot_start = current_slot_start.replace(tzinfo=UTC)
-            range_end = range_end.replace(tzinfo=UTC)
+        # 2. Localize to Provider Timezone
+        # If the input 'date' was already timezone aware (e.g. UTC from query), 
+        # combining it might inherit tzinfo or stay naive depending on method.
+        # But here 'date.date()' removes time/tz, so it's naive.
+        
+        # We enforce provider timezone on the naive datetime
+        if getattr(provider_tz, 'localize', None):
+             # pytz method
+            current_slot_start = provider_tz.localize(current_slot_active_naive)
+            range_end = provider_tz.localize(range_end_active_naive)
+        else:
+             # standard python method
+             current_slot_start = current_slot_active_naive.replace(tzinfo=provider_tz)
+             range_end = range_end_active_naive.replace(tzinfo=provider_tz)
+
+        # 3. Convert to UTC for standardized storage/return
+        # We work in UTC for the loop to compare with 'now' correctly
+        # current_slot_utc = current_slot_start.astimezone(UTC)
+        # But wait, logic below increases by 'slot_interval'. 
+        # If we loop in UTC, it's fine.
 
         # Generate slots at regular intervals
         while current_slot_start + timedelta(minutes=duration_minutes) <= range_end:
@@ -308,14 +340,16 @@ class AvailabilityService:
                 break_end = time(int(break_end_parts[0]), int(break_end_parts[1]))
                 break_end_dt = datetime.combine(date.date(), break_end)
 
-                # Ensure break datetimes are also aware if needed
-                if current_slot_start.tzinfo:
-                    break_start_dt = break_start_dt.replace(
-                        tzinfo=current_slot_start.tzinfo
-                    )
-                    break_end_dt = break_end_dt.replace(
-                        tzinfo=current_slot_start.tzinfo
-                    )
+                # Ensure break datetimes are also aware and localized like the main range
+                break_start_naive = datetime.combine(date.date(), break_start)
+                break_end_naive = datetime.combine(date.date(), break_end)
+
+                if getattr(provider_tz, 'localize', None):
+                    break_start_dt = provider_tz.localize(break_start_naive)
+                    break_end_dt = provider_tz.localize(break_end_naive)
+                else:
+                    break_start_dt = break_start_naive.replace(tzinfo=provider_tz)
+                    break_end_dt = break_end_naive.replace(tzinfo=provider_tz)
 
                 # Check overlap
                 if not (
@@ -329,8 +363,8 @@ class AvailabilityService:
                     TimeSlot(
                         provider_id="",  # Will be set later
                         service_id="",  # Will be set later
-                        start=current_slot_start,
-                        end=slot_end,
+                        start=current_slot_start.astimezone(UTC), # Convert to UTC for output
+                        end=slot_end.astimezone(UTC),             # Convert to UTC for output
                         is_available=True,
                     )
                 )
