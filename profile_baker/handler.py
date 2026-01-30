@@ -45,26 +45,53 @@ def lambda_handler(event, context):
             if not slug:
                 continue
 
-            # Basic fields
-            name = new_image.get('name', {}).get('S', 'Profesional')
-            bio = new_image.get('bio', {}).get('S', '')
-            photo_url = new_image.get('photoUrl', {}).get('S', '')
-            theme_color = new_image.get('themeColor', {}).get('S', '#3b82f6')
-            profession = new_image.get('profession', {}).get('S', 'Especialista')
-            full_address = new_image.get('fullAddress', {}).get('S', '')
-            operating_hours = new_image.get('operatingHours', {}).get('S', '')
+            # Extract and parse settings JSON
+            settings_raw = new_image.get('settings', {}).get('S', '{}')
+            settings = {}
+            try:
+                settings = json.loads(settings_raw)
+            except Exception as e:
+                logger.warning(f"Failed to parse settings JSON for {tenant_id}: {e}")
             
-            # Specializations is a List of Strings (L) or SS?
-            # Usually stored as Attribute 'L' or 'SS' in DynamoDB Stream
-            print(f"DEBUG Specializations raw: {new_image.get('specializations')}")
-            specializations = []
-            if 'specializations' in new_image:
-                 # If it's a list (L) [ {'S': '...'}, ... ]
-                if 'L' in new_image['specializations']:
-                    specializations = [item['S'] for item in new_image['specializations']['L']]
-                # If it's a String Set (SS)
-                elif 'SS' in new_image['specializations']:
-                     specializations = new_image['specializations']['SS']
+            profile = settings.get('profile', {})
+            address = profile.get('address', {})
+
+            # Priority: settings.profile > Top level attributes > Defaults
+            # Center name (prefer name from profile if centerName is used there)
+            name = profile.get('centerName') or new_image.get('name', {}).get('S', 'Profesional')
+            bio = profile.get('bio') or new_image.get('bio', {}).get('S', '')
+            
+            # Map logoUrl from profile to photoUrl
+            photo_url = profile.get('logoUrl') or new_image.get('photoUrl', {}).get('S', '')
+            
+            theme_color = settings.get('widgetConfig', {}).get('primaryColor') or new_image.get('themeColor', {}).get('S', '#3b82f6')
+            profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
+            
+            # Construct fullAddress
+            if address:
+                addr_parts = [
+                    address.get('street'),
+                    address.get('city'),
+                    address.get('state'),
+                    address.get('country')
+                ]
+                full_address = ", ".join([p for p in addr_parts if p])
+            else:
+                full_address = new_image.get('fullAddress', {}).get('S', '')
+                
+            operating_hours = profile.get('operatingHours') or new_image.get('operatingHours', {}).get('S', '')
+            
+            # Specializations logic
+            spec_raw = profile.get('specializations')
+            if spec_raw and isinstance(spec_raw, list):
+                specializations = spec_raw
+            else:
+                specializations = []
+                if 'specializations' in new_image:
+                    if 'L' in new_image['specializations']:
+                        specializations = [item['S'] for item in new_image['specializations']['L']]
+                    elif 'SS' in new_image['specializations']:
+                        specializations = new_image['specializations']['SS']
 
             logger.info(f"Processing bake for tenant {tenant_id} with slug {slug}")
             
