@@ -206,6 +206,7 @@ class Provider:
     metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
     google_integration: Optional[Dict[str, Any]] = None
+    microsoft_integration: Optional[Dict[str, Any]] = None
 
     def can_provide_service(self, service_id: str) -> bool:
         """Check if provider offers specific service"""
