@@ -198,13 +198,13 @@ def handle_get_service(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Missing serviceId", 400)
     
     service = catalog_service.get_service(tenant_id, service_id)
-    return service_to_dict(service)
+    return success_response(service_to_dict(service))
 
 
 def handle_list_services(tenant_id: TenantId) -> dict:
     """List all services"""
     services = catalog_service.list_all_services(tenant_id)
-    return [service_to_dict(s) for s in services]
+    return success_response([service_to_dict(s) for s in services])
 
 
 def handle_list_providers_by_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -214,7 +214,7 @@ def handle_list_providers_by_service(tenant_id: TenantId, input_data: dict) -> d
         return error_response("Missing serviceId", 400)
     
     providers = catalog_service.list_providers_by_service(tenant_id, service_id)
-    return [provider_to_dict(p) for p in providers]
+    return success_response([provider_to_dict(p) for p in providers])
 
 
 def handle_get_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -224,13 +224,13 @@ def handle_get_provider(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Missing providerId", 400)
     
     provider = catalog_service.get_provider(tenant_id, provider_id)
-    return provider_to_dict(provider)
+    return success_response(provider_to_dict(provider))
 
 
 def handle_list_providers(tenant_id: TenantId) -> dict:
     """List all providers"""
     providers = catalog_service.list_all_providers(tenant_id)
-    return [provider_to_dict(p) for p in providers]
+    return success_response([provider_to_dict(p) for p in providers])
 
 
 
@@ -238,7 +238,7 @@ def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
     """List categories"""
     active_only = input_data.get('activeOnly', False)
     categories = catalog_service.list_categories(tenant_id, active_only)
-    return [category_to_dict(c) for c in categories]
+    return success_response([category_to_dict(c) for c in categories])
 
 
 # Admin operation handlers
@@ -254,7 +254,7 @@ def handle_create_category(tenant_id: TenantId, input_data: dict) -> dict:
         display_order=input_data.get('displayOrder', 0),
         metadata=input_data.get('metadata')
     )
-    return category_to_dict(category)
+    return success_response(category_to_dict(category))
 
 
 def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
@@ -268,7 +268,7 @@ def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
         display_order=input_data.get('displayOrder'),
         metadata=input_data.get('metadata')
     )
-    return category_to_dict(category)
+    return success_response(category_to_dict(category))
 
 
 def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
@@ -283,7 +283,7 @@ def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
         return error_response("Category not found", 404)
 
     category_mgmt_service.delete_category(tenant_id, category_id)
-    return category_to_dict(category)
+    return success_response(category_to_dict(category))
 
 
 def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -300,7 +300,7 @@ def handle_create_service(tenant_id: TenantId, input_data: dict) -> dict:
         required_room_ids=input_data.get('requiredRoomIds'),
         location_type=input_data.get('locationType')
     )
-    return service_to_dict(service)
+    return success_response(service_to_dict(service))
 
 
 def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -319,7 +319,7 @@ def handle_update_service(tenant_id: TenantId, input_data: dict) -> dict:
         location_type=input_data.get('locationType')
     )
     logger.info(f"Service updated result: {service}")
-    return service_to_dict(service)
+    return success_response(service_to_dict(service))
 
 
 def handle_delete_service(tenant_id: TenantId, input_data: dict) -> dict:
@@ -331,7 +331,7 @@ def handle_delete_service(tenant_id: TenantId, input_data: dict) -> dict:
     # Get service before deleting (to return it)
     service = catalog_service.get_service(tenant_id, service_id)
     service_mgmt_service.delete_service(tenant_id, service_id)
-    return service_to_dict(service)
+    return success_response(service_to_dict(service))
 
 
 def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -349,7 +349,7 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         photo_url_thumbnail=input_data.get('photoUrlThumbnail'),
         slug=input_data.get('slug')
     )
-    return provider_to_dict(provider)
+    return success_response(provider_to_dict(provider))
 
 
 def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -369,7 +369,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         slug=input_data.get('slug')
     )
     logger.info(f"Updated provider result: {provider_to_dict(provider)}") # DEBUG LOG
-    return provider_to_dict(provider)
+    return success_response(provider_to_dict(provider))
 
 
 def handle_delete_provider(tenant_id: TenantId, input_data: dict) -> dict:
@@ -381,57 +381,8 @@ def handle_delete_provider(tenant_id: TenantId, input_data: dict) -> dict:
     # Get provider before deleting (to return it)
     provider = catalog_service.get_provider(tenant_id, provider_id)
     provider_mgmt_service.delete_provider(tenant_id, provider_id)
-    return provider_to_dict(provider)
+    return success_response(provider_to_dict(provider))
 
-
-def handle_list_categories(tenant_id: TenantId, input_data: dict) -> dict:
-    """List categories"""
-    active_only = input_data.get('activeOnly', False)
-    categories = catalog_service.list_categories(tenant_id, active_only)
-    return success_response([category_to_dict(c) for c in categories])
-
-
-def handle_create_category(tenant_id: TenantId, input_data: dict) -> dict:
-    """Create new category"""
-    category = category_mgmt_service.create_category(
-        tenant_id=tenant_id,
-        category_id=generate_id('cat'),
-        name=input_data['name'],
-        description=input_data.get('description'),
-        is_active=input_data.get('isActive', True),
-        display_order=input_data.get('displayOrder', 0),
-        metadata=input_data.get('metadata')
-    )
-    return success_response(category_to_dict(category))
-
-
-def handle_update_category(tenant_id: TenantId, input_data: dict) -> dict:
-    """Update existing category"""
-    category = category_mgmt_service.update_category(
-        tenant_id=tenant_id,
-        category_id=input_data['categoryId'],
-        name=input_data.get('name'),
-        description=input_data.get('description'),
-        is_active=input_data.get('isActive'),
-        display_order=input_data.get('displayOrder'),
-        metadata=input_data.get('metadata')
-    )
-    return success_response(category_to_dict(category))
-
-
-def handle_delete_category(tenant_id: TenantId, input_data: dict) -> dict:
-    """Delete category"""
-    category_id = input_data.get('categoryId')
-    if not category_id:
-        return error_response("Missing categoryId", 400)
-    
-    # Get category before deleting
-    category = category_repo.get_by_id(tenant_id, category_id)
-    if not category:
-        return error_response("Category not found", 404)
-
-    category_mgmt_service.delete_category(tenant_id, category_id)
-    return success_response(category_to_dict(category))
 
 
 # Serialization helpers
@@ -464,7 +415,8 @@ def provider_to_dict(provider) -> dict:
         'photoUrl': provider.photo_url,
         'photoUrlThumbnail': provider.photo_url_thumbnail,
         'slug': provider.slug,
-        'hasGoogleCalendar': provider.google_integration is not None
+        'hasGoogleCalendar': getattr(provider, 'google_integration', None) is not None,
+        'hasMicrosoftCalendar': getattr(provider, 'microsoft_integration', None) is not None
     }
 
 
@@ -506,7 +458,7 @@ def room_to_dict(room) -> dict:
 def handle_list_rooms(tenant_id: TenantId) -> dict:
     """List all rooms"""
     rooms = catalog_service.list_rooms(tenant_id)
-    return [room_to_dict(r) for r in rooms]
+    return success_response([room_to_dict(r) for r in rooms])
 
 
 def handle_get_room(tenant_id: TenantId, input_data: dict) -> dict:
