@@ -198,10 +198,11 @@ class TestProviderManagementService(unittest.TestCase):
     def test_create_provider(self):
         # Act
         prov = self.service.create_provider(
-            self.tenant_id, "p1", "Dr. Test", "Bio", ["s1"], "UTC"
+            self.tenant_id, "p1", "Dr. Test", "Bio", ["s1"], "UTC", slug="dr-test"
         )
 
         # Assert
         self.assertEqual(prov.name, "Dr. Test")
+        self.assertEqual(prov.slug, "dr-test")
         self.mock_repo.save.assert_called_once()
 

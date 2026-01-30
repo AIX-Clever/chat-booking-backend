@@ -29,98 +29,160 @@ PROVIDERS_TABLE_NAME = os.environ.get('PROVIDERS_TABLE')
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
     
-    # Initialize tables globally or here
+    # Initialize tables
+    tenants_table = dynamodb.Table(os.environ.get('TENANTS_TABLE'))
     services_table = dynamodb.Table(os.environ.get('SERVICES_TABLE'))
     providers_table = dynamodb.Table(os.environ.get('PROVIDERS_TABLE'))
     
     for record in event.get('Records', []):
-        if record['eventName'] in ['INSERT', 'MODIFY']:
-            new_image = record['dynamodb'].get('NewImage', {})
+        if record['eventName'] not in ['INSERT', 'MODIFY']:
+            continue
             
-            # Extract data from DynamoDB Stream record (Low-level DynamoDB JSON format)
-            # We need to unmarshall or carefuly extract.
-            # tenantId: {'S': '...'}
-            tenant_id = new_image.get('tenantId', {}).get('S')
-            slug = new_image.get('slug', {}).get('S')
-            if not slug:
-                continue
-
-            # Extract and parse settings JSON
-            settings_raw = new_image.get('settings', {}).get('S', '{}')
-            settings = {}
-            try:
-                settings = json.loads(settings_raw)
-            except Exception as e:
-                logger.warning(f"Failed to parse settings JSON for {tenant_id}: {e}")
-            
-            profile = settings.get('profile', {})
-            address = profile.get('address', {})
-
-            # Priority: settings.profile > Top level attributes > Defaults
-            # Center name (prefer name from profile if centerName is used there)
-            name = profile.get('centerName') or new_image.get('name', {}).get('S', 'Profesional')
-            bio = profile.get('bio') or new_image.get('bio', {}).get('S', '')
-            
-            # Map logoUrl from profile to photoUrl
-            photo_url = profile.get('logoUrl') or new_image.get('photoUrl', {}).get('S', '')
-            
-            theme_color = settings.get('widgetConfig', {}).get('primaryColor') or new_image.get('themeColor', {}).get('S', '#3b82f6')
-            profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
-            
-            # Construct fullAddress
-            if address:
-                addr_parts = [
-                    address.get('street'),
-                    address.get('city'),
-                    address.get('state'),
-                    address.get('country')
-                ]
-                full_address = ", ".join([p for p in addr_parts if p])
-            else:
-                full_address = new_image.get('fullAddress', {}).get('S', '')
+        new_image = record['dynamodb'].get('NewImage', {})
+        
+        # Determine if this is a Tenant or a Provider record
+        if 'providerId' in new_image:
+            process_provider_record(new_image, tenants_table, services_table, providers_table, context)
+        elif 'tenantId' in new_image:
+            process_tenant_record(new_image, services_table, providers_table, context)
                 
-            operating_hours = profile.get('operatingHours') or new_image.get('operatingHours', {}).get('S', '')
-            
-            # Specializations logic
-            spec_raw = profile.get('specializations')
-            if spec_raw and isinstance(spec_raw, list):
-                specializations = spec_raw
-            else:
-                specializations = []
-                if 'specializations' in new_image:
-                    if 'L' in new_image['specializations']:
-                        specializations = [item['S'] for item in new_image['specializations']['L']]
-                    elif 'SS' in new_image['specializations']:
-                        specializations = new_image['specializations']['SS']
+    return {"status": "success"}
 
-            logger.info(f"Processing bake for tenant {tenant_id} with slug {slug}")
+def process_tenant_record(new_image, services_table, providers_table, context):
+    tenant_id = new_image.get('tenantId', {}).get('S')
+    slug = new_image.get('slug', {}).get('S')
+    
+    if not slug:
+        logger.info(f"Skipping tenant {tenant_id}: No slug defined")
+        return
+
+    # Extract and parse settings JSON
+    settings = parse_settings(new_image)
+    profile = settings.get('profile', {})
+    
+    # Priority: settings.profile > Top level attributes > Defaults
+    name = profile.get('centerName') or new_image.get('name', {}).get('S', 'Profesional')
+    bio = profile.get('bio') or new_image.get('bio', {}).get('S', '')
+    photo_url = profile.get('logoUrl') or new_image.get('photoUrl', {}).get('S', '')
+    theme_color = settings.get('widgetConfig', {}).get('primaryColor') or new_image.get('themeColor', {}).get('S', '#3b82f6')
+    profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
+    
+    full_address = construct_address(profile, new_image)
+    operating_hours = profile.get('operatingHours') or new_image.get('operatingHours', {}).get('S', '')
+    specializations = extract_specializations(profile, new_image)
+
+    logger.info(f"Processing bake for tenant {tenant_id} with slug {slug}")
+    
+    try:
+        services = fetch_services(services_table, tenant_id)
+        providers = fetch_providers(providers_table, tenant_id)
+        
+        profile_data = {
+            "tenantId": tenant_id,
+            "slug": slug,
+            "name": name,
+            "bio": bio,
+            "photoUrl": photo_url,
+            "themeColor": theme_color,
+            "profession": profession,
+            "specializations": specializations,
+            "fullAddress": full_address,
+            "operatingHours": operating_hours,
+            "services": services,
+            "providers": providers
+        }
+        
+        bake_profile(slug, profile_data, context)
+    except Exception as e:
+        logger.error(f"Error baking tenant profile for {slug}: {str(e)}")
+
+def process_provider_record(new_image, tenants_table, services_table, providers_table, context):
+    tenant_id = new_image.get('tenantId', {}).get('S')
+    provider_id = new_image.get('providerId', {}).get('S')
+    slug = new_image.get('slug', {}).get('S')
+    
+    if not slug:
+        logger.info(f"Skipping provider {provider_id}: No slug defined")
+        return
+
+    logger.info(f"Processing personal bake for provider {provider_id} with slug {slug}")
+    
+    try:
+        # Fetch Tenant for branding
+        tenant_resp = tenants_table.get_item(Key={'tenantId': tenant_id})
+        tenant_item = tenant_resp.get('Item')
+        if not tenant_item:
+            logger.error(f"Tenant {tenant_id} not found for provider {provider_id}")
+            return
             
-            try:
-                # Fetch Services
-                services = fetch_services(services_table, tenant_id)
-                # Fetch Providers
-                providers = fetch_providers(providers_table, tenant_id)
-                
-                profile_data = {
-                    "tenantId": tenant_id,
-                    "slug": slug,
-                    "name": name,
-                    "bio": bio,
-                    "photoUrl": photo_url,
-                    "themeColor": theme_color,
-                    "profession": profession,
-                    "specializations": specializations,
-                    "fullAddress": full_address,
-                    "operatingHours": operating_hours,
-                    "services": services,
-                    "providers": providers
-                }
-                
-                bake_profile(slug, profile_data, context)
-            except Exception as e:
-                logger.error(f"Error baking profile for {slug}: {str(e)}")
-                import traceback
-                traceback.print_exc()
+        settings_raw = tenant_item.get('settings', '{}')
+        settings = json.loads(settings_raw) if isinstance(settings_raw, str) else settings_raw
+        
+        # Provider specific data
+        name = new_image.get('name', {}).get('S', 'Profesional')
+        bio = new_image.get('bio', {}).get('S', '')
+        photo_url = new_image.get('photoUrl', {}).get('S', '')
+        
+        # Tenant branding
+        theme_color = settings.get('widgetConfig', {}).get('primaryColor') or '#3b82f6'
+        
+        # Metadata / Profession from provider if available, else generic
+        # We don't have structured profile for providers yet, so we use top level
+        profession = "Especialista" # Could be extended in Provider entity
+        
+        services = fetch_services(services_table, tenant_id)
+        # For professional landing, we only include this provider or highlight it
+        all_providers = fetch_providers(providers_table, tenant_id)
+        
+        profile_data = {
+            "tenantId": tenant_id,
+            "slug": slug,
+            "name": name,
+            "bio": bio,
+            "photoUrl": photo_url,
+            "themeColor": theme_color,
+            "profession": profession,
+            "services": services,
+            "providers": all_providers,
+            "preselectedProviderId": provider_id # Signal for frontend to open this one
+        }
+        
+        bake_profile(slug, profile_data, context)
+    except Exception as e:
+        logger.error(f"Error baking provider profile for {slug}: {str(e)}")
+
+def parse_settings(new_image):
+    settings_raw = new_image.get('settings', {}).get('S', '{}')
+    try:
+        return json.loads(settings_raw)
+    except Exception as e:
+        logger.warning(f"Failed to parse settings JSON: {e}")
+        return {}
+
+def construct_address(profile, new_image):
+    address = profile.get('address', {})
+    if address:
+        addr_parts = [
+            address.get('street'),
+            address.get('city'),
+            address.get('state'),
+            address.get('country')
+        ]
+        return ", ".join([p for p in addr_parts if p])
+    return new_image.get('fullAddress', {}).get('S', '')
+
+def extract_specializations(profile, new_image):
+    spec_raw = profile.get('specializations')
+    if spec_raw and isinstance(spec_raw, list):
+        return spec_raw
+    
+    if 'specializations' in new_image:
+        spec_attr = new_image['specializations']
+        if 'L' in spec_attr:
+            return [item['S'] for item in spec_attr['L']]
+        elif 'SS' in spec_attr:
+            return spec_attr['SS']
+    return []
                 
     return {"status": "success"}
 

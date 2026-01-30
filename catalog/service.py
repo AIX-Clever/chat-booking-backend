@@ -419,7 +419,8 @@ class ProviderManagementService:
         metadata: Optional[Dict[str, Any]] = None,
         active: bool = True,
         photo_url: Optional[str] = None,
-        photo_url_thumbnail: Optional[str] = None
+        photo_url_thumbnail: Optional[str] = None,
+        slug: Optional[str] = None
     ) -> Provider:
         """
         Create new provider
@@ -445,7 +446,8 @@ class ProviderManagementService:
             metadata=metadata or {},
             active=active,
             photo_url=photo_url,
-            photo_url_thumbnail=photo_url_thumbnail
+            photo_url_thumbnail=photo_url_thumbnail,
+            slug=slug
         )
 
         # Persist
@@ -470,7 +472,8 @@ class ProviderManagementService:
         metadata: Optional[Dict[str, Any]] = None,
         active: Optional[bool] = None,
         photo_url: Optional[str] = None,
-        photo_url_thumbnail: Optional[str] = None
+        photo_url_thumbnail: Optional[str] = None,
+        slug: Optional[str] = None
     ) -> Provider:
         """
         Update existing provider
@@ -505,6 +508,8 @@ class ProviderManagementService:
             provider.photo_url = photo_url
         if photo_url_thumbnail is not None:
             provider.photo_url_thumbnail = photo_url_thumbnail
+        if slug is not None:
+            provider.slug = slug
 
         # Persist
         self.provider_repo.save(provider)

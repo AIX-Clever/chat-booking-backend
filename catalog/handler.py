@@ -346,7 +346,8 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         metadata=input_data.get('metadata'),
         active=input_data.get('active', True),
         photo_url=input_data.get('photoUrl'),
-        photo_url_thumbnail=input_data.get('photoUrlThumbnail')
+        photo_url_thumbnail=input_data.get('photoUrlThumbnail'),
+        slug=input_data.get('slug')
     )
     return provider_to_dict(provider)
 
@@ -364,7 +365,8 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         metadata=input_data.get('metadata'), # Added metadata
         active=input_data.get('active') if 'active' in input_data else input_data.get('available'),
         photo_url=input_data.get('photoUrl'),
-        photo_url_thumbnail=input_data.get('photoUrlThumbnail')
+        photo_url_thumbnail=input_data.get('photoUrlThumbnail'),
+        slug=input_data.get('slug')
     )
     logger.info(f"Updated provider result: {provider_to_dict(provider)}") # DEBUG LOG
     return provider_to_dict(provider)
@@ -461,6 +463,7 @@ def provider_to_dict(provider) -> dict:
         'available': provider.active,
         'photoUrl': provider.photo_url,
         'photoUrlThumbnail': provider.photo_url_thumbnail,
+        'slug': provider.slug,
         'hasGoogleCalendar': provider.google_integration is not None
     }
 

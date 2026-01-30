@@ -311,6 +311,7 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   photoUrlThumbnail: String
   available: Boolean!
   hasGoogleCalendar: Boolean
+  slug: String
 }
 
 # Types - Availability
@@ -408,6 +409,7 @@ input CreateProviderInput {
   metadata: AWSJSON
   photoUrl: String
   photoUrlThumbnail: String
+  slug: String
 }
 
 input UpdateProviderInput {
@@ -420,6 +422,7 @@ input UpdateProviderInput {
   photoUrl: String
   photoUrlThumbnail: String
   available: Boolean
+  slug: String
 }
 
 input CreateRoomInput {
