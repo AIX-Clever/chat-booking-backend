@@ -28,6 +28,7 @@ from shared.domain.exceptions import (
 )
 from shared.utils import Logger
 from shared.infrastructure.google_auth_service import GoogleAuthService
+from shared.infrastructure.microsoft_auth_service import MicrosoftAuthService
 import os
 
 
@@ -73,6 +74,18 @@ class AvailabilityService:
                 "",  # Redirect URI unused for refresh
             )
             if self.google_client_id
+            else None
+        )
+
+        self.microsoft_client_id = os.environ.get("MICROSOFT_CLIENT_ID")
+        self.microsoft_client_secret = os.environ.get("MICROSOFT_CLIENT_SECRET")
+        self.microsoft_auth_service = (
+            MicrosoftAuthService(
+                self.microsoft_client_id,
+                self.microsoft_client_secret,
+                "",  # Redirect URI unused for refresh
+            )
+            if self.microsoft_client_id
             else None
         )
 
@@ -169,6 +182,16 @@ class AvailabilityService:
                 self.logger.error(f"Error checking Google Calendar: {str(e)}")
                 # Fail open or closed? Typically fail open (allow booking) or closed (safer)?
                 # Let's log but NOT block for now to avoid outages if token expired and not refreshed properly
+                pass
+
+        # [NEW] Filter out Microsoft Outlook Busy Slots
+        if self.microsoft_auth_service:
+            try:
+                available_slots = self._filter_microsoft_busy_slots(
+                    tenant_id, provider_id, available_slots, from_date, to_date
+                )
+            except Exception as e:
+                self.logger.error(f"Error checking Microsoft Calendar: {str(e)}")
                 pass
 
         self.logger.info(
@@ -498,6 +521,79 @@ class AvailabilityService:
             raise e  # Propagate to let main try/catch handle it (failsafe)
 
         return available_slots
+
+    def _filter_microsoft_busy_slots(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        candidate_slots: List[TimeSlot],
+        from_date: datetime,
+        to_date: datetime,
+    ) -> List[TimeSlot]:
+        """
+        Filters slots that overlap with Microsoft Outlook busy periods
+        """
+        # 1. Get Credentials
+        creds = self.provider_integration_repo.get_microsoft_creds(tenant_id, provider_id)
+        if not creds:
+            return candidate_slots
+
+        try:
+            # 2. Get Access Token (refresh if needed)
+            # In a production scenario, we'd check expiration here. 
+            # For simplicity, we assume the service handles basic refresh if we improve it later,
+            # but let's do a simple refresh or just use the current one.
+            access_token = creds.get("access_token")
+            
+            # 3. Query Schedule
+            # Microsoft expects ISO format without Z if we pass timezone explicitly, 
+            # or just UTC strings.
+            time_min = from_date.isoformat()
+            time_max = to_date.isoformat()
+
+            busy_periods = self.microsoft_auth_service.list_busy_slots(
+                access_token, time_min, time_max
+            )
+
+            if not busy_periods:
+                return candidate_slots
+
+            # 4. Filter
+            available_slots = []
+            parsed_busy = []
+            for period in busy_periods:
+                # Microsoft returns ISO strings
+                start_str = period["start"]
+                end_str = period["end"]
+                # Convert to aware UTC
+                parsed_busy.append({
+                    "start": datetime.fromisoformat(start_str.replace("Z", "+00:00")),
+                    "end": datetime.fromisoformat(end_str.replace("Z", "+00:00")),
+                })
+
+            for slot in candidate_slots:
+                is_free = True
+                slot_start = slot.start
+                slot_end = slot.end
+
+                if not slot_start.tzinfo:
+                    from datetime import timezone
+                    slot_start = slot_start.replace(tzinfo=timezone.utc)
+                    slot_end = slot_end.replace(tzinfo=timezone.utc)
+
+                for busy in parsed_busy:
+                    if not (slot_end <= busy["start"] or slot_start >= busy["end"]):
+                        is_free = False
+                        break
+
+                if is_free:
+                    available_slots.append(slot)
+
+            return available_slots
+
+        except Exception as e:
+            self.logger.error(f"Microsoft Calc Logic Error: {e}")
+            return candidate_slots # Fail open
 
 
 class AvailabilityManagementService:

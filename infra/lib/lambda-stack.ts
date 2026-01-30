@@ -66,6 +66,7 @@ export class LambdaStack extends cdk.Stack {
 
   public readonly getPublicProfileFunction: lambda.Function;
   public readonly googleIntegrationFunction: lambda.Function;
+  public readonly microsoftIntegrationFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -102,6 +103,8 @@ export class LambdaStack extends cdk.Stack {
         DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
         DYNAMODB_FAQS_TABLE: props.faqsTable.tableName,
         ROOMS_TABLE: props.roomsTable.tableName,
+        MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
+        MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
       },
     };
 
@@ -477,6 +480,28 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.providersTable.grantReadWriteData(this.googleIntegrationFunction); // To store tokens
 
+    // 18. Microsoft Integration Lambda
+    this.microsoftIntegrationFunction = new lambda.Function(this, 'MicrosoftIntegrationFunction', {
+      ...commonProps,
+      description: 'Microsoft Outlook Calendar OAuth Handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'microsoft_integration')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
+        MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
+      }
+    });
+
+    // Add Function URL
+    const microsoftIntegrationUrl = this.microsoftIntegrationFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    // Grant permissions
+    props.providersTable.grantReadWriteData(this.microsoftIntegrationFunction); // To store tokens
+
     // 13. Ingestion Function (Knowledge Base - S3 Trigger)
     // Create Documents Bucket (Moved from VectorDatabaseStack to avoid cyclic dependency)
     this.documentsBucket = new s3.Bucket(this, 'DocumentsBucket', {
@@ -610,6 +635,11 @@ export class LambdaStack extends cdk.Stack {
       description: 'Google Integration Callback URL',
     });
 
+    new cdk.CfnOutput(this, 'MicrosoftIntegrationUrl', {
+      value: microsoftIntegrationUrl.url,
+      description: 'Microsoft Integration Callback URL',
+    });
+
     // 17. Profile Baker Lambda (SEO Generator)
     // Import Link resources from SSM
     const linkBucketName = ssm.StringParameter.valueForStringParameter(
@@ -637,7 +667,7 @@ export class LambdaStack extends cdk.Stack {
     });
 
     // Grant permissions
-    // 1. DynamoDB Stream Trigger
+    // 1. DynamoDB Stream Triggers
     profileBakerFunction.addEventSource(new lambdaEventSources.DynamoEventSource(props.tenantsTable, {
       startingPosition: lambda.StartingPosition.LATEST,
       retryAttempts: 2,
@@ -648,8 +678,19 @@ export class LambdaStack extends cdk.Stack {
       ],
     }));
 
-    // Grant read access to the stream source table (required for stream processing + item lookup)
+    profileBakerFunction.addEventSource(new lambdaEventSources.DynamoEventSource(props.providersTable, {
+      startingPosition: lambda.StartingPosition.LATEST,
+      retryAttempts: 2,
+      filters: [
+        lambda.FilterCriteria.filter({
+          eventName: lambda.FilterRule.or('INSERT', 'MODIFY'),
+        }),
+      ],
+    }));
+
+    // Grant read access to the stream source tables
     props.tenantsTable.grantReadData(profileBakerFunction);
+    props.providersTable.grantReadData(profileBakerFunction);
 
     // 2. S3 Write Access to Link Bucket
     const linkBucket = s3.Bucket.fromBucketName(this, 'ImportedLinkBucket', linkBucketName);

@@ -59,6 +59,7 @@ except ImportError:
     PaymentGatewayFactory = None
 
 from shared.infrastructure.google_auth_service import GoogleAuthService
+from shared.infrastructure.microsoft_auth_service import MicrosoftAuthService
 
 try:
     from shared.metrics import MetricsService
@@ -109,12 +110,20 @@ class BookingService:
             MetricsService() if MetricsService else None
         )
 
-        # Initialize Google Service
         self.google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
         self.google_client_secret = os.environ.get("GOOGLE_CLIENT_SECRET")
+
         self.google_auth_service = (
             GoogleAuthService(self.google_client_id, self.google_client_secret, "")
             if self.google_client_id
+            else None
+        )
+
+        self.microsoft_client_id = os.environ.get("MICROSOFT_CLIENT_ID")
+        self.microsoft_client_secret = os.environ.get("MICROSOFT_CLIENT_SECRET")
+        self.microsoft_auth_service = (
+            MicrosoftAuthService(self.microsoft_client_id, self.microsoft_client_secret, "")
+            if self.microsoft_client_id
             else None
         )
 
@@ -297,6 +306,12 @@ class BookingService:
         # [NEW] Sync to Google Calendar
         if self.google_auth_service and self._provider_integration_repo:
             self._sync_to_google_calendar(
+                tenant_id, provider_id, booking, client_name, client_email, service.name
+            )
+
+        # [NEW] Sync to Microsoft Outlook Calendar
+        if self.microsoft_auth_service and self._provider_integration_repo:
+            self._sync_to_microsoft_calendar(
                 tenant_id, provider_id, booking, client_name, client_email, service.name
             )
 
@@ -603,7 +618,52 @@ class BookingService:
             print(f"Synced to Google Calendar: {created_event.get('id')}")
 
         except Exception as e:
+            # Do NOT fail the booking
             print(f"Failed to sync to Google Calendar: {e}")
+
+    def _sync_to_microsoft_calendar(
+        self,
+        tenant_id: TenantId,
+        provider_id: str,
+        booking: Booking,
+        client_name: str,
+        client_email: str,
+        service_name: str,
+    ):
+        """
+        Create event in Microsoft Outlook Calendar
+        """
+        try:
+            # 1. Get Creds
+            creds = self._provider_integration_repo.get_microsoft_creds(
+                tenant_id, provider_id
+            )
+            if not creds:
+                return
+
+            # 2. Extract Token
+            access_token = creds.get("access_token")
+            
+            # 3. Create Event
+            description = f"Cliente: {client_name}<br>Email: {client_email}<br>Notas: {booking.notes or ''}"
+
+            created_event = self.microsoft_auth_service.create_event(
+                access_token=access_token,
+                summary=f"{service_name} - {client_name}",
+                description=description,
+                start_time=booking.start_time.isoformat(),
+                end_time=booking.end_time.isoformat(),
+                timezone="UTC"
+            )
+
+            # 4. Save Microsoft Event ID
+            booking.microsoft_event_id = created_event.get("id")
+            self._booking_repo.update(booking)
+
+            print(f"Synced to Microsoft Calendar: {created_event.get('id')}")
+
+        except Exception as e:
+            print(f"Failed to sync to Microsoft Calendar: {e}")
             # Do NOT fail the booking
 
 

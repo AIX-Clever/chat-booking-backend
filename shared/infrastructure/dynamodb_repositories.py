@@ -327,6 +327,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             "timezone": provider.timezone,
             "metadata": provider.metadata,
             "active": provider.active,
+            "slug": provider.slug,
         }
 
         if provider.bio:
@@ -357,7 +358,9 @@ class DynamoDBProviderRepository(IProviderRepository):
             active=item.get("active", True),
             photo_url=item.get("photoUrl"),
             photo_url_thumbnail=item.get("photoUrlThumbnail"),
+            slug=item.get("slug"),
             google_integration=item.get("googleIntegration"),
+            microsoft_integration=item.get("microsoftIntegration"),
         )
 
 
@@ -899,4 +902,31 @@ class DynamoDBProviderIntegrationRepository(IProviderIntegrationRepository):
         self.table.update_item(
             Key={"tenantId": str(tenant_id), "providerId": provider_id},
             UpdateExpression="REMOVE googleIntegration",
+        )
+
+    def save_microsoft_creds(
+        self, tenant_id: TenantId, provider_id: str, credentials: dict
+    ) -> None:
+        self.table.update_item(
+            Key={"tenantId": str(tenant_id), "providerId": provider_id},
+            UpdateExpression="SET microsoftIntegration = :c",
+            ExpressionAttributeValues={":c": credentials},
+        )
+
+    def get_microsoft_creds(self, tenant_id: TenantId, provider_id: str) -> Optional[dict]:
+        try:
+            response = self.table.get_item(
+                Key={"tenantId": str(tenant_id), "providerId": provider_id},
+                ProjectionExpression="microsoftIntegration",
+            )
+            item = response.get("Item")
+            return item.get("microsoftIntegration") if item else None
+        except ClientError as e:
+            print(f"Error getting microsoft creds: {e}")
+            return None
+
+    def delete_microsoft_creds(self, tenant_id: TenantId, provider_id: str) -> None:
+        self.table.update_item(
+            Key={"tenantId": str(tenant_id), "providerId": provider_id},
+            UpdateExpression="REMOVE microsoftIntegration",
         )
