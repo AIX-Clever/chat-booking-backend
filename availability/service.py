@@ -700,7 +700,7 @@ class AvailabilityManagementService:
             tenant_id, provider_id, exception_rules
         )
 
-        return exceptions
+        return exception_rules
 
     def get_provider_exceptions(
         self, tenant_id: TenantId, provider_id: str

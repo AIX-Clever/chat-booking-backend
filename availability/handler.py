@@ -301,9 +301,21 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
         tenant_id, provider_id, exceptions
     )
 
+    # Serialize entities for response
+    serialized_exceptions = [
+        {
+            "date": ex.date,
+            "timeRanges": [
+                {"startTime": tr.start_time, "endTime": tr.end_time}
+                for tr in ex.time_ranges
+            ],
+        }
+        for ex in updated_exceptions
+    ]
+
     # Return object matches GraphQL schema ProviderExceptions!
     return success_response(
-        {"providerId": provider_id, "exceptions": updated_exceptions}
+        {"providerId": provider_id, "exceptions": serialized_exceptions}
     )
 
 
