@@ -106,13 +106,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             
             logger.info(f"Created Cognito user {email} with sub {user_sub}")
 
-            # Set permanent password
+            # Set permanent password using User Sub (more reliable than email/username alias)
             cognito.admin_set_user_password(
                 UserPoolId=user_pool_id,
-                Username=email,
+                Username=user_sub,
                 Password=password,
                 Permanent=True
             )
+            
+            logger.info(f"Set permanent password for user {user_sub}")
             
         except cognito.exceptions.UsernameExistsException:
              # Check if user exists but has no tenant? Or just fail.
@@ -232,4 +234,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         raise Exception(str(ve))
     except Exception as e:
         logger.error("Internal error", error=e)
-        raise Exception(f"Internal error: {str(e)}")
+        # Avoid double-wrapping if it's already an error message we want to bubble up
+        err_msg = str(e)
+        if "Internal error:" in err_msg:
+            raise Exception(err_msg)
+        raise Exception(f"Error en el servidor: {err_msg}")
