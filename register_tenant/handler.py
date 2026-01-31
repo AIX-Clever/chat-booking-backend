@@ -33,7 +33,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     Args:
         event: AppSync event with arguments
     """
-    global cognito, workflows_table, user_roles_table
+    global cognito, workflows_table, user_roles_table, categories_table
     
     # Lazy initialization of boto3 clients
     if cognito is None:
