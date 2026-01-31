@@ -76,19 +76,16 @@ class TestLambdaResponses:
         assert response["headers"]["Content-Type"] == "application/json"
 
     def test_success_response(self):
-        response = success_response({"result": "ok"})
+        data = {"result": "ok"}
+        response = success_response(data)
 
-        assert response["statusCode"] == 200
-        body = eval(response["body"])  # Parse JSON string
-        assert body["result"] == "ok"
+        assert response == data
 
     def test_error_response(self):
-        response = error_response("Something went wrong", 500)
-
-        assert response["statusCode"] == 500
-        body = eval(response["body"])
-        assert "error" in body
-        assert body["error"] == "Something went wrong"
+        with pytest.raises(Exception) as exc_info:
+            error_response("Something went wrong", 500)
+        
+        assert str(exc_info.value) == "Something went wrong"
 
 
 class TestDateTimeUtilities:
