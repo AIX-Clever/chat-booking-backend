@@ -48,7 +48,7 @@ except Exception as e:
     asset_service = None
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
-service_mgmt_service = ServiceManagementService(service_repo)
+service_mgmt_service = ServiceManagementService(service_repo, category_repo)
 provider_mgmt_service = ProviderManagementService(provider_repo)
 category_mgmt_service = CategoryManagementService(category_repo)
 room_mgmt_service = RoomManagementService(room_repo)
@@ -347,7 +347,8 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         active=input_data.get('active', True),
         photo_url=input_data.get('photoUrl'),
         photo_url_thumbnail=input_data.get('photoUrlThumbnail'),
-        slug=input_data.get('slug')
+        slug=input_data.get('slug'),
+        professional_license=input_data.get('professionalLicense')
     )
     return success_response(provider_to_dict(provider))
 
@@ -366,7 +367,8 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         active=input_data.get('active') if 'active' in input_data else input_data.get('available'),
         photo_url=input_data.get('photoUrl'),
         photo_url_thumbnail=input_data.get('photoUrlThumbnail'),
-        slug=input_data.get('slug')
+        slug=input_data.get('slug'),
+        professional_license=input_data.get('professionalLicense')
     )
     logger.info(f"Updated provider result: {provider_to_dict(provider)}") # DEBUG LOG
     return success_response(provider_to_dict(provider))
@@ -415,6 +417,7 @@ def provider_to_dict(provider) -> dict:
         'photoUrl': provider.photo_url,
         'photoUrlThumbnail': provider.photo_url_thumbnail,
         'slug': provider.slug,
+        'professionalLicense': getattr(provider, 'professional_license', None),
         'hasGoogleCalendar': getattr(provider, 'google_integration', None) is not None,
         'hasMicrosoftCalendar': getattr(provider, 'microsoft_integration', None) is not None
     }

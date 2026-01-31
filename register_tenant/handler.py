@@ -16,6 +16,7 @@ from shared.utils import lambda_response, Logger, generate_api_key, hash_api_key
 cognito = None
 workflows_table = None
 user_roles_table = None
+categories_table = None
 
 # Load Default Flow
 try:
@@ -41,6 +42,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
     if user_roles_table is None:
         user_roles_table = boto3.resource('dynamodb').Table(os.environ.get('USER_ROLES_TABLE', 'ChatBooking-UserRoles'))
+    if categories_table is None:
+        categories_table = boto3.resource('dynamodb').Table(os.environ.get('CATEGORIES_TABLE', 'ChatBooking-Categories'))
     
     logger = Logger()
     logger.info("Starting tenant registration", event=event)
@@ -188,8 +191,27 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         except Exception as u_error:
              # Don't fail registration, but log critical error
              logger.error(f"Failed to create user role for owner: {u_error}")
+
+        # 9. Create Default Category (General)
+        try:
+             current_time = datetime.now(timezone.utc).isoformat()
+             category_item = {
+                 'tenantId': str(tenant_id),
+                 'categoryId': f"cat_{secrets.token_hex(4)}",
+                 'name': 'General',
+                 'description': 'Categoría predeterminada para servicios',
+                 'isActive': True,
+                 'displayOrder': 0,
+                 'createdAt': current_time,
+                 'updatedAt': current_time,
+                 'metadata': {}
+             }
+             logger.info(f"Creating default General category for tenant {tenant_id}")
+             categories_table.put_item(Item=category_item)
+        except Exception as cat_error:
+             logger.error(f"Failed to create default category: {cat_error}")
         
-        # 9. Return Result
+        # 10. Return Result
         # Map entity to GraphQL type
         return {
             'tenantId': str(tenant.tenant_id),

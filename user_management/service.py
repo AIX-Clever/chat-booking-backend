@@ -282,6 +282,39 @@ class UserManagementService:
             print(f"Error resetting password for {user_id}: {e}")
             raise
 
+    def resend_invitation(self, user_id: str) -> bool:
+        """
+        Resend invitation to a user who is still in PENDING_INVITATION status.
+        Generates a new temporary password and resends the custom email.
+        """
+        # 1. Get user role from DynamoDB
+        user_role = self.user_role_repo.get(user_id)
+        if not user_role:
+            raise ValueError(f"User {user_id} not found")
+        
+        if user_role.status != UserStatus.PENDING_INVITATION:
+            # If not pending, they should use normal password reset
+            return self.reset_user_password(user_id)
+
+        # 2. Set a new temporary password in Cognito
+        temp_password = self._generate_temp_password()
+        
+        try:
+            self.cognito.admin_set_user_password(
+                UserPoolId=self.user_pool_id,
+                Username=user_role.email, # Or user_id/sub
+                Password=temp_password,
+                Permanent=False
+            )
+        except Exception as e:
+            print(f"Error setting temporary password for resend: {e}")
+            raise
+
+        # 3. Resend the custom invitation email
+        self._send_invitation_email(user_role.email, temp_password, user_role.name or user_role.email)
+        
+        return True
+
     def _generate_temp_password(self) -> str:
         """Generate a secure temporary password"""
         alphabet = string.ascii_letters + string.digits + "!@#$%^&*"

@@ -88,9 +88,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Any:
             user_id = arguments.get('userId')
             return handle_remove_user(tenant_id, user_id, caller_role, claims)
 
-        elif field_name == 'resetUserPassword':
+        elif field_name == 'resetUserPassword' or field_name == 'resendUserPasswordReset':
             user_id = arguments.get('userId')
             return handle_reset_password(tenant_id, user_id, caller_role)
+        
+        elif field_name == 'resendInvitation':
+            user_id = arguments.get('userId')
+            return handle_resend_invitation(tenant_id, user_id, caller_role)
         
         else:
             return error_response(f"Unknown field: {field_name}", 400)
@@ -268,6 +272,31 @@ def handle_reset_password(tenant_id: TenantId, user_id: str, caller_role: str) -
         
     except Exception as e:
         logger.error(f"Error resetting password: {str(e)}", exc_info=True)
+        raise
+
+def handle_resend_invitation(tenant_id: TenantId, user_id: str, caller_role: str) -> bool:
+    """
+    Resend invitation to a user.
+    Only OWNER or ADMIN can resend invitations.
+    """
+    try:
+        # Check caller permissions
+        if caller_role not in ['OWNER', 'ADMIN']:
+             raise ValueError("Insufficient permissions to resend invitation")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get('tenantId') != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+        
+        # Call service to resend invitation
+        success = user_service.resend_invitation(user_id)
+        
+        logger.info(f"Resent invitation for user {user_id}")
+        return success
+        
+    except Exception as e:
+        logger.error(f"Error resending invitation: {str(e)}", exc_info=True)
         raise
 
 

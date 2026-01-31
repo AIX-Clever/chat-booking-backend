@@ -205,6 +205,7 @@ class Provider:
     photo_url_thumbnail: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
+    professional_license: Optional[str] = None
     google_integration: Optional[Dict[str, Any]] = None
     microsoft_integration: Optional[Dict[str, Any]] = None
 

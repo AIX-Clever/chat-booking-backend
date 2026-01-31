@@ -144,10 +144,14 @@ class TestCatalogService(unittest.TestCase):
 class TestServiceManagementService(unittest.TestCase):
     def setUp(self):
         self.mock_repo = Mock()
-        self.service = ServiceManagementService(self.mock_repo)
+        self.mock_category_repo = Mock()
+        self.service = ServiceManagementService(self.mock_repo, self.mock_category_repo)
         self.tenant_id = TenantId("tenant-1")
 
     def test_create_service(self):
+        # Arrange
+        self.mock_category_repo.list_by_tenant.return_value = []
+        
         # Act
         svc = self.service.create_service(
             self.tenant_id, "s1", "New Service", "desc", "general", 60, 50.0
@@ -156,6 +160,8 @@ class TestServiceManagementService(unittest.TestCase):
         # Assert
         self.assertEqual(svc.name, "New Service")
         self.mock_repo.save.assert_called_once()
+        # Verify category auto-creation
+        self.mock_category_repo.save.assert_called_once()
 
 
     def test_update_service(self):
@@ -164,15 +170,21 @@ class TestServiceManagementService(unittest.TestCase):
             service_id="s1", tenant_id=self.tenant_id, name="Old Name", description="desc",
             category="cat", duration_minutes=30, price=100
         )
+        self.mock_category_repo.list_by_tenant.return_value = [
+            Category(category_id="c1", tenant_id=self.tenant_id, name="cat")
+        ]
         
         # Act
         svc = self.service.update_service(
-            self.tenant_id, "s1", name="Updated Name"
+            self.tenant_id, "s1", name="Updated Name", category="new-cat"
         )
         
         # Assert
         self.assertEqual(svc.name, "Updated Name")
+        self.assertEqual(svc.category, "new-cat")
         self.mock_repo.save.assert_called_once()
+        # Verify new-cat was created because it wasn't in list
+        self.mock_category_repo.save.assert_called_once()
 
 
     def test_delete_service(self):
@@ -198,11 +210,34 @@ class TestProviderManagementService(unittest.TestCase):
     def test_create_provider(self):
         # Act
         prov = self.service.create_provider(
-            self.tenant_id, "p1", "Dr. Test", "Bio", ["s1"], "UTC", slug="dr-test"
+            self.tenant_id, "p1", "Dr. Test", "Bio", ["s1"], "UTC", 
+            slug="dr-test", professional_license="LIC-123"
         )
 
         # Assert
         self.assertEqual(prov.name, "Dr. Test")
         self.assertEqual(prov.slug, "dr-test")
+        self.assertEqual(prov.professional_license, "LIC-123")
+        self.mock_repo.save.assert_called_once()
+
+    def test_update_provider(self):
+        # Arrange
+        self.mock_repo.get_by_id.return_value = Provider(
+            provider_id="p1", 
+            tenant_id=self.tenant_id, 
+            name="Old Name", 
+            bio="bio", 
+            service_ids=["s1"], 
+            timezone="UTC"
+        )
+        
+        # Act
+        prov = self.service.update_provider(
+            self.tenant_id, "p1", name="Updated Name", professional_license="NEW-LIC"
+        )
+        
+        # Assert
+        self.assertEqual(prov.name, "Updated Name")
+        self.assertEqual(prov.professional_license, "NEW-LIC")
         self.mock_repo.save.assert_called_once()
 

@@ -312,6 +312,7 @@ type Provider @aws_api_key @aws_cognito_user_pools {
   available: Boolean!
   hasGoogleCalendar: Boolean
   slug: String
+  professionalLicense: String
 }
 
 # Types - Availability
@@ -410,6 +411,7 @@ input CreateProviderInput {
   photoUrl: String
   photoUrlThumbnail: String
   slug: String
+  professionalLicense: String
 }
 
 input UpdateProviderInput {
@@ -423,6 +425,7 @@ input UpdateProviderInput {
   photoUrlThumbnail: String
   available: Boolean
   slug: String
+  professionalLicense: String
 }
 
 input CreateRoomInput {
@@ -707,6 +710,10 @@ type Mutation {
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
   sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
   confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
+  
+  # User Management
+  resendUserPasswordReset(userId: ID!): Boolean! @aws_cognito_user_pools
+  resendInvitation(userId: ID!): Boolean! @aws_cognito_user_pools
 }
 
 input ExceptionRuleInput {

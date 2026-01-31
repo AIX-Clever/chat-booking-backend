@@ -22,7 +22,7 @@ class MercadoPagoClient:
         Creates a preapproval (subscription) in Mercado Pago.
         """
         # Create a "reason" dynamically or use a standard one
-        reason = f"Suscripción ChatBooking {plan_id.upper()}"
+        reason = f"Suscripción Hola Lucía {plan_id.upper()}"
 
         preapproval_data = {
             "payer_email": payer_email,

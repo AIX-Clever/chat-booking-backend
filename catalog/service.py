@@ -250,9 +250,31 @@ class ServiceManagementService:
     Open/Closed Principle: separated from read-only catalog service
     """
 
-    def __init__(self, service_repository: IServiceRepository):
+    def __init__(self, service_repository: IServiceRepository, category_repository: ICategoryRepository):
         self.service_repo = service_repository
+        self.category_repo = category_repository
         self.logger = Logger()
+
+    def _ensure_category_exists(self, tenant_id: TenantId, category_name: str) -> None:
+        """Helper to ensure a category entity exists by name"""
+        existing = self.category_repo.list_by_tenant(tenant_id)
+        # Check if any existing category matches the name (case insensitive for safety)
+        if not any(c.name.lower() == category_name.lower() for c in existing):
+            self.logger.info(f"Auto-creating missing category: {category_name}")
+            from shared.utils import generate_id
+            from datetime import datetime, timezone
+            
+            new_cat = Category(
+                category_id=generate_id('cat'),
+                tenant_id=tenant_id,
+                name=category_name,
+                is_active=True,
+                display_order=len(existing),
+                metadata={},
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            self.category_repo.save(new_cat)
 
     def create_service(
         self,
@@ -284,6 +306,9 @@ class ServiceManagementService:
 
         if price is not None and price < 0:
             raise ValidationError("Price cannot be negative")
+
+        # Ensure category exists
+        self._ensure_category_exists(tenant_id, category)
 
         # Create entity
         service = Service(
@@ -336,6 +361,10 @@ class ServiceManagementService:
         service = self.service_repo.get_by_id(tenant_id, service_id)
         if not service:
             raise EntityNotFoundError("Service", service_id)
+
+        # Ensure category exists if being changed
+        if category is not None:
+            self._ensure_category_exists(tenant_id, category)
 
         # Update fields
         if name is not None:
@@ -420,7 +449,8 @@ class ProviderManagementService:
         active: bool = True,
         photo_url: Optional[str] = None,
         photo_url_thumbnail: Optional[str] = None,
-        slug: Optional[str] = None
+        slug: Optional[str] = None,
+        professional_license: Optional[str] = None
     ) -> Provider:
         """
         Create new provider
@@ -447,7 +477,8 @@ class ProviderManagementService:
             active=active,
             photo_url=photo_url,
             photo_url_thumbnail=photo_url_thumbnail,
-            slug=slug
+            slug=slug,
+            professional_license=professional_license
         )
 
         # Persist
@@ -473,7 +504,8 @@ class ProviderManagementService:
         active: Optional[bool] = None,
         photo_url: Optional[str] = None,
         photo_url_thumbnail: Optional[str] = None,
-        slug: Optional[str] = None
+        slug: Optional[str] = None,
+        professional_license: Optional[str] = None
     ) -> Provider:
         """
         Update existing provider
@@ -510,6 +542,8 @@ class ProviderManagementService:
             provider.photo_url_thumbnail = photo_url_thumbnail
         if slug is not None:
             provider.slug = slug
+        if professional_license is not None:
+            provider.professional_license = professional_license
 
         # Persist
         self.provider_repo.save(provider)
