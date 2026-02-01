@@ -7,7 +7,7 @@ import { DatabaseStack } from '../lib/database-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { AppSyncApiStack } from '../lib/appsync-api-stack';
 import { AuthStack } from '../lib/auth-stack';
-import { VectorDatabaseStack } from '../lib/vector-database-stack';
+// import { VectorDatabaseStack } from '../lib/vector-database-stack';
 import { AssetsStack } from '../lib/assets-stack';
 
 /**
@@ -58,12 +58,12 @@ const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
   tags,
 });
 
-// 2.5 Knowledge Base Stack - Aurora Serverless v2 + VPC (Private Network)
-const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase`, {
-  env: { account, region },
-  description: 'Aurora Serverless v2 with pgvector for AI Knowledge Base',
-  tags,
-});
+// 2.5 Knowledge Base Stack - REMOVED for Cost Optimization (RDS + VPC)
+// const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase`, {
+//   env: { account, region },
+//   description: 'Aurora Serverless v2 with pgvector for AI Knowledge Base',
+//   tags,
+// });
 
 // 2.6 Assets Stack - S3 for User Uploads
 const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
@@ -89,10 +89,10 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking Backend',
   tags,
-  vpc: vectorDbStack.vpc,
-  dbSecurityGroup: vectorDbStack.dbSecurityGroup,
-  dbSecret: vectorDbStack.dbSecret,
-  dbEndpoint: vectorDbStack.cluster.clusterArn, // For Data API, we pass the ARN
+  // vpc: vectorDbStack.vpc, // Removed
+  // dbSecurityGroup: vectorDbStack.dbSecurityGroup, // Removed
+  // dbSecret: vectorDbStack.dbSecret, // Removed
+  // dbEndpoint: vectorDbStack.cluster.clusterArn, // Removed
   tenantsTable: databaseStack.tenantsTable,
   apiKeysTable: databaseStack.apiKeysTable,
   servicesTable: databaseStack.servicesTable,
@@ -113,7 +113,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
-lambdaStack.addDependency(vectorDbStack);
+// lambdaStack.addDependency(vectorDbStack); // Removed
 // lambdaStack.addDependency(assetsStack); // If lambda needs to read/write, passed as prop?
 
 // 4. AppSync API Stack - GraphQL Gateway

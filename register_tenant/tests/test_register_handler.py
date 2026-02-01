@@ -4,6 +4,7 @@ import os
 from unittest.mock import Mock, patch, MagicMock
 
 # Patch boto3 before importing handler to prevent NoRegionError
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 with patch('boto3.client') as mock_client, \
      patch('boto3.resource') as mock_resource:
     mock_client.return_value = MagicMock()
