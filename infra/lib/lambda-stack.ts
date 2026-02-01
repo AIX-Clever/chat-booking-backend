@@ -252,12 +252,12 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(120), // More time for conversation logic / RAG
       memorySize: 1024, // More memory for FSM processing
-      vpc: props.vpc,
-      securityGroups: props.dbSecurityGroup ? [props.dbSecurityGroup] : undefined,
+      // vpc: props.vpc,
+      // securityGroups: props.dbSecurityGroup ? [props.dbSecurityGroup] : undefined,
       environment: {
         ...commonProps.environment,
-        DB_SECRET_ARN: props.dbSecret?.secretArn || '',
-        DB_ENDPOINT: props.dbEndpoint || '',
+        // DB_SECRET_ARN: props.dbSecret?.secretArn || '',
+        // DB_ENDPOINT: props.dbEndpoint || '',
         EMBEDDING_MODEL_ID: process.env.EMBEDDING_MODEL_ID || 'amazon.titan-embed-text-v2:0',
         LLM_MODEL_ID: 'amazon.titan-text-express-v1', // HARDCODED FORCE TO FIX ANTHROPIC ERROR
       }
@@ -279,7 +279,8 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'], // Scope this down in production to specific models
     }));
 
-    // Grant RDS Data API Access
+    // Grant RDS Data API Access - REMOVED for Cost Optimization
+    /*
     if (props.dbSecret && props.dbEndpoint) {
       props.dbSecret.grantRead(this.chatAgentFunction);
       this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
@@ -287,6 +288,7 @@ export class LambdaStack extends cdk.Stack {
         resources: [props.dbEndpoint], // DB Cluster ARN
       }));
     }
+    */
 
     // 6. Register Tenant Lambda
     this.registerTenantFunction = new lambda.Function(this, 'RegisterTenantFunction', {
@@ -528,8 +530,8 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 1024,
       environment: {
         ...commonProps.environment,
-        DB_SECRET_ARN: props.dbSecret?.secretArn || '',
-        DB_ENDPOINT: props.dbEndpoint || '',
+        // DB_SECRET_ARN: props.dbSecret?.secretArn || '',
+        // DB_ENDPOINT: props.dbEndpoint || '',
       }
     });
 
@@ -542,9 +544,9 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions for Ingestion
     props.tenantsTable.grantReadData(this.ingestionFunction);
-    if (props.dbSecret) {
-      props.dbSecret.grantRead(this.ingestionFunction);
-    }
+    // if (props.dbSecret) {
+    //   props.dbSecret.grantRead(this.ingestionFunction);
+    // }
 
     // Grant Bedrock
     this.ingestionFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
@@ -552,13 +554,15 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'],
     }));
 
-    // Grant RDS Data API
+    // Grant RDS Data API - REMOVED
+    /*
     if (props.dbEndpoint) {
       this.ingestionFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
         actions: ['rds-data:ExecuteStatement', 'rds-data:BatchExecuteStatement'],
         resources: [props.dbEndpoint],
       }));
     }
+    */
 
     // 13. Presign Function (Get Upload URL)
     this.presignFunction = new lambda.Function(this, 'PresignFunction', {

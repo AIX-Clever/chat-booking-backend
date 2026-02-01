@@ -86,8 +86,14 @@ class ChatAgentService:
         db_secret_arn = os.environ.get("DB_SECRET_ARN")
 
         if db_cluster_arn and db_secret_arn:
-            vector_repo = VectorRepository(db_cluster_arn, db_secret_arn)
-            self.ai_handler = AIHandler(vector_repo)
+            try:
+                vector_repo = VectorRepository(db_cluster_arn, db_secret_arn)
+                self.ai_handler = AIHandler(vector_repo)
+            except Exception as e:
+                print(f"Failed to initialize AI Handler: {e}")
+                self.ai_handler = None
+        else:
+            self.ai_handler = None
 
     def start_conversation(
         self,

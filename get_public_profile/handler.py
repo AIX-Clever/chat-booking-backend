@@ -180,7 +180,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'specializations': profile_settings.get('specializations', []),
             'operatingHours': profile_settings.get('operatingHours', ''),
             'fullAddress': full_address or profile_settings.get('fullAddress', ''),
-            'providers': providers
+            'providers': providers,
+            'tenantPlan': tenant_data.get('plan', 'LITE')
         }
         
         logger.info(f"Found public profile for {slug} with {len(services)} services", profile=public_profile)

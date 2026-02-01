@@ -26,6 +26,10 @@ if db_cluster_arn and db_secret_arn:
     vector_repo = VectorRepository(db_cluster_arn, db_secret_arn)
     # Reuse AIHandler for embedding only
     ai_handler = AIHandler(vector_repo) 
+else:
+    logger.warning("Vector DB infrastructure not configured. AI ingestion disabled.")
+    vector_repo = None
+    ai_handler = None 
 
 doc_processor = DocumentProcessor()
 
