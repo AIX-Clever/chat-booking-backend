@@ -10,7 +10,7 @@ from typing import Any, Dict
 from shared.domain.entities import TenantId
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
 from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
-from shared.plan_limits import PlanLimitExceeded
+from shared.domain.exceptions import PlanLimitExceeded
 try:
     from user_management.service import UserManagementService
 except ImportError:
