@@ -36,12 +36,16 @@ def lambda_handler(event, context):
             return lambda_response(403, {'message': 'Missing signature components'})
 
         # Parse ts and v1 from x-signature
-        parts = {p.split('=')[0]: p.split('=')[1] for p in x_signature.split(',')}
-        ts = parts.get('ts')
-        v1 = parts.get('v1')
+        try:
+            parts = {p.split('=')[0]: p.split('=')[1] for p in x_signature.split(',')}
+            ts = parts.get('ts')
+            v1 = parts.get('v1')
+        except Exception:
+            print(f"Malformed x-signature: {x_signature}")
+            return lambda_response(400, {'message': 'Malformed signature'})
         
         if not ts or not v1:
-            print("Invalid signature format")
+            print(f"Invalid signature format: {x_signature}")
             return lambda_response(403, {'message': 'Invalid signature format'})
 
         # 2. Build Manifest
@@ -62,7 +66,7 @@ def lambda_handler(event, context):
         
         # 4. Compare
         if not hmac.compare_digest(calculated_hmac, v1):
-            print(f"Signature Mismatch. Calculated: {calculated_hmac}, Received: {v1}")
+            print(f"Signature Mismatch! Manifest: {manifest} | Calculated: {calculated_hmac} | Received: {v1}")
             return lambda_response(403, {'message': 'Invalid signature'})
 
         # 5. Push to SQS (If valid)
