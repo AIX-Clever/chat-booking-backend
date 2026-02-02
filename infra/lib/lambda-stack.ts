@@ -105,6 +105,7 @@ export class LambdaStack extends cdk.Stack {
         ROOMS_TABLE: props.roomsTable.tableName,
         MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
+        SHARED_HASH: sharedHash,
       },
     };
 
@@ -114,7 +115,27 @@ export class LambdaStack extends cdk.Stack {
       this, '/chatbooking/layers/python-layer-arn'
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
-    // Force backend redeploy to pick up latest layer version - 2026-02-01 v5
+
+    // Create a hash of the shared directory to force redeployments when it changes
+    const crypto = require('crypto');
+    const fs = require('fs');
+    const sharedDir = path.join(backendPath, 'shared');
+    let sharedHash = 'none';
+    try {
+      if (fs.existsSync(sharedDir)) {
+        const hash = crypto.createHash('md5');
+        const files = fs.readdirSync(sharedDir);
+        files.forEach((file: string) => {
+          const filePath = path.join(sharedDir, file);
+          if (fs.lstatSync(filePath).isFile()) {
+            hash.update(fs.readFileSync(filePath));
+          }
+        });
+        sharedHash = hash.digest('hex');
+      }
+    } catch (e) {
+      console.warn('Could not calculate shared directory hash:', e);
+    }
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
