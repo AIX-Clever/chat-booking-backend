@@ -220,7 +220,7 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
             {"startTime": br.start_time, "endTime": br.end_time}
             for br in availability.breaks
         ],
-        "exceptions": availability.exceptions,
+        "exceptions": availability.exceptions if isinstance(availability.exceptions, list) and (not availability.exceptions or isinstance(availability.exceptions[0], str)) else [ex.date for ex in availability.exceptions] if availability.exceptions else [],
     }
 
     return success_response(response_data)
@@ -302,13 +302,13 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     )
 
     # Serialize entities for response
-    serialized_exceptions = [
+        # Serialize manually to avoid JSON errors with Dataclasses
         {
             "date": ex.date,
             "timeRanges": [
                 {"startTime": tr.start_time, "endTime": tr.end_time}
                 for tr in ex.time_ranges
-            ],
+            ] if ex.time_ranges else [],
         }
         for ex in updated_exceptions
     ]
