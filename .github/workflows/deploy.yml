@@ -24,41 +24,7 @@ permissions:
   contents: read
 
 jobs:
-  sync-to-layers:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/main')
-    steps:
-      - name: Checkout backend
-        uses: actions/checkout@v4
-        with:
-          path: backend
-
-      - name: Checkout layers
-        uses: actions/checkout@v4
-        with:
-          repository: AIX-Clever/chat-booking-layers
-          path: layers
-          token: ${{ secrets.GH_PAT_SYNC }} # Requires a PAT with repo scope
-          ref: ${{ github.ref_name }}
-
-      - name: Sync shared folder
-        run: |
-          mkdir -p layers/layer/python/shared
-          cp -rp backend/shared/* layers/layer/python/shared/
-          cd layers
-          git config user.name "GitHub Action"
-          git config user.email "action@github.com"
-          git add .
-          if git diff --staged --quiet; then
-            echo "No changes to sync"
-          else
-            git commit -m "chore: sync shared modules from backend (${{ github.sha }})"
-            git push origin ${{ github.ref_name }}
-          fi
-
   deploy:
-    needs: sync-to-layers
-    if: always() && (needs.sync-to-layers.result == 'success' || needs.sync-to-layers.result == 'skipped' || needs.sync-to-layers.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
