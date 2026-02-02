@@ -58,15 +58,16 @@ jobs:
             exit 1
           fi
           
-          echo "Checking Layer ARN: $LAYER_ARN"
-          LAYER_DESC=$(aws lambda get-layer-version-by-arn --arn "$LAYER_ARN" --query 'Description' --output text || echo "")
+          echo "Checking Layer Hash via SSM..."
+          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
           
-          echo "Layer Description: $LAYER_DESC"
+          echo "Deploed Layer Hash: $EXPECTED_HASH"
+          echo "Local Backend Hash: $LOCAL_HASH"
           
-          if [[ "$LAYER_DESC" != *"$LOCAL_HASH"* ]]; then
+          if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
             echo "::error::Backend 'shared' folder is out of sync with deployed Lambda Layer."
-            echo "Current Layer: $LAYER_DESC"
-            echo "Expected Hash (starting with): $LOCAL_HASH"
+            echo "Deployed Hash: $EXPECTED_HASH"
+            echo "Local Hash: $LOCAL_HASH"
             echo "Please push your changes to the 'chat-booking-layers' repository first and wait for the layer to deploy."
             exit 1
           fi
