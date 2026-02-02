@@ -59,7 +59,7 @@ jobs:
           fi
           
           echo "Checking Layer ARN: $LAYER_ARN"
-          LAYER_DESC=$(aws lambda get-layer-version-by-arn --version-arn "$LAYER_ARN" --query 'Description' --output text || echo "")
+          LAYER_DESC=$(aws lambda get-layer-version-by-arn --arn "$LAYER_ARN" --query 'Description' --output text || echo "")
           
           echo "Layer Description: $LAYER_DESC"
           
