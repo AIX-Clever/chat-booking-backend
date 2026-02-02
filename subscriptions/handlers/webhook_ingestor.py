@@ -40,8 +40,9 @@ def lambda_handler(event, context):
             parts = {p.split('=')[0]: p.split('=')[1] for p in x_signature.split(',')}
             ts = parts.get('ts')
             v1 = parts.get('v1')
-        except Exception:
-            print(f"Malformed x-signature: {x_signature}")
+            print(f"Signature details -> ts: {ts}, v1: {v1}")
+        except Exception as e:
+            print(f"Malformed x-signature: {x_signature}. Error: {str(e)}")
             return lambda_response(400, {'message': 'Malformed signature'})
         
         if not ts or not v1:
@@ -51,6 +52,7 @@ def lambda_handler(event, context):
         # 2. Build Manifest
         # Template: id:[data.id];request-id:[x-request-id];ts:[ts];
         manifest = f"id:{data_id};request-id:{x_request_id};ts:{ts};"
+        print(f"HMAC Manifest: {manifest}")
         
         # 3. Calculate HMAC
         secret = SubscriptionConfig.MP_WEBHOOK_SECRET
