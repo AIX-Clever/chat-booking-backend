@@ -71,7 +71,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    // Get backend code path (relative to infra/lib)
+    // Force backend redeploy to pick up latest layer version - 2026-02-01 v6
     // Get backend code path (relative to infra root, assuming cdk runs from infra)
     const backendPath = path.join(process.cwd(), '../');
 
