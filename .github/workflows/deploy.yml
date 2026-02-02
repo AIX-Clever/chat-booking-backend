@@ -29,8 +29,6 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -42,6 +40,31 @@ jobs:
         with:
           python-version: '3.9'
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
+          aws-region: us-east-1
+
+      - name: Validate Layer Sync
+        run: |
+          LOCAL_HASH=$(python scripts/validate_shared.py shared)
+          echo "Local Hash: $LOCAL_HASH"
+          
+          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text)
+          LAYER_DESC=$(aws lambda get-layer-version-by-arn --version-arn $LAYER_ARN --query 'Description' --output text)
+          
+          echo "Layer Description: $LAYER_DESC"
+          
+          if [[ "$LAYER_DESC" != *"$LOCAL_HASH"* ]]; then
+            echo "::error::Backend 'shared' folder is out of sync with deployed Lambda Layer."
+            echo "Current Layer: $LAYER_DESC"
+            echo "Expected Hash: $LOCAL_HASH"
+            echo "Please push your changes to the 'chat-booking-layers' repository first."
+            exit 1
+          fi
+          echo "Layer is in sync! ✅"
+
       - name: Install Lambda Dependencies
         run: |
           # Find all requirements.txt files and install dependencies to their directory
@@ -50,13 +73,6 @@ jobs:
             dir=$(dirname "$req_file")
             pip install -r "$req_file" -t "$dir"
           done
-
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
-          aws-region: us-east-1
 
       - name: Install CDK dependencies
         working-directory: infra
@@ -70,6 +86,6 @@ jobs:
         working-directory: infra
         run: npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
-          ENV: dev # Always deploy to dev environment in current AWS account
+          ENV: dev
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
