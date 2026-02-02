@@ -80,6 +80,28 @@ export class LambdaStack extends cdk.Stack {
       assetsBucket = s3.Bucket.fromBucketName(this, 'ImportedAssetsBucket', props.assetsBucketName);
     }
 
+    // Create a hash of the shared directory to force redeployments when it changes
+    const crypto = require('crypto');
+    const fs = require('fs');
+    const sharedDir = path.join(backendPath, 'shared');
+    let sharedHash = 'none';
+    try {
+      if (fs.existsSync(sharedDir)) {
+        const hash = crypto.createHash('md5');
+        const files = fs.readdirSync(sharedDir);
+        files.sort().forEach((file: string) => {
+          const filePath = path.join(sharedDir, file);
+          if (fs.lstatSync(filePath).isFile()) {
+            hash.update(file); // Include filename for better tracking
+            hash.update(fs.readFileSync(filePath));
+          }
+        });
+        sharedHash = hash.digest('hex');
+      }
+    } catch (e) {
+      console.warn('Could not calculate shared directory hash:', e);
+    }
+
     // Common Lambda configuration
     const commonProps = {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -116,26 +138,6 @@ export class LambdaStack extends cdk.Stack {
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
-    // Create a hash of the shared directory to force redeployments when it changes
-    const crypto = require('crypto');
-    const fs = require('fs');
-    const sharedDir = path.join(backendPath, 'shared');
-    let sharedHash = 'none';
-    try {
-      if (fs.existsSync(sharedDir)) {
-        const hash = crypto.createHash('md5');
-        const files = fs.readdirSync(sharedDir);
-        files.forEach((file: string) => {
-          const filePath = path.join(sharedDir, file);
-          if (fs.lstatSync(filePath).isFile()) {
-            hash.update(fs.readFileSync(filePath));
-          }
-        });
-        sharedHash = hash.digest('hex');
-      }
-    } catch (e) {
-      console.warn('Could not calculate shared directory hash:', e);
-    }
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
