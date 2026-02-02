@@ -58,7 +58,7 @@ jobs:
 
   deploy:
     needs: sync-to-layers
-    if: always() && (needs.sync-to-layers.result == 'success' || needs.sync-to-layers.result == 'skipped')
+    if: always() && (needs.sync-to-layers.result == 'success' || needs.sync-to-layers.result == 'skipped' || needs.sync-to-layers.result == 'failure')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
