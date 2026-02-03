@@ -193,7 +193,7 @@ export class LambdaStack extends cdk.Stack {
         SLOT_INTERVAL_MINUTES: '15', // Default slot interval
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
-        FORCE_DEPLOY: '2026-02-03-v3', // Force update
+        FORCE_DEPLOY: '2026-02-03-v4', // Force update
       },
     });
 

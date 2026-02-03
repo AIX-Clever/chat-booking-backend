@@ -247,16 +247,27 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
     exception_entities = availability_repo.get_provider_exceptions(
         tenant_id, provider_id
     )
-    serialized_exceptions = [
-        {
-            "date": ex.date,
-            "timeRanges": [
-                {"startTime": tr.start_time, "endTime": tr.end_time}
-                for tr in ex.time_ranges
-            ],
-        }
-        for ex in exception_entities
-    ]
+    serialized_exceptions = []
+    for ex in exception_entities:
+        # Handle both dict and object (entity)
+        if isinstance(ex, dict):
+            serialized_exceptions.append({
+                "date": ex.get("date"),
+                "timeRanges": [
+                    {"startTime": tr["startTime"], "endTime": tr["endTime"]} 
+                    if isinstance(tr, dict) else 
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in ex.get("timeRanges", [])
+                ]
+            })
+        else:
+             serialized_exceptions.append({
+                "date": ex.date,
+                "timeRanges": [
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in ex.time_ranges
+                ]
+            })
 
     # Convert to response format
     response_data = []
@@ -344,16 +355,27 @@ def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     )
 
     # Deserialize entities for response
-    serialized_exceptions = [
-        {
-            "date": ex.date,
-            "timeRanges": [
-                {"startTime": tr.start_time, "endTime": tr.end_time}
-                for tr in ex.time_ranges
-            ],
-        }
-        for ex in exceptions
-    ]
+    # Deserialize entities for response
+    serialized_exceptions = []
+    for ex in exceptions:
+         if isinstance(ex, dict):
+            serialized_exceptions.append({
+                "date": ex.get("date"),
+                "timeRanges": [
+                     {"startTime": tr["startTime"], "endTime": tr["endTime"]} 
+                    if isinstance(tr, dict) else 
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in ex.get("timeRanges", [])
+                ]
+            })
+         else:
+            serialized_exceptions.append({
+                "date": ex.date,
+                "timeRanges": [
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in ex.time_ranges
+                ],
+            })
 
     # Return list directly to match GraphQL schema [ProviderException!]!
     return success_response(serialized_exceptions)
