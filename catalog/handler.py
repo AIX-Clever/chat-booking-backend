@@ -44,7 +44,8 @@ try:
     s3_repo = S3FileStorageRepository(bucket_name=bucket_name)
     asset_service = AssetService(s3_repo)
 except Exception as e:
-    logger.error("Failed to initialize AssetService", error=str(e))
+    # Logger not initialized yet, use print
+    print(json.dumps({"level": "ERROR", "message": "Failed to initialize AssetService", "error": str(e)}))
     asset_service = None
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
