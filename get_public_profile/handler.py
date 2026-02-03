@@ -172,6 +172,20 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             raw_providers = providers_response.get('Items', [])
             
             for prov in raw_providers:
+                # Parse metadata safely to extract specializations
+                specializations = []
+                try:
+                    metadata_str = prov.get('metadata', '{}')
+                    if isinstance(metadata_str, str):
+                        metadata = json.loads(metadata_str)
+                    else:
+                        metadata = metadata_str or {}
+                    
+                    ai_drivers = metadata.get('aiDrivers', {})
+                    specializations = ai_drivers.get('specialties', [])
+                except Exception as e:
+                    logger.warning(f"Failed to parse provider metadata for {prov.get('providerId')}", error=str(e))
+
                 providers.append({
                     'providerId': prov.get('providerId'),
                     'name': prov.get('name'),
@@ -179,6 +193,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     'photoUrl': prov.get('photoUrl'),
                     'timezone': prov.get('timezone', 'America/Santiago'),
                     'serviceIds': prov.get('services', []), # Correct field name in DB is services
+                    'specializations': specializations,
                     'available': prov.get('active', True) # distinct from specific availability logic, just means "active provider"
                     # Exclude metadata for public
                 })
@@ -246,6 +261,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 public_profile['name'] = target_provider['name']
                 public_profile['bio'] = target_provider.get('bio') or public_profile['bio']
                 public_profile['photoUrl'] = target_provider.get('photoUrl') or public_profile['photoUrl']
+                public_profile['specializations'] = target_provider.get('specializations') or public_profile['specializations']
                 public_profile['profession'] = "Especialista" # Or from provider metadata if available
         
         
