@@ -127,9 +127,16 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
         theme_color = settings.get('widgetConfig', {}).get('primaryColor') or '#3b82f6'
         
         # Metadata / Profession from provider if available, else generic
-        # We don't have structured profile for providers yet, so we use top level
-        profession = "Especialista" # Could be extended in Provider entity
-        
+        specializations = []
+        try:
+            metadata_str = new_image.get('metadata', {}).get('S', '{}')
+            metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
+            ai_drivers = metadata.get('aiDrivers', {})
+            specializations = ai_drivers.get('specialties', [])
+            profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
+        except:
+            profession = "Especialista"
+
         services = fetch_services(services_table, tenant_id)
         # For professional landing, we only include this provider or highlight it
         all_providers = fetch_providers(providers_table, tenant_id)
@@ -142,6 +149,7 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "photoUrl": photo_url,
             "themeColor": theme_color,
             "profession": profession,
+            "specializations": specializations,
             "services": services,
             "providers": all_providers,
             "preselectedProviderId": provider_id # Signal for frontend to open this one
@@ -261,6 +269,21 @@ def bake_profile(slug, profile_data, context=None):
     <meta name="twitter:description" content="{description}">
     <meta name="twitter:image" content="{photo_url}">
     """
+
+    # 2.1 SEO Body Text (For indexability without JS)
+    specialties_text = ", ".join(profile_data.get('specializations', []))
+    services_text = ", ".join([s['name'] for s in profile_data.get('services', [])])
+    
+    seo_body = f"""
+    <div style="display:none;" id="seo-content" aria-hidden="true">
+        <h1>{name}</h1>
+        <p>{bio}</p>
+        <h2>Especialidades</h2>
+        <p>{specialties_text}</p>
+        <h2>Servicios</h2>
+        <p>{services_text}</p>
+    </div>
+    """
     
     # 3. Data Injection (The Full Bake)
     # Serialize profile_data to JSON and inject as window.__INITIAL_DATA__
@@ -280,6 +303,11 @@ def bake_profile(slug, profile_data, context=None):
     if "<head>" in template_html:
         template_html = template_html.replace("<head>", f"<head>{meta_tags}{script_injection}")
     
+    if "<body>" in template_html:
+        template_html = template_html.replace("<body>", f"<body>{seo_body}")
+    elif "<body " in template_html: # Handle body with attributes
+        import re
+        template_html = re.sub(r'(<body[^>]*>)', rf'\1{seo_body}', template_html)
     # 5. Upload
     target_key = f"{slug}/index.html"
     logger.info(f"Uploading baked HTML to {target_key}")
