@@ -47,12 +47,63 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         items = response.get('Items', [])
         
         if not items:
-            logger.warning(f"No tenant found for slug: {slug}")
-            logger.info(f"Query details - Table: {table_name}, Index: slug-index, Slug: {slug}")
-            return None # AppSync handles null return as valid for nullable type, or error if !
+            logger.info(f"No tenant found for slug: {slug}. Checking providers...")
             
-        tenant_data = items[0]
-        tenant_id = tenant_data.get('tenantId')
+            # Fallback: Check if it's a Provider Slug
+            # Since we don't have a global slug index on Providers yet, we must Scan
+            # This is not performant for high volume but acceptable for current scale/fix.
+            
+            providers_table_name = os.environ.get('PROVIDERS_TABLE', 'ChatBooking-Providers')
+            providers_table = dynamodb.Table(providers_table_name)
+            
+            try:
+                # Scan for slug
+                # Use limit? No, slug should be unique-ish.
+                scan_response = providers_table.scan(
+                    FilterExpression='slug = :slug',
+                    ExpressionAttributeValues={':slug': slug}
+                )
+                
+                provider_items = scan_response.get('Items', [])
+                
+                if not provider_items:
+                    logger.warning(f"No provider found for slug: {slug}")
+                    return None
+                    
+                # Found a provider!
+                provider_data = provider_items[0]
+                tenant_id = provider_data.get('tenantId')
+                provider_id = provider_data.get('providerId')
+                
+                logger.info(f"Found provider {provider_id} for slug {slug} in tenant {tenant_id}")
+                
+                # Fetch Tenant details for branding
+                tenant_response = table.get_item(Key={'tenantId': tenant_id})
+                tenant_data = tenant_response.get('Item')
+                
+                if not tenant_data:
+                    logger.error(f"Tenant {tenant_id} not found for provider {slug}")
+                    return None
+                    
+                # Continue with this tenant_data context, but mark as provider profile
+                # We need to adapt the flow below to prioritize this provider
+                
+                # Assign tenant_data so subsequent logic works
+                # But we want to inject 'preselectedProviderId' or modify specific fields
+                
+                # Set specific flag to modify return structure at the end
+                is_provider_profile = True
+                target_provider_id = provider_id
+                
+            except Exception as e:
+                logger.error(f"Error scanning providers for slug {slug}: {str(e)}")
+                return None
+        else:
+            # Tenant found
+            tenant_data = items[0]
+            tenant_id = tenant_data.get('tenantId')
+            is_provider_profile = False
+            target_provider_id = None
         
         # 3. Fetch Services
         services = []
@@ -181,8 +232,22 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             'operatingHours': profile_settings.get('operatingHours', ''),
             'fullAddress': full_address or profile_settings.get('fullAddress', ''),
             'providers': providers,
-            'tenantPlan': tenant_data.get('plan', 'LITE')
+            'tenantPlan': tenant_data.get('plan', 'LITE'),
+            'preselectedProviderId': target_provider_id if is_provider_profile else None
         }
+        
+        # Override name/bio/photo if it is a specific provider profile
+        if is_provider_profile:
+            # Find the specific provider data in the fetched 'providers' list
+            # The 'providers' list contains all active providers for the tenant (fetched in step 3.1)
+            target_provider = next((p for p in providers if p['providerId'] == target_provider_id), None)
+            
+            if target_provider:
+                public_profile['name'] = target_provider['name']
+                public_profile['bio'] = target_provider.get('bio') or public_profile['bio']
+                public_profile['photoUrl'] = target_provider.get('photoUrl') or public_profile['photoUrl']
+                public_profile['profession'] = "Especialista" # Or from provider metadata if available
+        
         
         logger.info(f"Found public profile for {slug} with {len(services)} services", profile=public_profile)
         return public_profile
