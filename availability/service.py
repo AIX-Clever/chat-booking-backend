@@ -696,8 +696,20 @@ class AvailabilityManagementService:
                 ExceptionRule(date=ex["date"], time_ranges=time_ranges)
             )
 
+        # Convert to dicts for persistence (Boto3 requires dicts)
+        rules_as_dicts = [
+            {
+                "date": rule.date,
+                "timeRanges": [
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in rule.time_ranges
+                ]
+            }
+            for rule in exception_rules
+        ]
+
         self.availability_repo.save_provider_exceptions(
-            tenant_id, provider_id, exception_rules
+            tenant_id, provider_id, rules_as_dicts
         )
 
         return exception_rules
