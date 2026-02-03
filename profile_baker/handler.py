@@ -133,7 +133,10 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
             ai_drivers = metadata.get('aiDrivers', {})
             specializations = ai_drivers.get('specialties', [])
-            profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
+            # profession logic: try to get from new_image.profession, else generic.
+            # 'profile' was undefined here. We should look at new_image or tenant settings defaults.
+            # Let's try to get it from new_image directly first.
+            profession = new_image.get('profession', {}).get('S', 'Especialista')
         except Exception as e:
             logger.warning(f"Failed to parse provider metadata: {e}")
             profession = "Especialista"
