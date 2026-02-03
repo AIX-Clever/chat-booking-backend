@@ -302,7 +302,7 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     )
 
     # Serialize entities for response
-        # Serialize manually to avoid JSON errors with Dataclasses
+    serialized_exceptions = [
         {
             "date": ex.date,
             "timeRanges": [
