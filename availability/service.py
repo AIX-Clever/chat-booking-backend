@@ -148,9 +148,26 @@ class AvailabilityService:
         availability_map = {avail.day_of_week: avail for avail in availability_schedule}
 
         # Get provider-level exceptions (now stored separately)
-        provider_exceptions = self.availability_repo.get_provider_exceptions(
+        # Get provider-level exceptions (now stored separately)
+        raw_exceptions = self.availability_repo.get_provider_exceptions(
             tenant_id, provider_id
         )
+        
+        # Convert raw dicts to Entity objects for logic processing
+        provider_exceptions = []
+        for ex in raw_exceptions:
+            if isinstance(ex, dict):
+                # Deserialization logic
+                time_ranges = [
+                    TimeRange(tr["startTime"], tr["endTime"]) 
+                    for tr in ex.get("timeRanges", [])
+                ]
+                provider_exceptions.append(
+                    ExceptionRule(date=ex.get("date"), time_ranges=time_ranges)
+                )
+            else:
+                 # It's already an object (shouldn't happen with current repo but safe)
+                provider_exceptions.append(ex)
 
         # Get existing bookings in date range
         existing_bookings = self.booking_repo.list_by_provider(
