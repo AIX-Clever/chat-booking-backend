@@ -134,7 +134,8 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             ai_drivers = metadata.get('aiDrivers', {})
             specializations = ai_drivers.get('specialties', [])
             profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
-        except:
+        except Exception as e:
+            logger.warning(f"Failed to parse provider metadata: {e}")
             profession = "Especialista"
 
         services = fetch_services(services_table, tenant_id)
@@ -191,8 +192,6 @@ def extract_specializations(profile, new_image):
         elif 'SS' in spec_attr:
             return spec_attr['SS']
     return []
-                
-    return {"status": "success"}
 
 def fetch_services(table, tenant_id):
     # Query GSI by tenantId if possible, or Scan with filter (Services table usually has tenantId as PK or GSI)

@@ -209,7 +209,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if isinstance(settings, str):
             try:
                 settings = json.loads(settings)
-            except:
+            except Exception:
                 settings = {}
                 
         # Double check settings is not None (json.loads can return None) and is a dict
