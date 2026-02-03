@@ -89,15 +89,22 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     if event.get("arguments") and event["arguments"].get("tenantId"):
         return event["arguments"]["tenantId"]
 
-    # 2. From identity (User Pools)
-    if event.get("identity") and event["identity"].get("claims"):
-        claims = event["identity"]["claims"]
-        if "custom:tenantId" in claims:
-            return claims["custom:tenantId"]
-        if "tenantId" in claims:
-            return claims["tenantId"]
-        if "website" in claims:
-            return claims["website"]
+    # 2. From identity (resolverContext if via Lambda Authorizer)
+    if event.get("identity"):
+        identity = event["identity"]
+        # Lambda Authorizer context
+        if identity.get("resolverContext") and identity["resolverContext"].get("tenantId"):
+            return identity["resolverContext"]["tenantId"]
+        
+        # User Pools claims
+        if identity.get("claims"):
+            claims = identity["claims"]
+            if "custom:tenantId" in claims:
+                return claims["custom:tenantId"]
+            if "tenantId" in claims:
+                return claims["tenantId"]
+            if "website" in claims:
+                return claims["website"]
 
     # 3. From stash (Lambda Auth / Pipeline)
     if event.get("stash") and "tenantId" in event["stash"]:

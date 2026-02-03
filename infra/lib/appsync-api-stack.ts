@@ -481,37 +481,37 @@ export class AppSyncApiStack extends cdk.Stack {
     availabilityDataSource.createResolver('GetAvailableSlotsResolver', {
       typeName: 'Query',
       fieldName: 'getAvailableSlots',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('SetProviderAvailabilityResolver', {
       typeName: 'Mutation',
       fieldName: 'setProviderAvailability',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('GetProviderAvailabilityResolver', {
       typeName: 'Query',
       fieldName: 'getProviderAvailability',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('SetProviderExceptionsResolver', {
       typeName: 'Mutation',
       fieldName: 'setProviderExceptions',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Booking resolvers
     bookingDataSource.createResolver('GetBookingResolver', {
       typeName: 'Query',
       fieldName: 'getBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('ListBookingsByProviderResolver', {
@@ -524,22 +524,22 @@ export class AppSyncApiStack extends cdk.Stack {
     bookingDataSource.createResolver('ListBookingsByClientResolver', {
       typeName: 'Query',
       fieldName: 'listBookingsByClient',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('GetBookingByConversationResolver', {
       typeName: 'Query',
       fieldName: 'getBookingByConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('CreateBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'createBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
 
@@ -547,137 +547,137 @@ export class AppSyncApiStack extends cdk.Stack {
     workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
       typeName: 'Query',
       fieldName: 'listWorkflows',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('GetWorkflowResolver', {
       typeName: 'Query',
       fieldName: 'getWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('CreateWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'createWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('UpdateWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'updateWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('DeleteWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // FAQ Resolvers
     faqManagerDataSource.createResolver('ListFAQsResolver', {
       typeName: 'Query',
       fieldName: 'listFAQs',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('CreateFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'createFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('UpdateFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'updateFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('DeleteFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('ConfirmBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'confirmBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('CancelBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'cancelBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('MarkAsNoShowResolver', {
       typeName: 'Mutation',
       fieldName: 'markAsNoShow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('UpdateBookingStatusResolver', {
       typeName: 'Mutation',
       fieldName: 'updateBookingStatus',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Chat Agent resolvers
     chatAgentDataSource.createResolver('StartConversationResolver', {
       typeName: 'Mutation',
       fieldName: 'startConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('SendMessageResolver', {
       typeName: 'Mutation',
       fieldName: 'sendMessage',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('ConfirmBookingFromConversationResolver', {
       typeName: 'Mutation',
       fieldName: 'confirmBookingFromConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('GetConversationResolver', {
       typeName: 'Query',
       fieldName: 'getConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Metrics resolvers
-    metricsDataSource.createResolver('GetDashboardMetricsResolver', {
+    chatAgentDataSource.createResolver('GetDashboardMetricsResolver', {
       typeName: 'Query',
       fieldName: 'getDashboardMetrics',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
-    metricsDataSource.createResolver('GetPlanUsageResolver', {
+    chatAgentDataSource.createResolver('GetPlanUsageResolver', {
       typeName: 'Query',
       fieldName: 'getPlanUsage',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Subscription Resolvers
