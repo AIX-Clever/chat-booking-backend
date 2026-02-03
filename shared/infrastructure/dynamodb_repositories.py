@@ -92,7 +92,7 @@ class DynamoDBTenantRepository(ITenantRepository):
             name=item["name"],
             slug=item.get("slug", ""),
             status=TenantStatus(item["status"]),
-            plan=TenantPlan(item["plan"]),
+            plan=TenantPlan(item.get("plan", TenantPlan.LITE.value)),
             owner_user_id=item["ownerUserId"],
             billing_email=item.get("billingEmail"),
             settings=item.get("settings", {}),
