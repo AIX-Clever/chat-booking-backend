@@ -136,16 +136,21 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
         "isRequired": True
     })
 
-    # 3. Rooms/Infrastructure
-    from shared.infrastructure.dynamodb_repositories import DynamoDBRoomRepository
-    room_repo = DynamoDBRoomRepository()
-    rooms = room_repo.list_by_tenant(tenant_id)
-    checklist.append({
-        "item": "rooms",
-        "status": "COMPLETE" if rooms else "MISSING",
-        "label": "Salas (boxes/consultorios)",
-        "isRequired": True
-    })
+    # 3. Rooms/Infrastructure (Exclude for LITE)
+    from shared.domain.entities import TenantPlan
+    if tenant.plan != TenantPlan.LITE:
+        from shared.infrastructure.dynamodb_repositories import DynamoDBRoomRepository
+        room_repo = DynamoDBRoomRepository()
+        rooms = room_repo.list_by_tenant(tenant_id)
+        checklist.append({
+            "item": "rooms",
+            "status": "COMPLETE" if rooms else "MISSING",
+            "label": "Salas (boxes/consultorios)",
+            "isRequired": True
+        })
+    else:
+        # For LITE, categories are not mandatory either, but checked below
+        pass
 
     # 4. Professional Specific Logic
     if provider_id:

@@ -499,6 +499,7 @@ export class LambdaStack extends cdk.Stack {
     props.servicesTable.grantReadData(this.publicLinkStatusFunction);
     props.providersTable.grantReadData(this.publicLinkStatusFunction);
     props.availabilityTable.grantReadData(this.publicLinkStatusFunction);
+    props.roomsTable.grantReadData(this.publicLinkStatusFunction);
 
     // 16. Google Integration Lambda
     this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {
