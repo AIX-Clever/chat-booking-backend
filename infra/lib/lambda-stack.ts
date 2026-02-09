@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as lambdaEventSources from 'aws-cdk-lib/aws-lambda-event-sources';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
@@ -500,6 +501,15 @@ export class LambdaStack extends cdk.Stack {
     props.providersTable.grantReadData(this.publicLinkStatusFunction);
     props.availabilityTable.grantReadData(this.publicLinkStatusFunction);
     props.roomsTable.grantReadData(this.publicLinkStatusFunction);
+
+    // Explicitly grant access to indices for Rooms table
+    this.publicLinkStatusFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['dynamodb:Query', 'dynamodb:GetItem', 'dynamodb:Scan'],
+      resources: [
+        props.roomsTable.tableArn,
+        `${props.roomsTable.tableArn}/index/*`
+      ],
+    }));
 
     // 16. Google Integration Lambda
     this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {

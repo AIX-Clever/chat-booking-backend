@@ -172,7 +172,7 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
             
             # Professional availability
             availability_repo = DynamoDBAvailabilityRepository()
-            avail = availability_repo.get_by_provider(tenant_id, provider_id)
+            avail = availability_repo.get_provider_availability(tenant_id, provider_id)
             checklist.append({
                 "item": "prof_availability",
                 "status": "COMPLETE" if avail and len(avail) > 0 else "MISSING",
