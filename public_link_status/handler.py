@@ -89,12 +89,13 @@ def handle_get_status(tenant_id: TenantId, provider_id: Optional[str], logger: L
     }
 
 
+
 def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id: Optional[str], logger: Logger) -> List[Dict[str, Any]]:
     """
-    Builds a checklist including:
-    - Center data (Business Name, Slug, Rooms)
+    Builds a checklist as a Success Guide including:
+    - Center data (Business Name, Slug, Rooms) -> Granular
     - Services & Categories
-    - Professional specific data (if provider_id provided)
+    - Professional specific data (Bio, Photo, Availability) -> Granular
     """
     checklist = []
     
@@ -103,37 +104,52 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
         "item": "business_name",
         "status": "COMPLETE" if tenant.name else "MISSING",
         "label": "Nombre del negocio",
-        "isRequired": True
+        "isRequired": True,
+        "actionUrl": "/settings/profile"
     })
     
     checklist.append({
         "item": "slug",
         "status": "COMPLETE" if tenant.slug else "MISSING",
         "label": "URL personalizada (slug)",
-        "isRequired": True
+        "isRequired": True,
+        "actionUrl": "/settings/profile"
+    })
+
+    # Logo (Center branding)
+    settings = tenant.settings or {}
+    has_logo = bool(settings.get("photoUrl") or settings.get("logo"))
+    checklist.append({
+        "item": "logo",
+        "status": "COMPLETE" if has_logo else "MISSING",
+        "label": "Logo del Centro",
+        "isRequired": False,
+        "actionUrl": "/settings/profile"
     })
 
     # 2. Services Infrastructure
     from shared.infrastructure.dynamodb_repositories import DynamoDBServiceRepository
-    # Check for categories (at least one)
-    # Note: We don't have a direct CategoryRepo in the snippet above, let's assume one or check if services have categories
     service_repo = DynamoDBServiceRepository()
     services = service_repo.list_by_tenant(tenant_id)
     active_services = [s for s in services if s.active]
     
     has_categories = any(s.category for s in services)
+    
+    # Categories are essential for organization
     checklist.append({
         "item": "categories",
         "status": "COMPLETE" if has_categories else "MISSING",
         "label": "Categorías de servicios",
-        "isRequired": True
+        "isRequired": True,
+        "actionUrl": "/services"
     })
     
     checklist.append({
         "item": "services",
         "status": "COMPLETE" if active_services else "MISSING",
         "label": "Servicios configurados",
-        "isRequired": True
+        "isRequired": True,
+        "actionUrl": "/services"
     })
 
     # 3. Rooms/Infrastructure (Exclude for LITE)
@@ -146,11 +162,9 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
             "item": "rooms",
             "status": "COMPLETE" if rooms else "MISSING",
             "label": "Salas (boxes/consultorios)",
-            "isRequired": True
+            "isRequired": True,
+            "actionUrl": "/rooms"
         })
-    else:
-        # For LITE, categories are not mandatory either, but checked below
-        pass
 
     # 4. Professional Specific Logic
     if provider_id:
@@ -161,13 +175,21 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
         provider = provider_repo.get_by_id(tenant_id, provider_id)
         
         if provider:
-            # Professional Bio/Photo
-            has_prof_data = bool(provider.bio and provider.photo_url)
+            # Split Bio and Photo
             checklist.append({
-                "item": "prof_data",
-                "status": "COMPLETE" if has_prof_data else "MISSING",
-                "label": f"Perfil de {provider.name} (Bio/Foto)",
-                "isRequired": True
+                "item": "prof_bio",
+                "status": "COMPLETE" if provider.bio else "MISSING",
+                "label": f"Biografía de {provider.name}",
+                "isRequired": True,
+                "actionUrl": f"/users?providerId={provider_id}"
+            })
+
+            checklist.append({
+                "item": "prof_photo",
+                "status": "COMPLETE" if provider.photo_url else "MISSING",
+                "label": f"Foto de {provider.name}",
+                "isRequired": True,
+                "actionUrl": f"/users?providerId={provider_id}"
             })
             
             # Professional availability
@@ -177,7 +199,8 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
                 "item": "prof_availability",
                 "status": "COMPLETE" if avail and len(avail) > 0 else "MISSING",
                 "label": f"Disponibilidad de {provider.name}",
-                "isRequired": True
+                "isRequired": True,
+                "actionUrl": f"/availability?providerId={provider_id}"
             })
             
             # Professional associated services
@@ -185,7 +208,8 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
                 "item": "prof_services",
                 "status": "COMPLETE" if provider.service_ids else "MISSING",
                 "label": f"Servicios asignados a {provider.name}",
-                "isRequired": True
+                "isRequired": True,
+                "actionUrl": f"/users?providerId={provider_id}"
             })
     else:
         # Global Center / Pro Version Checklist
@@ -199,17 +223,8 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
             "item": "providers",
             "status": "COMPLETE" if active_providers else "MISSING",
             "label": "Al menos 1 profesional activo",
-            "isRequired": True
-        })
-        
-        # Recommendations
-        settings = tenant.settings or {}
-        has_photo = bool(settings.get("photoUrl") or settings.get("logo"))
-        checklist.append({
-            "item": "logo",
-            "status": "COMPLETE" if has_photo else "RECOMMENDED",
-            "label": "Logo del Centro",
-            "isRequired": False
+            "isRequired": True,
+            "actionUrl": "/users"
         })
         
     return checklist
@@ -289,81 +304,3 @@ def check_rate_limit(key: str, max_requests: int, window_seconds: int) -> bool:
     # Add current request
     _rate_limit_cache[key].append(current_time)
     return True
-
-
-def build_completeness_checklist(tenant_id: TenantId, tenant: Any, logger: Logger) -> List[Dict[str, str]]:
-    """Build checklist of required/recommended items for publication."""
-    
-    checklist = []
-    
-    # 1. Business Name (required)
-    checklist.append({
-        "item": "business_name",
-        "status": "COMPLETE" if tenant.name else "MISSING",
-        "label": "Nombre del negocio",
-    })
-    
-    # 2. Slug (required for URL)
-    checklist.append({
-        "item": "slug",
-        "status": "COMPLETE" if tenant.slug else "MISSING",
-        "label": "URL personalizada (slug)",
-    })
-    
-    # 3. At least one active service (required)
-    service_repo = DynamoDBServiceRepository()
-    services = service_repo.list_by_tenant(tenant_id)
-    active_services = [s for s in services if s.active]
-    checklist.append({
-        "item": "services",
-        "status": "COMPLETE" if active_services else "MISSING",
-        "label": "Al menos 1 servicio activo",
-    })
-    
-    # 4. At least one active provider (required)
-    provider_repo = DynamoDBProviderRepository()
-    providers = provider_repo.list_by_tenant(tenant_id)
-    active_providers = [p for p in providers if p.active]
-    checklist.append({
-        "item": "providers",
-        "status": "COMPLETE" if active_providers else "MISSING",
-        "label": "Al menos 1 profesional activo",
-    })
-    
-    # 5. Provider availability configured (required)
-    has_availability = False
-    if active_providers:
-        availability_repo = DynamoDBAvailabilityRepository()
-        for provider in active_providers[:3]:  # Check first 3 providers max
-            try:
-                avail = availability_repo.get_by_provider(tenant_id, provider.provider_id)
-                if avail and len(avail) > 0:
-                    has_availability = True
-                    break
-            except Exception:
-                pass
-    
-    checklist.append({
-        "item": "availability",
-        "status": "COMPLETE" if has_availability else "MISSING",
-        "label": "Horarios configurados",
-    })
-    
-    # 6. Logo/Photo (recommended)
-    settings = tenant.settings or {}
-    has_photo = bool(settings.get("photoUrl") or settings.get("logo"))
-    checklist.append({
-        "item": "photo",
-        "status": "COMPLETE" if has_photo else "RECOMMENDED",
-        "label": "Logo o foto de perfil",
-    })
-    
-    # 7. Description/Bio (recommended)
-    has_bio = bool(settings.get("bio") or settings.get("description"))
-    checklist.append({
-        "item": "bio",
-        "status": "COMPLETE" if has_bio else "RECOMMENDED",
-        "label": "Descripción del negocio",
-    })
-    
-    return checklist
