@@ -65,6 +65,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly apiKeyManagerFunction: lambda.Function;
 
   public readonly getPublicProfileFunction: lambda.Function;
+  public readonly publicLinkStatusFunction: lambda.Function;
   public readonly googleIntegrationFunction: lambda.Function;
   public readonly microsoftIntegrationFunction: lambda.Function;
 
@@ -479,6 +480,25 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadData(this.getPublicProfileFunction);
     props.servicesTable.grantReadData(this.getPublicProfileFunction);
     props.providersTable.grantReadData(this.getPublicProfileFunction);
+
+    // 15b. Public Link Status Lambda
+    this.publicLinkStatusFunction = new lambda.Function(this, 'PublicLinkStatusFunction', {
+      ...commonProps,
+      description: 'Manage public link publication status (isPublished, checklist)',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'public_link_status')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        PUBLIC_LINK_BASE_URL: 'https://agendar.holalucia.cl',
+      },
+    });
+
+    // Grant permissions
+    props.tenantsTable.grantReadWriteData(this.publicLinkStatusFunction);
+    props.servicesTable.grantReadData(this.publicLinkStatusFunction);
+    props.providersTable.grantReadData(this.publicLinkStatusFunction);
+    props.availabilityTable.grantReadData(this.publicLinkStatusFunction);
 
     // 16. Google Integration Lambda
     this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {

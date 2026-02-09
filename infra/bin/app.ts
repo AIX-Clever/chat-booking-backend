@@ -130,6 +130,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   updateTenantFunction: lambdaStack.updateTenantFunction,
   getTenantFunction: lambdaStack.getTenantFunction,
   getPublicProfileFunction: lambdaStack.getPublicProfileFunction,
+  publicLinkStatusFunction: lambdaStack.publicLinkStatusFunction,
   metricsFunction: lambdaStack.metricsFunction,
   workflowManagerFunction: lambdaStack.workflowManagerFunction,
   faqManagerFunction: lambdaStack.faqManagerFunction,

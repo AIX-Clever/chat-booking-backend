@@ -34,6 +34,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   downgradeFunction: lambda.IFunction;
   listInvoicesFunction: lambda.IFunction;
   getPublicProfileFunction: lambda.IFunction;
+  publicLinkStatusFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -195,6 +196,26 @@ export class AppSyncApiStack extends cdk.Stack {
     getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
       typeName: 'Query',
       fieldName: 'getTenantPublicProfile',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Public Link Status Data Source and Resolvers
+    const publicLinkStatusDataSource = this.api.addLambdaDataSource(
+      'PublicLinkStatusDataSource',
+      props.publicLinkStatusFunction
+    );
+
+    publicLinkStatusDataSource.createResolver('GetPublicLinkStatusResolver', {
+      typeName: 'Query',
+      fieldName: 'getPublicLinkStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    publicLinkStatusDataSource.createResolver('SetPublicLinkStatusResolver', {
+      typeName: 'Mutation',
+      fieldName: 'setPublicLinkStatus',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

@@ -85,6 +85,8 @@ type Tenant @aws_api_key @aws_cognito_user_pools {
   billingEmail: String!
   settings: AWSJSON
   services: [Service]
+  isPublished: Boolean
+  publishedAt: AWSDateTime
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -625,6 +627,9 @@ type Query {
 
   # Public Profile (Microsites)
   getTenantPublicProfile(slug: String!): PublicProfile
+
+  # Public Link Status (Admin)
+  getPublicLinkStatus: PublicLinkStatus @aws_cognito_user_pools
 }
 
 type PublicProfile {
@@ -641,6 +646,36 @@ type PublicProfile {
   operatingHours: String
   fullAddress: String
   providers: [Provider]
+  tenantPlan: String
+  isPublished: Boolean
+}
+
+# Public Link Status for Admin Panel
+type ChecklistItem {
+  item: String!
+  status: ChecklistStatus!
+  label: String!
+}
+
+enum ChecklistStatus {
+  COMPLETE
+  MISSING
+  RECOMMENDED
+}
+
+type PublicLinkStatus @aws_cognito_user_pools {
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
+  slug: String
+  publicUrl: String
+  completenessChecklist: [ChecklistItem!]!
+  completenessPercentage: Int!
+}
+
+type PublicLinkStatusResponse @aws_cognito_user_pools {
+  success: Boolean!
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
 }
 
 # Mutations
@@ -714,6 +749,9 @@ type Mutation {
   # User Management
   resendUserPasswordReset(userId: ID!): Boolean! @aws_cognito_user_pools
   resendInvitation(userId: ID!): Boolean! @aws_cognito_user_pools
+
+  # Public Link Status (Admin)
+  setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! @aws_cognito_user_pools
 }
 
 input ExceptionRuleInput {

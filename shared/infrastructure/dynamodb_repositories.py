@@ -81,12 +81,20 @@ class DynamoDBTenantRepository(ITenantRepository):
             "ownerUserId": tenant.owner_user_id,
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings,
+            "isPublished": tenant.is_published,
             "createdAt": tenant.created_at.isoformat(),
         }
+
+        if tenant.published_at:
+            item["publishedAt"] = tenant.published_at.isoformat()
 
         self.table.put_item(Item=item)
 
     def _item_to_entity(self, item: dict) -> Tenant:
+        published_at = None
+        if item.get("publishedAt"):
+            published_at = datetime.fromisoformat(item["publishedAt"])
+
         return Tenant(
             tenant_id=TenantId(item["tenantId"]),
             name=item["name"],
@@ -96,6 +104,8 @@ class DynamoDBTenantRepository(ITenantRepository):
             owner_user_id=item["ownerUserId"],
             billing_email=item.get("billingEmail"),
             settings=item.get("settings", {}),
+            is_published=item.get("isPublished", False),
+            published_at=published_at,
             created_at=datetime.fromisoformat(item["createdAt"]),
         )
 
