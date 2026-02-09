@@ -38,17 +38,24 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info("Public Link Status Handler", event=event)
 
     try:
-        field, tenant_id_str, input_data = extract_appsync_event(event)
+        # AppSync direct resolver event format
+        field = event.get("info", {}).get("fieldName")
+        arguments = event.get("arguments", {})
+        
+        # Extract identity context
+        identity = event.get("identity", {})
+        tenant_id_str = identity.get("claims", {}).get("custom:tenantId")
         
         if not tenant_id_str:
-            return error_response("Tenant ID not found in context", 400)
+            logger.error("Tenant ID missing in identity claims", identity=identity)
+            return error_response("Acceso denegado: Tenant ID no encontrado", 401)
         
         tenant_id = TenantId(tenant_id_str)
         
         if field == "getPublicLinkStatus":
             return handle_get_status(tenant_id, logger)
         elif field == "setPublicLinkStatus":
-            is_published = input_data.get("isPublished") if input_data else event.get("arguments", {}).get("isPublished")
+            is_published = arguments.get("isPublished")
             return handle_set_status(tenant_id, is_published, logger)
         else:
             return error_response(f"Unknown field: {field}", 400)
