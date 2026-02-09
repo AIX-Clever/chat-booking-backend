@@ -7,7 +7,7 @@ Provides query getPublicLinkStatus and mutation setPublicLinkStatus.
 
 import os
 from datetime import datetime, timezone
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from shared.domain.entities import TenantId
 from shared.infrastructure.dynamodb_repositories import (
