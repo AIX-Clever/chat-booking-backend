@@ -209,15 +209,15 @@ export class AppSyncApiStack extends cdk.Stack {
     publicLinkStatusDataSource.createResolver('GetPublicLinkStatusResolver', {
       typeName: 'Query',
       fieldName: 'getPublicLinkStatus',
-      requestMappingTemplate: requestTemplate,
-      responseMappingTemplate: responseTemplate,
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
     publicLinkStatusDataSource.createResolver('SetPublicLinkStatusResolver', {
       typeName: 'Mutation',
       fieldName: 'setPublicLinkStatus',
-      requestMappingTemplate: requestTemplate,
-      responseMappingTemplate: responseTemplate,
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
 
