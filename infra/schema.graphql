@@ -629,7 +629,7 @@ type Query {
   getTenantPublicProfile(slug: String!): PublicProfile
 
   # Public Link Status (Admin)
-  getPublicLinkStatus: PublicLinkStatus @aws_cognito_user_pools
+  getPublicLinkStatus(providerId: String): PublicLinkStatus @aws_cognito_user_pools
 }
 
 type PublicProfile {
@@ -655,6 +655,7 @@ type ChecklistItem {
   item: String!
   status: ChecklistStatus!
   label: String!
+  isRequired: Boolean!
 }
 
 enum ChecklistStatus {

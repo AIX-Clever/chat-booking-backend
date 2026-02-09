@@ -29,44 +29,34 @@ PUBLIC_LINK_BASE_URL = os.environ.get("PUBLIC_LINK_BASE_URL", "https://agendar.h
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Handler for public link status operations.
-    
-    Supports:
-    - getPublicLinkStatus: Query to get publication status and checklist
-    - setPublicLinkStatus: Mutation to toggle publication status
     """
     logger = Logger()
     logger.info("Public Link Status Handler", event=event)
 
     try:
-        # AppSync direct resolver event format
-        field = event.get("info", {}).get("fieldName")
-        arguments = event.get("arguments", {})
-        
-        # Extract identity context
-        identity = event.get("identity", {})
-        tenant_id_str = identity.get("claims", {}).get("custom:tenantId")
-        
-        if not tenant_id_str:
-            logger.error("Tenant ID missing in identity claims", identity=identity)
-            return error_response("Acceso denegado: Tenant ID no encontrado", 401)
+        # Use project standard helper for event extraction
+        field, tenant_id_str, input_data = extract_appsync_event(event)
         
         tenant_id = TenantId(tenant_id_str)
         
         if field == "getPublicLinkStatus":
-            return handle_get_status(tenant_id, logger)
+            # get providerId from arguments
+            provider_id = event.get("arguments", {}).get("providerId")
+            return handle_get_status(tenant_id, provider_id, logger)
         elif field == "setPublicLinkStatus":
-            is_published = arguments.get("isPublished")
+            is_published = input_data.get("isPublished")
             return handle_set_status(tenant_id, is_published, logger)
         else:
             return error_response(f"Unknown field: {field}", 400)
             
     except Exception as e:
         logger.error("Public link status handler failed", error=str(e))
+        # AppSync expects the exception message as the error
         raise e
 
 
-def handle_get_status(tenant_id: TenantId, logger: Logger) -> Dict[str, Any]:
-    """Get current publication status with completeness checklist."""
+def handle_get_status(tenant_id: TenantId, provider_id: Optional[str], logger: Logger) -> Dict[str, Any]:
+    """Get current publication status with dynamic checklist."""
     
     tenant_repo = DynamoDBTenantRepository()
     tenant = tenant_repo.get_by_id(tenant_id)
@@ -74,15 +64,19 @@ def handle_get_status(tenant_id: TenantId, logger: Logger) -> Dict[str, Any]:
     if not tenant:
         return error_response("Tenant not found", 404)
     
-    # Build completeness checklist
-    checklist = build_completeness_checklist(tenant_id, tenant, logger)
+    # Build dynamic checklist based on requirements
+    checklist = build_comprehensive_checklist(tenant_id, tenant, provider_id, logger)
     
-    # Calculate percentage
-    complete_items = sum(1 for item in checklist if item["status"] == "COMPLETE")
-    total_items = len(checklist)
-    percentage = int((complete_items / total_items) * 100) if total_items > 0 else 0
+    # Calculate percentage based on required items
+    required_items = [item for item in checklist if item.get("isRequired", True)]
+    complete_required = sum(1 for item in required_items if item["status"] == "COMPLETE")
+    total_required = len(required_items)
+    
+    percentage = int((complete_required / total_required) * 100) if total_required > 0 else 0
     
     # Build public URL
+    # For LITE (Personal), ideally redirect to professional slug if provider_id matches
+    # For now, base tenant URL
     public_url = f"{PUBLIC_LINK_BASE_URL}/{tenant.slug}" if tenant.slug else None
     
     return {
@@ -93,6 +87,127 @@ def handle_get_status(tenant_id: TenantId, logger: Logger) -> Dict[str, Any]:
         "completenessChecklist": checklist,
         "completenessPercentage": percentage,
     }
+
+
+def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id: Optional[str], logger: Logger) -> List[Dict[str, Any]]:
+    """
+    Builds a checklist including:
+    - Center data (Business Name, Slug, Rooms)
+    - Services & Categories
+    - Professional specific data (if provider_id provided)
+    """
+    checklist = []
+    
+    # 1. Base Business Configuration
+    checklist.append({
+        "item": "business_name",
+        "status": "COMPLETE" if tenant.name else "MISSING",
+        "label": "Nombre del negocio",
+        "isRequired": True
+    })
+    
+    checklist.append({
+        "item": "slug",
+        "status": "COMPLETE" if tenant.slug else "MISSING",
+        "label": "URL personalizada (slug)",
+        "isRequired": True
+    })
+
+    # 2. Services Infrastructure
+    from shared.infrastructure.dynamodb_repositories import DynamoDBServiceRepository
+    # Check for categories (at least one)
+    # Note: We don't have a direct CategoryRepo in the snippet above, let's assume one or check if services have categories
+    service_repo = DynamoDBServiceRepository()
+    services = service_repo.list_by_tenant(tenant_id)
+    active_services = [s for s in services if s.active]
+    
+    has_categories = any(s.category for s in services)
+    checklist.append({
+        "item": "categories",
+        "status": "COMPLETE" if has_categories else "MISSING",
+        "label": "Categorías de servicios",
+        "isRequired": True
+    })
+    
+    checklist.append({
+        "item": "services",
+        "status": "COMPLETE" if active_services else "MISSING",
+        "label": "Servicios configurados",
+        "isRequired": True
+    })
+
+    # 3. Rooms/Infrastructure
+    from shared.infrastructure.dynamodb_repositories import DynamoDBRoomRepository
+    room_repo = DynamoDBRoomRepository()
+    rooms = room_repo.list_by_tenant(tenant_id)
+    checklist.append({
+        "item": "rooms",
+        "status": "COMPLETE" if rooms else "MISSING",
+        "label": "Salas (boxes/consultorios)",
+        "isRequired": True
+    })
+
+    # 4. Professional Specific Logic
+    if provider_id:
+        from shared.infrastructure.dynamodb_repositories import DynamoDBProviderRepository
+        from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
+        
+        provider_repo = DynamoDBProviderRepository()
+        provider = provider_repo.get_by_id(tenant_id, provider_id)
+        
+        if provider:
+            # Professional Bio/Photo
+            has_prof_data = bool(provider.bio and provider.photo_url)
+            checklist.append({
+                "item": "prof_data",
+                "status": "COMPLETE" if has_prof_data else "MISSING",
+                "label": f"Perfil de {provider.name} (Bio/Foto)",
+                "isRequired": True
+            })
+            
+            # Professional availability
+            availability_repo = DynamoDBAvailabilityRepository()
+            avail = availability_repo.get_by_provider(tenant_id, provider_id)
+            checklist.append({
+                "item": "prof_availability",
+                "status": "COMPLETE" if avail and len(avail) > 0 else "MISSING",
+                "label": f"Disponibilidad de {provider.name}",
+                "isRequired": True
+            })
+            
+            # Professional associated services
+            checklist.append({
+                "item": "prof_services",
+                "status": "COMPLETE" if provider.service_ids else "MISSING",
+                "label": f"Servicios asignados a {provider.name}",
+                "isRequired": True
+            })
+    else:
+        # Global Center / Pro Version Checklist
+        # At least one professional active
+        from shared.infrastructure.dynamodb_repositories import DynamoDBProviderRepository
+        provider_repo = DynamoDBProviderRepository()
+        providers = provider_repo.list_by_tenant(tenant_id)
+        active_providers = [p for p in providers if p.active]
+        
+        checklist.append({
+            "item": "providers",
+            "status": "COMPLETE" if active_providers else "MISSING",
+            "label": "Al menos 1 profesional activo",
+            "isRequired": True
+        })
+        
+        # Recommendations
+        settings = tenant.settings or {}
+        has_photo = bool(settings.get("photoUrl") or settings.get("logo"))
+        checklist.append({
+            "item": "logo",
+            "status": "COMPLETE" if has_photo else "RECOMMENDED",
+            "label": "Logo del Centro",
+            "isRequired": False
+        })
+        
+    return checklist
 
 
 def handle_set_status(tenant_id: TenantId, is_published: bool, logger: Logger) -> Dict[str, Any]:
