@@ -677,6 +677,7 @@ type PublicLinkStatusResponse @aws_cognito_user_pools {
   success: Boolean!
   isPublished: Boolean!
   publishedAt: AWSDateTime
+  message: String
 }
 
 # Mutations
