@@ -913,7 +913,9 @@ class DynamoDBProviderIntegrationRepository(IProviderIntegrationRepository):
             ExpressionAttributeValues={":c": credentials},
         )
 
-    def get_microsoft_creds(self, tenant_id: TenantId, provider_id: str) -> Optional[dict]:
+    def get_microsoft_creds(
+        self, tenant_id: TenantId, provider_id: str
+    ) -> Optional[dict]:
         try:
             response = self.table.get_item(
                 Key={"tenantId": str(tenant_id), "providerId": provider_id},

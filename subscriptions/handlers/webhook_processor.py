@@ -93,10 +93,10 @@ def process_payment(payment_id, raw_data):
             ExpressionAttributeValues={':s': SubscriptionStatus.AUTHORIZED.value}
         )
 
-        # 4. Sync Plan to Tenant Entity
+        # 4. Sync Plan and Activate Tenant Entity
         try:
             from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
-            from shared.domain.entities import TenantPlan
+            from shared.domain.entities import TenantPlan, TenantStatus
             
             # Fetch Subscription to get the Plan
             sub_resp = SUBSCRIPTIONS_TABLE.get_item(Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'})
@@ -112,8 +112,9 @@ def process_payment(payment_id, raw_data):
                     # Update local entity
                     if new_plan_str.upper() in TenantPlan._member_names_:
                          tenant.plan = TenantPlan[new_plan_str.upper()]
+                         tenant.status = TenantStatus.ACTIVE # ACTIVATE TENANT
                          repo.save(tenant)
-                         print(f"Updated tenant {tenant_id} plan to {tenant.plan}")
+                         print(f"Updated tenant {tenant_id} plan to {tenant.plan} and status to ACTIVE")
                     else:
                         print(f"Warning: Unknown plan {new_plan_str}")
         except Exception as e:

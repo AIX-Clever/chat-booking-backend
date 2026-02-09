@@ -14,4 +14,4 @@ class SubscriptionConfig:
     PROMO_DURATION_MONTHS = 3
 
     # Plan Prices (CLP)
-    PLAN_PRICES = {"lite": 15000, "pro": 29990, "business": 89990}
+    PLAN_PRICES = {"lite": 9990, "pro": 29990, "business": 89990}

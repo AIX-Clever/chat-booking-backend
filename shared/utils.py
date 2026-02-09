@@ -93,9 +93,11 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     if event.get("identity"):
         identity = event["identity"]
         # Lambda Authorizer context
-        if identity.get("resolverContext") and identity["resolverContext"].get("tenantId"):
+        if identity.get("resolverContext") and identity["resolverContext"].get(
+            "tenantId"
+        ):
             return identity["resolverContext"]["tenantId"]
-        
+
         # User Pools claims
         if identity.get("claims"):
             claims = identity["claims"]

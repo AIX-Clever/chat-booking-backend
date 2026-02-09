@@ -122,7 +122,9 @@ class BookingService:
         self.microsoft_client_id = os.environ.get("MICROSOFT_CLIENT_ID")
         self.microsoft_client_secret = os.environ.get("MICROSOFT_CLIENT_SECRET")
         self.microsoft_auth_service = (
-            MicrosoftAuthService(self.microsoft_client_id, self.microsoft_client_secret, "")
+            MicrosoftAuthService(
+                self.microsoft_client_id, self.microsoft_client_secret, ""
+            )
             if self.microsoft_client_id
             else None
         )
@@ -643,7 +645,7 @@ class BookingService:
 
             # 2. Extract Token
             access_token = creds.get("access_token")
-            
+
             # 3. Create Event
             description = f"Cliente: {client_name}<br>Email: {client_email}<br>Notas: {booking.notes or ''}"
 
@@ -653,7 +655,7 @@ class BookingService:
                 description=description,
                 start_time=booking.start_time.isoformat(),
                 end_time=booking.end_time.isoformat(),
-                timezone="UTC"
+                timezone="UTC",
             )
 
             # 4. Save Microsoft Event ID

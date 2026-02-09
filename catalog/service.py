@@ -7,7 +7,12 @@ Following Clean Architecture / Hexagonal Architecture
 
 from typing import List, Optional, Dict, Any
 from shared.domain.entities import TenantId, Service, Provider, Category, Room
-from shared.domain.repositories import IServiceRepository, IProviderRepository, ICategoryRepository, IRoomRepository  # , FileStorageRepository  # Temporarily removed
+from shared.domain.repositories import (
+    IServiceRepository,
+    IProviderRepository,
+    ICategoryRepository,
+    IRoomRepository,
+)  # , FileStorageRepository  # Temporarily removed
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger
 
@@ -23,7 +28,7 @@ class CatalogService:
         service_repository: IServiceRepository,
         provider_repository: IProviderRepository,
         category_repository: ICategoryRepository,
-        room_repository: IRoomRepository
+        room_repository: IRoomRepository,
     ):
         """
         Dependency Injection: depends on abstractions
@@ -38,16 +43,16 @@ class CatalogService:
         self,
         tenant_id: TenantId,
         query: Optional[str] = None,
-        active_only: bool = False
+        active_only: bool = False,
     ) -> List[Service]:
         """
         Search services for a tenant
-        
+
         Args:
             tenant_id: Tenant identifier
             query: Optional search text (searches name, description, category)
             active_only: If True, only return active services
-            
+
         Returns:
             List of matching services
         """
@@ -55,41 +60,33 @@ class CatalogService:
             "Searching services",
             tenant_id=str(tenant_id),
             query=query,
-            active_only=active_only
+            active_only=active_only,
         )
 
         services = self.service_repo.search(tenant_id, query, active_only)
 
         self.logger.info(
-            "Services found",
-            tenant_id=str(tenant_id),
-            count=len(services)
+            "Services found", tenant_id=str(tenant_id), count=len(services)
         )
 
         return services
 
-    def get_service(
-        self,
-        tenant_id: TenantId,
-        service_id: str
-    ) -> Service:
+    def get_service(self, tenant_id: TenantId, service_id: str) -> Service:
         """
         Get specific service by ID
-        
+
         Args:
             tenant_id: Tenant identifier
             service_id: Service identifier
-            
+
         Returns:
             Service entity
-            
+
         Raises:
             EntityNotFoundError: Service doesn't exist
         """
         self.logger.info(
-            "Getting service",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Getting service", tenant_id=str(tenant_id), service_id=service_id
         )
 
         service = self.service_repo.get_by_id(tenant_id, service_id)
@@ -102,10 +99,10 @@ class CatalogService:
     def list_all_services(self, tenant_id: TenantId) -> List[Service]:
         """
         List all services for tenant (including inactive)
-        
+
         Args:
             tenant_id: Tenant identifier
-            
+
         Returns:
             List of all services
         """
@@ -116,27 +113,25 @@ class CatalogService:
         return services
 
     def list_providers_by_service(
-        self,
-        tenant_id: TenantId,
-        service_id: str
+        self, tenant_id: TenantId, service_id: str
     ) -> List[Provider]:
         """
         List providers that offer specific service
-        
+
         Args:
             tenant_id: Tenant identifier
             service_id: Service identifier
-            
+
         Returns:
             List of active providers offering the service
-            
+
         Raises:
             EntityNotFoundError: Service doesn't exist
         """
         self.logger.info(
             "Listing providers for service",
             tenant_id=str(tenant_id),
-            service_id=service_id
+            service_id=service_id,
         )
 
         # Verify service exists
@@ -145,9 +140,9 @@ class CatalogService:
         # Get providers
         # We manually filter here to add debug logging
         all_providers = self.provider_repo.list_by_tenant(tenant_id)
-        
+
         self.logger.info(f"DEBUG: Found {len(all_providers)} providers for tenant")
-        
+
         providers = []
         for p in all_providers:
             can_provide = p.can_provide_service(service_id)
@@ -162,33 +157,27 @@ class CatalogService:
             "Providers found",
             tenant_id=str(tenant_id),
             service_id=service_id,
-            count=len(providers)
+            count=len(providers),
         )
 
         return providers
 
-    def get_provider(
-        self,
-        tenant_id: TenantId,
-        provider_id: str
-    ) -> Provider:
+    def get_provider(self, tenant_id: TenantId, provider_id: str) -> Provider:
         """
         Get specific provider by ID
-        
+
         Args:
             tenant_id: Tenant identifier
             provider_id: Provider identifier
-            
+
         Returns:
             Provider entity
-            
+
         Raises:
             EntityNotFoundError: Provider doesn't exist
         """
         self.logger.info(
-            "Getting provider",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Getting provider", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
         provider = self.provider_repo.get_by_id(tenant_id, provider_id)
@@ -201,10 +190,10 @@ class CatalogService:
     def list_all_providers(self, tenant_id: TenantId) -> List[Provider]:
         """
         List all providers for tenant (including inactive)
-        
+
         Args:
             tenant_id: Tenant identifier
-            
+
         Returns:
             List of all providers
         """
@@ -215,19 +204,15 @@ class CatalogService:
         return providers
 
     def list_categories(
-        self,
-        tenant_id: TenantId,
-        active_only: bool = False
+        self, tenant_id: TenantId, active_only: bool = False
     ) -> List[Category]:
         """
         List categories for tenant
         """
         self.logger.info(
-            "Listing categories",
-            tenant_id=str(tenant_id),
-            active_only=active_only
+            "Listing categories", tenant_id=str(tenant_id), active_only=active_only
         )
-        
+
         return self.category_repo.list_by_tenant(tenant_id, active_only)
 
     def list_rooms(self, tenant_id: TenantId) -> List[Room]:
@@ -250,7 +235,11 @@ class ServiceManagementService:
     Open/Closed Principle: separated from read-only catalog service
     """
 
-    def __init__(self, service_repository: IServiceRepository, category_repository: ICategoryRepository):
+    def __init__(
+        self,
+        service_repository: IServiceRepository,
+        category_repository: ICategoryRepository,
+    ):
         self.service_repo = service_repository
         self.category_repo = category_repository
         self.logger = Logger()
@@ -263,16 +252,16 @@ class ServiceManagementService:
             self.logger.info(f"Auto-creating missing category: {category_name}")
             from shared.utils import generate_id
             from datetime import datetime, timezone
-            
+
             new_cat = Category(
-                category_id=generate_id('cat'),
+                category_id=generate_id("cat"),
                 tenant_id=tenant_id,
                 name=category_name,
                 is_active=True,
                 display_order=len(existing),
                 metadata={},
                 created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
+                updated_at=datetime.now(timezone.utc),
             )
             self.category_repo.save(new_cat)
 
@@ -287,18 +276,14 @@ class ServiceManagementService:
         price: Optional[float],
         active: bool = True,
         required_room_ids: Optional[List[str]] = None,
-        location_type: Optional[List[str]] = None
+        location_type: Optional[List[str]] = None,
     ) -> Service:
         """
         Create new service
-        
+
         Validates business rules before creating
         """
-        self.logger.info(
-            "Creating service",
-            tenant_id=str(tenant_id),
-            name=name
-        )
+        self.logger.info("Creating service", tenant_id=str(tenant_id), name=name)
 
         # Validate
         if duration_minutes <= 0:
@@ -321,16 +306,14 @@ class ServiceManagementService:
             price=price,
             active=active,
             required_room_ids=required_room_ids,
-            location_type=location_type or ["PHYSICAL"]
+            location_type=location_type or ["PHYSICAL"],
         )
 
         # Persist
         self.service_repo.save(service)
 
         self.logger.info(
-            "Service created",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Service created", tenant_id=str(tenant_id), service_id=service_id
         )
 
         return service
@@ -346,15 +329,13 @@ class ServiceManagementService:
         price: Optional[float] = None,
         active: Optional[bool] = None,
         required_room_ids: Optional[List[str]] = None,
-        location_type: Optional[List[str]] = None
+        location_type: Optional[List[str]] = None,
     ) -> Service:
         """
         Update existing service
         """
         self.logger.info(
-            "Updating service",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Updating service", tenant_id=str(tenant_id), service_id=service_id
         )
 
         # Get existing
@@ -392,25 +373,17 @@ class ServiceManagementService:
         self.service_repo.save(service)
 
         self.logger.info(
-            "Service updated",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Service updated", tenant_id=str(tenant_id), service_id=service_id
         )
 
         return service
 
-    def delete_service(
-        self,
-        tenant_id: TenantId,
-        service_id: str
-    ) -> None:
+    def delete_service(self, tenant_id: TenantId, service_id: str) -> None:
         """
         Delete service
         """
         self.logger.info(
-            "Deleting service",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Deleting service", tenant_id=str(tenant_id), service_id=service_id
         )
 
         # Verify exists
@@ -422,9 +395,7 @@ class ServiceManagementService:
         self.service_repo.delete(tenant_id, service_id)
 
         self.logger.info(
-            "Service deleted",
-            tenant_id=str(tenant_id),
-            service_id=service_id
+            "Service deleted", tenant_id=str(tenant_id), service_id=service_id
         )
 
 
@@ -450,16 +421,12 @@ class ProviderManagementService:
         photo_url: Optional[str] = None,
         photo_url_thumbnail: Optional[str] = None,
         slug: Optional[str] = None,
-        professional_license: Optional[str] = None
+        professional_license: Optional[str] = None,
     ) -> Provider:
         """
         Create new provider
         """
-        self.logger.info(
-            "Creating provider",
-            tenant_id=str(tenant_id),
-            name=name
-        )
+        self.logger.info("Creating provider", tenant_id=str(tenant_id), name=name)
 
         # Validate
         if not service_ids:
@@ -478,16 +445,14 @@ class ProviderManagementService:
             photo_url=photo_url,
             photo_url_thumbnail=photo_url_thumbnail,
             slug=slug,
-            professional_license=professional_license
+            professional_license=professional_license,
         )
 
         # Persist
         self.provider_repo.save(provider)
 
         self.logger.info(
-            "Provider created",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Provider created", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
         return provider
@@ -505,15 +470,13 @@ class ProviderManagementService:
         photo_url: Optional[str] = None,
         photo_url_thumbnail: Optional[str] = None,
         slug: Optional[str] = None,
-        professional_license: Optional[str] = None
+        professional_license: Optional[str] = None,
     ) -> Provider:
         """
         Update existing provider
         """
         self.logger.info(
-            "Updating provider",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Updating provider", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
         # Get existing
@@ -549,25 +512,17 @@ class ProviderManagementService:
         self.provider_repo.save(provider)
 
         self.logger.info(
-            "Provider updated",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Provider updated", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
         return provider
 
-    def delete_provider(
-        self,
-        tenant_id: TenantId,
-        provider_id: str
-    ) -> None:
+    def delete_provider(self, tenant_id: TenantId, provider_id: str) -> None:
         """
         Delete provider
         """
         self.logger.info(
-            "Deleting provider",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Deleting provider", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
         # Verify exists
@@ -579,9 +534,7 @@ class ProviderManagementService:
         self.provider_repo.delete(tenant_id, provider_id)
 
         self.logger.info(
-            "Provider deleted",
-            tenant_id=str(tenant_id),
-            provider_id=provider_id
+            "Provider deleted", tenant_id=str(tenant_id), provider_id=provider_id
         )
 
 
@@ -602,14 +555,10 @@ class CategoryManagementService:
         description: Optional[str] = None,
         is_active: bool = True,
         display_order: int = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Category:
         """Create new category"""
-        self.logger.info(
-            "Creating category",
-            tenant_id=str(tenant_id),
-            name=name
-        )
+        self.logger.info("Creating category", tenant_id=str(tenant_id), name=name)
 
         category = Category(
             category_id=category_id,
@@ -618,15 +567,13 @@ class CategoryManagementService:
             description=description,
             is_active=is_active,
             display_order=display_order,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
 
         self.category_repo.save(category)
 
         self.logger.info(
-            "Category created",
-            tenant_id=str(tenant_id),
-            category_id=category_id
+            "Category created", tenant_id=str(tenant_id), category_id=category_id
         )
 
         return category
@@ -639,13 +586,11 @@ class CategoryManagementService:
         description: Optional[str] = None,
         is_active: Optional[bool] = None,
         display_order: Optional[int] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Category:
         """Update existing category"""
         self.logger.info(
-            "Updating category",
-            tenant_id=str(tenant_id),
-            category_id=category_id
+            "Updating category", tenant_id=str(tenant_id), category_id=category_id
         )
 
         category = self.category_repo.get_by_id(tenant_id, category_id)
@@ -665,28 +610,21 @@ class CategoryManagementService:
 
         # Update timestamp
         from datetime import datetime, timezone
+
         category.updated_at = datetime.now(timezone.utc)
 
         self.category_repo.save(category)
 
         self.logger.info(
-            "Category updated",
-            tenant_id=str(tenant_id),
-            category_id=category_id
+            "Category updated", tenant_id=str(tenant_id), category_id=category_id
         )
 
         return category
 
-    def delete_category(
-        self,
-        tenant_id: TenantId,
-        category_id: str
-    ) -> None:
+    def delete_category(self, tenant_id: TenantId, category_id: str) -> None:
         """Delete category"""
         self.logger.info(
-            "Deleting category",
-            tenant_id=str(tenant_id),
-            category_id=category_id
+            "Deleting category", tenant_id=str(tenant_id), category_id=category_id
         )
 
         category = self.category_repo.get_by_id(tenant_id, category_id)
@@ -696,9 +634,7 @@ class CategoryManagementService:
         self.category_repo.delete(tenant_id, category_id)
 
         self.logger.info(
-            "Category deleted",
-            tenant_id=str(tenant_id),
-            category_id=category_id
+            "Category deleted", tenant_id=str(tenant_id), category_id=category_id
         )
 
 
@@ -721,7 +657,7 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Create new room"""
         self.logger.info("Creating room", tenant_id=str(tenant_id), name=name)
@@ -737,7 +673,7 @@ class RoomManagementService:
             min_duration=min_duration,
             max_duration=max_duration,
             operating_hours=operating_hours,
-            metadata=metadata or {}
+            metadata=metadata or {},
         )
         self.room_repo.save(room)
         return room
@@ -754,7 +690,7 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Update existing room"""
         self.logger.info("Updating room", tenant_id=str(tenant_id), room_id=room_id)
@@ -783,6 +719,7 @@ class RoomManagementService:
             room.metadata = metadata
 
         from datetime import datetime, timezone
+
         room.updated_at = datetime.now(timezone.utc)
 
         self.room_repo.save(room)
@@ -791,7 +728,7 @@ class RoomManagementService:
     def delete_room(self, tenant_id: TenantId, room_id: str) -> None:
         """Delete room"""
         self.logger.info("Deleting room", tenant_id=str(tenant_id), room_id=room_id)
-        
+
         # Verify exists
         room = self.room_repo.get_by_id(tenant_id, room_id)
         if not room:
@@ -805,38 +742,31 @@ class AssetService:
     Service for managing assets (files/images)
     """
 
-    def __init__(self, file_storage_repository): 
+    def __init__(self, file_storage_repository):
         self.storage_repo = file_storage_repository
         self.logger = Logger()
 
     def generate_upload_url(
-        self,
-        tenant_id: TenantId,
-        file_name: str,
-        content_type: str
+        self, tenant_id: TenantId, file_name: str, content_type: str
     ) -> str:
         """
         Generate presigned URL for uploading a file
         """
         self.logger.info(
-            "Generating upload URL",
-            tenant_id=str(tenant_id),
-            file_name=file_name
+            "Generating upload URL", tenant_id=str(tenant_id), file_name=file_name
         )
 
         # Validate content type
-        if not content_type.startswith('image/'):
-             raise ValidationError("Only image uploads are allowed")
+        if not content_type.startswith("image/"):
+            raise ValidationError("Only image uploads are allowed")
 
         # Generate unique filename to prevent collisions (or rely on client?)
         # For professional photos, maybe use a prefix?
         # Ideally, we should receive the entity ID (provider_id) to organize folders.
         # For now, just pass the filename (S3 adapter handles raw/ prefix).
-        
+
         url = self.storage_repo.generate_presigned_url(
-            file_name=file_name,
-            content_type=content_type,
-            operation='put_object'
+            file_name=file_name, content_type=content_type, operation="put_object"
         )
 
         return url

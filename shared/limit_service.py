@@ -5,8 +5,7 @@ Service for checking if a tenant has exceeded their plan limits.
 Integrates Tenant Entity logic with MetricsService data.
 """
 
-from typing import Optional, Dict, Any
-from .domain.entities import Tenant, TenantId
+from .domain.entities import TenantId
 from .domain.repositories import ITenantRepository
 from .metrics import MetricsService
 from .utils import Logger

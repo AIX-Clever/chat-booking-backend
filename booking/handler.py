@@ -4,10 +4,7 @@ Booking Lambda Handler (Adapter Layer)
 AWS Lambda function for booking operations
 """
 
-import json
-
 # Trigger deploy 2026-01-15
-from datetime import datetime
 
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBBookingRepository,
@@ -37,6 +34,7 @@ from shared.utils import (
 )
 from shared.metrics import MetricsService
 from shared.infrastructure.notifications import EmailService
+from shared.limit_service import TenantLimitService
 import os
 
 from service import BookingService, BookingQueryService
@@ -53,6 +51,9 @@ provider_integration_repo = DynamoDBProviderIntegrationRepository()
 metrics_service = MetricsService()
 email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
+# Initialize Limit Service
+limit_service = TenantLimitService(tenant_repo, metrics_service)
+
 booking_service = BookingService(
     booking_repo,
     service_repo,
@@ -60,7 +61,7 @@ booking_service = BookingService(
     tenant_repo,
     room_repo=room_repo,
     provider_integration_repo=provider_integration_repo,
-    limit_service=None,  # TenantLimitService is opt-in for now or injected if available
+    limit_service=limit_service,
     email_service=email_service,
 )
 

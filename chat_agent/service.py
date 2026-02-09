@@ -172,9 +172,7 @@ class ChatAgentService:
             raise EntityNotFoundError("Tenant", str(tenant_id))
 
         # Check settings for AI Mode
-        # HOTFIX: Temporarily disable AI to prevent Bedrock 'Model not submitted' errors
-        # ai_enabled = ai_settings.get('enabled', False)
-        ai_enabled = False
+        ai_enabled = tenant.settings.get("ai_config", {}).get("enabled", False)
 
         # Allow override via user_data (for testing)
         if user_data:
@@ -193,16 +191,24 @@ class ChatAgentService:
                 ai_enabled = True
 
         # Check AI Usage Limit (Degradation)
-        if self._limit_service and ai_enabled:
-            can_use_ai = self._limit_service.check_can_use_ai(tenant_id)
-            if not can_use_ai:
-                print(
-                    f"Tenant {tenant_id.value} AI limit exceeded. Falling back to FSM."
-                )
-                ai_enabled = False
+        # 2. Check Plan Limits (AI Enabled)
+        if self._limit_service:
+            ai_enabled = self._limit_service.check_can_use_ai(tenant_id)
+        else:
+            # If limit service is not available, default to tenant settings
+            ai_enabled = tenant.settings.get("ai_config", {}).get("enabled", False)
+
+        # 3. Determine Mode (FSM vs AI)
+        # If AI is enabled in Plan AND configured in Settings -> AI Mode
+        # Otherwise -> FSM Mode
+        tenant_settings = tenant.settings
+        use_ai = ai_enabled and (
+            tenant_settings.get("ai_config", {}).get("mode")
+            in ["HAIKU", "SONNET", "RAG"]
+        )
 
         # Fallback to metadata for testing override if needed, but prioritize DB
-        ai_mode = "BEDROCK_RAG" if ai_enabled else None
+        ai_mode = "BEDROCK_RAG" if use_ai else None
 
         if ai_mode == "BEDROCK_RAG" and self.ai_handler:
             # RAG FLOW

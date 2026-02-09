@@ -2,10 +2,16 @@ import unittest
 from datetime import datetime, time
 from unittest.mock import Mock, MagicMock
 from shared.domain.entities import (
-    TenantId, Service, Provider, ProviderAvailability, TimeRange, 
-    TimeSlot, Booking
+    TenantId,
+    Service,
+    Provider,
+    ProviderAvailability,
+    TimeRange,
+    TimeSlot,
+    Booking,
 )
 from availability.service import AvailabilityService
+
 
 class TestAvailabilityService(unittest.TestCase):
     def setUp(self):
@@ -13,18 +19,18 @@ class TestAvailabilityService(unittest.TestCase):
         self.mock_booking_repo = Mock()
         self.mock_service_repo = Mock()
         self.mock_provider_repo = Mock()
-        
+
         self.mock_provider_integration_repo = Mock()
-        
+
         self.service = AvailabilityService(
             self.mock_availability_repo,
             self.mock_booking_repo,
             self.mock_service_repo,
             self.mock_provider_repo,
             self.mock_provider_integration_repo,
-            slot_interval_minutes=60 # 1 hour slots for easier testing
+            slot_interval_minutes=60,  # 1 hour slots for easier testing
         )
-        
+
         self.tenant_id = TenantId("tenant-123")
         self.service_id = "svc-1"
         self.provider_id = "pro-1"
@@ -38,7 +44,7 @@ class TestAvailabilityService(unittest.TestCase):
             category="cat-1",
             duration_minutes=60,
             price=100,
-            active=True
+            active=True,
         )
         self.mock_service_repo.get_by_id.return_value = self.mock_service_obj
 
@@ -49,10 +55,10 @@ class TestAvailabilityService(unittest.TestCase):
             bio="",
             service_ids=[self.service_id],
             timezone="UTC",
-            active=True
+            active=True,
         )
         self.mock_provider_repo.get_by_id.return_value = self.mock_provider_obj
-        
+
         # Default: No bookings
         self.mock_booking_repo.list_by_provider.return_value = []
 
@@ -63,10 +69,14 @@ class TestAvailabilityService(unittest.TestCase):
             tenant_id=self.tenant_id,
             provider_id=self.provider_id,
             day_of_week="MON",
-            time_ranges=[TimeRange("09:00", "12:00")]
+            time_ranges=[TimeRange("09:00", "12:00")],
         )
-        self.mock_availability_repo.get_provider_availability.return_value = [availability]
-        self.mock_availability_repo.get_provider_exceptions.return_value = [] # No exceptions
+        self.mock_availability_repo.get_provider_availability.return_value = [
+            availability
+        ]
+        self.mock_availability_repo.get_provider_exceptions.return_value = (
+            []
+        )  # No exceptions
 
         # Test date: 2026-03-23 (Monday)
         from_date = datetime(2026, 3, 23, 0, 0)
@@ -88,14 +98,17 @@ class TestAvailabilityService(unittest.TestCase):
             tenant_id=self.tenant_id,
             provider_id=self.provider_id,
             day_of_week="MON",
-            time_ranges=[TimeRange("09:00", "12:00")]
+            time_ranges=[TimeRange("09:00", "12:00")],
         )
-        self.mock_availability_repo.get_provider_availability.return_value = [availability]
-        
+        self.mock_availability_repo.get_provider_availability.return_value = [
+            availability
+        ]
+
         # Exception: 2026-03-23 is OFF
         from shared.domain.entities import ExceptionRule
+
         self.mock_availability_repo.get_provider_exceptions.return_value = [
-            ExceptionRule(date='2026-03-23', time_ranges=[])
+            ExceptionRule(date="2026-03-23", time_ranges=[])
         ]
 
         from_date = datetime(2026, 3, 23, 0, 0)
@@ -115,14 +128,20 @@ class TestAvailabilityService(unittest.TestCase):
             tenant_id=self.tenant_id,
             provider_id=self.provider_id,
             day_of_week="MON",
-            time_ranges=[TimeRange("09:00", "17:00")]
+            time_ranges=[TimeRange("09:00", "17:00")],
         )
-        self.mock_availability_repo.get_provider_availability.return_value = [availability]
-        
+        self.mock_availability_repo.get_provider_availability.return_value = [
+            availability
+        ]
+
         # Exception: 2026-03-23 Only work 10:00-12:00
         from shared.domain.entities import ExceptionRule
+
         self.mock_availability_repo.get_provider_exceptions.return_value = [
-            ExceptionRule(date='2026-03-23', time_ranges=[TimeRange(start_time='10:00', end_time='12:00')])
+            ExceptionRule(
+                date="2026-03-23",
+                time_ranges=[TimeRange(start_time="10:00", end_time="12:00")],
+            )
         ]
 
         from_date = datetime(2026, 3, 23, 0, 0)
@@ -138,36 +157,38 @@ class TestAvailabilityService(unittest.TestCase):
         self.assertEqual(slots[0].start.hour, 10)
         self.assertEqual(slots[1].start.hour, 11)
 
-
     def test_timezone_shift(self):
         """Test timezone-aware slot generation"""
         # Provider in Chile (UTC-3 in Jan)
         self.mock_provider_obj.timezone = "America/Santiago"
-        
+
         # Availability: 09:00 - 10:00 Local
         availability = ProviderAvailability(
             tenant_id=self.tenant_id,
             provider_id=self.provider_id,
             day_of_week="MON",
-            time_ranges=[TimeRange("09:00", "10:00")]
+            time_ranges=[TimeRange("09:00", "10:00")],
         )
-        self.mock_availability_repo.get_provider_availability.return_value = [availability]
+        self.mock_availability_repo.get_provider_availability.return_value = [
+            availability
+        ]
         self.mock_availability_repo.get_provider_exceptions.return_value = []
-        
+
         # Test date: 2026-03-23 (Monday)
         from_date = datetime(2026, 3, 23, 0, 0)
         to_date = datetime(2026, 3, 23, 23, 59)
-        
-        # Note: timezone_str arg is not exposed in public get_available_slots, 
+
+        # Note: timezone_str arg is not exposed in public get_available_slots,
         # it comes from provider entity inside the service.
         slots = self.service.get_available_slots(
             self.tenant_id, self.service_id, self.provider_id, from_date, to_date
         )
-        
+
         # 09:00 Santiago = 12:00 UTC
         self.assertEqual(len(slots), 1)
-        self.assertEqual(slots[0].start.hour, 12) # UTC
-        self.assertEqual(slots[0].end.hour, 13) # UTC
+        self.assertEqual(slots[0].start.hour, 12)  # UTC
+        self.assertEqual(slots[0].end.hour, 13)  # UTC
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

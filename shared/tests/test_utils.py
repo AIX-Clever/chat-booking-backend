@@ -84,7 +84,7 @@ class TestLambdaResponses:
     def test_error_response(self):
         with pytest.raises(Exception) as exc_info:
             error_response("Something went wrong", 500)
-        
+
         assert str(exc_info.value) == "Something went wrong"
 
 

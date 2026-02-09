@@ -5,6 +5,7 @@ from typing import Dict, Any
 
 from shared.domain.payment_interfaces import IPaymentGateway
 
+
 class MercadoPagoClient(IPaymentGateway):
     def __init__(self):
         self.access_token = os.environ.get("MP_ACCESS_TOKEN", "")
@@ -12,11 +13,15 @@ class MercadoPagoClient(IPaymentGateway):
             print("WARNING: MP_ACCESS_TOKEN is not set")
         self.sdk = mercadopago.SDK(self.access_token)
 
-    def create_payment_intent(self, amount: float, currency: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
+    def create_payment_intent(
+        self, amount: float, currency: str, metadata: Dict[str, Any]
+    ) -> Dict[str, Any]:
         # Implementation for single payments (not used in subscription flow yet)
         return {}
 
-    def verify_webhook_signature(self, payload: str, sig_header: str, secret: str) -> Dict[str, Any]:
+    def verify_webhook_signature(
+        self, payload: str, sig_header: str, secret: str
+    ) -> Dict[str, Any]:
         # Implementation for webhook verification
         return {}
 
@@ -28,7 +33,9 @@ class MercadoPagoClient(IPaymentGateway):
         back_url: str,
         price: float,
     ) -> Dict[str, Any]:
-        return self.create_preapproval(payer_email, plan_id, external_reference, back_url, price)
+        return self.create_preapproval(
+            payer_email, plan_id, external_reference, back_url, price
+        )
 
     def create_preapproval(
         self,
@@ -58,20 +65,22 @@ class MercadoPagoClient(IPaymentGateway):
         }
 
         request_options = mercadopago.config.RequestOptions()
-        
+
         try:
             result = self.sdk.preapproval().create(preapproval_data, request_options)
-            
+
             if result["status"] == 201:
                 return result["response"]
             else:
-                error_msg = result.get('response', {}).get('message', 'Unknown error')
+                error_msg = result.get("response", {}).get("message", "Unknown error")
                 print(f"MP Create Error: {result}")
-                
+
                 # Check for Sandbox collision (Real vs Test users)
                 if "payer and collector must be real or test users" in error_msg:
-                     raise Exception("Sandbox Error: Use a Test User email for payment (e.g., test_user_1954@testuser.com)")
-                     
+                    raise Exception(
+                        "Sandbox Error: Use a Test User email for payment (e.g., test_user_1954@testuser.com)"
+                    )
+
                 raise Exception(f"Failed to create preapproval: {error_msg}")
         except Exception as e:
             # Re-raise nicely formatted
@@ -93,3 +102,25 @@ class MercadoPagoClient(IPaymentGateway):
         else:
             print(f"MP Update Error: {result}")
             raise Exception(f"Failed to update preapproval {preapproval_id}")
+
+    def get_payment(self, payment_id: str) -> Dict[str, Any]:
+        """
+        Fetches payment details from Mercado Pago.
+        """
+        result = self.sdk.payment().get(payment_id)
+        if result["status"] == 200:
+            return result["response"]
+        else:
+            print(f"MP Get Payment Error: {result}")
+            raise Exception(f"Failed to fetch payment {payment_id}")
+
+    def get_preapproval(self, preapproval_id: str) -> Dict[str, Any]:
+        """
+        Fetches preapproval (subscription) details from Mercado Pago.
+        """
+        result = self.sdk.preapproval().get(preapproval_id)
+        if result["status"] == 200:
+            return result["response"]
+        else:
+            print(f"MP Get Preapproval Error: {result}")
+            raise Exception(f"Failed to fetch preapproval {preapproval_id}")

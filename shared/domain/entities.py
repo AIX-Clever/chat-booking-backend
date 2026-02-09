@@ -51,6 +51,7 @@ class TenantStatus(Enum):
     SUSPENDED = "SUSPENDED"
     TRIAL = "TRIAL"
     CANCELLED = "CANCELLED"
+    PENDING_PAYMENT = "PENDING_PAYMENT"
 
 
 class TenantPlan(Enum):
@@ -73,8 +74,8 @@ PLAN_LIMITS = {
     TenantPlan.PRO: {
         "messages": 2000,
         "bookings": 200,
-        "tokensIA": 100000,  # ~100k tokens
-        "ai_enabled": True,
+        "tokensIA": 0,  # No AI for PRO anymore
+        "ai_enabled": False,
     },
     TenantPlan.BUSINESS: {
         "messages": 10000,

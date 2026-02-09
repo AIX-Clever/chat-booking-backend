@@ -24,10 +24,15 @@ class IPaymentGateway(ABC):
             Dict containing at least 'client_secret' and 'payment_id'
         """
         pass
-    
+
     @abstractmethod
     def create_subscription(
-        self, payer_email: str, plan_id: str, external_reference: str, back_url: str, price: float
+        self,
+        payer_email: str,
+        plan_id: str,
+        external_reference: str,
+        back_url: str,
+        price: float,
     ) -> Dict[str, Any]:
         """
         Create a recurring subscription (Preapproval).
