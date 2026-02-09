@@ -1,6 +1,7 @@
 import pytest
 import os
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch, MagicMock
+from register_tenant.handler import lambda_handler
 
 # Set default region for all tests
 os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
@@ -13,9 +14,6 @@ def mock_boto_base():
         "boto3.resource", return_value=MagicMock()
     ):
         yield
-
-
-# from register_tenant.handler import lambda_handler
 
 
 @pytest.fixture
@@ -67,8 +65,6 @@ def test_register_tenant_success(
     }
 
     # Execute
-    from register_tenant.handler import lambda_handler
-
     result = lambda_handler(event, {})
 
     # Assert
@@ -85,7 +81,9 @@ def test_register_tenant_success(
     api_key_repo.save.assert_called_once()
 
 
-def test_register_tenant_missing_input(mock_env, mock_cognito, mock_workflows_table):
+def test_register_tenant_missing_input(
+    mock_env, mock_cognito, mock_workflows_table
+):
     event = {}
     with pytest.raises(Exception):
         lambda_handler(event, {})
