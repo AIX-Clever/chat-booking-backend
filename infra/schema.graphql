@@ -651,11 +651,12 @@ type PublicProfile {
 }
 
 # Public Link Status for Admin Panel
-type ChecklistItem {
+type ChecklistItem @aws_cognito_user_pools {
   item: String!
   status: ChecklistStatus!
   label: String!
   isRequired: Boolean!
+  actionUrl: String
 }
 
 enum ChecklistStatus {
