@@ -38,8 +38,12 @@ export class AssetsStack extends cdk.Stack {
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
+                compress: true,
             },
             comment: `Assets for Chat Booking (${props.stage})`,
+            enableLogging: true,
+            enableIpv6: true,
+            httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
         });
 
         // Outputs
