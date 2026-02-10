@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 
-from shared.domain.entities import TenantId
+from shared.domain.entities import TenantId, TenantPlan
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBTenantRepository,
     DynamoDBServiceRepository,
@@ -74,15 +74,42 @@ def handle_get_status(tenant_id: TenantId, provider_id: Optional[str], logger: L
     
     percentage = int((complete_required / total_required) * 100) if total_required > 0 else 0
     
+    # Determine Public Slug
+    # Default: Tenant Slug
+    public_slug = tenant.slug
+    
+    # Logic for LITE Plan: Prioritize Provider Slug
+    if tenant.plan == TenantPlan.LITE:
+        try:
+            provider_repo = DynamoDBProviderRepository()
+            # Efficiently we might want a get_by_tenant but usually it lists all
+            providers = provider_repo.list_by_tenant(tenant_id)
+            active_providers = [p for p in providers if p.active]
+            
+            target_provider = None
+            if provider_id:
+                # If specific provider requested, look for it
+                target_provider = next((p for p in active_providers if p.provider_id == provider_id), None)
+            elif active_providers:
+                # If no specific provider (or global view), take the first one with a slug
+                # For LITE, there is usually only one.
+                target_provider = next((p for p in active_providers if p.slug), None)
+            
+            if target_provider and target_provider.slug:
+                public_slug = target_provider.slug
+                logger.info(f"Using Provider Slug for LITE plan: {public_slug}")
+                
+        except Exception as e:
+            logger.warning("Failed to resolve provider slug for LITE plan", error=str(e))
+            # Fallback to tenant.slug
+    
     # Build public URL
-    # For LITE (Personal), ideally redirect to professional slug if provider_id matches
-    # For now, base tenant URL
-    public_url = f"{PUBLIC_LINK_BASE_URL}/{tenant.slug}" if tenant.slug else None
+    public_url = f"{PUBLIC_LINK_BASE_URL}/{public_slug}" if public_slug else None
     
     return {
         "isPublished": tenant.is_published,
         "publishedAt": tenant.published_at.isoformat() + "Z" if tenant.published_at else None,
-        "slug": tenant.slug,
+        "slug": public_slug,
         "publicUrl": public_url,
         "completenessChecklist": checklist,
         "completenessPercentage": percentage,

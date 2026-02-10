@@ -50,7 +50,8 @@ class TestPublicLinkStatusHandler:
             mock_prov_repo.return_value.list_by_tenant.return_value = []
             
             logger = MagicMock()
-            result = handle_get_status(TenantId("tenant_test_123"), logger)
+            # provider_id is None
+            result = handle_get_status(TenantId("tenant_test_123"), None, logger)
             
             assert "isPublished" in result
             assert "completenessChecklist" in result
@@ -68,7 +69,7 @@ class TestPublicLinkStatusHandler:
             
             logger = MagicMock()
             with pytest.raises(Exception) as exc_info:
-                handle_get_status(TenantId("non_existent"), logger)
+                handle_get_status(TenantId("non_existent"), None, logger)
             
             assert "Tenant not found" in str(exc_info.value)
 
@@ -116,6 +117,54 @@ class TestPublicLinkStatusHandler:
                 handle_set_status(TenantId("tenant_test_123"), True, logger)
             
             assert "Rate limit exceeded" in str(exc_info.value)
+
+
+    def test_handle_get_status_lite_provider_slug(self):
+        """Test LITE plan uses provider slug if available."""
+        from public_link_status.handler import handle_get_status
+        from shared.domain.entities import Tenant, TenantId, TenantStatus, TenantPlan, Provider
+        
+        # Create LITE tenant
+        lite_tenant = Tenant(
+            tenant_id=TenantId("tenant_lite"),
+            name="Lite Business",
+            slug="lite-business-slug", # Should be ignored in favor of provider slug
+            status=TenantStatus.ACTIVE,
+            plan=TenantPlan.LITE,
+            owner_user_id="user_lite",
+            billing_email="lite@example.com",
+            settings={},
+            is_published=True,
+            published_at=datetime.now(timezone.utc),
+            created_at=datetime.now(timezone.utc),
+        )
+        
+        # Create Provider with slug
+        provider_with_slug = MagicMock(spec=Provider)
+        provider_with_slug.provider_id = "prov_1"
+        provider_with_slug.active = True
+        provider_with_slug.slug = "expert-mario"
+        provider_with_slug.bio = "Expert bio"
+        provider_with_slug.photo_url = "http://photo"
+        provider_with_slug.service_ids = ["srv_1"]
+        
+        with patch('public_link_status.handler.DynamoDBTenantRepository') as mock_repo, \
+             patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
+             patch('public_link_status.handler.DynamoDBAvailabilityRepository') as mock_avail_repo:
+            
+            mock_repo.return_value.get_by_id.return_value = lite_tenant
+            mock_svc_repo.return_value.list_by_tenant.return_value = []
+            
+            # Return list of providers
+            mock_prov_repo.return_value.list_by_tenant.return_value = [provider_with_slug]
+            
+            logger = MagicMock()
+            result = handle_get_status(TenantId("tenant_lite"), None, logger)
+            
+            # Logic should pick "expert-mario" instead of "lite-business-slug"
+            assert result["slug"] == "expert-mario"
+            assert "expert-mario" in result["publicUrl"]
 
 
 class TestRateLimiter:
@@ -168,37 +217,42 @@ class TestCompletenessChecklist:
         )
 
     def test_checklist_includes_all_required_items(self, complete_tenant):
-        """Test that checklist includes all 7 items."""
-        from public_link_status.handler import build_completeness_checklist
+        """Test that checklist includes all 7 expected items for PRO plan."""
+        from public_link_status.handler import build_comprehensive_checklist
         
         with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
              patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
-             patch('public_link_status.handler.DynamoDBAvailabilityRepository') as mock_avail_repo:
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBRoomRepository') as mock_room_repo:
             
             mock_svc_repo.return_value.list_by_tenant.return_value = []
             mock_prov_repo.return_value.list_by_tenant.return_value = []
+            mock_room_repo.return_value.list_by_tenant.return_value = []
             
             logger = MagicMock()
-            checklist = build_completeness_checklist(
+            
+            checklist = build_comprehensive_checklist(
                 TenantId("tenant_complete"), 
                 complete_tenant, 
+                None,
                 logger
             )
             
+            # PRO Plan expects 7 items: 
+            # business_name, slug, logo, categories, services, rooms, providers
             assert len(checklist) == 7
             
             item_names = [item["item"] for item in checklist]
             assert "business_name" in item_names
             assert "slug" in item_names
+            assert "logo" in item_names
+            assert "categories" in item_names
             assert "services" in item_names
+            assert "rooms" in item_names
             assert "providers" in item_names
-            assert "availability" in item_names
-            assert "photo" in item_names
-            assert "bio" in item_names
 
     def test_checklist_marks_missing_items(self):
-        """Test that missing required items are marked as MISSING."""
-        from public_link_status.handler import build_completeness_checklist
+        """Test that missing required items are marked as MISSING and LITE exclusions work."""
+        from public_link_status.handler import build_comprehensive_checklist
         
         incomplete_tenant = Tenant(
             tenant_id=TenantId("tenant_incomplete"),
@@ -215,21 +269,32 @@ class TestCompletenessChecklist:
         )
         
         with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
-             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
-             patch('public_link_status.handler.DynamoDBAvailabilityRepository') as mock_avail_repo:
+             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo:
             
             mock_svc_repo.return_value.list_by_tenant.return_value = []
             mock_prov_repo.return_value.list_by_tenant.return_value = []
             
             logger = MagicMock()
-            checklist = build_completeness_checklist(
+            checklist = build_comprehensive_checklist(
                 TenantId("tenant_incomplete"), 
                 incomplete_tenant, 
+                None,
                 logger
             )
             
-            name_item = next(i for i in checklist if i["item"] == "business_name")
-            assert name_item["status"] == "MISSING"
+            item_names = [item["item"] for item in checklist]
             
+            # LITE Plan should EXCLUDE business_name, logo, rooms
+            assert "business_name" not in item_names
+            assert "logo" not in item_names
+            assert "rooms" not in item_names
+            
+            # Should INCLUDE slug, categories, services, providers
+            assert "slug" in item_names
+            assert "categories" in item_names
+            assert "services" in item_names
+            assert "providers" in item_names
+            
+            # Verify status for missing items
             slug_item = next(i for i in checklist if i["item"] == "slug")
             assert slug_item["status"] == "MISSING"
