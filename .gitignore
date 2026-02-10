@@ -56,3 +56,8 @@ infra/.env
 node_modules/
 infra/node_modules/
 deployment_log.txt
+
+check_key_db.py
+.pytest_cache/
+htmlcov/
+.coverage
