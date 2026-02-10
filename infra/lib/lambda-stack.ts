@@ -43,6 +43,7 @@ interface LambdaStackProps extends cdk.StackProps {
   dbSecurityGroup?: cdk.aws_ec2.ISecurityGroup;
   dbSecret?: cdk.aws_secretsmanager.ISecret;
   dbEndpoint?: string; // Cluster ARN for Data API
+  publicLinkBaseUrl?: string; // Base URL for public profile links
   envName: string;
   assetsBucketName?: string;
 }
@@ -491,7 +492,7 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        PUBLIC_LINK_BASE_URL: 'https://agendar.holalucia.cl',
+        PUBLIC_LINK_BASE_URL: props.publicLinkBaseUrl || 'https://agendar.holalucia.cl',
       },
     });
 

@@ -109,7 +109,8 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   userRolesTable: databaseStack.userRolesTable,
   userPool: authStack.userPool,
   envName: env,
-  assetsBucketName: assetsStack.assetsBucket.bucketName,
+  assetsBucketName: assetsStack.bucketName,
+  publicLinkBaseUrl: env === 'prod' ? 'https://agendar.holalucia.cl' : 'https://dev.agendar.holalucia.cl', // Dev fallback
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
