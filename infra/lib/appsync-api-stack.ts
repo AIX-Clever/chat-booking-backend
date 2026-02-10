@@ -78,6 +78,10 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
+      corsConfig: {
+        allowOrigins: ['*'],
+        allowHeaders: ['Content-Type', 'X-Api-Key', 'Authorization', 'x-tenant-id'],
+      },
     });
 
 
