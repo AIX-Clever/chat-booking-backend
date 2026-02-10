@@ -35,6 +35,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   listInvoicesFunction: lambda.IFunction;
   getPublicProfileFunction: lambda.IFunction;
   publicLinkStatusFunction: lambda.IFunction;
+  checkPaymentStatusFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -216,6 +217,19 @@ export class AppSyncApiStack extends cdk.Stack {
     publicLinkStatusDataSource.createResolver('SetPublicLinkStatusResolver', {
       typeName: 'Mutation',
       fieldName: 'setPublicLinkStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Check Payment Status Data Source
+    const checkPaymentStatusDataSource = this.api.addLambdaDataSource(
+      'CheckPaymentStatusDataSource',
+      props.checkPaymentStatusFunction
+    );
+
+    checkPaymentStatusDataSource.createResolver('CheckPaymentStatusResolver', {
+      typeName: 'Query',
+      fieldName: 'checkPaymentStatus',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });

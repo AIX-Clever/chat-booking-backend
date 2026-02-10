@@ -10,6 +10,7 @@ sys.path.insert(0, backend_path)
 sys.path.insert(0, layer_path)
 
 from register_tenant.handler import lambda_handler
+import shared.infrastructure.recaptcha_adapter # Explicit import for patching
 
 class TestRegisterTenant(unittest.TestCase):
 
@@ -17,7 +18,8 @@ class TestRegisterTenant(unittest.TestCase):
         self.mock_env = patch.dict(os.environ, {
             'USER_POOL_ID': 'dummy_pool',
             'USER_ROLES_TABLE': 'dummy_roles_table',
-            'RECAPTCHA_SECRET_KEY': 'dummy_secret'
+            'RECAPTCHA_SECRET_KEY': 'dummy_secret',
+            'AWS_DEFAULT_REGION': 'us-east-1'
         })
         self.mock_env.start()
 

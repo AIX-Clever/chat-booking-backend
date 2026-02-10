@@ -110,8 +110,10 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   userPool: authStack.userPool,
   envName: env,
   assetsBucketName: assetsStack.assetsBucket.bucketName,
+  subscriptionsTable: subscriptionStack.subscriptionsTable,
 });
 lambdaStack.addDependency(databaseStack);
+lambdaStack.addDependency(subscriptionStack);
 lambdaStack.addDependency(authStack);
 // lambdaStack.addDependency(vectorDbStack); // Removed
 // lambdaStack.addDependency(assetsStack); // If lambda needs to read/write, passed as prop?
@@ -140,6 +142,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   subscribeFunction: subscriptionStack.subscribeFunction,
   downgradeFunction: subscriptionStack.downgradeFunction,
   listInvoicesFunction: subscriptionStack.listInvoicesFunction,
+  checkPaymentStatusFunction: lambdaStack.checkPaymentStatusFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);

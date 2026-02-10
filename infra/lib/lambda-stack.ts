@@ -45,6 +45,7 @@ interface LambdaStackProps extends cdk.StackProps {
   dbEndpoint?: string; // Cluster ARN for Data API
   envName: string;
   assetsBucketName?: string;
+  subscriptionsTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -69,6 +70,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly publicLinkStatusFunction: lambda.Function;
   public readonly googleIntegrationFunction: lambda.Function;
   public readonly microsoftIntegrationFunction: lambda.Function;
+  public readonly checkPaymentStatusFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -768,6 +770,25 @@ export class LambdaStack extends cdk.Stack {
     props.servicesTable.grantReadData(profileBakerFunction);
     props.providersTable.grantReadData(profileBakerFunction);
     // End Full Bake Permissions
+
+    // 19. Check Payment Status Lambda (Reconciliation)
+    this.checkPaymentStatusFunction = new lambda.Function(this, 'CheckPaymentStatusFunction', {
+      ...commonProps,
+      description: 'Check payment status against Mercado Pago for reconciliation',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
+      handler: 'check_payment_status.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        SUBSCRIPTIONS_TABLE: props.subscriptionsTable.tableName,
+        MP_ACCESS_TOKEN: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretCheck', 'ChatBooking/MercadoPago')
+          .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
+      }
+    });
+
+    // Grant permissions
+    props.subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
+    props.tenantsTable.grantReadWriteData(this.checkPaymentStatusFunction);
   }
 
   private createAlarms(): void {

@@ -630,6 +630,14 @@ type Query {
 
   # Public Link Status (Admin)
   getPublicLinkStatus(providerId: String): PublicLinkStatus @aws_cognito_user_pools
+
+  # Payment Reconciliation
+  checkPaymentStatus(tenantId: ID!): PaymentStatusResponse @aws_cognito_user_pools
+}
+
+type PaymentStatusResponse @aws_cognito_user_pools {
+  status: String!
+  message: String
 }
 
 type PublicProfile @aws_api_key @aws_cognito_user_pools {

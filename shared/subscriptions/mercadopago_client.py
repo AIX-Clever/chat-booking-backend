@@ -124,3 +124,41 @@ class MercadoPagoClient(IPaymentGateway):
         else:
             print(f"MP Get Preapproval Error: {result}")
             raise Exception(f"Failed to fetch preapproval {preapproval_id}")
+
+    def cancel_subscription(self, preapproval_id: str) -> bool:
+        try:
+            result = self.sdk.preapproval().update(
+                preapproval_id, {"status": "cancelled"}
+            )
+            if result["status"] == 200:
+                print(f"Subscription {preapproval_id} cancelled")
+                return True
+            else:
+                print(f"Error cancelling subscription {preapproval_id}: {result}")
+                return False
+        except Exception as e:
+            print(f"Exception cancelling subscription {preapproval_id}: {e}")
+            return False
+
+    def search_payments(
+        self, external_reference: str, limit: int = 10
+    ) -> Dict[str, Any]:
+        """
+        Search for payments by external_reference (tenant_id).
+        """
+        filters = {
+            "external_reference": external_reference,
+            "sort": "date_created",
+            "criteria": "desc",
+            "limit": limit,
+        }
+        try:
+            result = self.sdk.payment().search(filters)
+            if result["status"] == 200:
+                return result["response"]
+            else:
+                print(f"MP Search Error: {result}")
+                return {"results": []}
+        except Exception as e:
+            print(f"MP Search Exception: {e}")
+            return {"results": []}
