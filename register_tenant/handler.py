@@ -67,6 +67,16 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if not email or not password:
             raise ValueError("Email and password are required")
 
+        # 1.5 Verify reCAPTCHA
+        recaptcha_token = inputs.get("recaptchaToken")
+        # Ensure we block even if token is missing in production?
+        # For now, if provided, we verify.
+        if recaptcha_token:
+            from shared.infrastructure.recaptcha_adapter import GoogleRecaptchaAdapter
+            recaptcha_service = GoogleRecaptchaAdapter()
+            if not recaptcha_service.verify(recaptcha_token, 'signup'):
+                raise ValueError("Security verification failed (reCAPTCHA)")
+        
         # 2. Dependency Injection
         tenant_repo = DynamoDBTenantRepository()
         api_key_repo = DynamoDBApiKeyRepository()

@@ -242,6 +242,8 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET || '',
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
+        MP_ACCESS_TOKEN_PROD: process.env.MP_ACCESS_TOKEN_PROD || '',
+        MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET || '',
       }
     });
 
@@ -328,6 +330,7 @@ export class LambdaStack extends cdk.Stack {
         USER_POOL_ID: props.userPool.userPoolId,
         WORKFLOWS_TABLE: props.workflowsTable.tableName,
         USER_ROLES_TABLE: props.userRolesTable.tableName,
+        RECAPTCHA_SECRET_KEY: process.env.RECAPTCHA_SECRET_KEY || '',
       },
       timeout: cdk.Duration.seconds(15),
     });
