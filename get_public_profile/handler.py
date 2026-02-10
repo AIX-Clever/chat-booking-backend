@@ -149,10 +149,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         "serviceId": svc.get("serviceId"),
                         "name": svc.get("name"),
                         "description": svc.get("description"),
+                        "category": svc.get("category", "General"),
                         "durationMinutes": int(svc.get("durationMinutes", 0)),
                         "price": float(svc.get("price", 0)) if svc.get("price") else 0,
-                        "currency": "CLP",  # Default
-                        # Add other fields if needed for SEO
+                        "available": svc.get("active", True),
                     }
                 )
 
