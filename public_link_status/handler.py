@@ -100,13 +100,17 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
     checklist = []
     
     # 1. Base Business Configuration
-    checklist.append({
-        "item": "business_name",
-        "status": "COMPLETE" if tenant.name else "MISSING",
-        "label": "Nombre del negocio",
-        "isRequired": True,
-        "actionUrl": "/settings/profile"
-    })
+    from shared.domain.entities import TenantPlan
+    
+    # Only show Business Name for non-LITE plans (Solopreneurs use their own name)
+    if tenant.plan != TenantPlan.LITE:
+        checklist.append({
+            "item": "business_name",
+            "status": "COMPLETE" if tenant.name else "MISSING",
+            "label": "Nombre del negocio",
+            "isRequired": True,
+            "actionUrl": "/settings/profile"
+        })
     
     checklist.append({
         "item": "slug",
@@ -116,16 +120,17 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
         "actionUrl": "/settings/profile"
     })
 
-    # Logo (Center branding)
-    settings = tenant.settings or {}
-    has_logo = bool(settings.get("photoUrl") or settings.get("logo"))
-    checklist.append({
-        "item": "logo",
-        "status": "COMPLETE" if has_logo else "MISSING",
-        "label": "Logo del Centro",
-        "isRequired": False,
-        "actionUrl": "/settings/profile"
-    })
+    # Logo (Center branding) - Optional for LITE
+    if tenant.plan != TenantPlan.LITE:
+        settings = tenant.settings or {}
+        has_logo = bool(settings.get("photoUrl") or settings.get("logo"))
+        checklist.append({
+            "item": "logo",
+            "status": "COMPLETE" if has_logo else "MISSING",
+            "label": "Logo del Centro",
+            "isRequired": False,
+            "actionUrl": "/settings/profile"
+        })
 
     # 2. Services Infrastructure
     from shared.infrastructure.dynamodb_repositories import DynamoDBServiceRepository
