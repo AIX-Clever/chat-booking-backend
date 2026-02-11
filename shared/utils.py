@@ -85,17 +85,11 @@ def error_response(message: str, status_code: int = 400) -> Dict[str, Any]:
 
 def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
     """Extract tenantId from Lambda event (AppSync context)"""
-    # 1. From args (if passed explicitly and not null)
-    if event.get("arguments") and event["arguments"].get("tenantId"):
-        return event["arguments"]["tenantId"]
-
-    # 2. From identity (resolverContext if via Lambda Authorizer)
+    # 1. From identity (resolverContext if via Lambda Authorizer) - PRIORITY
     if event.get("identity"):
         identity = event["identity"]
         # Lambda Authorizer context
-        if identity.get("resolverContext") and identity["resolverContext"].get(
-            "tenantId"
-        ):
+        if identity.get("resolverContext") and identity["resolverContext"].get("tenantId"):
             return identity["resolverContext"]["tenantId"]
 
         # User Pools claims
@@ -105,8 +99,11 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
                 return claims["custom:tenantId"]
             if "tenantId" in claims:
                 return claims["tenantId"]
-            if "website" in claims:
-                return claims["website"]
+    
+    # 2. From args (Only if NO identity is present - e.g. Public API Key or Admin override)
+    # WARNING: trusting client input is dangerous. Only use if strictly necessary.
+    if event.get("arguments") and event["arguments"].get("tenantId"):
+        return event["arguments"]["tenantId"]
 
     # 3. From stash (Lambda Auth / Pipeline)
     if event.get("stash") and "tenantId" in event["stash"]:

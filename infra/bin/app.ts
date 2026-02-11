@@ -111,6 +111,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   envName: env,
   assetsBucketName: assetsStack.assetsBucket.bucketName,
   subscriptionsTable: subscriptionStack.subscriptionsTable,
+  clientsTable: databaseStack.clientsTable,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(subscriptionStack);
@@ -143,6 +144,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   downgradeFunction: subscriptionStack.downgradeFunction,
   listInvoicesFunction: subscriptionStack.listInvoicesFunction,
   checkPaymentStatusFunction: lambdaStack.checkPaymentStatusFunction,
+  clientsFunction: lambdaStack.clientsFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);

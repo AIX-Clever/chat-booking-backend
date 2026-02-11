@@ -46,6 +46,7 @@ interface LambdaStackProps extends cdk.StackProps {
   envName: string;
   assetsBucketName?: string;
   subscriptionsTable: dynamodb.ITable;
+  clientsTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -53,6 +54,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly catalogFunction: lambda.Function;
   public readonly availabilityFunction: lambda.Function;
   public readonly bookingFunction: lambda.Function;
+  public readonly clientsFunction: lambda.Function; // New function
   public readonly chatAgentFunction: lambda.Function;
   public readonly ingestionFunction: lambda.Function;
   public readonly presignFunction: lambda.Function;
@@ -124,6 +126,7 @@ export class LambdaStack extends cdk.Stack {
         TENANT_USAGE_TABLE: props.tenantUsageTable.tableName,
         WORKFLOWS_TABLE: props.workflowsTable.tableName,
         FAQS_TABLE: props.faqsTable.tableName,
+        CLIENTS_TABLE: props.clientsTable.tableName,
         LOG_LEVEL: 'INFO',
         // Aliases for legacy/shared code compatibility
         DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
@@ -442,7 +445,6 @@ export class LambdaStack extends cdk.Stack {
       'cognito-idp:AdminCreateUser',
       'cognito-idp:AdminGetUser',
       'cognito-idp:ListUsers',
-      'cognito-idp:ListUsers',
       'cognito-idp:AdminUpdateUserAttributes',
       'cognito-idp:AdminDisableUser',
       'cognito-idp:AdminResetUserPassword'
@@ -704,6 +706,7 @@ export class LambdaStack extends cdk.Stack {
       description: 'Microsoft Integration Callback URL',
     });
 
+
     // 17. Profile Baker Lambda (SEO Generator)
     // Import Link resources from SSM
     const linkBucketName = ssm.StringParameter.valueForStringParameter(
@@ -789,6 +792,29 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
     props.tenantsTable.grantReadWriteData(this.checkPaymentStatusFunction);
+
+    // 20. Clients Lambda (Client File)
+    this.clientsFunction = new lambda.Function(this, 'ClientsFunction', {
+      ...commonProps,
+      description: 'Client File Management (CRUD)',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'clients')), // Path to 'clients' dir
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        CLIENTS_TABLE: props.clientsTable.tableName,
+        // Encryption Key ID will be needed here later
+      }
+    });
+
+    // Grant permissions
+    props.clientsTable.grantReadWriteData(this.clientsFunction);
+    props.tenantsTable.grantReadData(this.clientsFunction); // To validate tenant/plan
+
+    new cdk.CfnOutput(this, 'ClientsFunctionArn', {
+      value: this.clientsFunction.functionArn,
+      description: 'Clients Lambda ARN',
+    });
   }
 
   private createAlarms(): void {

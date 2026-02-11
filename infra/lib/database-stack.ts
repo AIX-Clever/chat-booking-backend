@@ -31,6 +31,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly documentsTable: dynamodb.Table;
   public readonly roomsTable: dynamodb.Table;
   public readonly userRolesTable: dynamodb.Table;
+  public readonly clientsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -469,6 +470,42 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'UserRolesTableName', {
       value: this.userRolesTable.tableName,
       description: 'User Roles table name',
+    });
+
+    // 15. Clients Table (Client File)
+    this.clientsTable = new dynamodb.Table(this, 'ClientsTable', {
+      tableName: 'ChatBooking-Clients',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'id',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+    });
+
+    // GSI: tax-id-index for client lookup by identifier (RUT/CPF/Passport)
+    this.clientsTable.addGlobalSecondaryIndex({
+      indexName: 'tax-id-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'identifierValue',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    new cdk.CfnOutput(this, 'ClientsTableName', {
+      value: this.clientsTable.tableName,
+      description: 'Clients table name',
     });
   }
 }

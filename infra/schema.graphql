@@ -633,6 +633,10 @@ type Query {
 
   # Payment Reconciliation
   checkPaymentStatus(tenantId: ID!): PaymentStatusResponse @aws_cognito_user_pools
+
+  # Client Management (Client File)
+  getClient(clientId: ID!): Client @aws_cognito_user_pools
+  listClients: [Client!]! @aws_cognito_user_pools
 }
 
 type PaymentStatusResponse @aws_cognito_user_pools {
@@ -763,6 +767,10 @@ type Mutation {
 
   # Public Link Status (Admin)
   setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! @aws_cognito_user_pools
+
+  # Client Management
+  createClient(input: CreateClientInput!): Client! @aws_cognito_user_pools
+  updateClient(input: UpdateClientInput!): Client! @aws_cognito_user_pools
 }
 
 input ExceptionRuleInput {
@@ -778,6 +786,102 @@ input SetExceptionsInput {
 type ProviderExceptions @aws_cognito_user_pools {
   providerId: ID!
   exceptions: [ExceptionRule!]!
+}
+
+# --- Client File Types ---
+type ClientIdentifier @aws_cognito_user_pools {
+  type: String!
+  value: String!
+}
+
+type ClientName @aws_cognito_user_pools {
+  given: String!
+  family: String!
+}
+
+type ClientContact @aws_cognito_user_pools {
+  system: String!
+  value: String!
+  use: String
+}
+
+type ClientAddress @aws_cognito_user_pools {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+type ClientInsurance @aws_cognito_user_pools {
+  provider: String!
+  type: String!
+}
+
+type Client @aws_cognito_user_pools {
+  id: ID!
+  tenantId: ID!
+  identifiers: [ClientIdentifier!]!
+  names: ClientName!
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContact!]
+  address: ClientAddress
+  occupation: String
+  healthInsurance: ClientInsurance
+  communicationLanguage: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+input ClientIdentifierInput {
+  type: String!
+  value: String!
+}
+
+input ClientNameInput {
+  given: String!
+  family: String!
+}
+
+input ClientContactInput {
+  system: String!
+  value: String!
+  use: String
+}
+
+input ClientAddressInput {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+input ClientInsuranceInput {
+  provider: String!
+  type: String!
+}
+
+input CreateClientInput {
+  identifiers: [ClientIdentifierInput!]!
+  names: ClientNameInput!
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
+}
+
+input UpdateClientInput {
+  id: ID!
+  identifiers: [ClientIdentifierInput!]
+  names: ClientNameInput
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
 }
 
 schema {

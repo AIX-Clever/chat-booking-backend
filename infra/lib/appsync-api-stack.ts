@@ -36,6 +36,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   getPublicProfileFunction: lambda.IFunction;
   publicLinkStatusFunction: lambda.IFunction;
   checkPaymentStatusFunction: lambda.IFunction;
+  clientsFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -230,6 +231,40 @@ export class AppSyncApiStack extends cdk.Stack {
     checkPaymentStatusDataSource.createResolver('CheckPaymentStatusResolver', {
       typeName: 'Query',
       fieldName: 'checkPaymentStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Clients Data Source (Client File)
+    const clientsDataSource = this.api.addLambdaDataSource(
+      'ClientsDataSource',
+      props.clientsFunction
+    );
+
+    clientsDataSource.createResolver('GetClientResolver', {
+      typeName: 'Query',
+      fieldName: 'getClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('ListClientsResolver', {
+      typeName: 'Query',
+      fieldName: 'listClients',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('CreateClientResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('UpdateClientResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateClient',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
