@@ -163,6 +163,7 @@ type ChatResponse @aws_api_key @aws_cognito_user_pools {
 type Booking @aws_api_key @aws_cognito_user_pools {
   bookingId: ID!
   tenantId: ID!
+  clientId: ID
   serviceId: ID!
   providerId: ID!
   start: AWSDateTime!
@@ -487,6 +488,7 @@ input UpdateFAQInput {
 
 # Inputs - Bookings
 input CreateBookingInput {
+  clientId: ID
   serviceId: ID!
   providerId: ID!
   start: AWSDateTime!
@@ -828,6 +830,7 @@ type Client @aws_cognito_user_pools {
   occupation: String
   healthInsurance: ClientInsurance
   communicationLanguage: String
+  providerIds: [ID!]
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -869,6 +872,7 @@ input CreateClientInput {
   occupation: String
   healthInsurance: ClientInsuranceInput
   communicationLanguage: String
+  providerIds: [ID!]
 }
 
 input UpdateClientInput {
@@ -882,6 +886,7 @@ input UpdateClientInput {
   occupation: String
   healthInsurance: ClientInsuranceInput
   communicationLanguage: String
+  providerIds: [ID!]
 }
 
 schema {
