@@ -125,6 +125,9 @@ class TenantLimitService:
         try:
             tenant = self._tenant_repo.get_by_id(tenant_id)
             if not tenant:
+                self.logger.warning(
+                    "Tenant not found during provider limit check", tenant_id=tenant_id.value
+                )
                 return False
 
             usage = self._metrics_service.get_usage_for_plan_limits(tenant_id.value)
@@ -133,11 +136,15 @@ class TenantLimitService:
             can_create = tenant.check_limit("providers", current_providers)
 
             if not can_create:
+                limits = tenant.get_plan_limits()
+                limit = limits.get("providers", 0)
                 self.logger.info(
                     "Provider limit exceeded",
                     tenant_id=tenant_id.value,
                     plan=tenant.plan.value,
                     usage=current_providers,
+                    limit=limit,
+                    metrics_dump=usage
                 )
 
             return can_create

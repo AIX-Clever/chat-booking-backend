@@ -109,6 +109,20 @@ def lambda_handler(event, context):
         
         SUBSCRIPTIONS_TABLE.put_item(Item=sub.to_item())
 
+        # 5. Create 'CURRENT' pointer for Webhook Processing
+        # This ensures the webhook processor can find the active subscription easily
+        sub_current = Subscription(
+            tenant_id=tenant_id,
+            subscription_id='CURRENT',  # Fixed ID for active sub lookup
+            status=SubscriptionStatus.PENDING,
+            plan_id=plan_enum,
+            current_price=price,
+            mp_preapproval_id=preapproval_id,  # Link to real ID
+            is_promo_active=True,
+            promo_scheduler_arn=scheduler_arn
+        )
+        SUBSCRIPTIONS_TABLE.put_item(Item=sub_current.to_item())
+
         # Return data directly for AppSync (not wrapped in HTTP response)
         return {
             'subscriptionId': preapproval_id,

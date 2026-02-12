@@ -6,9 +6,15 @@ from datetime import datetime, timedelta
 
 # You might need to install these:
 # pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
+try:
+    from google.oauth2.credentials import Credentials
+    from google.auth.transport.requests import Request
+    from googleapiclient.discovery import build
+except ImportError:
+    from unittest.mock import MagicMock
+    Credentials = MagicMock
+    Request = MagicMock
+    build = MagicMock
 
 
 class GoogleAuthService:

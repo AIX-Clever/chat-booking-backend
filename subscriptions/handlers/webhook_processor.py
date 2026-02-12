@@ -140,6 +140,22 @@ def process_payment(payment_id, raw_data):
             }
         )
 
+        # 4.5 Update Original Subscription Record (History)
+        original_sub_id = sub_item.get('mpPreapprovalId')
+        if original_sub_id and original_sub_id != 'CURRENT':
+            try:
+                print(f"Syncing status to original subscription {original_sub_id}")
+                SUBSCRIPTIONS_TABLE.update_item(
+                    Key={'tenantId': tenant_id, 'subscriptionId': original_sub_id},
+                    UpdateExpression="set #s = :s",
+                    ExpressionAttributeNames={'#s': 'status'},
+                    ExpressionAttributeValues={
+                        ':s': SubscriptionStatus.AUTHORIZED.value
+                    }
+                )
+            except Exception as e:
+                print(f"Failed to sync original subscription: {e}")
+
         # 5. Sync Plan and Activate Tenant Entity
         try:
             from shared.infrastructure.dynamodb_repositories import (

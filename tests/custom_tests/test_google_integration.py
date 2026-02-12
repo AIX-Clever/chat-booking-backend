@@ -28,28 +28,31 @@ def test_google_auth_url_generation():
     assert params["access_type"][0] == "offline"
 
 
-def test_repo_save_google_creds(mocker):
-    # Mock DynamoDB
-    mock_boto = mocker.patch("boto3.resource")
-    mock_table = MagicMock()
-    mock_boto.return_value.Table.return_value = mock_table
-
+def test_repo_save_google_creds():
+    from unittest.mock import patch, MagicMock
     from shared.infrastructure.dynamodb_repositories import (
         DynamoDBProviderIntegrationRepository,
     )
 
-    repo = DynamoDBProviderIntegrationRepository("TestTable")
-    repo.table = mock_table
+    # Mock DynamoDB
+    with patch("boto3.resource") as mock_boto:
+        mock_table = MagicMock()
+        mock_boto.return_value.Table.return_value = mock_table
 
-    tenant_id = TenantId("tenant-1")
-    provider_id = "prov-1"
-    creds = {"access_token": "abc", "refresh_token": "def"}
+        repo = DynamoDBProviderIntegrationRepository("TestTable")
+        # Ensure the table is set to our mock (though init does it)
+        # Verify init called boto3.resource
+        mock_boto.assert_called_with("dynamodb")
 
-    repo.save_google_creds(tenant_id, provider_id, creds)
+        tenant_id = TenantId("tenant-1")
+        provider_id = "prov-1"
+        creds = {"access_token": "abc", "refresh_token": "def"}
 
-    # Assert called with correct params
-    mock_table.update_item.assert_called_once()
-    call_args = mock_table.update_item.call_args[1]
-    assert call_args["Key"] == {"tenantId": "tenant-1", "providerId": "prov-1"}
-    assert call_args["UpdateExpression"] == "SET googleIntegration = :c"
-    assert call_args["ExpressionAttributeValues"] == {":c": creds}
+        repo.save_google_creds(tenant_id, provider_id, creds)
+
+        # Assert called with correct params
+        mock_table.update_item.assert_called_once()
+        call_args = mock_table.update_item.call_args[1]
+        assert call_args["Key"] == {"tenantId": "tenant-1", "providerId": "prov-1"}
+        assert call_args["UpdateExpression"] == "SET googleIntegration = :c"
+        assert call_args["ExpressionAttributeValues"] == {":c": creds}

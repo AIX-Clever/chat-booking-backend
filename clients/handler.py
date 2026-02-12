@@ -122,8 +122,7 @@ def create_client(
 
             # Basic validation
             if not validate_id(ident['type'], ident['value'], 'CL'):
-                # logger.warning for now to not block
-                pass
+                raise ValueError(f"Invalid identifier: {ident['value']}")
 
     client_id = str(uuid.uuid4())
     timestamp = to_iso_string(datetime.utcnow())
