@@ -869,7 +869,7 @@ class DynamoDBRoomRepository(IRoomRepository):
             is_virtual=item.get("isVirtual", False),
             min_duration=int(item["minDuration"]) if item.get("minDuration") else 15,
             max_duration=int(item["maxDuration"]) if item.get("maxDuration") else 60,
-            operating_hours=item.get("operatingHours", {}),
+            operating_hours=item.get("operatingHours", []),
             metadata=item.get("metadata", {}),
             created_at=datetime.fromisoformat(item["createdAt"]),
             updated_at=datetime.fromisoformat(item["updatedAt"]),
