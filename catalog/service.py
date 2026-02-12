@@ -442,10 +442,18 @@ class ProviderManagementService:
                 try:
                     tenant = self.limit_service._tenant_repo.get_by_id(tenant_id)
                     usage = self.limit_service._metrics_service.get_usage_for_plan_limits(tenant_id.value)
-                    limit = tenant.get_plan_limits().get("providers", 0)
-                    msg = f"DEBUG: Tenant={tenant_id.value}, Plan={tenant.plan.value}, Usage={usage}, Limit={limit}"
+                    
+                    if tenant:
+                        limit = tenant.get_plan_limits().get("providers", 0)
+                        plan_val = tenant.plan.value
+                    else:
+                        limit = "Unknown"
+                        plan_val = "Not Found"
+
+                    msg = f"DEBUG: Tenant={tenant_id.value}, Plan={plan_val}, Usage={usage}, Limit={limit}"
                 except Exception as e:
-                    msg = f"DEBUG: Error getting details: {str(e)}"
+                    # Fallback to just printing the ID if everything blows up
+                    msg = f"DEBUG: Tenant={tenant_id.value if tenant_id else 'None'}, Error={str(e)}"
 
                 raise ValidationError(
                     f"{msg} || Has alcanzado el límite de profesionales permitidos en tu plan. Por favor, sube de nivel para agregar más."
