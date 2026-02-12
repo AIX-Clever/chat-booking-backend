@@ -32,6 +32,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly roomsTable: dynamodb.Table;
   public readonly userRolesTable: dynamodb.Table;
   public readonly clientsTable: dynamodb.Table;
+  public readonly clientAuditLogsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -489,6 +490,20 @@ export class DatabaseStack extends cdk.Stack {
       stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
     });
 
+    // GSI: email-index for client lookup by email
+    this.clientsTable.addGlobalSecondaryIndex({
+      indexName: 'email-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'email',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // GSI: tax-id-index for client lookup by identifier (RUT/CPF/Passport)
     this.clientsTable.addGlobalSecondaryIndex({
       indexName: 'tax-id-index',
@@ -503,9 +518,25 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
-    new cdk.CfnOutput(this, 'ClientsTableName', {
-      value: this.clientsTable.tableName,
-      description: 'Clients table name',
+    // 16. Client Audit Logs Table (Trazabilidad)
+    this.clientAuditLogsTable = new dynamodb.Table(this, 'ClientAuditLogsTable', {
+      tableName: 'ChatBooking-ClientAuditLogs',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'clientIdAndTimestamp', // Format: {clientId}#{timestamp}
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    new cdk.CfnOutput(this, 'ClientAuditLogsTableName', {
+      value: this.clientAuditLogsTable.tableName,
+      description: 'Client Audit Logs table name',
     });
   }
 }

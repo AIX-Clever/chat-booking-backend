@@ -255,6 +255,13 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    clientsDataSource.createResolver('ListClientAuditLogsResolver', {
+      typeName: 'Query',
+      fieldName: 'listClientAuditLogs',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     clientsDataSource.createResolver('CreateClientResolver', {
       typeName: 'Mutation',
       fieldName: 'createClient',

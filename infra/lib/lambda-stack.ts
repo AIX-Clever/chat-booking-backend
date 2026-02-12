@@ -47,6 +47,7 @@ interface LambdaStackProps extends cdk.StackProps {
   assetsBucketName?: string;
   subscriptionsTable: dynamodb.ITable;
   clientsTable: dynamodb.ITable;
+  clientAuditLogsTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -67,6 +68,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly faqManagerFunction: lambda.Function;
   public readonly userManagementFunction: lambda.Function;
   public readonly apiKeyManagerFunction: lambda.Function;
+  public readonly clientSyncFunction: lambda.Function;
 
   public readonly getPublicProfileFunction: lambda.Function;
   public readonly publicLinkStatusFunction: lambda.Function;
@@ -809,12 +811,45 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions
     props.clientsTable.grantReadWriteData(this.clientsFunction);
-    props.tenantsTable.grantReadData(this.clientsFunction); // To validate tenant/plan
-
     new cdk.CfnOutput(this, 'ClientsFunctionArn', {
       value: this.clientsFunction.functionArn,
       description: 'Clients Lambda ARN',
     });
+
+    // 21. Client Synchronization Lambda (Stream Trigger)
+    this.clientSyncFunction = new lambda.Function(this, 'ClientSyncFunction', {
+      ...commonProps,
+      description: 'Synchronizes Booking data to Client File automatically',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'clients')),
+      handler: 'sync_handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        CLIENTS_TABLE: props.clientsTable.tableName,
+        CLIENT_AUDIT_LOGS_TABLE: props.clientAuditLogsTable.tableName,
+        BOOKINGS_TABLE: props.bookingsTable.tableName,
+      }
+    });
+
+    // Permissions for Sync
+    props.clientsTable.grantReadWriteData(this.clientSyncFunction);
+    props.clientAuditLogsTable.grantReadWriteData(this.clientSyncFunction);
+    props.bookingsTable.grantReadData(this.clientSyncFunction);
+
+    // Also update main Clients Lambda to write audit logs
+    this.clientsFunction.addEnvironment('CLIENT_AUDIT_LOGS_TABLE', props.clientAuditLogsTable.tableName);
+    props.clientAuditLogsTable.grantReadWriteData(this.clientsFunction);
+
+    // Add DynamoDB Stream Trigger on Bookings Table
+    this.clientSyncFunction.addEventSource(new lambdaEventSources.DynamoEventSource(props.bookingsTable, {
+      startingPosition: lambda.StartingPosition.LATEST,
+      retryAttempts: 2,
+      filters: [
+        lambda.FilterCriteria.filter({
+          eventName: lambda.FilterRule.is('INSERT'), // Only on new bookings
+        }),
+      ],
+    }));
   }
 
   private createAlarms(): void {

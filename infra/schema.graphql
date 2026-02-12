@@ -639,6 +639,7 @@ type Query {
   # Client Management (Client File)
   getClient(clientId: ID!): Client @aws_cognito_user_pools
   listClients: [Client!]! @aws_cognito_user_pools
+  listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! @aws_cognito_user_pools
 }
 
 type PaymentStatusResponse @aws_cognito_user_pools {
@@ -823,6 +824,7 @@ type Client @aws_cognito_user_pools {
   tenantId: ID!
   identifiers: [ClientIdentifier!]!
   names: ClientName!
+  email: String
   birthDate: String
   gender: String
   contactInfo: [ClientContact!]
@@ -833,6 +835,18 @@ type Client @aws_cognito_user_pools {
   providerIds: [ID!]
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
+}
+
+type ClientAuditLog @aws_cognito_user_pools {
+  tenantId: ID!
+  clientId: ID!
+  field: String!
+  oldValue: String
+  newValue: String
+  source: String!
+  sourceId: String
+  changedBy: String!
+  timestamp: AWSDateTime!
 }
 
 input ClientIdentifierInput {
