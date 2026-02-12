@@ -190,6 +190,7 @@ export class LambdaStack extends cdk.Stack {
     props.categoriesTable.grantReadWriteData(this.catalogFunction);
     props.roomsTable.grantReadWriteData(this.catalogFunction);
     props.tenantsTable.grantReadData(this.catalogFunction); // Fix: Allow LimitService to read tenant plan
+    props.tenantUsageTable.grantReadWriteData(this.catalogFunction); // Fix: Allow MetricsService to increment provider count
 
     // 3. Availability Lambda
     this.availabilityFunction = new lambda.Function(this, 'AvailabilityFunction', {
