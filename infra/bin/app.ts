@@ -112,6 +112,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   assetsBucketName: assetsStack.assetsBucket.bucketName,
   subscriptionsTable: subscriptionStack.subscriptionsTable,
   clientsTable: databaseStack.clientsTable,
+  clientAuditLogsTable: databaseStack.clientAuditLogsTable,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(subscriptionStack);

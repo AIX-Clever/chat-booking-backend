@@ -846,7 +846,7 @@ export class LambdaStack extends cdk.Stack {
       retryAttempts: 2,
       filters: [
         lambda.FilterCriteria.filter({
-          eventName: lambda.FilterRule.is('INSERT'), // Only on new bookings
+          eventName: lambda.FilterRule.isEqual('INSERT'), // Only on new bookings
         }),
       ],
     }));
