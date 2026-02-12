@@ -183,6 +183,21 @@ class MetricsService:
             extra_attrs={"lastOccurred": datetime.now(timezone.utc).isoformat()},
         )
 
+    def increment_provider(self, tenant_id: str) -> None:
+        """Increment total provider count for the tenant"""
+        periods = self._get_periods()
+        # Increment in different periods for flexibility, but main one is MONTH for limits
+        self._atomic_increment(tenant_id, f"MONTH#{periods['month']}", "providers")
+        self._atomic_increment(tenant_id, "TOTAL#ALL", "providers")
+
+    def decrement_provider(self, tenant_id: str) -> None:
+        """Decrement total provider count for the tenant"""
+        periods = self._get_periods()
+        self._atomic_increment(
+            tenant_id, f"MONTH#{periods['month']}", "providers", count=-1
+        )
+        self._atomic_increment(tenant_id, "TOTAL#ALL", "providers", count=-1)
+
     def increment_conversation_completed(self, tenant_id: str) -> None:
         """Track a completed conversation (booking made through chat)"""
         periods = self._get_periods()
@@ -408,6 +423,7 @@ class MetricsService:
                 "messages": int(item.get("messages", 0)),
                 "bookings": int(item.get("bookings", 0)),
                 "tokensIA": int(item.get("tokensIA", 0)),
+                "providers": int(item.get("providers", 0)),
             }
         except Exception:
-            return {"messages": 0, "bookings": 0, "tokensIA": 0}
+            return {"messages": 0, "bookings": 0, "tokensIA": 0, "providers": 0}

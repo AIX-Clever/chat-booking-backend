@@ -68,24 +68,28 @@ PLAN_LIMITS = {
     TenantPlan.LITE: {
         "messages": 500,
         "bookings": 50,
+        "providers": 1,
         "tokensIA": 0,  # No AI
         "ai_enabled": False,
     },
     TenantPlan.PRO: {
         "messages": 2000,
         "bookings": 200,
+        "providers": 5,
         "tokensIA": 0,  # No AI for PRO anymore
         "ai_enabled": False,
     },
     TenantPlan.BUSINESS: {
         "messages": 10000,
         "bookings": 1000,
+        "providers": 20,
         "tokensIA": 500000,  # ~500k tokens
         "ai_enabled": True,
     },
     TenantPlan.ENTERPRISE: {
         "messages": 100000,
         "bookings": 10000,
+        "providers": 100,
         "tokensIA": 5000000,  # ~5m tokens
         "ai_enabled": True,
     },

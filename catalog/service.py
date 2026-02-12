@@ -404,8 +404,15 @@ class ProviderManagementService:
     Service for managing providers (admin operations)
     """
 
-    def __init__(self, provider_repository: IProviderRepository):
+    def __init__(
+        self,
+        provider_repository: IProviderRepository,
+        limit_service: Any = None,
+        metrics_service: Any = None,
+    ):
         self.provider_repo = provider_repository
+        self.limit_service = limit_service
+        self.metrics_service = metrics_service
         self.logger = Logger()
 
     def create_provider(
@@ -428,11 +435,18 @@ class ProviderManagementService:
         """
         self.logger.info("Creating provider", tenant_id=str(tenant_id), name=name)
 
-        # Validate
+        # 1. Check Capacity Limit
+        if self.limit_service:
+            if not self.limit_service.check_can_create_provider(tenant_id):
+                raise ValidationError(
+                    "Has alcanzado el límite de profesionales permitidos en tu plan. Por favor, sube de nivel para agregar más."
+                )
+
+        # 2. Validate Input
         if not service_ids:
             raise ValidationError("Provider must offer at least one service")
 
-        # Create entity
+        # 3. Create entity
         provider = Provider(
             provider_id=provider_id,
             tenant_id=tenant_id,
@@ -448,8 +462,12 @@ class ProviderManagementService:
             professional_license=professional_license,
         )
 
-        # Persist
+        # 4. Persist
         self.provider_repo.save(provider)
+
+        # 5. Track Usage
+        if self.metrics_service:
+            self.metrics_service.increment_provider(tenant_id.value)
 
         self.logger.info(
             "Provider created", tenant_id=str(tenant_id), provider_id=provider_id
@@ -532,6 +550,10 @@ class ProviderManagementService:
 
         # Delete
         self.provider_repo.delete(tenant_id, provider_id)
+
+        # Track Usage
+        if self.metrics_service:
+            self.metrics_service.decrement_provider(tenant_id.value)
 
         self.logger.info(
             "Provider deleted", tenant_id=str(tenant_id), provider_id=provider_id

@@ -250,6 +250,7 @@ type PlanUsage @aws_cognito_user_pools {
   messages: Int!
   bookings: Int!
   tokensIA: Int!
+  providers: Int!
 }
 
 # Billing & Invoices

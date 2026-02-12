@@ -11,7 +11,10 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
     DynamoDBRoomRepository,
+    DynamoDBTenantRepository,
 )
+from shared.metrics import MetricsService
+from shared.limit_service import TenantLimitService
 from shared.infrastructure.category_repository import DynamoDBCategoryRepository
 from shared.infrastructure.s3_storage_adapter import S3FileStorageRepository
 from shared.domain.entities import TenantId
@@ -41,6 +44,11 @@ service_repo = DynamoDBServiceRepository()
 provider_repo = DynamoDBProviderRepository()
 category_repo = DynamoDBCategoryRepository()
 room_repo = DynamoDBRoomRepository()
+tenant_repo = DynamoDBTenantRepository()
+
+# Initialize metrics and limit services
+metrics_service = MetricsService()
+limit_service = TenantLimitService(tenant_repo, metrics_service)
 
 # Initialize asset service for S3 uploads
 try:
@@ -64,7 +72,9 @@ except Exception as e:
 
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo, category_repo)
-provider_mgmt_service = ProviderManagementService(provider_repo)
+provider_mgmt_service = ProviderManagementService(
+    provider_repo, limit_service, metrics_service
+)
 category_mgmt_service = CategoryManagementService(category_repo)
 room_mgmt_service = RoomManagementService(room_repo)
 

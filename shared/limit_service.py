@@ -117,3 +117,31 @@ class TenantLimitService:
         except Exception as e:
             self.logger.error("Error checking AI limit", error=e)
             return False  # Fail closed for AI (fallback to FSM)
+
+    def check_can_create_provider(self, tenant_id: TenantId) -> bool:
+        """
+        Check if tenant can create more providers (professionals).
+        """
+        try:
+            tenant = self._tenant_repo.get_by_id(tenant_id)
+            if not tenant:
+                return False
+
+            usage = self._metrics_service.get_usage_for_plan_limits(tenant_id.value)
+            current_providers = usage.get("providers", 0)
+
+            can_create = tenant.check_limit("providers", current_providers)
+
+            if not can_create:
+                self.logger.info(
+                    "Provider limit exceeded",
+                    tenant_id=tenant_id.value,
+                    plan=tenant.plan.value,
+                    usage=current_providers,
+                )
+
+            return can_create
+
+        except Exception as e:
+            self.logger.error("Error checking provider limit", error=e)
+            return True  # Fail open
