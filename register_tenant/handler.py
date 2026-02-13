@@ -63,6 +63,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         email = inputs.get("email")
         password = inputs.get("password")
         company_name = inputs.get("companyName") or email.split("@")[0]
+        plan_input = (inputs.get("plan") or "LITE").upper()
 
         if not email or not password:
             raise ValueError("Email and password are required")
@@ -95,7 +96,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             name=company_name,
             slug=slug,
             status=TenantStatus.PENDING_PAYMENT,  # Must pay to activate
-            plan=TenantPlan.LITE,  # Start on Lite plan
+            plan=TenantPlan[plan_input] if plan_input in TenantPlan._member_names_ else TenantPlan.LITE,
             owner_user_id=email,  # Temporary, will be linked to Cognito Sub if needed
             billing_email=email,
             created_at=datetime.now(timezone.utc),
