@@ -78,30 +78,33 @@ def handle_get_status(tenant_id: TenantId, provider_id: Optional[str], logger: L
     # Default: Tenant Slug
     public_slug = tenant.slug
     
-    # Logic for LITE Plan: Prioritize Provider Slug
-    if tenant.plan == TenantPlan.LITE:
-        try:
+    # Logic for resolving the target slug:
+    # 1. If provider_id is specified, prioritize that professional's slug.
+    # 2. If LITE plan and no provider_id, take the first active provider's slug (solopreneur).
+    # 3. Fallback to center slug.
+    
+    try:
+        active_providers = []
+        if provider_id or tenant.plan == TenantPlan.LITE:
             provider_repo = DynamoDBProviderRepository()
-            # Efficiently we might want a get_by_tenant but usually it lists all
             providers = provider_repo.list_by_tenant(tenant_id)
             active_providers = [p for p in providers if p.active]
+
+        target_provider = None
+        if provider_id:
+            # If specific provider requested, look for it
+            target_provider = next((p for p in active_providers if p.provider_id == provider_id), None)
+        elif tenant.plan == TenantPlan.LITE and active_providers:
+            # For LITE, if no specific provider requested, take the first one with a slug
+            target_provider = next((p for p in active_providers if p.slug), None)
+        
+        if target_provider and target_provider.slug:
+            public_slug = target_provider.slug
+            logger.info(f"Using Provider Slug: {public_slug}", provider_id=target_provider.provider_id)
             
-            target_provider = None
-            if provider_id:
-                # If specific provider requested, look for it
-                target_provider = next((p for p in active_providers if p.provider_id == provider_id), None)
-            elif active_providers:
-                # If no specific provider (or global view), take the first one with a slug
-                # For LITE, there is usually only one.
-                target_provider = next((p for p in active_providers if p.slug), None)
-            
-            if target_provider and target_provider.slug:
-                public_slug = target_provider.slug
-                logger.info(f"Using Provider Slug for LITE plan: {public_slug}")
-                
-        except Exception as e:
-            logger.warning("Failed to resolve provider slug for LITE plan", error=str(e))
-            # Fallback to tenant.slug
+    except Exception as e:
+        logger.warning("Failed to resolve provider slug for public link", error=str(e))
+        # Fallback to tenant.slug is already set
     
     # Build public URL
     public_url = f"{PUBLIC_LINK_BASE_URL}/{public_slug}" if public_slug else None
