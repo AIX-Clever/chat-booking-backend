@@ -66,6 +66,8 @@ enum TenantStatus {
   ACTIVE
   SUSPENDED
   CANCELLED
+  TRIAL
+  PENDING_PAYMENT
 }
 
 enum TenantPlan {
