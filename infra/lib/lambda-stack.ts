@@ -212,7 +212,8 @@ export class LambdaStack extends cdk.Stack {
     props.availabilityTable.grantReadWriteData(this.availabilityFunction);
     props.bookingsTable.grantReadData(this.availabilityFunction); // Read for conflict detection
     props.servicesTable.grantReadData(this.availabilityFunction);
-    props.providersTable.grantReadWriteData(this.availabilityFunction); // Write for token refresh? Or just Read? Authenticator updates token. Read is enough if we trust refresh logic is not storing back always.
+    props.providersTable.grantReadWriteData(this.availabilityFunction);
+    props.tenantsTable.grantReadData(this.availabilityFunction); // Fix: Allow LimitService/Shared code to read tenant plan // Write for token refresh? Or just Read? Authenticator updates token. Read is enough if we trust refresh logic is not storing back always.
     // Actually, refresh_access_token operation updates the token. So we might need write if we store the new access token.
     // DynamoDBProviderIntegrationRepository.save_google_creds does write.
     // So yes, ReadWrite.
