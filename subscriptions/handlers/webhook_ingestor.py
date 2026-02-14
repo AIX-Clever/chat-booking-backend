@@ -55,9 +55,9 @@ def lambda_handler(event, context):
         print(f"HMAC Manifest: {manifest}")
         
         # 3. Calculate HMAC
-        secret = SubscriptionConfig.MP_WEBHOOK_SECRET
+        secret = os.environ.get('MP_WEBHOOK_SECRET')
         if not secret:
-            print("Missing MP_WEBHOOK_SECRET in config")
+            print("Missing MP_WEBHOOK_SECRET in env")
             return lambda_response(500, {'message': 'Configuration Error'})
 
         calculated_hmac = hmac.new(
