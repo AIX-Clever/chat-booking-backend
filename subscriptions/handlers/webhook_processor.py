@@ -13,6 +13,7 @@ def lambda_handler(event, context):
     """
     SQS Event Processor
     """
+    print(f"DEBUG RAW EVENT: {json.dumps(event)}")
     for record in event.get('Records', []):
         try:
             body = json.loads(record['body'])
