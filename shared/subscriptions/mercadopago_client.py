@@ -32,10 +32,9 @@ class MercadoPagoClient(IPaymentGateway):
         external_reference: str,
         back_url: str,
         price: float,
-        notification_url: str = None,
     ) -> Dict[str, Any]:
         return self.create_preapproval(
-            payer_email, plan_id, external_reference, back_url, price, notification_url
+            payer_email, plan_id, external_reference, back_url, price
         )
 
     def create_preapproval(
@@ -45,7 +44,6 @@ class MercadoPagoClient(IPaymentGateway):
         external_reference: str,
         back_url: str,
         price: float,
-        notification_url: str = None,
     ) -> Dict[str, Any]:
         """
         Creates a preapproval (subscription) in Mercado Pago.
@@ -65,9 +63,6 @@ class MercadoPagoClient(IPaymentGateway):
                 "currency_id": "CLP",  # Assuming Chile based on conversation
             },
         }
-
-        if notification_url:
-            preapproval_data["notification_url"] = notification_url
 
         request_options = mercadopago.config.RequestOptions()
 
