@@ -78,6 +78,7 @@ def lambda_handler(event, context):
             QueueUrl=QUEUE_URL,
             MessageBody=json.dumps({
                 'source': 'mercadopago',
+                'id': data_id,
                 'raw_data': body,
                 'headers': headers,
                 'query_params': query_params
