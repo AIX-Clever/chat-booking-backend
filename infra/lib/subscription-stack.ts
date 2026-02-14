@@ -137,7 +137,7 @@ export class SubscriptionStack extends cdk.Stack {
             })]
         });
         this.subscriptionsTable.grantReadWriteData(this.webhookProcessorFunction);
-        props.tenantsTable.grantReadData(this.webhookProcessorFunction);
+        props.tenantsTable.grantReadWriteData(this.webhookProcessorFunction);
 
         // E. Subscription Worker (Scheduler Target)
         this.subscriptionWorkerFunction = new lambda.Function(this, 'SubscriptionWorkerFunction', {
