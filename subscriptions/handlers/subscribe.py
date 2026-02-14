@@ -1,6 +1,7 @@
 import json
 import os
 import boto3
+import mercadopago
 from datetime import datetime, timedelta
 from shared.utils import extract_tenant_id
 from shared.subscriptions.mercadopago_client import MercadoPagoClient
@@ -11,12 +12,14 @@ from shared.subscriptions.entities import Subscription, SubscriptionStatus, Plan
 # Initialize clients
 dynamodb = boto3.resource('dynamodb')
 scheduler = boto3.client('scheduler')
-mp_client = MercadoPagoClient()
+# We still initialize these for other potential uses or legacy consistency, 
+# but we will bypass them for creation to support notification_url hotfix.
+mp_client = MercadoPagoClient() 
 subscription_service = SubscriptionService(mp_client)
 
 SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
-WORKER_ARN = os.getenv('WORKER_ARN', '') # To be passed by CDK
-SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '') # To be passed by CDK
+WORKER_ARN = os.getenv('WORKER_ARN', '') 
+SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '') 
 
 def lambda_handler(event, context):
     try:
@@ -41,22 +44,56 @@ def lambda_handler(event, context):
             raise Exception('Invalid planId')
 
         # Business Logic
-        # 2. Create Preapproval via Service
+        # 2. Create Preapproval - HOTFIX: Direct SDK usage to support notification_url 
+        # (Bypassing shared layer to avoid deployment sync issues)
         webhook_url = os.environ.get('WEBHOOK_URL')
+        mp_access_token = os.environ.get('MP_ACCESS_TOKEN')
+        
+        # Determine Price
+        full_price = SubscriptionConfig.PLAN_PRICES.get(plan_id_str, 15000)
+        price = SubscriptionConfig.PROMO_PRICE if plan_id_str == 'lite' else full_price
         
         try:
-            sub_result = subscription_service.create_subscription(
-                tenant_id=tenant_id,
-                email=payer_email,
-                plan_id=plan_id_str,
-                back_url=back_url,
-                notification_url=webhook_url
-            )
-            price = sub_result['price']
-            full_price = sub_result['full_price']
-            preapproval_id = sub_result['preapproval_id']
-            init_point = sub_result['init_point']
+            # Direct SDK Call
+            sdk = mercadopago.SDK(mp_access_token)
+            reason = f"Suscripción Hola Lucía {plan_id_str.upper()}"
             
+            preapproval_data = {
+                "payer_email": payer_email,
+                "back_url": back_url,
+                "reason": reason,
+                "external_reference": tenant_id,
+                "auto_recurring": {
+                    "frequency": 1,
+                    "frequency_type": "months",
+                    "transaction_amount": price,
+                    "currency_id": "CLP", 
+                },
+                "status": "authorized" 
+            }
+            
+            if webhook_url:
+                preapproval_data["notification_url"] = webhook_url
+                
+            print(f"Creating Preapproval with data: {json.dumps(preapproval_data)}")
+            
+            request_options = mercadopago.config.RequestOptions()
+            result = sdk.preapproval().create(preapproval_data, request_options)
+            
+            if result["status"] == 201:
+                response = result["response"]
+                preapproval_id = response.get("id")
+                init_point = response.get("init_point")
+            else:
+                error_msg = result.get("response", {}).get("message", "Unknown error")
+                print(f"MP Create Error: {result}")
+                
+                 # Check for Sandbox collision (Real vs Test users)
+                if "payer and collector must be real or test users" in error_msg:
+                     raise Exception("Sandbox Error: Use a Test User email for payment (e.g., test_user_1954@testuser.com)")
+                
+                raise Exception(f"Failed to create preapproval: {error_msg}")
+
         except Exception as e:
             # Fallback for Development/Sandbox Friction
             if "Sandbox Error" in str(e):
