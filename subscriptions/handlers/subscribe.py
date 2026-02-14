@@ -42,12 +42,15 @@ def lambda_handler(event, context):
 
         # Business Logic
         # 2. Create Preapproval via Service
+        webhook_url = os.environ.get('WEBHOOK_URL')
+        
         try:
             sub_result = subscription_service.create_subscription(
                 tenant_id=tenant_id,
                 email=payer_email,
                 plan_id=plan_id_str,
-                back_url=back_url
+                back_url=back_url,
+                notification_url=webhook_url
             )
             price = sub_result['price']
             full_price = sub_result['full_price']

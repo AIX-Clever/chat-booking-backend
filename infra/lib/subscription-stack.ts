@@ -83,7 +83,7 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
                 MP_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretVal', 'ChatBooking/MercadoPago')
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
-                LAST_UPDATED: '2026-02-13T19:40:00Z', // Force update for Test Credentials
+                LAST_UPDATED: '2026-02-13T22:45:00Z', // Force update for Test Seller Credentials
             },
         };
 
@@ -193,6 +193,9 @@ export class SubscriptionStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'SubscriptionsTableName', { value: this.subscriptionsTable.tableName });
         new cdk.CfnOutput(this, 'WebhookUrl', { value: webhookUrl.url });
         new cdk.CfnOutput(this, 'SchedulerRoleArn', { value: schedulerRole.roleArn });
+
+        // Late binding of Webhook URL to Subscribe Function
+        this.subscribeFunction.addEnvironment('WEBHOOK_URL', webhookUrl.url);
     }
 }
 

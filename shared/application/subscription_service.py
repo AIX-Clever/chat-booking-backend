@@ -8,7 +8,7 @@ class SubscriptionService:
         self.payment_gateway = payment_gateway
 
     def create_subscription(
-        self, tenant_id: str, email: str, plan_id: str, back_url: str
+        self, tenant_id: str, email: str, plan_id: str, back_url: str, notification_url: str = None
     ) -> Dict[str, Any]:
         """
         Orchestrates subscription creation.
@@ -33,6 +33,7 @@ class SubscriptionService:
             external_reference=tenant_id,
             back_url=back_url,
             price=price,
+            notification_url=notification_url,
         )
 
         return {
