@@ -226,6 +226,7 @@ def process_subscription_update(preapproval_id):
             f"Subscription {preapproval_id} status: {status} "
             f"for tenant {tenant_id}"
         )
+        print(f"DEBUG: Processing status '{status}' (type: {type(status)})")
 
         if not tenant_id:
             print("No tenant_id found in preapproval.")
