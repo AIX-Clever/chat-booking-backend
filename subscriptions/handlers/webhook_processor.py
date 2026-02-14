@@ -268,6 +268,43 @@ def process_subscription_update(preapproval_id):
                     )
             except Exception as e:
                 print(f"Failed to downgrade tenant: {e}")
+                
+        elif status == 'authorized':
+             # Activate Subscription
+            print(f"Activating tenant {tenant_id} due to status: {status}")
+            
+            # Update Subscription
+            SUBSCRIPTIONS_TABLE.update_item(
+                Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'},
+                UpdateExpression="set #s = :s",
+                ExpressionAttributeNames={'#s': 'status'},
+                ExpressionAttributeValues={':s': SubscriptionStatus.AUTHORIZED.value}
+            )
+            
+            # Activate Tenant (Sync Plan)
+            # Fetch plan from subscription first to know what to activate
+            sub_resp = SUBSCRIPTIONS_TABLE.get_item(
+                Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'}
+            )
+            sub_item = sub_resp.get('Item')
+            plan_id = sub_item.get('planId', 'pro') if sub_item else 'pro' # Default to pro if missing
+            
+            try:
+                from shared.infrastructure.dynamodb_repositories import (
+                    DynamoDBTenantRepository
+                )
+                from shared.domain.entities import TenantPlan, TenantStatus
+
+                repo = DynamoDBTenantRepository()
+                tenant = repo.get_by_id(tenant_id)
+                if tenant:
+                     if plan_id.upper() in TenantPlan._member_names_:
+                        tenant.plan = TenantPlan[plan_id.upper()]
+                        tenant.status = TenantStatus.ACTIVE
+                        repo.save(tenant)
+                        print(f"Activated tenant {tenant_id} with plan {tenant.plan}")
+            except Exception as e:
+                print(f"Failed to activate tenant: {e}")
 
     except Exception as e:
         print(f"Error processing subscription update: {e}")
