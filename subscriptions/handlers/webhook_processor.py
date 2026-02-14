@@ -41,8 +41,11 @@ def lambda_handler(event, context):
                 print("Skipping: No resource ID found")
                 continue
                 
-            topic = msg_body.get('type') or msg_body.get('action')
+            query_params = body.get('query_params', {}) or {}
+            topic = msg_body.get('type') or msg_body.get('action') or query_params.get('topic')
             
+            print(f"DEBUG: Retrieved topic: {topic}, resource_id: {resource_id}")
+
             if topic == 'payment':
                 process_payment(resource_id, raw_data)
             elif topic == 'subscription_preapproval':
