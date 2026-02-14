@@ -27,7 +27,10 @@ def lambda_handler(event, context):
             # { "action": "payment.created", "data": { "id": "123" } }
             
             resource_id = None
-            if 'data' in msg_body and 'id' in msg_body['data']:
+            # Check top-level SQS body first (added by Ingestor)
+            if 'id' in body:
+                resource_id = body['id']
+            elif 'data' in msg_body and 'id' in msg_body['data']:
                 resource_id = msg_body['data']['id']
             elif 'id' in msg_body:
                 # v1 fallback
