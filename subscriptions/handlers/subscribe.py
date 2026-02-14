@@ -69,7 +69,6 @@ def lambda_handler(event, context):
                     "transaction_amount": price,
                     "currency_id": "CLP", 
                 },
-                "status": "authorized" 
             }
             
             if webhook_url:
