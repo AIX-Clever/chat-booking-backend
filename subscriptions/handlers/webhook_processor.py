@@ -289,22 +289,33 @@ def process_subscription_update(preapproval_id):
             sub_item = sub_resp.get('Item')
             plan_id = sub_item.get('planId', 'pro') if sub_item else 'pro' # Default to pro if missing
             
-            try:
-                from shared.infrastructure.dynamodb_repositories import (
-                    DynamoDBTenantRepository
-                )
-                from shared.domain.entities import TenantPlan, TenantStatus
+                try:
+                    from shared.infrastructure.dynamodb_repositories import (
+                        DynamoDBTenantRepository
+                    )
+                    from shared.domain.entities import TenantPlan, TenantStatus
 
-                repo = DynamoDBTenantRepository()
-                tenant = repo.get_by_id(tenant_id)
-                if tenant:
-                     if plan_id.upper() in TenantPlan._member_names_:
-                        tenant.plan = TenantPlan[plan_id.upper()]
-                        tenant.status = TenantStatus.ACTIVE
-                        repo.save(tenant)
-                        print(f"Activated tenant {tenant_id} with plan {tenant.plan}")
-            except Exception as e:
-                print(f"Failed to activate tenant: {e}")
+                    print(f"Syncing tenant {tenant_id} plan to {plan_id.upper()}")
+                    repo = DynamoDBTenantRepository()
+                    tenant = repo.get_by_id(tenant_id)
+                    if tenant:
+                        if plan_id.upper() in TenantPlan._member_names_:
+                            tenant.plan = TenantPlan[plan_id.upper()]
+                            tenant.status = TenantStatus.ACTIVE
+                            repo.save(tenant)
+                            print(f"Activated tenant {tenant_id} with plan {tenant.plan}")
+                        else:
+                            print(f"Invalid plan name {plan_id} for tenant {tenant_id}")
+                    else:
+                        print(f"Tenant {tenant_id} not found for activation")
+                except Exception as e:
+                    print(f"Failed to activate tenant entity: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+
+        elif status in ['rejected', 'cancelled', 'paused']:
+            # Fallback for other statuses to prevent silent failure
+            print(f"Subscription status {status} handled as inactive.")
 
     except Exception as e:
         print(f"Error processing subscription update: {e}")
