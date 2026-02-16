@@ -120,7 +120,7 @@ class UserManagementService:
         """Send welcome email with temporary credentials"""
         try:
             # Login URL (could be from env)
-            login_url = "https://admin.holalucia.cl"
+            login_url = "https://control.holalucia.cl"
 
             subject = "Bienvenido a Lucia - Tu Asistente de Reservas"
 

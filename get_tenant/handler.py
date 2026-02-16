@@ -114,7 +114,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Schema expects Tenant! (object), success_response returns raw data?
         # shared/utils.py success_response returns data directly.
 
-        return {
+        response = {
             "tenantId": str(tenant.tenant_id),
             "name": tenant.name,
             "slug": tenant.slug,
@@ -123,10 +123,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "ownerUserId": tenant.owner_user_id,
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings if tenant.settings else None,
-            "createdAt": tenant.created_at.isoformat() + "Z",
-            "updatedAt": getattr(tenant, "updated_at", tenant.created_at).isoformat()
-            + "Z",
+            "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
+            "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
+
+        logger.info("Get tenant success", response=response)
+        return response
 
     except Exception as e:
         logger.error("Get tenant failed", error=str(e))

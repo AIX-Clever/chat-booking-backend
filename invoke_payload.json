@@ -1,0 +1,20 @@
+{
+    "Records": [
+        {
+            "messageId": "manual-invoke-check-new-user",
+            "receiptHandle": "AQEB...",
+            "body": "{\"id\": \"ef2cc45d9c7a4513809ad34a48096d4a\", \"topic\": \"subscription_preapproval\", \"query_params\": {\"topic\": \"subscription_preapproval\"}, \"raw_data\": {\"type\": \"subscription_preapproval\"}}",
+            "attributes": {
+                "ApproximateReceiveCount": "1",
+                "SentTimestamp": "1635732122000",
+                "SenderId": "AROAY...",
+                "ApproximateFirstReceiveTimestamp": "1635732122000"
+            },
+            "messageAttributes": {},
+            "md5OfBody": "...",
+            "eventSource": "aws:sqs",
+            "eventSourceARN": "arn:aws:sqs:us-east-1:123456789012:ChatBooking-WebhooksQueue-dev",
+            "awsRegion": "us-east-1"
+        }
+    ]
+}
