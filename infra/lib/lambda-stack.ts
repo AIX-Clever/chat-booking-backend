@@ -137,6 +137,7 @@ export class LambdaStack extends cdk.Stack {
         MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
         SHARED_HASH: sharedHash,
+        USER_POOL_ID: props.userPool.userPoolId,
       },
     };
 
@@ -191,6 +192,7 @@ export class LambdaStack extends cdk.Stack {
     props.roomsTable.grantReadWriteData(this.catalogFunction);
     props.tenantsTable.grantReadData(this.catalogFunction); // Fix: Allow LimitService to read tenant plan
     props.tenantUsageTable.grantReadWriteData(this.catalogFunction); // Fix: Allow MetricsService to increment provider count
+    props.userPool.grant(this.catalogFunction, 'cognito-idp:AdminGetUser');
 
     // 3. Availability Lambda
     this.availabilityFunction = new lambda.Function(this, 'AvailabilityFunction', {
@@ -214,6 +216,7 @@ export class LambdaStack extends cdk.Stack {
     props.servicesTable.grantReadData(this.availabilityFunction);
     props.providersTable.grantReadWriteData(this.availabilityFunction);
     props.tenantsTable.grantReadData(this.availabilityFunction); // Fix: Allow LimitService/Shared code to read tenant plan // Write for token refresh? Or just Read? Authenticator updates token. Read is enough if we trust refresh logic is not storing back always.
+    props.userPool.grant(this.availabilityFunction, 'cognito-idp:AdminGetUser');
     // Actually, refresh_access_token operation updates the token. So we might need write if we store the new access token.
     // DynamoDBProviderIntegrationRepository.save_google_creds does write.
     // So yes, ReadWrite.
@@ -280,6 +283,7 @@ export class LambdaStack extends cdk.Stack {
     props.conversationsTable.grantReadData(this.bookingFunction);
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
     props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
+    props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');
 
     // 5. Chat Agent Lambda
     this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
@@ -310,6 +314,7 @@ export class LambdaStack extends cdk.Stack {
     props.tenantUsageTable.grantWriteData(this.chatAgentFunction); // For metrics tracking
     props.workflowsTable.grantReadWriteData(this.chatAgentFunction); // For self-healing (create default workflow)
     props.tenantsTable.grantReadData(this.chatAgentFunction);
+    props.userPool.grant(this.chatAgentFunction, 'cognito-idp:AdminGetUser');
 
     // Grant Bedrock Access for AI Plans
     this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({
@@ -414,6 +419,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.workflowsTable.grantReadWriteData(this.workflowManagerFunction);
     props.tenantsTable.grantReadData(this.workflowManagerFunction);
+    props.userPool.grant(this.workflowManagerFunction, 'cognito-idp:AdminGetUser');
 
     // 11. FAQ Manager Lambda
     this.faqManagerFunction = new lambda.Function(this, 'FaqManagerFunction', {
@@ -427,6 +433,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.faqsTable.grantReadWriteData(this.faqManagerFunction);
     props.tenantsTable.grantReadData(this.faqManagerFunction);
+    props.userPool.grant(this.faqManagerFunction, 'cognito-idp:AdminGetUser');
 
     // Grant permissions to Chat Agent to read FAQs
     props.faqsTable.grantReadData(this.chatAgentFunction);
@@ -480,6 +487,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.apiKeysTable.grantReadWriteData(this.apiKeyManagerFunction);
     props.tenantsTable.grantReadData(this.apiKeyManagerFunction);
+    props.userPool.grant(this.apiKeyManagerFunction, 'cognito-idp:AdminGetUser');
 
     // 15. Get Public Profile Lambda
     this.getPublicProfileFunction = new lambda.Function(this, 'GetPublicProfileFunction', {
@@ -523,6 +531,7 @@ export class LambdaStack extends cdk.Stack {
         `${props.roomsTable.tableArn}/index/*`
       ],
     }));
+    props.userPool.grant(this.publicLinkStatusFunction, 'cognito-idp:AdminGetUser');
 
     // 16. Google Integration Lambda
     this.googleIntegrationFunction = new lambda.Function(this, 'GoogleIntegrationFunction', {
