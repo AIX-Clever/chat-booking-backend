@@ -7,6 +7,7 @@ Common helper functions used across all lambdas
 import hashlib
 import secrets
 import uuid
+import os
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 
@@ -100,20 +101,40 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
             if "tenantId" in claims:
                 return claims["tenantId"]
     
-    # 2. From args (Only if NO identity is present - e.g. Public API Key or Admin override)
-    # WARNING: trusting client input is dangerous. Only use if strictly necessary.
+    # 5. Fallback: Fetch from Cognito using sub from identity
+    # (Required when identity claims are missing, e.g. delay in propagation)
+    if event.get("identity") and event["identity"].get("sub") and os.environ.get("USER_POOL_ID"):
+        try:
+            import boto3
+
+            client = boto3.client("cognito-idp")
+            user = client.admin_get_user(
+                UserPoolId=os.environ["USER_POOL_ID"],
+                Username=event["identity"]["sub"]
+            )
+            # Convert list of dicts to dict
+            attributes = {
+                attr["Name"]: attr["Value"] for attr in user["UserAttributes"]
+            }
+
+            # Check for tenantId in fetched attributes
+            if "custom:tenantId" in attributes:
+                return attributes["custom:tenantId"]
+            if "tenantId" in attributes:
+                return attributes["tenantId"]
+            if "website" in attributes:
+                return attributes["website"]
+
+        except Exception as e:
+            # Log error but don't crash - allow returning None to fail functionally later
+            print(f"Error fetching user attributes from Cognito using AdminGetUser: {str(e)}")
+
+    # 6. From args (Only if NO identity is present - e.g. Public API Key)
+    # WARNING: trusting client input is dangerous. We only allow this if no identity is found.
     if event.get("arguments") and event["arguments"].get("tenantId"):
         return event["arguments"]["tenantId"]
 
-    # 3. From stash (Lambda Auth / Pipeline)
-    if event.get("stash") and "tenantId" in event["stash"]:
-        return event["stash"]["tenantId"]
-
-    # 4. Direct property (Direct invocation / Test)
-    if "tenantId" in event:
-        return event["tenantId"]
-
-    # 5. From headers (API Key / Custom Auth)
+    # 7. From headers (API Key / Custom Auth)
     if event.get("request") and event["request"].get("headers"):
         headers = event["request"]["headers"]
         # Check standard custom header
@@ -122,39 +143,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
         if "X-Tenant-Id" in headers:
             return headers["X-Tenant-Id"]
 
-    # 5. Fallback: Fetch from Cognito using Access Token from headers
-    # (Required when Access Token is used but attribute is not in claims, e.g. standard attrs like website)
-    if event.get("request") and event["request"].get("headers"):
-        headers = event["request"]["headers"]
-        auth_header = headers.get("authorization")
-        if auth_header:
-            # Handle "Bearer <token>" or just "<token>"
-            token = (
-                auth_header.replace("Bearer ", "")
-                if auth_header.startswith("Bearer ")
-                else auth_header
-            )
-            try:
-                import boto3
-
-                client = boto3.client("cognito-idp")
-                user = client.get_user(AccessToken=token)
-                # Convert list of dicts to dict
-                attributes = {
-                    attr["Name"]: attr["Value"] for attr in user["UserAttributes"]
-                }
-
-                # Check for tenantId in fetched attributes
-                if "custom:tenantId" in attributes:
-                    return attributes["custom:tenantId"]
-                if "tenantId" in attributes:
-                    return attributes["tenantId"]
-                if "website" in attributes:
-                    return attributes["website"]
-
-            except Exception as e:
-                # Log error but don't crash - allow returning None to fail functionally later
-                print(f"Error fetching user attributes from Cognito: {str(e)}")
+    return None
 
     return None
 
