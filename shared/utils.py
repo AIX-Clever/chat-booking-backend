@@ -145,8 +145,6 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
 
     return None
 
-    return None
-
 
 def extract_appsync_event(event: Dict[str, Any]) -> tuple[str, str, Dict[str, Any]]:
     """

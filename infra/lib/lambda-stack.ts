@@ -828,6 +828,7 @@ export class LambdaStack extends cdk.Stack {
       value: this.clientsFunction.functionArn,
       description: 'Clients Lambda ARN',
     });
+    props.userPool.grant(this.clientsFunction, 'cognito-idp:AdminGetUser');
 
     // 21. Client Synchronization Lambda (Stream Trigger)
     this.clientSyncFunction = new lambda.Function(this, 'ClientSyncFunction', {
