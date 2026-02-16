@@ -71,6 +71,21 @@ class DynamoDBTenantRepository(ITenantRepository):
             print(f"Error getting tenant: {e}")
             return None
 
+    def get_by_slug(self, slug: str) -> Optional[Tenant]:
+        try:
+            response = self.table.query(
+                IndexName="slug-index",
+                KeyConditionExpression=Key("slug").eq(slug)
+            )
+            items = response.get("Items", [])
+            if not items:
+                return None
+            
+            return self._item_to_entity(items[0])
+        except ClientError as e:
+            print(f"Error getting tenant by slug: {e}")
+            return None
+
     def save(self, tenant: Tenant) -> None:
         item = {
             "tenantId": str(tenant.tenant_id),

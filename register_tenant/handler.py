@@ -87,8 +87,17 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             raise ValueError("USER_POOL_ID configuration missing")
 
         # 3. Create Tenant Entity
-        # Generate a slug from company name or random
-        slug = company_name.lower().replace(" ", "-") + "-" + secrets.token_hex(2)
+        # Generate a slug from company name
+        base_slug = company_name.lower().replace(" ", "-")
+        # Sanitize further if needed (keep it simple for now)
+        
+        # Check availability
+        if tenant_repo.get_by_slug(base_slug):
+            # If taken, append suffix
+            slug = f"{base_slug}-{secrets.token_hex(2)}"
+        else:
+            # If free, use it
+            slug = base_slug
         tenant_id = TenantId(str(uuid.uuid4())[:8])
 
         tenant = Tenant(

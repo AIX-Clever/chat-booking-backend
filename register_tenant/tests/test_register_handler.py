@@ -44,6 +44,9 @@ def mock_repositories():
 
         tenant_repo_instance = mock_tenant_repo.return_value
         api_key_repo_instance = mock_api_key_repo.return_value
+        
+        # Default behavior: Slug is available
+        tenant_repo_instance.get_by_slug.return_value = None
 
         yield tenant_repo_instance, api_key_repo_instance
 

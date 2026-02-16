@@ -78,8 +78,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         if "billingEmail" in inputs:
             tenant.billing_email = inputs["billingEmail"]
         if "slug" in inputs:
-            tenant.slug = inputs["slug"]
-            # TODO: Check for uniqueness if slug is changed (future improvement)
+            new_slug = inputs["slug"]
+            if new_slug != tenant.slug:
+                # Check for uniqueness
+                if tenant_repo.get_by_slug(new_slug):
+                    raise ValueError(f"El link personalizado '{new_slug}' ya está en uso. Por favor elige otro.")
+                tenant.slug = new_slug
         if "settings" in inputs:
             # Merge settings
             new_settings = (
