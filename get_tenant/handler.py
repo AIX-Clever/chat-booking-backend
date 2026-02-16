@@ -120,6 +120,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "slug": tenant.slug,
             "status": tenant.status.value,
             "plan": tenant.plan.value,
+            "ownerUserId": tenant.owner_user_id,
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings if tenant.settings else None,
             "createdAt": tenant.created_at.isoformat() + "Z",
