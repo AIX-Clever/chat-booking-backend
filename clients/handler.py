@@ -88,7 +88,15 @@ def list_clients(tenant_id: str) -> List[Dict[str, Any]]:
     )
 
     items = response.get('Items', [])
-    return [_format_client(item) for item in items]
+    logger.info(f"Found {len(items)} clients")
+    if len(items) > 0:
+        logger.info(f"First client raw: {items[0]}")
+    
+    result = [_format_client(item) for item in items]
+    if len(result) > 0:
+        logger.info(f"First client result: {result[0]}")
+        
+    return result
 
 
 def create_client(
