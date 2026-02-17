@@ -3,12 +3,11 @@ import boto3
 import uuid
 import logging
 from datetime import datetime
-from decimal import Decimal
 
 # Initialize DynamoDB
 dynamodb = boto3.resource('dynamodb')
 CLIENTS_TABLE_NAME = os.environ.get('CLIENTS_TABLE')
-AUDIT_LOGS_TABLE_NAME = os.environ.get('CLIENT__AUDIT_LOGS_TABLE')
+AUDIT_LOGS_TABLE_NAME = os.environ.get('CLIENT_AUDIT_LOGS_TABLE')
 
 clients_table = dynamodb.Table(CLIENTS_TABLE_NAME)
 audit_table = dynamodb.Table(AUDIT_LOGS_TABLE_NAME)
@@ -16,63 +15,67 @@ audit_table = dynamodb.Table(AUDIT_LOGS_TABLE_NAME)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+
 def to_iso_string(dt):
     return dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
 
 def lambda_handler(event, context):
     """
     Triggered by DynamoDB Stream on Bookings table (INSERT only)
     """
     logger.info(f"Processing {len(event['Records'])} stream records")
-    
+
     for record in event['Records']:
         if record['eventName'] != 'INSERT':
             continue
-            
+
         try:
             # Extract new booking image
             new_image = record['dynamodb']['NewImage']
-            
+
             # Unmarshal DynamoDB JSON to plain dict
             booking = _unmarshal(new_image)
             tenant_id = booking.get('tenantId')
             customer_info = booking.get('customerInfo', {})
-            
+
             email = customer_info.get('email')
             if not email:
-                logger.warning(f"Booking {booking.get('id')} has no email. Skipping sync.")
+                logger.warning(
+                    f"Booking {booking.get('id')} has no email. Skipping sync."
+                )
                 continue
-                
+
             _sync_client(tenant_id, booking, customer_info)
-            
+
         except Exception as e:
             logger.error(f"Error processing record: {str(e)}", exc_info=True)
+
 
 def _sync_client(tenant_id, booking, customer_info):
     email = customer_info.get('email')
     given_name = customer_info.get('name', 'Cliente')
     phone = customer_info.get('phone')
     booking_id = booking.get('id', 'unknown')
-    
+
     # 1. Lookup client by email GSI
     response = clients_table.query(
         IndexName='email-index',
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('tenantId').eq(tenant_id) & 
-                                 boto3.dynamodb.conditions.Key('email').eq(email)
+        KeyConditionExpression=boto3.dynamodb.conditions.Key('tenantId').eq(tenant_id) &
+        boto3.dynamodb.conditions.Key('email').eq(email)
     )
-    
+
     timestamp = to_iso_string(datetime.utcnow())
-    
+
     if response.get('Count', 0) > 0:
         # Existing client
         client = response['Items'][0]
-        client_id = client['id']
         _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp)
     else:
         # New client
         client_id = str(uuid.uuid4())
         logger.info(f"Creating new client {client_id} for email {email}")
-        
+
         new_client = {
             'tenantId': tenant_id,
             'id': client_id,
@@ -88,21 +91,25 @@ def _sync_client(tenant_id, booking, customer_info):
             'createdAt': timestamp,
             'updatedAt': timestamp,
             'source': 'BOOKING',
-            'identifierValue': 'PENDING' # Placeholder for RUT/CPF
+            'identifierValue': 'PENDING'  # Placeholder for RUT/CPF
         }
         # Clean None from lists
         new_client['contactInfo'] = [c for c in new_client['contactInfo'] if c]
-        
+
         clients_table.put_item(Item=new_client)
-        
+
         # Audit log for creation
-        _record_audit(tenant_id, client_id, 'ALL', None, 'CREATED', 'BOOKING_SYNC', booking_id, timestamp)
+        _record_audit(
+            tenant_id, client_id, 'ALL', None, 'CREATED',
+            'BOOKING_SYNC', booking_id, timestamp
+        )
+
 
 def _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp):
     client_id = client['id']
     updates = {}
     changes = []
-    
+
     # 1. Check Name
     new_name = customer_info.get('name')
     old_name = client.get('names', {}).get('given')
@@ -110,36 +117,46 @@ def _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp):
         updates['names'] = client.get('names', {})
         updates['names']['given'] = new_name
         changes.append(('names.given', old_name, new_name))
-        
+
     # 2. Check Phone
     new_phone = customer_info.get('phone')
-    old_phone = next((c['value'] for c in client.get('contactInfo', []) if c['system'] == 'phone'), None)
+    old_phone = next(
+        (c['value'] for c in client.get('contactInfo', []) if c['system'] == 'phone'),
+        None
+    )
     if new_phone and new_phone != old_phone:
         # Update contactInfo list
-        new_contact_info = [c for c in client.get('contactInfo', []) if c['system'] != 'phone']
+        new_contact_info = [
+            c for c in client.get('contactInfo', []) if c['system'] != 'phone'
+        ]
         new_contact_info.append({'system': 'phone', 'value': new_phone})
         updates['contactInfo'] = new_contact_info
         changes.append(('phone', old_phone, new_phone))
-        
+
     if updates:
         logger.info(f"Updating client {client_id} with {len(changes)} changes")
-        
+
         # Build update expression
         update_expr = "SET updatedAt = :ts"
         attr_values = {":ts": timestamp}
-        
+
         for i, (field, old, new) in enumerate(changes):
-            clean_field = field.replace('.', '_')
+            # clean_field = field.replace('.', '_') # Unused
             update_expr += f", {field} = :val{i}"
-            attr_values[f":val{i}"] = updates.get(field.split('.')[0], new) # Handles nested given name
-            
+            # Handles nested given name
+            attr_values[f":val{i}"] = updates.get(field.split('.')[0], new)
+
         # Simplest way: put_item with merged data since we already have the full item
         merged_item = {**client, **updates, 'updatedAt': timestamp}
         clients_table.put_item(Item=merged_item)
-        
+
         # Record audits
         for field, old, new in changes:
-            _record_audit(tenant_id, client_id, field, old, new, 'BOOKING_SYNC', booking_id, timestamp)
+            _record_audit(
+                tenant_id, client_id, field, old, new,
+                'BOOKING_SYNC', booking_id, timestamp
+            )
+
 
 def _record_audit(tenant_id, client_id, field, old, new, source, source_id, timestamp):
     audit_item = {
@@ -155,6 +172,7 @@ def _record_audit(tenant_id, client_id, field, old, new, source, source_id, time
         'timestamp': timestamp
     }
     audit_table.put_item(Item=audit_item)
+
 
 def _unmarshal(image):
     """Deeply unmarshal DynamoDB Image to plain dict/list"""
