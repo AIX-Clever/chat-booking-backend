@@ -37,26 +37,34 @@ def lambda_handler(event, context):
             # Unmarshal DynamoDB JSON to plain dict
             booking = _unmarshal(new_image)
             tenant_id = booking.get('tenantId')
-            customer_info = booking.get('customerInfo', {})
+            
+            # Map flattened fields to customer_info structure
+            customer_info = {
+                'email': booking.get('clientEmail') or booking.get('customerEmail'),
+                'name': booking.get('clientName') or booking.get('customerName'),
+                'phone': booking.get('clientPhone') or booking.get('customerPhone')
+            }
 
             email = customer_info.get('email')
+            booking_id = booking.get('bookingId')
+
             if not email:
                 logger.warning(
-                    f"Booking {booking.get('id')} has no email. Skipping sync."
+                    f"Booking {booking_id} has no email. Skipping sync."
                 )
                 continue
 
-            _sync_client(tenant_id, booking, customer_info)
+            _sync_client(tenant_id, booking_id, customer_info)
 
         except Exception as e:
             logger.error(f"Error processing record: {str(e)}", exc_info=True)
 
 
-def _sync_client(tenant_id, booking, customer_info):
+def _sync_client(tenant_id, booking_id, customer_info):
     email = customer_info.get('email')
     given_name = customer_info.get('name', 'Cliente')
     phone = customer_info.get('phone')
-    booking_id = booking.get('id', 'unknown')
+    # booking_id passed as arg now
 
     # 1. Lookup client by email GSI
     response = clients_table.query(
