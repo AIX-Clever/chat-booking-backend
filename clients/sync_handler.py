@@ -99,7 +99,8 @@ def _sync_client(tenant_id, booking_id, customer_info):
             'createdAt': timestamp,
             'updatedAt': timestamp,
             'source': 'BOOKING',
-            'identifierValue': 'PENDING'  # Placeholder for RUT/CPF
+            'identifierValue': 'PENDING',  # Placeholder for RUT/CPF
+            'identifiers': []  # Required by GraphQL schema
         }
         # Clean None from lists
         new_client['contactInfo'] = [c for c in new_client['contactInfo'] if c]
