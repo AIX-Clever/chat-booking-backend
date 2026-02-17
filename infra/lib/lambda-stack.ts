@@ -667,6 +667,10 @@ export class LambdaStack extends cdk.Stack {
     props.documentsTable.grantReadWriteData(this.presignFunction); // Create PENDING record
     props.documentsTable.grantReadWriteData(this.ingestionFunction); // Update status to INDEXED
 
+    // Grant AdminGetUser to fetch tenantId if missing in claims
+    this.presignFunction.addEnvironment('USER_POOL_ID', props.userPool.userPoolId);
+    props.userPool.grant(this.presignFunction, 'cognito-idp:AdminGetUser');
+
     // CloudWatch alarms for critical functions
     this.createAlarms();
 
