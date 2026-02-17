@@ -26,7 +26,7 @@ def lambda_handler(event: dict, context) -> dict:
     Input: { "fileName": "foo.pdf", "fileType": "application/pdf" }
     Output: { "uploadUrl": "...", "key": "...", "documentId": "..." }
     """
-    """
+
     try:
         # Debug Logging
         logger.info("Presign Handler Event", extra={"event": event})
