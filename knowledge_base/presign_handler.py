@@ -28,13 +28,6 @@ def lambda_handler(event: dict, context) -> dict:
     """
 
     try:
-        # Debug Logging
-        logger.info("Presign Handler Event", extra={"event": event})
-        if event.get("identity"):
-            logger.info("Identity found", extra={"identity": event.get("identity")})
-        else:
-            logger.warning("No identity in event")
-
         field, tenant_id_str, input_data = extract_appsync_event(event)
         tenant_id = TenantId(tenant_id_str)
 
