@@ -85,6 +85,16 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // GSI1: search index for API key lookup by hash (shared repo expects this)
+    this.apiKeysTable.addGlobalSecondaryIndex({
+      indexName: 'GSI1',
+      partitionKey: {
+        name: 'apiKeyHash',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // 3. Services Table
     this.servicesTable = new dynamodb.Table(this, 'ServicesTable', {
       tableName: 'ChatBooking-Services',
