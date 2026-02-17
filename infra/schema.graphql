@@ -46,7 +46,7 @@ enum LocationType {
 }
 
 # Types - Tenant
-type Room @aws_api_key @aws_cognito_user_pools {
+type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
   roomId: ID!
   tenantId: ID!
   name: String!
@@ -77,7 +77,7 @@ enum TenantPlan {
   ENTERPRISE
 }
 
-type Tenant @aws_api_key @aws_cognito_user_pools {
+type Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda {
   tenantId: ID!
   name: String!
   slug: String
@@ -129,7 +129,7 @@ enum UserStatus {
   PENDING_INVITATION
 }
 
-type FAQ @aws_api_key @aws_cognito_user_pools {
+type FAQ @aws_api_key @aws_cognito_user_pools @aws_lambda {
   faqId: ID!
   tenantId: ID!
   question: String!
@@ -138,7 +138,7 @@ type FAQ @aws_api_key @aws_cognito_user_pools {
   active: Boolean!
 }
 
-type Conversation @aws_api_key @aws_cognito_user_pools {
+type Conversation @aws_api_key @aws_cognito_user_pools @aws_lambda {
   conversationId: ID!
   tenantId: ID!
   state: String!
@@ -150,19 +150,19 @@ type Conversation @aws_api_key @aws_cognito_user_pools {
   updatedAt: AWSDateTime!
 }
 
-type Message @aws_api_key @aws_cognito_user_pools {
+type Message @aws_api_key @aws_cognito_user_pools @aws_lambda {
   role: String!
   content: String!
   timestamp: String!
   metadata: AWSJSON
 }
 
-type ChatResponse @aws_api_key @aws_cognito_user_pools {
+type ChatResponse @aws_api_key @aws_cognito_user_pools @aws_lambda {
   conversation: Conversation!
   response: String
 }
 
-type Booking @aws_api_key @aws_cognito_user_pools {
+type Booking @aws_api_key @aws_cognito_user_pools @aws_lambda {
   bookingId: ID!
   tenantId: ID!
   clientId: ID
@@ -282,7 +282,7 @@ type BillingDetails @aws_cognito_user_pools {
 }
 
 # Types - Catalog
-type Category @aws_api_key @aws_cognito_user_pools {
+type Category @aws_api_key @aws_cognito_user_pools @aws_lambda {
   categoryId: ID!
   tenantId: ID!
   name: String!
@@ -294,7 +294,7 @@ type Category @aws_api_key @aws_cognito_user_pools {
   updatedAt: AWSDateTime!
 }
 
-type Service @aws_api_key @aws_cognito_user_pools {
+type Service @aws_api_key @aws_cognito_user_pools @aws_lambda {
   serviceId: ID!
   name: String!
   description: String
@@ -306,7 +306,7 @@ type Service @aws_api_key @aws_cognito_user_pools {
   locationType: [LocationType]
 }
 
-type Provider @aws_api_key @aws_cognito_user_pools {
+type Provider @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID!
   name: String!
   bio: String
@@ -322,7 +322,7 @@ type Provider @aws_api_key @aws_cognito_user_pools {
 }
 
 # Types - Availability
-type TimeSlot @aws_api_key @aws_cognito_user_pools {
+type TimeSlot @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID!
   serviceId: ID!
   start: AWSDateTime!
@@ -587,29 +587,29 @@ input UpdateUserRoleInput {
 # Queries
 type Query {
   # Catalog
-  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools
-  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools
-  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools
-  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools
-  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools
+  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
 
   listRooms: [Room!]! @aws_api_key @aws_cognito_user_pools
   getRoom(roomId: ID!): Room @aws_api_key @aws_cognito_user_pools
   
   # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
   getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_api_key @aws_cognito_user_pools
   
   # Bookings
   getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
   listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! @aws_cognito_user_pools
   listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! @aws_cognito_user_pools
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools @aws_lambda
   
   # Chat
-  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
-  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
-  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
+  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools @aws_lambda
+  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
   
   # Workflow (Admin)
   listWorkflows: [Workflow!]! @aws_cognito_user_pools
@@ -631,7 +631,7 @@ type Query {
   listInvoices: [Invoice!]! @aws_cognito_user_pools
 
   # Public Profile (Microsites)
-  getTenantPublicProfile(slug: String!): PublicProfile @aws_api_key
+  getTenantPublicProfile(slug: String!): PublicProfile @aws_api_key @aws_lambda
 
   # Public Link Status (Admin)
   getPublicLinkStatus(providerId: String): PublicLinkStatus @aws_cognito_user_pools
@@ -650,7 +650,7 @@ type PaymentStatusResponse @aws_cognito_user_pools {
   message: String
 }
 
-type PublicProfile @aws_api_key @aws_cognito_user_pools {
+type PublicProfile @aws_api_key @aws_cognito_user_pools @aws_lambda {
   tenantId: ID!
   name: String!
   slug: String!
@@ -702,7 +702,7 @@ type PublicLinkStatusResponse @aws_cognito_user_pools {
 # Mutations
 type Mutation {
   # Tenant (Public/Auth)
-  registerTenant(input: RegisterTenantInput!): Tenant @aws_api_key
+  registerTenant(input: RegisterTenantInput!): Tenant @aws_api_key @aws_lambda
   updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
 
   # Catalog (Admin)
@@ -742,7 +742,7 @@ type Mutation {
   getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
 
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
+  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools @aws_lambda
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
@@ -763,9 +763,9 @@ type Mutation {
   downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! @aws_cognito_user_pools
 
   # Chat
-  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools
-  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools
-  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools
+  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
   
   # User Management
   resendUserPasswordReset(userId: ID!): Boolean! @aws_cognito_user_pools
