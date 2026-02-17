@@ -227,6 +227,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             except Exception:
                 settings = {}
 
+        # Handle double-serialization (common in some legacy saves)
+        if isinstance(settings, str):
+            try:
+                settings = json.loads(settings)
+            except Exception:
+                pass # Keep as string or whatever it was, but likely will fail dict check
+
         # Double check settings is not None (json.loads can return None) and is a dict
         if not isinstance(settings, dict):
             settings = {}
