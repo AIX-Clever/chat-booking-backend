@@ -1,10 +1,8 @@
 import os
 import boto3
 import json
-from typing import Dict, Any
-from shared.utils import Logger, success_response, error_response
-from shared.domain.entities import Tenant, TenantId
-from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from typing import Dict, Any, List
+from shared.utils import Logger, error_response
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -41,7 +39,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         )
 
         logger.info(
-            f"DynamoDB query response",
+            "DynamoDB query response",
             response_count=response.get("Count", 0),
             items_count=len(response.get("Items", [])),
         )
@@ -88,7 +86,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 tenant_data = tenant_response.get("Item")
 
                 if not tenant_data:
-                    logger.error(f"Tenant {tenant_id} not found for provider {slug}")
+                    logger.error(f"Tenant {tenant_id} not found for {slug}")
                     return None
 
                 # Continue with this tenant_data context, but mark as provider profile
@@ -232,7 +230,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             try:
                 settings = json.loads(settings)
             except Exception:
-                pass # Keep as string or whatever it was, but likely will fail dict check
+                pass  # Keep as string or whatever it was
 
         # Double check settings is not None (json.loads can return None) and is a dict
         if not isinstance(settings, dict):
@@ -303,6 +301,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                 public_profile["profession"] = (
                     "Especialista"  # Or from provider metadata if available
                 )
+
+            # [FIX] If this is a direct professional profile, ONLY show this professional
+            # This prevents showing "Select a Professional" when you are already on their page
+            public_profile["providers"] = [target_provider]
 
         logger.info(
             f"Found public profile for {slug} with {len(services)} services",
