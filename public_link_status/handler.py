@@ -153,7 +153,12 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
     # Logo (Center branding) - Optional for LITE
     if tenant.plan != TenantPlan.LITE:
         settings = tenant.settings or {}
-        has_logo = bool(settings.get("photoUrl") or settings.get("logo"))
+        profile = settings.get("profile", {})
+        has_logo = bool(
+            settings.get("photoUrl") or 
+            settings.get("logo") or 
+            profile.get("logoUrl")
+        )
         checklist.append({
             "item": "logo",
             "status": "COMPLETE" if has_logo else "MISSING",

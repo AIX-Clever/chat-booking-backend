@@ -298,3 +298,41 @@ class TestCompletenessChecklist:
             # Verify status for missing items
             slug_item = next(i for i in checklist if i["item"] == "slug")
             assert slug_item["status"] == "MISSING"
+
+    def test_checklist_detects_logo_in_profile(self):
+        """Test that logo is detected when present in settings.profile.logoUrl."""
+        from public_link_status.handler import build_comprehensive_checklist
+        
+        tenant = Tenant(
+            tenant_id=TenantId("tenant_profile_logo"),
+            name="Business",
+            slug="slug",
+            status=TenantStatus.ACTIVE,
+            plan=TenantPlan.PRO,
+            owner_user_id="user_123",
+            billing_email="test@example.com",
+            settings={"profile": {"logoUrl": "https://example.com/logo.png"}},
+            is_published=False,
+            published_at=None,
+            created_at=datetime.now(timezone.utc),
+        )
+        
+        with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBRoomRepository') as mock_room_repo:
+            
+            mock_svc_repo.return_value.list_by_tenant.return_value = []
+            mock_prov_repo.return_value.list_by_tenant.return_value = []
+            mock_room_repo.return_value.list_by_tenant.return_value = []
+            
+            logger = MagicMock()
+            checklist = build_comprehensive_checklist(
+                TenantId("tenant_profile_logo"), 
+                tenant, 
+                None,
+                logger
+            )
+            
+            logo_item = next(i for i in checklist if i["item"] == "logo")
+            assert logo_item["status"] == "COMPLETE"
+
