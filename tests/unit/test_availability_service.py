@@ -190,5 +190,40 @@ class TestAvailabilityService(unittest.TestCase):
         self.assertEqual(slots[0].end.hour, 13)  # UTC
 
 
+    def test_duplicate_time_ranges(self):
+        """Test that overlapping/duplicate time ranges do not produce duplicate slots"""
+        # Overlapping ranges: 09:00-11:00 and 10:00-12:00
+        # Should produce: 09:00, 10:00, 11:00 (assuming 60m slots)
+        # Without fix, might produce: 09:00, 10:00, 10:00, 11:00
+        availability = ProviderAvailability(
+            tenant_id=self.tenant_id,
+            provider_id=self.provider_id,
+            day_of_week="MON",
+            time_ranges=[
+                TimeRange("09:00", "11:00"),
+                TimeRange("10:00", "12:00"),
+            ],
+        )
+        self.mock_availability_repo.get_provider_availability.return_value = [
+            availability
+        ]
+        self.mock_availability_repo.get_provider_exceptions.return_value = []
+
+        from_date = datetime(2026, 3, 23, 0, 0)
+        to_date = datetime(2026, 3, 23, 23, 59)
+
+        slots = self.service.get_available_slots(
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+        )
+
+        # Check for uniqueness
+        start_times = [s.start.isoformat() for s in slots]
+        self.assertEqual(len(start_times), len(set(start_times)), "Found duplicate slots")
+        
+        # Should be 3 slots: 09:00, 10:00, 11:00
+        self.assertEqual(len(slots), 3)
+
+
 if __name__ == "__main__":
     unittest.main()
+

@@ -218,7 +218,19 @@ class AvailabilityService:
             available_count=len(available_slots),
         )
 
-        return available_slots
+        # [NEW] De-duplicate slots by start time
+        # This handles cases where provider has overlapping/duplicate time ranges
+        unique_slots_map = {}
+        for slot in available_slots:
+            # Use isoformat or timestamp as key
+            key = slot.start.isoformat()
+            if key not in unique_slots_map:
+                unique_slots_map[key] = slot
+        
+        # Sort by start time for consistent output
+        final_slots = sorted(unique_slots_map.values(), key=lambda s: s.start)
+
+        return final_slots
 
     def _generate_candidate_slots(
         self,
