@@ -139,7 +139,7 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
             "status": "COMPLETE" if tenant.name else "MISSING",
             "label": "Nombre del negocio",
             "isRequired": True,
-            "actionUrl": "/settings/profile"
+            "actionUrl": "/settings?tab=profile"
         })
     
     checklist.append({
@@ -159,7 +159,7 @@ def build_comprehensive_checklist(tenant_id: TenantId, tenant: Any, provider_id:
             "status": "COMPLETE" if has_logo else "MISSING",
             "label": "Logo del Centro",
             "isRequired": False,
-            "actionUrl": "/settings/profile"
+            "actionUrl": "/settings?tab=profile"
         })
 
     # 2. Services Infrastructure
