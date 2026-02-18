@@ -59,6 +59,7 @@ export class AssetsStack extends cdk.Stack {
         // Attach OAC to the standard Distribution construct
         const cfnDistribution = this.distribution.node.defaultChild as cloudfront.CfnDistribution;
         cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.OriginAccessControlId', cfnOriginAccessControl.attrId);
+        cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.S3OriginConfig.OriginAccessIdentity', '');
 
         // Grant read permissions to CloudFront (S3 Bucket Policy)
         this.assetsBucket.addToResourcePolicy(new cdk.aws_iam.PolicyStatement({
