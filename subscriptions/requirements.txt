@@ -1,1 +1,3 @@
 mercadopago==2.2.3
+fintoc>=1.0.0
+

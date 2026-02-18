@@ -25,8 +25,10 @@ export class SubscriptionStack extends cdk.Stack {
     public readonly webhookProcessorFunction: lambda.Function;
     public readonly subscriptionWorkerFunction: lambda.Function;
     public readonly listInvoicesFunction: lambda.Function;
+    public readonly fintocWebhookFunction: lambda.Function;
 
     constructor(scope: Construct, id: string, props: SubscriptionStackProps) {
+
         super(scope, id, props);
 
         const backendPath = path.join(process.cwd(), '../');
@@ -83,7 +85,10 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
                 MP_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretVal', 'ChatBooking/MercadoPago')
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
+                FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
+                    .secretValueFromJson('API_KEY').unsafeUnwrap(),
                 LAST_UPDATED: '2026-02-13T22:45:00Z', // Force update for Test Seller Credentials
+
             },
         };
 
@@ -157,7 +162,22 @@ export class SubscriptionStack extends cdk.Stack {
         });
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
 
+        this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
+
+        // G. Fintoc Webhook Function
+        this.fintocWebhookFunction = new lambda.Function(this, 'FintocWebhookFunction', {
+            ...commonProps,
+            description: 'Handle Fintoc webhooks',
+            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
+            handler: 'fintoc_webhook.lambda_handler',
+        });
+
+        const fintocWebhookUrl = this.fintocWebhookFunction.addFunctionUrl({
+            authType: lambda.FunctionUrlAuthType.NONE,
+        });
+
         // 5. IAM Role for EventBridge Scheduler
+
         const schedulerRole = new iam.Role(this, 'SchedulerRole', {
             assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
         });
@@ -192,7 +212,9 @@ export class SubscriptionStack extends cdk.Stack {
         // Outputs
         new cdk.CfnOutput(this, 'SubscriptionsTableName', { value: this.subscriptionsTable.tableName });
         new cdk.CfnOutput(this, 'WebhookUrl', { value: webhookUrl.url });
+        new cdk.CfnOutput(this, 'FintocWebhookUrl', { value: fintocWebhookUrl.url });
         new cdk.CfnOutput(this, 'SchedulerRoleArn', { value: schedulerRole.roleArn });
+
 
         // Late binding of Webhook URL to Subscribe Function
         this.subscribeFunction.addEnvironment('WEBHOOK_URL', webhookUrl.url);
