@@ -31,10 +31,20 @@ export class AssetsStack extends cdk.Stack {
             }]
         });
 
-        // 2. CloudFront Distribution (OAC)
+        // 2. CloudFront Origin Access Control (OAC)
+        const cfnOriginAccessControl = new cloudfront.CfnOriginAccessControl(this, 'AssetsOAC', {
+            originAccessControlConfig: {
+                name: `AssetsOAC-${props.stage}`,
+                originAccessControlOriginType: 's3',
+                signingBehavior: 'always',
+                signingProtocol: 'sigv4',
+            },
+        });
+
+        // 3. CloudFront Distribution
         this.distribution = new cloudfront.Distribution(this, 'AssetsDistribution', {
             defaultBehavior: {
-                origin: new origins.S3Origin(this.assetsBucket), // OAI/OAC handled auto
+                origin: new origins.S3Origin(this.assetsBucket),
                 viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
@@ -45,6 +55,22 @@ export class AssetsStack extends cdk.Stack {
             enableIpv6: true,
             httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
         });
+
+        // Attach OAC to the standard Distribution construct
+        const cfnDistribution = this.distribution.node.defaultChild as cloudfront.CfnDistribution;
+        cfnDistribution.addPropertyOverride('DistributionConfig.Origins.0.OriginAccessControlId', cfnOriginAccessControl.attrId);
+
+        // Grant read permissions to CloudFront (S3 Bucket Policy)
+        this.assetsBucket.addToResourcePolicy(new cdk.aws_iam.PolicyStatement({
+            actions: ['s3:GetObject'],
+            resources: [this.assetsBucket.arnForObjects('*')],
+            principals: [new cdk.aws_iam.ServicePrincipal('cloudfront.amazonaws.com')],
+            conditions: {
+                StringEquals: {
+                    'AWS:SourceArn': `arn:aws:cloudfront::${cdk.Aws.ACCOUNT_ID}:distribution/${this.distribution.distributionId}`
+                }
+            }
+        }));
 
         // Outputs
         new cdk.CfnOutput(this, 'AssetsBucketName', {

@@ -163,13 +163,33 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
     except Exception as e:
         logger.error(f"Error baking provider profile for {slug}: {str(e)}")
 
+from boto3.dynamodb.types import TypeDeserializer
+
+deserializer = TypeDeserializer()
+
 def parse_settings(new_image):
-    settings_raw = new_image.get('settings', {}).get('S', '{}')
-    try:
-        return json.loads(settings_raw)
-    except Exception as e:
-        logger.warning(f"Failed to parse settings JSON: {e}")
-        return {}
+    settings_data = new_image.get('settings', {})
+    
+    # Verify if it's a Stream Record format (S or M)
+    if 'S' in settings_data:
+        try:
+            return json.loads(settings_data['S'])
+        except Exception as e:
+            logger.warning(f"Failed to parse settings JSON string: {e}")
+            return {}
+            
+    if 'M' in settings_data:
+        try:
+            # TypeDeserializer expects the value inside 'M' IF we pass the whole item
+            # But here settings_data IS the wrapper {"M": {...}} or {"S": ...}
+            # deserializer.deserialize(settings_data) should work if valid low-level
+            return deserializer.deserialize(settings_data)
+        except Exception as e:
+            logger.warning(f"Failed to deserialize settings Map: {e}")
+            return {}
+            
+    # Fallback/Empty
+    return {}
 
 def construct_address(profile, new_image):
     address = profile.get('address', {})

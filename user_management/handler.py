@@ -262,6 +262,10 @@ def handle_reset_password(tenant_id: TenantId, user_id: str, caller_role: str) -
         if caller_role == "ADMIN" and user.get("role") == "OWNER":
             raise ValueError("Admins cannot reset Owner passwords")
 
+        # Prevent resetting password for INACTIVE users
+        if user.get("status") == "INACTIVE":
+            raise ValueError("Cannot reset password for an inactive user")
+
         # Call service to reset password
         # Since we haven't updated user_service yet, we might need a direct boto3 call or update service too.
         # Assuming user_service will have this method or we add it now.

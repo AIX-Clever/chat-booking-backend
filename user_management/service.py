@@ -272,6 +272,8 @@ class UserManagementService:
             return True
         except self.cognito.exceptions.UserNotFoundException:
             raise ValueError(f"User {user_id} not found in Cognito")
+        except self.cognito.exceptions.NotAuthorizedException:
+            raise ValueError(f"User {user_id} is disabled or unauthorized in Cognito")
         except Exception as e:
             print(f"Error resetting password for {user_id}: {e}")
             raise
