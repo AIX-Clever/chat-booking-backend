@@ -75,6 +75,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly googleIntegrationFunction: lambda.Function;
   public readonly microsoftIntegrationFunction: lambda.Function;
   public readonly checkPaymentStatusFunction: lambda.Function;
+  public readonly supportManagerFunction: lambda.Function; // New function
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -502,6 +503,25 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadData(this.getPublicProfileFunction);
     props.servicesTable.grantReadData(this.getPublicProfileFunction);
     props.providersTable.grantReadData(this.getPublicProfileFunction);
+
+    // 16. Support Manager Lambda
+    this.supportManagerFunction = new lambda.Function(this, 'SupportManagerFunction', {
+      ...commonProps,
+      description: 'Handles support requests and forwards to GitHub/Email',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'support_manager')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        GITHUB_SUPPORT_REPO: process.env.GITHUB_SUPPORT_REPO || 'marioalvarez/conversacion',
+      }
+    });
+
+    // Grant SSM access to get GitHub Token
+    this.supportManagerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ssm:GetParameter'],
+      resources: [`arn:aws:ssm:${this.region}:${this.account}:parameter/chat-booking/github-token`],
+    }));
 
     // 15b. Public Link Status Lambda
     this.publicLinkStatusFunction = new lambda.Function(this, 'PublicLinkStatusFunction', {

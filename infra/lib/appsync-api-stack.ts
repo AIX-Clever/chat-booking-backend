@@ -37,6 +37,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   publicLinkStatusFunction: lambda.IFunction;
   checkPaymentStatusFunction: lambda.IFunction;
   clientsFunction: lambda.IFunction;
+  supportManagerFunction: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -159,6 +160,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.downgradeFunction
     );
 
+    const supportManagerDataSource = this.api.addLambdaDataSource(
+      'SupportManagerDataSource',
+      props.supportManagerFunction
+    );
+
     // Create resolvers
     this.createResolvers(
       catalogDataSource,
@@ -175,7 +181,8 @@ export class AppSyncApiStack extends cdk.Stack {
       userManagementDataSource,
       apiKeyManagerDataSource,
       subscribeDataSource,
-      downgradeDataSource
+      downgradeDataSource,
+      supportManagerDataSource
     );
 
     const listInvoicesDataSource = this.api.addLambdaDataSource(
@@ -312,7 +319,8 @@ export class AppSyncApiStack extends cdk.Stack {
     userManagementDataSource: appsync.LambdaDataSource,
     apiKeyManagerDataSource: appsync.LambdaDataSource,
     subscribeDataSource: appsync.LambdaDataSource,
-    downgradeDataSource: appsync.LambdaDataSource
+    downgradeDataSource: appsync.LambdaDataSource,
+    supportManagerDataSource: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -768,6 +776,14 @@ export class AppSyncApiStack extends cdk.Stack {
     downgradeDataSource.createResolver('DowngradeResolver', {
       typeName: 'Mutation',
       fieldName: 'downgrade',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Support Resolver
+    supportManagerDataSource.createResolver('CreateSupportIssueResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createSupportIssue',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });

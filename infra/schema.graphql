@@ -584,6 +584,12 @@ input UpdateUserRoleInput {
   role: UserRole!
 }
 
+input SupportIssueInput {
+  subject: String!
+  description: String!
+  tenantId: ID!
+}
+
 # Queries
 type Query {
   # Catalog
@@ -770,6 +776,9 @@ type Mutation {
   # User Management
   resendUserPasswordReset(userId: ID!): Boolean! @aws_cognito_user_pools
   resendInvitation(userId: ID!): Boolean! @aws_cognito_user_pools
+
+  # Support
+  createSupportIssue(input: SupportIssueInput!): Boolean! @aws_cognito_user_pools
 
   # Public Link Status (Admin)
   setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! @aws_cognito_user_pools
