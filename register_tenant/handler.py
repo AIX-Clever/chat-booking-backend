@@ -139,14 +139,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             logger.info(f"Created Cognito user {email} with sub {user_sub}")
 
             # Set permanent password using User Sub (more reliable than email/username alias)
+            # FIX: Use 'email' (the explicitly used Username during creation) to avoid any lookup ambiguity
             cognito.admin_set_user_password(
                 UserPoolId=user_pool_id,
-                Username=user_sub,
+                Username=email,
                 Password=password,
                 Permanent=True,
             )
 
-            logger.info(f"Set permanent password for user {user_sub}")
+            logger.info(f"Set permanent password for user {email}")
 
         except cognito.exceptions.UsernameExistsException:
             # Check if user exists but has no tenant? Or just fail.
