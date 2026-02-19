@@ -247,3 +247,4 @@ def check_plan_limit(plan: str, metric: str, current_usage: int) -> None:
         raise PlanLimitExceeded(
             f"Plan {plan} limit exceeded for {metric}. Limit: {limit}, Current: {current_usage}"
         )
+# intentional change to test validation
