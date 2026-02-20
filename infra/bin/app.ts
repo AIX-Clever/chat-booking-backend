@@ -80,6 +80,7 @@ const subscriptionStack = new SubscriptionStack(app, `${stackPrefix}-Subscriptio
   description: 'SaaS Subscriptions Core (DynamoDB + SQS + Lambdas)',
   tags,
   tenantsTable: databaseStack.tenantsTable,
+  userPool: authStack.userPool,
   envName: env,
 });
 subscriptionStack.addDependency(databaseStack);

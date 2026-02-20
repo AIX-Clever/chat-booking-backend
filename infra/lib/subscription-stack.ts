@@ -11,6 +11,7 @@ import * as path from 'path';
 
 interface SubscriptionStackProps extends cdk.StackProps {
     tenantsTable: dynamodb.ITable;
+    userPool: lambda.IResource; // Passing UserPool as IResource to simplify permissions if needed, or specific IUserPool
     envName: string;
 }
 
@@ -87,7 +88,8 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
                     .secretValueFromJson('API_KEY').unsafeUnwrap(),
-                LAST_UPDATED: '2026-02-13T22:45:00Z', // Force update for Test Seller Credentials
+                USER_POOL_ID: (props.userPool as any).userPoolId,
+                LAST_UPDATED: '2026-02-20T01:50:00Z', // Force update
 
             },
         };
@@ -103,6 +105,12 @@ export class SubscriptionStack extends cdk.Stack {
         });
         this.subscriptionsTable.grantReadWriteData(this.subscribeFunction);
         props.tenantsTable.grantReadData(this.subscribeFunction);
+
+        // Grant permission to fetch user attributes (fallback for tenantId)
+        this.subscribeFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['cognito-idp:AdminGetUser'],
+            resources: [(props.userPool as any).userPoolArn],
+        }));
 
         // B. Downgrade Handler
         this.downgradeFunction = new lambda.Function(this, 'DowngradeFunction', {
