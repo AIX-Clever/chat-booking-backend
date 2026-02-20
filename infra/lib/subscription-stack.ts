@@ -90,7 +90,7 @@ export class SubscriptionStack extends cdk.Stack {
                 FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
                     .secretValueFromJson('API_KEY').unsafeUnwrap(),
                 USER_POOL_ID: props.userPool.userPoolId,
-                LAST_UPDATED: '2026-02-20T12:45:00Z', // Force update with linter fix and separation
+                LAST_UPDATED: '2026-02-20T13:20:00Z', // Force pick up of new Layer version with pinned SDK
 
             },
         };
