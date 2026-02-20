@@ -73,7 +73,7 @@ def lambda_handler(event, _context):
                 from shared.subscriptions.fintoc_client import FintocClient
                 fintoc_client = FintocClient()
                 
-                fintoc_env = os.environ.get('FINTOC_ENV', 'live')
+                fintoc_env = os.environ.get('FINTOC_ENV', 'test')
                 fintoc_client.environment = fintoc_env
                 
                 print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env}")
