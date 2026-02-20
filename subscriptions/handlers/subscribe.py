@@ -14,28 +14,31 @@ from shared.subscriptions.config import SubscriptionConfig
 from shared.subscriptions.entities import Subscription, SubscriptionStatus, PlanType
 
 
-# Initialize clients
+# Initialize resource at top level (AWS SDK is usually safe)
 dynamodb = boto3.resource('dynamodb')
 scheduler = boto3.client('scheduler')
-# We still initialize these for other potential uses or legacy consistency,
-# but we will bypass them for creation to support notification_url hotfix.
-mp_client = MercadoPagoClient()
-fintoc_client = FintocClient()
-subscription_service = SubscriptionService(mp_client)
-
-
-SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
-WORKER_ARN = os.getenv('WORKER_ARN', '')
-SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '')
+SUBSCRIPTIONS_TABLE_NAME = SubscriptionConfig.SUBSCRIPTIONS_TABLE
 
 def lambda_handler(event, _context):
     """
-    Handles subscription creation requests.
+    Handles subscription creation requests with enhanced logging for debugging.
     """
+    print(f"[INTERNAL_LOG] Starting subscribe handler. Event: {json.dumps(event)}")
+    
     try:
+        # Initialize clients inside handler to catch import/init errors
+        print("[INTERNAL_LOG] Initializing Gateway Clients...")
+        from shared.subscriptions.mercadopago_client import MercadoPagoClient
+        from shared.subscriptions.fintoc_client import FintocClient
+        from shared.application.subscription_service import SubscriptionService
+        
+        mp_client = MercadoPagoClient()
+        fintoc_client = FintocClient()
+        
         # Extract tenant_id from AppSync event
         tenant_id = extract_tenant_id(event)
         if not tenant_id:
+            print("[INTERNAL_LOG] Error: Missing tenantId")
             raise ValueError('Missing tenantId in request context')
 
         # Extract arguments from AppSync event
@@ -43,9 +46,9 @@ def lambda_handler(event, _context):
         plan_id_str = args.get('planId', 'lite')
         payer_email = args.get('email')
         payment_method = args.get("paymentMethod", "mercadopago")
-        print(f"DEBUG: Processing subscription for {tenant_id}, Method: {payment_method}, Plan: {plan_id_str}")
         back_url = args.get('backUrl', 'https://control.holalucia.cl')
-
+        
+        print(f"[INTERNAL_LOG] Params: tenant={tenant_id}, method={payment_method}, plan={plan_id_str}, email={payer_email}")
 
         # Validate inputs
         if not payer_email:
@@ -54,9 +57,9 @@ def lambda_handler(event, _context):
         try:
             plan_enum = PlanType(plan_id_str)
         except ValueError as exc:
-            raise ValueError('Invalid planId') from exc
+            print(f"[INTERNAL_LOG] Error: Invalid plan {plan_id_str}")
+            raise ValueError(f'Invalid planId: {plan_id_str}') from exc
 
-        # Business Logic
         # Determine Price
         full_price = SubscriptionConfig.PLAN_PRICES.get(plan_id_str, 15000)
         price = SubscriptionConfig.PROMO_PRICE if plan_id_str == 'lite' else full_price
@@ -65,39 +68,39 @@ def lambda_handler(event, _context):
         init_point = None
 
         if payment_method == 'fintoc':
-            # --- FINTOC LOGIC ---
-            print(f"Initializing Fintoc for {payer_email} (Tenant: {tenant_id})")
+            print("[INTERNAL_LOG] Flow: Fintoc")
             try:
                 # Ensure we use the correct environment
-                fintoc_env = os.environ.get('FINTOC_ENV', 'live') # Default to live if not specified
+                fintoc_env = os.environ.get('FINTOC_ENV', 'live')
                 fintoc_client.environment = fintoc_env
                 
-                # Create Link Intent for Widget
+                print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env}")
                 result = fintoc_client.create_link_intent()
+                print(f"[INTERNAL_LOG] Fintoc Result: {result}")
                 
                 if not result or 'widget_token' not in result or 'link_intent_id' not in result:
-                    print(f"Fintoc invalid result format: {result}")
-                    raise RuntimeError("Fintoc returned an invalid or empty response")
+                    print(f"[INTERNAL_LOG] Error: Fintoc invalid result format: {result}")
+                    raise RuntimeError(f"Fintoc returned an invalid response format: {result}")
 
                 preapproval_id = result['link_intent_id']
                 init_point = result['widget_token']
-
-                print(f"Fintoc Intent Created Successfully: {preapproval_id}")
+                
+                print(f"[INTERNAL_LOG] Fintoc ID: {preapproval_id}")
 
             except Exception as e:
-                print(f"Fintoc Critical Error: {str(e)}")
-                # Re-raise with a clear message to avoid the 'Cannot return null' GraphQL error
-                raise RuntimeError(f"Fintoc Initialization Error: {str(e)}") from e
+                print(f"[INTERNAL_LOG] Fintoc Exception: {str(e)}")
+                raise RuntimeError(f"Fintoc Error: {str(e)}") from e
 
         else:
-            # --- MERCADOPAGO LOGIC (Existing) ---
-            # 2. Create Preapproval - HOTFIX: Direct SDK usage to support notification_url
-            # (Bypassing shared layer to avoid deployment sync issues)
+            print("[INTERNAL_LOG] Flow: MercadoPago")
             webhook_url = os.environ.get('WEBHOOK_URL')
             mp_access_token = os.environ.get('MP_ACCESS_TOKEN')
 
+            if not mp_access_token:
+                print("[INTERNAL_LOG] Error: Missing MP_ACCESS_TOKEN")
+                raise RuntimeError("MercadoPago configuration missing")
+
             try:
-                # Direct SDK Call
                 sdk = mercadopago.SDK(mp_access_token)
                 reason = f"Suscripción Hola Lucía {plan_id_str.upper()}"
 
@@ -117,7 +120,7 @@ def lambda_handler(event, _context):
                 if webhook_url:
                     preapproval_data["notification_url"] = webhook_url
 
-                print(f"Creating Preapproval with data: {json.dumps(preapproval_data)}")
+                print(f"[INTERNAL_LOG] Creating MP Preapproval: {json.dumps(preapproval_data)}")
 
                 request_options = mercadopago.config.RequestOptions()
                 result = sdk.preapproval().create(preapproval_data, request_options)
@@ -126,94 +129,99 @@ def lambda_handler(event, _context):
                     response = result["response"]
                     preapproval_id = response.get("id")
                     init_point = response.get("init_point")
+                    print(f"[INTERNAL_LOG] MP Success: {preapproval_id}")
                 else:
                     error_msg = result.get("response", {}).get("message", "Unknown error")
-                    print(f"MP Create Error: {result}")
-
-                     # Check for Sandbox collision (Real vs Test users)
+                    print(f"[INTERNAL_LOG] MP API Error: {result}")
                     if "payer and collector must be real or test users" in error_msg:
                         raise ValueError("Sandbox Error: Use a Test User email (e.g., test_user_...)")
-
-                    raise RuntimeError(f"Failed to create preapproval: {error_msg}")
+                    raise RuntimeError(f"Failed to create MP preapproval: {error_msg}")
 
             except Exception as e:
-                # Fallback for Development/Sandbox Friction
                 if "Sandbox Error" in str(e):
-                    print("WARNING: Using Mock Subscription due to Sandbox Constraint")
-                    price = SubscriptionConfig.PROMO_PRICE if plan_id_str == 'lite' else 15000
-                    full_price = 15000
+                    print("[INTERNAL_LOG] Fallback: Mocking due to Sandbox constraint")
                     preapproval_id = f"mock_{tenant_id}_{int(datetime.utcnow().timestamp())}"
                     init_point = f"{back_url}?status=approved&payment_id={preapproval_id}&mock=true"
                 else:
+                    print(f"[INTERNAL_LOG] MP Exception: {str(e)}")
                     raise e
 
+        # Final check before persistence
+        if not preapproval_id or not init_point:
+            print(f"[INTERNAL_LOG] Error: Resulting IDs are null. subId={preapproval_id}, init={init_point}")
+            raise RuntimeError("Internal Error: Gateway response incomplete")
 
-        # 3. Schedule Promo Removal (if applicable)
+        # Persistence and Scheduler (Omitted for brevity in this log, but keeping logic)
+        # 3. Schedule Promo Removal
         scheduler_arn = None
         if price < full_price:
-            end_promo_date = datetime.utcnow() + timedelta(days=30 * SubscriptionConfig.PROMO_DURATION_MONTHS)
-            schedule_name = f"PromoEnd_{tenant_id}_{preapproval_id}"
-
+            print("[INTERNAL_LOG] Scheduling promo removal...")
             try:
-                # Format: yyyy-mm-ddThh:mm:ss
+                end_promo_date = datetime.utcnow() + timedelta(days=30 * SubscriptionConfig.PROMO_DURATION_MONTHS)
+                schedule_name = f"PromoEnd_{tenant_id}_{preapproval_id}"
                 at_expression = f"at({end_promo_date.strftime('%Y-%m-%dT%H:%M:%S')})"
+                
+                WORKER_ARN = os.getenv('WORKER_ARN', '')
+                SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '')
 
-                response = scheduler.create_schedule(
-                    Name=schedule_name,
-                    ScheduleExpression=at_expression,
-                    Target={
-                        'Arn': WORKER_ARN,
-                        'RoleArn': SCHEDULER_ROLE_ARN,
-                        'Input': json.dumps({
-                            'action': 'REMOVE_PROMO',
-                            'tenant_id': tenant_id,
-                            'subscription_id': preapproval_id,
-                            'target_price': full_price
-                        })
-                    },
-                    FlexibleTimeWindow={'Mode': 'OFF'}
-                )
-                scheduler_arn = response['ScheduleArn']
+                if WORKER_ARN and SCHEDULER_ROLE_ARN:
+                    response = scheduler.create_schedule(
+                        Name=schedule_name,
+                        ScheduleExpression=at_expression,
+                        Target={
+                            'Arn': WORKER_ARN,
+                            'RoleArn': SCHEDULER_ROLE_ARN,
+                            'Input': json.dumps({
+                                'action': 'REMOVE_PROMO',
+                                'tenant_id': tenant_id,
+                                'subscription_id': preapproval_id,
+                                'target_price': full_price
+                            })
+                        },
+                        FlexibleTimeWindow={'Mode': 'OFF'}
+                    )
+                    scheduler_arn = response.get('ScheduleArn')
+                    print(f"[INTERNAL_LOG] Promo scheduled: {scheduler_arn}")
             except Exception as e:
-                print(f"Scheduler Error: {str(e)}")
-                # Continue, don't block subscription, but log error (manual fix needed)
+                print(f"[INTERNAL_LOG] Scheduler Warning: {str(e)}")
 
         # 4. Persistence
+        print("[INTERNAL_LOG] Persisting subscription to DynamoDB...")
+        table = dynamodb.Table(SUBSCRIPTIONS_TABLE_NAME)
         sub = Subscription(
             tenant_id=tenant_id,
-            subscription_id=preapproval_id, # Using MP ID as PK component
-            status=SubscriptionStatus.PENDING, # Pending until webhook confirms payment/auth
+            subscription_id=preapproval_id,
+            status=SubscriptionStatus.PENDING,
             plan_id=plan_enum,
             current_price=price,
             mp_preapproval_id=preapproval_id,
             is_promo_active=True,
             promo_scheduler_arn=scheduler_arn
         )
-
-        SUBSCRIPTIONS_TABLE.put_item(Item=sub.to_item())
-
-        # 5. Create 'CURRENT' pointer for Webhook Processing
-        # This ensures the webhook processor can find the active subscription easily
+        table.put_item(Item=sub.to_item())
+        
+        # 5. Create 'CURRENT' pointer
         sub_current = Subscription(
             tenant_id=tenant_id,
-            subscription_id='CURRENT',  # Fixed ID for active sub lookup
+            subscription_id='CURRENT',
             status=SubscriptionStatus.PENDING,
             plan_id=plan_enum,
             current_price=price,
-            mp_preapproval_id=preapproval_id,  # Link to real ID
+            mp_preapproval_id=preapproval_id,
             is_promo_active=True,
             promo_scheduler_arn=scheduler_arn
         )
-        SUBSCRIPTIONS_TABLE.put_item(Item=sub_current.to_item())
+        table.put_item(Item=sub_current.to_item())
 
-        # Return data directly for AppSync (not wrapped in HTTP response)
+        print(f"[INTERNAL_LOG] Handler finished successfully for {tenant_id}")
         return {
-            'subscriptionId': preapproval_id,
-            'initPoint': init_point,
+            'subscriptionId': str(preapproval_id),
+            'initPoint': str(init_point),
             'message': 'Subscription initialized'
         }
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"[INTERNAL_LOG] UNHANDLED EXCEPTION: {str(e)}")
+        # IMPORTANT: Rethrow as RuntimeError to ensure AppSync sees the error
         raise RuntimeError(f'Internal Server Error: {str(e)}') from e
 

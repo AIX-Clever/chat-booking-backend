@@ -21,27 +21,49 @@ class FintocClient:
         """
         Creates a Link Intent to initialize the Fintoc Widget.
         """
+        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Product: {product}, Key: {self.api_key[:10]}...")
         try:
             # Re-initialize client if api_key changed
             self.client = Fintoc(self.api_key)
+            print("[INTERNAL_LOG] Fintoc SDK Client initialized.")
 
             # Use SDK manager for link_intents
+            print(f"[INTERNAL_LOG] Executing self.client.link_intents.create(product='{product}', ...)")
             link_intent = self.client.link_intents.create(
                 product=product,
                 holder_type=holder_type,
                 country=country
             )
             
-            if not link_intent or not hasattr(link_intent, 'widget_token'):
-                print(f"Fintoc SDK result error: {link_intent}")
-                raise ValueError(f"Fintoc API returned unexpected result: {link_intent}")
+            print(f"[INTERNAL_LOG] Link Intent creation result type: {type(link_intent)}")
+            
+            if not link_intent:
+                print("[INTERNAL_LOG] Error: Fintoc SDK returned None")
+                raise ValueError("Fintoc API returned None (Possible timeout or network issue)")
+
+            # Check for attributes (Python SDK objects have attributes)
+            widget_token = getattr(link_intent, 'widget_token', None)
+            link_id = getattr(link_intent, 'id', None)
+            
+            print(f"[INTERNAL_LOG] Extracted widget_token: {widget_token[:10] if widget_token else 'NONE'}...")
+            print(f"[INTERNAL_LOG] Extracted link_id: {link_id}")
+
+            if not widget_token or not link_id:
+                # Try dictionary access as fallback if it's a dict
+                if isinstance(link_intent, dict):
+                    widget_token = link_intent.get('widget_token')
+                    link_id = link_intent.get('id')
+                
+                if not widget_token or not link_id:
+                    print(f"[INTERNAL_LOG] Error: Missing mandatory fields in link_intent: {link_intent}")
+                    raise ValueError(f"Fintoc API result missing fields. Result: {link_intent}")
 
             return {
-                'widget_token': link_intent.widget_token,
-                'link_intent_id': link_intent.id
+                'widget_token': widget_token,
+                'link_intent_id': link_id
             }
         except Exception as e:
-            print(f"Fintoc SDK Error in create_link_intent: {str(e)}")
+            print(f"[INTERNAL_LOG] FintocClient Exception: {str(e)}")
             raise e
 
     def get_movement(self, movement_id, link_token):

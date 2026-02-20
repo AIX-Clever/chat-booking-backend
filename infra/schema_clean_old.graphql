@@ -1,0 +1,530 @@
+
+# Scalars
+scalar AWSDateTime
+scalar AWSJSON
+
+# Enums
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  NONE
+  PENDING
+  PAID
+  FAILED
+}
+
+enum ConversationState {
+  INIT
+  SERVICE_PENDING
+  SERVICE_SELECTED
+  PROVIDER_PENDING
+  PROVIDER_SELECTED
+  SLOT_PENDING
+  CONFIRM_PENDING
+  BOOKING_CONFIRMED
+}
+
+
+# Types - Tenant
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum TenantPlan {
+  LITE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+type Tenant   {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  status: TenantStatus!
+  plan: TenantPlan!
+  ownerUserId: String!
+  billingEmail: String!
+  settings: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ApiKey {
+  apiKey: String!
+  tenantId: ID!
+  status: String!
+  createdAt: AWSDateTime!
+  expiresAt: AWSDateTime!
+}
+
+type FAQ   {
+  faqId: ID!
+  tenantId: ID!
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean!
+}
+
+# Types - Dashboard Metrics
+type DashboardSummary  {
+  revenue: Float!
+  bookings: Int!
+  messages: Int!
+  tokensIA: Int!
+  conversionsChat: Int!
+  aiResponses: Int!
+  conversionRate: Float!
+  autoAttendanceRate: Float!
+}
+
+type DailyMetric  {
+  date: String!
+  bookings: Int!
+  messages: Int!
+}
+
+type TopService  {
+  serviceId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type TopProvider  {
+  providerId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type BookingStatusCounts  {
+  CONFIRMED: Int!
+  PENDING: Int!
+  CANCELLED: Int!
+  NO_SHOW: Int!
+}
+
+type MetricError  {
+  type: String!
+  count: Int!
+  lastOccurred: String
+}
+
+type DashboardMetrics  {
+  period: String!
+  summary: DashboardSummary!
+  daily: [DailyMetric!]!
+  topServices: [TopService!]!
+  topProviders: [TopProvider!]!
+  bookingStatus: BookingStatusCounts!
+  errors: [MetricError!]!
+}
+
+type PlanUsage  {
+  messages: Int!
+  bookings: Int!
+  tokensIA: Int!
+}
+
+# Types - Catalog
+type Category   {
+  categoryId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  displayOrder: Int
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Service   {
+  serviceId: ID!
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+  available: Boolean!
+}
+
+type Provider   {
+  providerId: ID!
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  metadata: AWSJSON
+  available: Boolean!
+}
+
+# Types - Availability
+type TimeSlot   {
+  providerId: ID!
+  serviceId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  isAvailable: Boolean!
+}
+
+type TimeRange   {
+  startTime: String!
+  endTime: String!
+}
+
+type ProviderAvailability  {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRange!]!
+  breaks: [TimeRange!]
+  exceptions: [String!]
+}
+
+# Types - Bookings
+type Booking   {
+  bookingId: ID!
+  tenantId: ID!
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  status: BookingStatus!
+  clientName: String!
+  clientEmail: String!
+  clientPhone: String
+  notes: String
+  conversationId: ID
+  paymentStatus: PaymentStatus!
+  totalAmount: Float!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Types - Chat
+type Message  {
+  role: String!
+  content: String!
+  type: String!
+  timestamp: String!
+}
+
+type Conversation  {
+  conversationId: ID!
+  tenantId: ID!
+  state: ConversationState!
+  context: AWSJSON
+  messages: [Message!]!
+  channel: String!
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ChatResponse  {
+  conversation: Conversation!
+  response: AWSJSON!
+}
+
+# Types - Workflow
+type WorkflowStep  {
+  stepId: String!
+  type: String!
+  content: AWSJSON
+  next: String
+}
+
+type Workflow  {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  steps: AWSJSON! # JSON object with map of steps
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+
+# Inputs - Tenant
+input RegisterTenantInput {
+  companyName: String!
+  email: String!
+  password: String!
+}
+
+input UpdateTenantInput {
+  name: String
+  billingEmail: String
+  settings: AWSJSON
+}
+
+# Inputs - FAQs
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
+}
+
+# Inputs - Catalog
+input CreateCategoryInput {
+  name: String!
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input UpdateCategoryInput {
+  categoryId: ID!
+  name: String
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input CreateServiceInput {
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+}
+
+input UpdateServiceInput {
+  serviceId: ID!
+  name: String
+  description: String
+  category: String
+  durationMinutes: Int
+  price: Float
+  available: Boolean
+}
+
+input CreateProviderInput {
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  metadata: AWSJSON
+}
+
+input UpdateProviderInput {
+  providerId: ID!
+  name: String
+  bio: String
+  serviceIds: [ID!]
+  timezone: String
+  metadata: AWSJSON
+  available: Boolean
+}
+
+# Inputs - Availability
+input GetAvailableSlotsInput {
+  serviceId: ID!
+  providerId: ID!
+  from: AWSDateTime!
+  to: AWSDateTime!
+}
+
+input TimeRangeInput {
+  startTime: String!
+  endTime: String!
+}
+
+input SetAvailabilityInput {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRangeInput!]!
+  breaks: [TimeRangeInput!]
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
+type ProviderExceptions  {
+  providerId: ID!
+  exceptions: [String!]!
+}
+
+# Inputs - Bookings
+input CreateBookingInput {
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  clientName: String!
+  clientEmail: String!
+  clientPhone: String
+  notes: String
+  conversationId: ID
+}
+
+input ConfirmBookingInput {
+  bookingId: ID!
+}
+
+input CancelBookingInput {
+  bookingId: ID!
+  reason: String
+}
+
+input GetBookingInput {
+  bookingId: ID!
+}
+
+input ListBookingsByProviderInput {
+  providerId: ID!
+  startDate: AWSDateTime!
+  endDate: AWSDateTime!
+}
+
+input ListBookingsByClientInput {
+  clientEmail: String!
+}
+
+input GetBookingByConversationInput {
+  conversationId: ID!
+}
+
+# Inputs - Chat
+input StartConversationInput {
+  channel: String
+  metadata: AWSJSON
+}
+
+input SendMessageInput {
+  conversationId: ID!
+  message: String!
+  messageType: String
+  userData: AWSJSON
+}
+
+input ConfirmBookingFromConversationInput {
+  conversationId: ID!
+}
+
+input GetConversationInput {
+  conversationId: ID!
+}
+
+# Inputs - Workflow
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  steps: AWSJSON!
+  metadata: AWSJSON
+  isActive: Boolean
+}
+
+input UpdateWorkflowInput {
+  workflowId: ID!
+  name: String
+  description: String
+  steps: AWSJSON
+  metadata: AWSJSON
+  isActive: Boolean
+}
+
+# Queries
+type Query {
+  # Catalog
+  listCategories(activeOnly: Boolean): [Category!]!  
+  searchServices(text: String, availableOnly: Boolean): [Service!]!  
+  getService(serviceId: ID!): Service  
+  listProviders: [Provider!]!  
+  listProvidersByService(serviceId: ID!): [Provider!]!  
+  
+  # Availability
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!  
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! 
+  
+  # Bookings
+  getBooking(input: GetBookingInput!): Booking  
+  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! 
+  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! 
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking  
+  
+  # Chat
+  getConversation(input: GetConversationInput!): Conversation  
+  getTenant(tenantId: ID): Tenant  
+  listFAQs: [FAQ!]!  
+  
+  # Workflow (Admin)
+  listWorkflows: [Workflow!]! 
+  getWorkflow(workflowId: ID!): Workflow 
+
+  # Dashboard Metrics (Admin)
+  getDashboardMetrics: DashboardMetrics 
+  getPlanUsage: PlanUsage 
+}
+
+# Mutations
+type Mutation {
+  # Tenant (Public/Auth)
+  registerTenant(input: RegisterTenantInput!): Tenant! 
+  updateTenant(input: UpdateTenantInput!): Tenant! 
+
+  # Catalog (Admin)
+  createCategory(input: CreateCategoryInput!): Category! 
+  updateCategory(input: UpdateCategoryInput!): Category! 
+  deleteCategory(categoryId: ID!): Category! 
+
+  createService(input: CreateServiceInput!): Service! 
+  updateService(input: UpdateServiceInput!): Service! 
+  deleteService(serviceId: ID!): Service! 
+  
+  createProvider(input: CreateProviderInput!): Provider! 
+  updateProvider(input: UpdateProviderInput!): Provider! 
+  deleteProvider(providerId: ID!): Provider! 
+  
+  # Availability (Admin)
+  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! 
+  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! 
+  
+  # FAQs (Admin)
+  createFAQ(input: CreateFAQInput!): FAQ! 
+  updateFAQ(input: UpdateFAQInput!): FAQ! 
+  deleteFAQ(faqId: ID!): FAQ! 
+
+  # Workflows (Admin)
+  createWorkflow(input: CreateWorkflowInput!): Workflow! 
+  updateWorkflow(input: UpdateWorkflowInput!): Workflow! 
+  deleteWorkflow(workflowId: ID!): Workflow! 
+
+  # Bookings
+  createBooking(input: CreateBookingInput!): Booking!  
+  confirmBooking(input: ConfirmBookingInput!): Booking! 
+  cancelBooking(input: CancelBookingInput!): Booking! 
+  markAsNoShow(bookingId: ID!): Booking! 
+  
+  # Chat
+  startConversation(input: StartConversationInput!): ChatResponse! 
+  sendMessage(input: SendMessageInput!): ChatResponse! 
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! 
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

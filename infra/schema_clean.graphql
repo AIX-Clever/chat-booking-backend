@@ -1,0 +1,921 @@
+
+# Scalars
+scalar AWSDateTime
+scalar AWSJSON
+
+# Enums
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  NONE
+  PENDING
+  PAID
+  FAILED
+}
+
+type SubscriptionResponse  {
+  subscriptionId: String!
+  initPoint: String!
+  message: String
+}
+
+type DowngradeResponse  {
+  message: String!
+  effectiveDate: String!
+}
+
+enum ConversationState {
+  INIT
+  SERVICE_PENDING
+  SERVICE_SELECTED
+  PROVIDER_PENDING
+  PROVIDER_SELECTED
+  SLOT_PENDING
+  CONFIRM_PENDING
+  BOOKING_CONFIRMED
+}
+
+enum LocationType {
+  ONLINE
+  PHYSICAL
+}
+
+# Types - Tenant
+type Room    {
+  roomId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  capacity: Int!
+  status: String!
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+  TRIAL
+  PENDING_PAYMENT
+}
+
+enum TenantPlan {
+  LITE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+type Tenant    {
+  tenantId: ID!
+  name: String!
+  slug: String
+  status: TenantStatus!
+  plan: TenantPlan!
+  ownerUserId: String!
+  billingEmail: String!
+  settings: AWSJSON
+  services: [Service]
+  isPublished: Boolean
+  publishedAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ApiKey  {
+  apiKeyId: ID!
+  tenantId: ID!
+  name: String
+  keyPreview: String
+  status: String!
+
+  createdAt: AWSDateTime!
+  lastUsedAt: AWSDateTime
+  apiKey: String # Only populated on creation
+}
+
+# User Management Types
+type TenantUser  {
+  userId: ID!
+  tenantId: ID!
+  email: String!
+  name: String
+  role: UserRole!
+  status: UserStatus!
+  createdAt: AWSDateTime!
+  lastLogin: AWSDateTime
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_INVITATION
+}
+
+type FAQ    {
+  faqId: ID!
+  tenantId: ID!
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean!
+}
+
+type Conversation    {
+  conversationId: ID!
+  tenantId: ID!
+  state: String!
+  context: AWSJSON
+  messages: [Message!]
+  channel: String
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Message    {
+  role: String!
+  content: String!
+  timestamp: String!
+  metadata: AWSJSON
+}
+
+type ChatResponse    {
+  conversation: Conversation!
+  response: String
+}
+
+type Booking    {
+  bookingId: ID!
+  tenantId: ID!
+  clientId: ID
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  status: BookingStatus!
+  paymentStatus: PaymentStatus
+  clientName: String
+  clientEmail: String
+  clientPhone: String
+  notes: String
+  roomId: ID
+  conversationId: ID
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Workflow  {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  steps: AWSJSON!
+  metadata: AWSJSON
+  isActive: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Types - Dashboard Metrics
+type DashboardSummary  {
+  revenue: Float!
+  bookings: Int!
+  messages: Int!
+  tokensIA: Int!
+  conversionsChat: Int!
+  aiResponses: Int!
+  conversionRate: Float!
+  autoAttendanceRate: Float!
+}
+
+type DailyMetric  {
+  date: String!
+  bookings: Int!
+  messages: Int!
+}
+
+type TopService  {
+  serviceId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type TopProvider  {
+  providerId: ID!
+  name: String!
+  bookings: Int!
+}
+
+type BookingStatusCounts  {
+  CONFIRMED: Int!
+  PENDING: Int!
+  CANCELLED: Int!
+  NO_SHOW: Int!
+}
+
+type MetricError  {
+  type: String!
+  count: Int!
+  lastOccurred: String
+}
+
+type DashboardMetrics  {
+  period: String!
+  summary: DashboardSummary!
+  daily: [DailyMetric!]!
+  topServices: [TopService!]!
+  topProviders: [TopProvider!]!
+  bookingStatus: BookingStatusCounts!
+  errors: [MetricError!]!
+}
+
+type PlanUsage  {
+  messages: Int!
+  bookings: Int!
+  tokensIA: Int!
+  providers: Int!
+}
+
+# Billing & Invoices
+enum InvoiceStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+type Invoice  {
+  invoiceId: ID!
+  tenantId: ID!
+  amount: Float!
+  currency: String!
+  status: InvoiceStatus!
+  date: AWSDateTime!
+  pdfUrl: String
+  metadata: AWSJSON
+}
+
+type BillingDetails  {
+  companyName: String
+  rut: String
+  address: String
+  city: String
+}
+
+# Types - Catalog
+type Category    {
+  categoryId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  isActive: Boolean!
+  displayOrder: Int
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Service    {
+  serviceId: ID!
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+  available: Boolean!
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
+}
+
+type Provider    {
+  providerId: ID!
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+  available: Boolean!
+  hasGoogleCalendar: Boolean
+  slug: String
+  professionalLicense: String
+}
+
+# Types - Availability
+type TimeSlot    {
+  providerId: ID!
+  serviceId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  isAvailable: Boolean!
+}
+
+type TimeRange   {
+  startTime: String!
+  endTime: String!
+}
+
+type ProviderAvailability  {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRange!]!
+  breaks: [TimeRange!]
+  exceptions: [ExceptionRule!]
+}
+
+type ExceptionRule   {
+  date: String!
+  timeRanges: [TimeRange!]!
+}
+
+# Inputs - Shared
+input TimeRangeInput {
+  startTime: String!
+  endTime: String!
+}
+
+# Inputs - Tenant & Catalog
+input RegisterTenantInput {
+  email: String!
+  password: String!
+  companyName: String!
+  plan: TenantPlan
+}
+
+input UpdateTenantInput {
+  name: String
+  slug: String
+  billingEmail: String
+  settings: AWSJSON
+}
+
+input CreateCategoryInput {
+  name: String!
+  description: String
+  metadata: AWSJSON
+  displayOrder: Int
+}
+
+input UpdateCategoryInput {
+  categoryId: ID!
+  name: String
+  description: String
+  isActive: Boolean
+  displayOrder: Int
+  metadata: AWSJSON
+}
+
+input CreateServiceInput {
+  name: String!
+  description: String
+  category: String!
+  durationMinutes: Int!
+  price: Float
+  available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
+}
+
+input UpdateServiceInput {
+  serviceId: ID!
+  name: String
+  description: String
+  category: String
+  durationMinutes: Int
+  price: Float
+  available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
+}
+
+input CreateProviderInput {
+  name: String!
+  bio: String
+  serviceIds: [ID!]!
+  timezone: String!
+  metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+  slug: String
+  professionalLicense: String
+}
+
+input UpdateProviderInput {
+  providerId: ID!
+  name: String
+  bio: String
+  serviceIds: [ID!]
+  timezone: String
+  metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+  available: Boolean
+  slug: String
+  professionalLicense: String
+}
+
+input CreateRoomInput {
+  name: String!
+  description: String
+  capacity: Int!
+  status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+}
+
+input UpdateRoomInput {
+  roomId: ID!
+  name: String
+  description: String
+  capacity: Int
+  status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+}
+
+# Inputs - Availability & FAQs
+input GetAvailableSlotsInput {
+  serviceId: ID!
+  providerId: ID!
+  from: AWSDateTime!
+  to: AWSDateTime!
+}
+
+input SetAvailabilityInput {
+  providerId: ID!
+  dayOfWeek: String!
+  timeRanges: [TimeRangeInput!]!
+  breaks: [TimeRangeInput!]
+}
+
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean
+}
+
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
+}
+
+# Inputs - Bookings
+input CreateBookingInput {
+  clientId: ID
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  clientName: String!
+  clientEmail: String!
+  clientPhone: String
+  notes: String
+  conversationId: ID
+  roomId: ID
+}
+
+input ConfirmBookingInput {
+  bookingId: ID!
+  tenantId: ID
+}
+
+input CancelBookingInput {
+  bookingId: ID!
+  reason: String
+  tenantId: ID
+}
+
+input GetBookingInput {
+  bookingId: ID!
+}
+
+input ListBookingsByProviderInput {
+  providerId: ID!
+  startDate: AWSDateTime!
+  endDate: AWSDateTime!
+}
+
+input ListBookingsByClientInput {
+  clientEmail: String!
+}
+
+input GetBookingByConversationInput {
+  conversationId: ID!
+}
+
+# Inputs - Chat
+input StartConversationInput {
+  channel: String
+  metadata: AWSJSON
+}
+
+input SendMessageInput {
+  conversationId: ID!
+  message: String!
+  messageType: String
+  userData: AWSJSON
+}
+
+input ConfirmBookingFromConversationInput {
+  conversationId: ID!
+}
+
+input GetConversationInput {
+  conversationId: ID!
+}
+
+# Inputs - Workflow
+input CreateWorkflowInput {
+  name: String!
+  description: String
+  steps: AWSJSON!
+  metadata: AWSJSON
+  isActive: Boolean
+}
+
+input UpdateWorkflowInput {
+  workflowId: ID!
+  name: String
+  description: String
+  steps: AWSJSON
+  metadata: AWSJSON
+  isActive: Boolean
+}
+
+# User Management Inputs
+input InviteUserInput {
+  email: String!
+  name: String
+  role: UserRole!
+}
+
+input UpdateUserRoleInput {
+  userId: ID!
+  role: UserRole!
+}
+
+input SupportIssueInput {
+  subject: String!
+  description: String!
+  tenantId: ID!
+}
+
+# Queries
+type Query {
+  # Catalog
+  listCategories(activeOnly: Boolean): [Category!]!   
+  searchServices(text: String, availableOnly: Boolean): [Service!]!   
+  getService(serviceId: ID!): Service   
+  listProviders: [Provider!]!   
+  listProvidersByService(serviceId: ID!): [Provider!]!   
+
+  listRooms: [Room!]!  
+  getRoom(roomId: ID!): Room  
+  
+  # Availability
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]!   
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]!  
+  
+  # Bookings
+  getBooking(input: GetBookingInput!): Booking  
+  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! 
+  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! 
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking   
+  
+  # Chat
+  getConversation(input: GetConversationInput!): Conversation   
+  getTenant(tenantId: ID): Tenant   
+  listFAQs: [FAQ!]!   
+  
+  # Workflow (Admin)
+  listWorkflows: [Workflow!]! 
+  getWorkflow(workflowId: ID!): Workflow 
+
+  # Dashboard Metrics (Admin)
+  getDashboardMetrics: DashboardMetrics 
+  getPlanUsage: PlanUsage 
+
+  # User Management (Admin)
+  listTenantUsers: [TenantUser!]! 
+  getTenantUser(userId: ID!): TenantUser 
+
+  # API Keys (Admin)
+  listApiKeys: [ApiKey!]! 
+
+  # Billing (Admin)
+  # Billing (Admin)
+  listInvoices: [Invoice!]! 
+
+  # Public Profile (Microsites)
+  getTenantPublicProfile(slug: String!): PublicProfile  
+
+  # Public Link Status (Admin)
+  getPublicLinkStatus(providerId: String): PublicLinkStatus 
+
+  # Payment Reconciliation
+  checkPaymentStatus(tenantId: ID!): PaymentStatusResponse 
+
+  # Client Management (Client File)
+  getClient(clientId: ID!): Client 
+  listClients: [Client!]! 
+  listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! 
+}
+
+type PaymentStatusResponse  {
+  status: String!
+  message: String
+}
+
+type PublicProfile    {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  bio: String
+  photoUrl: String
+  themeColor: String
+  primaryServiceId: String
+  services: [Service]
+  profession: String
+  specializations: [String]
+  operatingHours: String
+  fullAddress: String
+  providers: [Provider]
+  tenantPlan: String
+  isPublished: Boolean
+}
+
+# Public Link Status for Admin Panel
+type ChecklistItem  {
+  item: String!
+  status: ChecklistStatus!
+  label: String!
+  isRequired: Boolean!
+  actionUrl: String
+}
+
+enum ChecklistStatus {
+  COMPLETE
+  MISSING
+  RECOMMENDED
+}
+
+type PublicLinkStatus  {
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
+  slug: String
+  publicUrl: String
+  completenessChecklist: [ChecklistItem!]!
+  completenessPercentage: Int!
+}
+
+type PublicLinkStatusResponse  {
+  success: Boolean!
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
+  message: String
+}
+
+# Mutations
+type Mutation {
+  # Tenant (Public/Auth)
+  registerTenant(input: RegisterTenantInput!): Tenant  
+  updateTenant(input: UpdateTenantInput!): Tenant! 
+
+  # Catalog (Admin)
+  createCategory(input: CreateCategoryInput!): Category! 
+  updateCategory(input: UpdateCategoryInput!): Category! 
+  deleteCategory(categoryId: ID!): Category! 
+
+  generatePresignedUrl(fileName: String!, contentType: String!): String! 
+
+  createService(input: CreateServiceInput!): Service! 
+  updateService(input: UpdateServiceInput!): Service! 
+  deleteService(serviceId: ID!): Service! 
+  
+  createProvider(input: CreateProviderInput!): Provider! 
+  updateProvider(input: UpdateProviderInput!): Provider! 
+  deleteProvider(providerId: ID!): Provider! 
+
+  createRoom(input: CreateRoomInput!): Room! 
+  updateRoom(input: UpdateRoomInput!): Room! 
+  deleteRoom(roomId: ID!): Room! 
+  
+  # Availability (Admin)
+  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! 
+  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! 
+  
+  # FAQs (Admin)
+  createFAQ(input: CreateFAQInput!): FAQ! 
+  updateFAQ(input: UpdateFAQInput!): FAQ! 
+  deleteFAQ(faqId: ID!): FAQ! 
+
+  # Workflows (Admin)
+  createWorkflow(input: CreateWorkflowInput!): Workflow! 
+  updateWorkflow(input: UpdateWorkflowInput!): Workflow! 
+  deleteWorkflow(workflowId: ID!): Workflow! 
+
+  # Documents (Knowledge Base)
+  getUploadUrl(fileName: String!, contentType: String!): String! 
+
+  # Bookings
+  createBooking(input: CreateBookingInput!): Booking!   
+  confirmBooking(input: ConfirmBookingInput!): Booking! 
+  cancelBooking(input: CancelBookingInput!): Booking! 
+  markAsNoShow(bookingId: ID!): Booking! 
+  updateBookingStatus(bookingId: ID!, status: String!): Booking! 
+  
+  # User Management (Admin)
+  inviteUser(input: InviteUserInput!): TenantUser! 
+  updateUserRole(input: UpdateUserRoleInput!): TenantUser! 
+  removeUser(userId: ID!): TenantUser! 
+  resetUserPassword(userId: ID!): Boolean 
+  
+  # API Keys
+  createApiKey(name: String): ApiKey! 
+  revokeApiKey(apiKeyId: ID!): ApiKey! 
+
+  # Subscription Mutations
+  subscribe(planId: String!, email: String, backUrl: String, paymentMethod: String): SubscriptionResponse! 
+  downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! 
+
+  # Chat
+  startConversation(input: StartConversationInput!): ChatResponse!   
+  sendMessage(input: SendMessageInput!): ChatResponse!   
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse!   
+  
+  # User Management
+  resendUserPasswordReset(userId: ID!): Boolean! 
+  resendInvitation(userId: ID!): Boolean! 
+
+  # Support
+  createSupportIssue(input: SupportIssueInput!): Boolean! 
+
+  # Public Link Status (Admin)
+  setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! 
+
+  # Client Management
+  createClient(input: CreateClientInput!): Client! 
+  updateClient(input: UpdateClientInput!): Client! 
+}
+
+input ExceptionRuleInput {
+  date: String!
+  timeRanges: [TimeRangeInput!]!
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [ExceptionRuleInput!]!
+}
+
+type ProviderExceptions  {
+  providerId: ID!
+  exceptions: [ExceptionRule!]!
+}
+
+# --- Client File Types ---
+type ClientIdentifier  {
+  type: String!
+  value: String!
+}
+
+type ClientName  {
+  given: String!
+  family: String!
+}
+
+type ClientContact  {
+  system: String!
+  value: String!
+  use: String
+}
+
+type ClientAddress  {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+type ClientInsurance  {
+  provider: String!
+  type: String!
+}
+
+type Client  {
+  id: ID!
+  tenantId: ID!
+  identifiers: [ClientIdentifier!]!
+  names: ClientName!
+  email: String
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContact!]
+  address: ClientAddress
+  occupation: String
+  healthInsurance: ClientInsurance
+  communicationLanguage: String
+  providerIds: [ID!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ClientAuditLog  {
+  tenantId: ID!
+  clientId: ID!
+  field: String!
+  oldValue: String
+  newValue: String
+  source: String!
+  sourceId: String
+  changedBy: String!
+  timestamp: AWSDateTime!
+}
+
+input ClientIdentifierInput {
+  type: String!
+  value: String!
+}
+
+input ClientNameInput {
+  given: String!
+  family: String!
+}
+
+input ClientContactInput {
+  system: String!
+  value: String!
+  use: String
+}
+
+input ClientAddressInput {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+input ClientInsuranceInput {
+  provider: String!
+  type: String!
+}
+
+input CreateClientInput {
+  identifiers: [ClientIdentifierInput!]!
+  names: ClientNameInput!
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
+  providerIds: [ID!]
+}
+
+input UpdateClientInput {
+  id: ID!
+  identifiers: [ClientIdentifierInput!]
+  names: ClientNameInput
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
+  providerIds: [ID!]
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}
