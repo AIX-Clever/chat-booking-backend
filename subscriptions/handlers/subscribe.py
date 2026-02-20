@@ -10,6 +10,7 @@ def lambda_handler(event, _context):
     """
     import json
     import os
+    import mercadopago
     from datetime import datetime, timedelta
     
     print(f"[INTERNAL_LOG] Starting subscribe handler. Event: {json.dumps(event)}")
