@@ -39,7 +39,51 @@ def lambda_handler(event, context):
             
             print(f"Payment detected: {amount} CLP from Account {account_id}")
 
-        # 3. Handle 'link.created' (Account Connected)
+        # 3. Handle 'subscription_intent.succeeded' (Successful Payment)
+        elif event_type == 'subscription_intent.succeeded':
+            intent_id = data.get('id')
+            print(f"Subscription Intent Succeeded: {intent_id}")
+            
+            # Find the tenant associated with this intent ID
+            # We can use a scan with filter since we don't have a GSI on mpPreapprovalId (which we used for Fintoc Intent ID)
+            # though in a production system we should use a GSI.
+            response = SUBSCRIPTIONS_TABLE.scan(
+                FilterExpression=boto3.dynamodb.conditions.Attr('mpPreapprovalId').eq(intent_id)
+            )
+            items = response.get('Items', [])
+            
+            if not items:
+                print(f"No subscription found for intent ID: {intent_id}")
+            else:
+                for item in items:
+                    tenant_id = item['tenantId']
+                    sub_id = item['subscriptionId']
+                    print(f"Activating subscription {sub_id} for tenant {tenant_id}")
+                    
+                    # Update the specific item
+                    SUBSCRIPTIONS_TABLE.update_item(
+                        Key={'tenantId': tenant_id, 'subscriptionId': sub_id},
+                        UpdateExpression="SET #s = :s, updatedAt = :u",
+                        ExpressionAttributeNames={'#s': 'status'},
+                        ExpressionAttributeValues={
+                            ':s': SubscriptionStatus.AUTHORIZED.value,
+                            ':u': datetime.now().isoformat()
+                        }
+                    )
+                    
+                    # Also update 'CURRENT' pointer
+                    SUBSCRIPTIONS_TABLE.update_item(
+                        Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'},
+                        UpdateExpression="SET #s = :s, updatedAt = :u",
+                        ExpressionAttributeNames={'#s': 'status'},
+                        ExpressionAttributeValues={
+                            ':s': SubscriptionStatus.AUTHORIZED.value,
+                            ':u': datetime.now().isoformat()
+                        }
+                    )
+                    print(f"Successfully activated tenant {tenant_id}")
+
+        # 4. Handle 'link.created' (Account Connected)
         elif event_type == 'link.created':
             link_token = data.get('link_token')
             holder_id = data.get('holder_id')
