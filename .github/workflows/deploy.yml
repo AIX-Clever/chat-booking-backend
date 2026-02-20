@@ -97,6 +97,28 @@ jobs:
             pip install -r "$req_file" -t "$dir"
           done
 
+      - name: Validate GraphQL Schema (Retrocompatibility)
+        run: |
+          npm install -g @graphql-inspector/cli graphql
+          
+          # Get the previous commit's schema (HEAD^)
+          git show HEAD^:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
+          
+          if [ -s infra/schema_old.graphql ]; then
+            # Strip AWS-specific directives (@aws_api_key, etc.) since they break standard GraphQL parsers
+            cat infra/schema.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean.graphql
+            cat infra/schema_old.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean_old.graphql
+            
+            echo "Checking schema for breaking changes..."
+            npx graphql-inspector diff schema_clean_old.graphql schema_clean.graphql || {
+              echo "::error::GraphQL Schema introduced BREAKING CHANGES. Please fix the schema retrocompatibility to avoid breaking the frontend clients."
+              exit 1
+            }
+            echo "GraphQL Schema is retrocompatible! ✅"
+          else
+            echo "Skipping check: Could not find previous schema version."
+          fi
+
       - name: Install CDK dependencies
         working-directory: infra
         run: npm install
