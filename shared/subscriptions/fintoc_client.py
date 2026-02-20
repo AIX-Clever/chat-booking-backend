@@ -25,24 +25,20 @@ class FintocClient:
             # Re-initialize client if api_key changed
             self.client = Fintoc(self.api_key)
 
-            # SDK Wrapper for link_intents
-            response = self.client._client.request(
-                path="link_intents",
-                method="post",
-                json={
-                    "product": product,
-                    "holder_type": holder_type,
-                    "country": country
-                }
+            # Use SDK manager for link_intents
+            link_intent = self.client.link_intents.create(
+                product=product,
+                holder_type=holder_type,
+                country=country
             )
             
-            if not response or 'widget_token' not in response:
-                print(f"Fintoc raw response error: {response}")
-                raise ValueError(f"Fintoc API returned unexpected response: {response}")
+            if not link_intent or not hasattr(link_intent, 'widget_token'):
+                print(f"Fintoc SDK result error: {link_intent}")
+                raise ValueError(f"Fintoc API returned unexpected result: {link_intent}")
 
             return {
-                'widget_token': response['widget_token'],
-                'link_intent_id': response['id']
+                'widget_token': link_intent.widget_token,
+                'link_intent_id': link_intent.id
             }
         except Exception as e:
             print(f"Fintoc SDK Error in create_link_intent: {str(e)}")
