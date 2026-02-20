@@ -765,7 +765,7 @@ type Mutation {
   revokeApiKey(apiKeyId: ID!): ApiKey! @aws_cognito_user_pools
 
   # Subscription Mutations
-  subscribe(planId: String!, email: String, backUrl: String): SubscriptionResponse! @aws_cognito_user_pools
+  subscribe(planId: String!, email: String, backUrl: String, paymentMethod: String): SubscriptionResponse! @aws_cognito_user_pools
   downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! @aws_cognito_user_pools
 
   # Chat
