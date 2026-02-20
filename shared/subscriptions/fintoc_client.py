@@ -1,8 +1,9 @@
 """
-Fintoc Client wrapper for managing Banking integration.
+Fintoc Client wrapper for managing Banking integration (Subscription Intents).
 """
 import os
 from fintoc import Fintoc
+
 
 class FintocClient:
     """
@@ -14,58 +15,48 @@ class FintocClient:
         if not self.api_key:
             raise ValueError("Fintoc API Key is missing")
 
-        # Fintoc v2 SDK uses api_key primarily
         self.client = Fintoc(self.api_key)
 
     def create_link_intent(self, product='movements', holder_type='business', country='cl'):
         """
-        Creates a Link Intent to initialize the Fintoc Widget.
+        Creates a Subscription Intent to initialize the Fintoc Widget.
+
+        NOTE: The `link_intents` manager does not exist in the Fintoc Python SDK.
+        The correct resource for subscriptions is `subscription_intents`.
         """
-        import fintoc
-        print(f"[INTERNAL_LOG] Fintoc SDK Version: {getattr(fintoc, '__version__', 'UNKNOWN')}")
-        print(f"[INTERNAL_LOG] Fintoc Module Location: {getattr(fintoc, '__file__', 'UNKNOWN')}")
-        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Product: {product}, Key: {self.api_key[:10]}...")
+        import fintoc as fintoc_module
+        print(f"[INTERNAL_LOG] Fintoc SDK Version: {getattr(fintoc_module, '__version__', 'UNKNOWN')}")
+        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Using: subscription_intents")
         try:
-            # Re-initialize client if api_key changed
             self.client = Fintoc(self.api_key)
-            print(f"[INTERNAL_LOG] Fintoc SDK Client initialized. Object: {self.client}")
-            print(f"[INTERNAL_LOG] Available attributes on Fintoc object: {dir(self.client)}")
+            print(f"[INTERNAL_LOG] Available managers: {[a for a in dir(self.client) if not a.startswith('_')]}")
 
-            # Use SDK manager for link_intents
-            if not hasattr(self.client, 'link_intents'):
-                 print("[INTERNAL_LOG] CRITICAL ERROR: 'link_intents' attribute missing even after version pin.")
-                 if hasattr(self.client, 'links'):
-                     print("[INTERNAL_LOG] FOUND 'links' manager version 0.x workaround?")
-            
-            print(f"[INTERNAL_LOG] Executing self.client.link_intents.create(product='{product}', ...)")
-            link_intent = self.client.link_intents.create(
-                product=product,
-                holder_type=holder_type,
-                country=country
-            )
-            
-            print(f"[INTERNAL_LOG] Link Intent creation result type: {type(link_intent)}")
-            
-            if not link_intent:
-                print("[INTERNAL_LOG] Error: Fintoc SDK returned None")
-                raise ValueError("Fintoc API returned None (Possible timeout or network issue)")
+            print(f"[INTERNAL_LOG] Calling self.client.subscription_intents.create()")
+            subscription_intent = self.client.subscription_intents.create()
 
-            # Check for attributes (Python SDK objects have attributes)
-            widget_token = getattr(link_intent, 'widget_token', None)
-            link_id = getattr(link_intent, 'id', None)
-            
-            print(f"[INTERNAL_LOG] Extracted widget_token: {widget_token[:10] if widget_token else 'NONE'}...")
-            print(f"[INTERNAL_LOG] Extracted link_id: {link_id}")
+            print(f"[INTERNAL_LOG] subscription_intent type: {type(subscription_intent)}")
+            print(f"[INTERNAL_LOG] subscription_intent attrs: {dir(subscription_intent)}")
+
+            if not subscription_intent:
+                raise ValueError("Fintoc API returned None for subscription_intent")
+
+            # Extract widget_token and id
+            widget_token = getattr(subscription_intent, 'widget_token', None)
+            if widget_token is None and isinstance(subscription_intent, dict):
+                widget_token = subscription_intent.get('widget_token')
+
+            link_id = getattr(subscription_intent, 'id', None)
+            if link_id is None and isinstance(subscription_intent, dict):
+                link_id = subscription_intent.get('id')
+
+            print(f"[INTERNAL_LOG] widget_token: {str(widget_token)[:10] if widget_token else 'NONE'}...")
+            print(f"[INTERNAL_LOG] subscription_intent id: {link_id}")
 
             if not widget_token or not link_id:
-                # Try dictionary access as fallback if it's a dict
-                if isinstance(link_intent, dict):
-                    widget_token = link_intent.get('widget_token')
-                    link_id = link_intent.get('id')
-                
-                if not widget_token or not link_id:
-                    print(f"[INTERNAL_LOG] Error: Missing mandatory fields in link_intent: {link_intent}")
-                    raise ValueError(f"Fintoc API result missing fields. Result: {link_intent}")
+                raise ValueError(
+                    f"Fintoc subscription_intent missing mandatory fields. "
+                    f"Got: widget_token={widget_token}, id={link_id}"
+                )
 
             return {
                 'widget_token': widget_token,
@@ -76,16 +67,9 @@ class FintocClient:
             raise e
 
     def get_movement(self, movement_id, link_token):
-        """
-        Retrieves a movement (payment) details.
-        Requires the link_token associated with the account.
-        """
-        # Note: Fintoc SDK structure might vary, this is a simplified abstraction
-        # In reality, you get movements from an account, which comes from a link.
+        """Retrieves a movement (payment) details."""
         pass
 
     def get_account_info(self, link_token, account_id):
-        """
-        Retrieves account information.
-        """
+        """Retrieves account information."""
         pass
