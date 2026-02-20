@@ -22,7 +22,10 @@ class FintocClient:
         Creates a Link Intent to initialize the Fintoc Widget.
         """
         try:
-            # SDK Wrapper for link_intents seems missing in this version, using raw request
+            # Re-initialize client if api_key changed
+            self.client = Fintoc(self.api_key)
+
+            # SDK Wrapper for link_intents
             response = self.client._client.request(
                 path="link_intents",
                 method="post",
@@ -32,12 +35,17 @@ class FintocClient:
                     "country": country
                 }
             )
+            
+            if not response or 'widget_token' not in response:
+                print(f"Fintoc raw response error: {response}")
+                raise ValueError(f"Fintoc API returned unexpected response: {response}")
+
             return {
                 'widget_token': response['widget_token'],
                 'link_intent_id': response['id']
             }
         except Exception as e:
-            print(f"Error creating link intent: {str(e)}")
+            print(f"Fintoc SDK Error in create_link_intent: {str(e)}")
             raise e
 
     def get_movement(self, movement_id, link_token):

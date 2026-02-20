@@ -42,7 +42,8 @@ def lambda_handler(event, _context):
         args = event.get('arguments', {})
         plan_id_str = args.get('planId', 'lite')
         payer_email = args.get('email')
-        payment_method = args.get('paymentMethod', 'mercadopago') # Default to MP
+        payment_method = args.get("paymentMethod", "mercadopago")
+        print(f"DEBUG: Processing subscription for {tenant_id}, Method: {payment_method}, Plan: {plan_id_str}")
         back_url = args.get('backUrl', 'https://control.holalucia.cl')
 
 
@@ -65,21 +66,28 @@ def lambda_handler(event, _context):
 
         if payment_method == 'fintoc':
             # --- FINTOC LOGIC ---
-            print(f"Initializing Fintoc for {payer_email}")
+            print(f"Initializing Fintoc for {payer_email} (Tenant: {tenant_id})")
             try:
+                # Ensure we use the correct environment
+                fintoc_env = os.environ.get('FINTOC_ENV', 'live') # Default to live if not specified
+                fintoc_client.environment = fintoc_env
+                
                 # Create Link Intent for Widget
                 result = fintoc_client.create_link_intent()
-                # We use the widget_token as the 'initPoint' for the frontend to open
-                # We use the link_intent_id as the temporary 'subscription_id'
+                
+                if not result or 'widget_token' not in result or 'link_intent_id' not in result:
+                    print(f"Fintoc invalid result format: {result}")
+                    raise RuntimeError("Fintoc returned an invalid or empty response")
 
                 preapproval_id = result['link_intent_id']
                 init_point = result['widget_token']
 
-                print(f"Fintoc Intent Created: {preapproval_id}")
+                print(f"Fintoc Intent Created Successfully: {preapproval_id}")
 
             except Exception as e:
-                print(f"Fintoc Error: {e}")
-                raise RuntimeError(f"Failed to initialize Fintoc: {str(e)}") from e
+                print(f"Fintoc Critical Error: {str(e)}")
+                # Re-raise with a clear message to avoid the 'Cannot return null' GraphQL error
+                raise RuntimeError(f"Fintoc Initialization Error: {str(e)}") from e
 
         else:
             # --- MERCADOPAGO LOGIC (Existing) ---
