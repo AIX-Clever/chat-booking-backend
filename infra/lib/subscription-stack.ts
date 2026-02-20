@@ -89,8 +89,10 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
                     .secretValueFromJson('API_KEY').unsafeUnwrap(),
+                FINTOC_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'FintocWebhookSecret', 'ChatBooking/Fintoc')
+                    .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 USER_POOL_ID: props.userPool.userPoolId,
-                LAST_UPDATED: '2026-02-20T13:20:00Z', // Force pick up of new Layer version with pinned SDK
+                LAST_UPDATED: '2026-02-20T20:15:00Z', // Force pick up of new Layer version and secrets
 
             },
         };
