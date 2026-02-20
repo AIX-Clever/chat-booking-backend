@@ -1,37 +1,33 @@
-"""
-Subscription Handler.
-"""
-import json
-import os
-from datetime import datetime, timedelta
+
+# Initialize resource at top level (AWS SDK is usually safe and handled by Lambda runtime)
 import boto3
-import mercadopago
-from shared.utils import extract_tenant_id
-from shared.subscriptions.mercadopago_client import MercadoPagoClient
-from shared.subscriptions.fintoc_client import FintocClient
-from shared.application.subscription_service import SubscriptionService
-from shared.subscriptions.config import SubscriptionConfig
-from shared.subscriptions.entities import Subscription, SubscriptionStatus, PlanType
-
-
-# Initialize resource at top level (AWS SDK is usually safe)
 dynamodb = boto3.resource('dynamodb')
 scheduler = boto3.client('scheduler')
-SUBSCRIPTIONS_TABLE_NAME = SubscriptionConfig.SUBSCRIPTIONS_TABLE
 
 def lambda_handler(event, _context):
     """
-    Handles subscription creation requests with enhanced logging for debugging.
+    Handles subscription creation requests with extreme logging and safe imports.
     """
+    import json
+    import os
+    from datetime import datetime, timedelta
+    
     print(f"[INTERNAL_LOG] Starting subscribe handler. Event: {json.dumps(event)}")
     
     try:
-        # Initialize clients inside handler to catch import/init errors
-        print("[INTERNAL_LOG] Initializing Gateway Clients...")
+        # ABSOLUTELY ALL IMPORTS INSIDE HANDLER FOR DEBUGGING
+        print("[INTERNAL_LOG] Executing late-bound imports...")
+        from shared.utils import extract_tenant_id
         from shared.subscriptions.mercadopago_client import MercadoPagoClient
         from shared.subscriptions.fintoc_client import FintocClient
         from shared.application.subscription_service import SubscriptionService
+        from shared.subscriptions.config import SubscriptionConfig
+        from shared.subscriptions.entities import Subscription, SubscriptionStatus, PlanType
         
+        print("[INTERNAL_LOG] Imports successful. Configuring Table...")
+        SUBSCRIPTIONS_TABLE_NAME = SubscriptionConfig.SUBSCRIPTIONS_TABLE
+        
+        print("[INTERNAL_LOG] Initializing Gateway Clients...")
         mp_client = MercadoPagoClient()
         fintoc_client = FintocClient()
         
