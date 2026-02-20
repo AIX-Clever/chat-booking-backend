@@ -16,6 +16,10 @@ def lambda_handler(event, context):
         # Fintoc sends a signature in headers to verify authenticity
         # (Simplified for initial implementation, add full HMAC check later)
         
+        print(f"Full Event: {json.dumps(event)}")
+        headers = event.get('headers', {})
+        print(f"Headers: {json.dumps(headers)}")
+        
         body = json.loads(event.get('body', '{}'))
         event_type = body.get('type')
         data = body.get('data', {})
