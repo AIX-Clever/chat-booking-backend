@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -102,7 +104,7 @@ jobs:
           npm install -g @graphql-inspector/cli graphql
           
           # Get the previous commit's schema (HEAD^)
-          git show HEAD^:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
+          git show HEAD~1:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
           
           if [ -s infra/schema_old.graphql ]; then
             # Strip AWS-specific directives (@aws_api_key, etc.) since they break standard GraphQL parsers
@@ -110,7 +112,11 @@ jobs:
             cat infra/schema_old.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean_old.graphql
             
             echo "Checking schema for breaking changes..."
-            npx graphql-inspector diff schema_clean_old.graphql schema_clean.graphql || {
+            # Note: We comparison clean files. graphql-inspector needs a .graphql extension or similar to detect the format
+            mv schema_clean.graphql schema_clean.gql
+            mv schema_clean_old.graphql schema_clean_old.gql
+            
+            npx graphql-inspector diff schema_clean_old.gql schema_clean.gql || {
               echo "::error::GraphQL Schema introduced BREAKING CHANGES. Please fix the schema retrocompatibility to avoid breaking the frontend clients."
               exit 1
             }
