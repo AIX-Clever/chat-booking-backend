@@ -21,13 +21,22 @@ class FintocClient:
         """
         Creates a Link Intent to initialize the Fintoc Widget.
         """
+        import fintoc
+        print(f"[INTERNAL_LOG] Fintoc SDK Version: {getattr(fintoc, '__version__', 'UNKNOWN')}")
+        print(f"[INTERNAL_LOG] Fintoc Module Location: {getattr(fintoc, '__file__', 'UNKNOWN')}")
         print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Product: {product}, Key: {self.api_key[:10]}...")
         try:
             # Re-initialize client if api_key changed
             self.client = Fintoc(self.api_key)
-            print("[INTERNAL_LOG] Fintoc SDK Client initialized.")
+            print(f"[INTERNAL_LOG] Fintoc SDK Client initialized. Object: {self.client}")
+            print(f"[INTERNAL_LOG] Available attributes on Fintoc object: {dir(self.client)}")
 
             # Use SDK manager for link_intents
+            if not hasattr(self.client, 'link_intents'):
+                 print("[INTERNAL_LOG] CRITICAL ERROR: 'link_intents' attribute missing even after version pin.")
+                 if hasattr(self.client, 'links'):
+                     print("[INTERNAL_LOG] FOUND 'links' manager version 0.x workaround?")
+            
             print(f"[INTERNAL_LOG] Executing self.client.link_intents.create(product='{product}', ...)")
             link_intent = self.client.link_intents.create(
                 product=product,
