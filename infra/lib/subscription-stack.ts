@@ -3,6 +3,7 @@ import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
@@ -11,7 +12,7 @@ import * as path from 'path';
 
 interface SubscriptionStackProps extends cdk.StackProps {
     tenantsTable: dynamodb.ITable;
-    userPool: lambda.IResource; // Passing UserPool as IResource to simplify permissions if needed, or specific IUserPool
+    userPool: cognito.IUserPool;
     envName: string;
 }
 
@@ -88,8 +89,8 @@ export class SubscriptionStack extends cdk.Stack {
                     .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
                     .secretValueFromJson('API_KEY').unsafeUnwrap(),
-                USER_POOL_ID: (props.userPool as any).userPoolId,
-                LAST_UPDATED: '2026-02-20T01:50:00Z', // Force update
+                USER_POOL_ID: props.userPool.userPoolId,
+                LAST_UPDATED: '2026-02-20T02:05:00Z', // Force update
 
             },
         };
@@ -109,7 +110,7 @@ export class SubscriptionStack extends cdk.Stack {
         // Grant permission to fetch user attributes (fallback for tenantId)
         this.subscribeFunction.addToRolePolicy(new iam.PolicyStatement({
             actions: ['cognito-idp:AdminGetUser'],
-            resources: [(props.userPool as any).userPoolArn],
+            resources: [props.userPool.userPoolArn],
         }));
 
         // B. Downgrade Handler
