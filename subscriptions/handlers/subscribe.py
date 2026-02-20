@@ -168,10 +168,10 @@ def lambda_handler(event, _context):
         # Final check before persistence
         if not preapproval_id or not init_point:
             print(f"[INTERNAL_LOG] Error: Resulting IDs are null. subId={preapproval_id}, init={init_point}")
-             return {
-                    'subscriptionId': 'ERROR',
-                    'initPoint': '',
-                    'message': "Internal Error: Gateway response incomplete"
+            return {
+                'subscriptionId': 'ERROR',
+                'initPoint': '',
+                'message': "Internal Error: Gateway response incomplete"
             }
 
         # 4. Persistence
@@ -207,10 +207,10 @@ def lambda_handler(event, _context):
             print(f"[INTERNAL_LOG] DynamoDB Persistence Exception: {str(e)}")
             # Even if persistence fails, we might want to return the initPoint so the user can pay?
             # No, better fail and ask to try again to avoid sync issues.
-             return {
-                    'subscriptionId': 'ERROR',
-                    'initPoint': '',
-                    'message': f"Database Error: {str(e)}"
+            return {
+                'subscriptionId': 'ERROR',
+                'initPoint': '',
+                'message': f"Database Error: {str(e)}"
             }
 
         print(f"[INTERNAL_LOG] Handler finished successfully for {tenant_id}")
