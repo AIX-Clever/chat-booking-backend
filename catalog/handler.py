@@ -6,6 +6,7 @@ Handles both public widget queries and admin panel operations
 """
 
 import json
+from typing import Optional
 
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
