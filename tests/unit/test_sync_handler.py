@@ -7,6 +7,7 @@ import os
 from unittest.mock import MagicMock, patch
 
 # Set env vars BEFORE import
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 os.environ['CLIENTS_TABLE'] = 'ClientsTable'
 os.environ['CLIENT_AUDIT_LOGS_TABLE'] = 'AuditTable'
 
@@ -46,14 +47,10 @@ def test_lambda_handler_insert_new_client(mock_dynamodb, mock_env):
                     'dynamodb': {
                         'NewImage': {
                             'tenantId': {'S': 'tenant-1'},
-                            'id': {'S': 'booking-1'},
-                            'customerInfo': {
-                                'M': {
-                                    'name': {'S': 'Test Client'},
-                                    'email': {'S': 'test@example.com'},
-                                    'phone': {'S': '+123456789'}
-                                }
-                            }
+                            'bookingId': {'S': 'booking-1'},
+                            'clientName': {'S': 'Test Client'},
+                            'clientEmail': {'S': 'test@example.com'},
+                            'clientPhone': {'S': '+123456789'},
                         }
                     }
                 }
@@ -142,14 +139,10 @@ def test_lambda_handler_update_existing_client(mock_dynamodb, mock_env):
                     'dynamodb': {
                         'NewImage': {
                             'tenantId': {'S': 'tenant-1'},
-                            'id': {'S': 'booking-3'},
-                            'customerInfo': {
-                                'M': {
-                                    'name': {'S': 'New Name'},
-                                    'email': {'S': 'test@example.com'},
-                                    'phone': {'S': '+999999999'}
-                                }
-                            }
+                            'bookingId': {'S': 'booking-3'},
+                            'clientName': {'S': 'New Name'},
+                            'clientEmail': {'S': 'test@example.com'},
+                            'clientPhone': {'S': '+999999999'},
                         }
                     }
                 }

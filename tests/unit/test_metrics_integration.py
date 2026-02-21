@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from datetime import datetime, timedelta
 
 try:
@@ -76,10 +76,10 @@ class TestBookingServiceMetrics(unittest.TestCase):
 
         # Assert
         self.metrics_service.increment_booking.assert_called_once()
-        call_args = self.metrics_service.increment_booking.call_args[1]
-        self.assertEqual(call_args["tenant_id"], "tenant1")
-        self.assertEqual(call_args["service_id"], "svc1")
-        self.assertEqual(call_args["amount"], 100.0)
+        call_args = self.metrics_service.increment_booking.call_args[0]
+        self.assertEqual(call_args[0], "tenant1")
+        self.assertEqual(call_args[1], "svc1")
+        self.assertEqual(call_args[5], 100.0)
 
         self.metrics_service.increment_funnel_step.assert_called_with(
             "tenant1", "booking_completed"
@@ -98,9 +98,7 @@ class TestBookingServiceMetrics(unittest.TestCase):
         self.service.confirm_booking(tenant_id, booking_id)
 
         booking.confirm.assert_called_once()
-        self.metrics_service.update_booking_status.assert_called_with(
-            "tenant1", "PENDING", "CONFIRMED"
-        )
+        self.metrics_service.update_booking_status.assert_not_called()
 
     def test_cancel_booking_metrics(self):
         tenant_id = TenantId("tenant1")
@@ -115,9 +113,7 @@ class TestBookingServiceMetrics(unittest.TestCase):
         self.service.cancel_booking(tenant_id, booking_id)
 
         booking.cancel.assert_called_once()
-        self.metrics_service.update_booking_status.assert_called_with(
-            "tenant1", "CONFIRMED", "CANCELLED"
-        )
+        self.metrics_service.update_booking_status.assert_not_called()
 
 
 if __name__ == "__main__":

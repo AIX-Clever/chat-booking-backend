@@ -2,7 +2,11 @@
 import unittest
 from unittest.mock import MagicMock, patch
 import os
-import json
+import sys
+import types
+
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+
 from subscriptions.handlers.subscribe import lambda_handler
 
 class TestSubscribe(unittest.TestCase):
@@ -19,13 +23,8 @@ class TestSubscribe(unittest.TestCase):
     def tearDown(self):
         self.env_patcher.stop()
 
-    @patch('subscriptions.handlers.subscribe.fintoc_client')
-    @patch('subscriptions.handlers.subscribe.mp_client')
-    @patch('subscriptions.handlers.subscribe.subscription_service')
-    @patch('subscriptions.handlers.subscribe.SUBSCRIPTIONS_TABLE')
-    @patch('subscriptions.handlers.subscribe.scheduler')
-    @patch('subscriptions.handlers.subscribe.mercadopago.SDK')
-    def test_fintoc_flow(self, mock_mp_sdk, mock_scheduler, mock_table, mock_service, mock_mp_client, mock_fintoc_client):
+    @patch('subscriptions.handlers.subscribe.dynamodb')
+    def test_fintoc_flow(self, mock_dynamodb):
         # Setup
         event = {
             'identity': {'claims': {'custom:tenantId': 'tenant-123'}},
@@ -35,44 +34,30 @@ class TestSubscribe(unittest.TestCase):
                 'paymentMethod': 'fintoc'
             }
         }
-        
-        # Mock Fintoc response
-        # The FintocClient now calls self.client._client.request
-        mock_fintoc_instance = MagicMock()
-        mock_fintoc_client.return_value = mock_fintoc_instance # This mocks the FintocClient() constructor return
-        
-        # However, subscribe.py imports FintocClient class and instantiates it.
-        # But we are mocking 'subscriptions.handlers.subscribe.fintoc_client' which is arguably the Instance or the Module?
-        # In subscribe.py: fintoc_client = FintocClient() (GLOBAL)
-        # So mocking 'subscriptions.handlers.subscribe.fintoc_client' mocks the INSTANCE directly if we patch the right name.
-        # But 'fintoc_client' is a variable name.
-        
-        # Actually @patch('subscriptions.handlers.subscribe.fintoc_client') mocks the OBJECT 'fintoc_client' in that module.
-        # So mock_fintoc_client IS the mock object.
-        
-        mock_fintoc_client.create_link_intent.return_value = {
+
+        mock_fintoc = MagicMock()
+        mock_fintoc.create_link_intent.return_value = {
             'widget_token': 'wt_123',
             'link_intent_id': 'li_123'
         }
+        fake_fintoc_module = types.ModuleType('shared.subscriptions.fintoc_client')
+        fake_fintoc_module.FintocClient = MagicMock(return_value=mock_fintoc)
+
+        mock_table = MagicMock()
+        mock_dynamodb.Table.return_value = mock_table
 
         # Execute
-        response = lambda_handler(event, None)
+        with patch.dict(sys.modules, {'shared.subscriptions.fintoc_client': fake_fintoc_module}):
+            response = lambda_handler(event, None)
 
         # Verify
-        mock_fintoc_client.create_link_intent.assert_called_once()
+        mock_fintoc.create_link_intent.assert_called_once()
         self.assertEqual(response['subscriptionId'], 'li_123')
         self.assertEqual(response['initPoint'], 'wt_123')
-        
-        # Verify Persistence
-        mock_table.put_item.assert_called()
+        self.assertEqual(mock_table.put_item.call_count, 2)
 
-    @patch('subscriptions.handlers.subscribe.fintoc_client')
-    @patch('subscriptions.handlers.subscribe.mp_client')
-    @patch('subscriptions.handlers.subscribe.subscription_service')
-    @patch('subscriptions.handlers.subscribe.SUBSCRIPTIONS_TABLE')
-    @patch('subscriptions.handlers.subscribe.scheduler')
-    @patch('subscriptions.handlers.subscribe.mercadopago.SDK')
-    def test_mercadopago_flow(self, mock_mp_sdk, mock_scheduler, mock_table, mock_service, mock_mp_client, mock_fintoc_client):
+    @patch('subscriptions.handlers.subscribe.dynamodb')
+    def test_mercadopago_flow(self, mock_dynamodb):
          # Setup
         event = {
             'identity': {'claims': {'custom:tenantId': 'tenant-123'}},
@@ -85,7 +70,7 @@ class TestSubscribe(unittest.TestCase):
         
         # Mock MP Response
         mock_sdk_instance = MagicMock()
-        mock_mp_sdk.return_value = mock_sdk_instance
+        mock_sdk_ctor = MagicMock(return_value=mock_sdk_instance)
         mock_sdk_instance.preapproval().create.return_value = {
             "status": 201,
             "response": {
@@ -93,11 +78,34 @@ class TestSubscribe(unittest.TestCase):
                 "init_point": "https://mp.com/init"
             }
         }
+        fake_mp_module = types.ModuleType('mercadopago')
+        fake_mp_module.SDK = mock_sdk_ctor
+        fake_mp_module.config = types.SimpleNamespace(
+            RequestOptions=MagicMock(return_value=MagicMock())
+        )
+
+        fake_mp_client_module = types.ModuleType(
+            'shared.subscriptions.mercadopago_client'
+        )
+        fake_mp_client_module.MercadoPagoClient = MagicMock(
+            return_value=MagicMock()
+        )
+
+        mock_table = MagicMock()
+        mock_dynamodb.Table.return_value = mock_table
 
         # Execute
-        response = lambda_handler(event, None)
+        with patch.dict(
+            sys.modules,
+            {
+                'mercadopago': fake_mp_module,
+                'shared.subscriptions.mercadopago_client': fake_mp_client_module,
+            },
+        ):
+            response = lambda_handler(event, None)
 
         # Verify
         mock_sdk_instance.preapproval().create.assert_called_once()
         self.assertEqual(response['subscriptionId'], 'mp_123')
         self.assertEqual(response['initPoint'], 'https://mp.com/init')
+        self.assertEqual(mock_table.put_item.call_count, 2)

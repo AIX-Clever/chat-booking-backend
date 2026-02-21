@@ -10,6 +10,7 @@ os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 os.environ["AWS_ACCESS_KEY_ID"] = "testing"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "testing"
 os.environ["CLIENTS_TABLE"] = "ClientsTable"
+os.environ["CLIENT_AUDIT_LOGS_TABLE"] = "ClientAuditLogsTable"
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -26,7 +27,9 @@ class TestClientsHandler(unittest.TestCase):
         
         # Mock DynamoDB Table
         self.mock_table = Mock()
+        self.mock_audit_table = Mock()
         handler.clients_table = self.mock_table
+        handler.audit_table = self.mock_audit_table
 
     def test_create_client_success(self):
         # Arrange

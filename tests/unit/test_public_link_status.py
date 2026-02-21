@@ -41,13 +41,14 @@ class TestPublicLinkStatusHandler:
         from public_link_status.handler import handle_get_status
         
         with patch('public_link_status.handler.DynamoDBTenantRepository') as mock_repo, \
-             patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
-             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
-             patch('public_link_status.handler.DynamoDBAvailabilityRepository') as mock_avail_repo:
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBProviderRepository') as mock_prov_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBRoomRepository') as mock_room_repo:
             
             mock_repo.return_value.get_by_id.return_value = mock_tenant
             mock_svc_repo.return_value.list_by_tenant.return_value = []
             mock_prov_repo.return_value.list_by_tenant.return_value = []
+            mock_room_repo.return_value.list_by_tenant.return_value = []
             
             logger = MagicMock()
             # provider_id is None
@@ -149,15 +150,16 @@ class TestPublicLinkStatusHandler:
         provider_with_slug.service_ids = ["srv_1"]
         
         with patch('public_link_status.handler.DynamoDBTenantRepository') as mock_repo, \
-             patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBServiceRepository') as mock_svc_repo, \
              patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
-             patch('public_link_status.handler.DynamoDBAvailabilityRepository') as mock_avail_repo:
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBProviderRepository') as mock_prov_repo_shared:
             
             mock_repo.return_value.get_by_id.return_value = lite_tenant
             mock_svc_repo.return_value.list_by_tenant.return_value = []
             
             # Return list of providers
             mock_prov_repo.return_value.list_by_tenant.return_value = [provider_with_slug]
+            mock_prov_repo_shared.return_value.list_by_tenant.return_value = [provider_with_slug]
             
             logger = MagicMock()
             result = handle_get_status(TenantId("tenant_lite"), None, logger)
@@ -220,8 +222,8 @@ class TestCompletenessChecklist:
         """Test that checklist includes all 7 expected items for PRO plan."""
         from public_link_status.handler import build_comprehensive_checklist
         
-        with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
-             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
+        with patch('shared.infrastructure.dynamodb_repositories.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBProviderRepository') as mock_prov_repo, \
              patch('shared.infrastructure.dynamodb_repositories.DynamoDBRoomRepository') as mock_room_repo:
             
             mock_svc_repo.return_value.list_by_tenant.return_value = []
@@ -268,8 +270,8 @@ class TestCompletenessChecklist:
             created_at=datetime.now(timezone.utc),
         )
         
-        with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
-             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo:
+        with patch('shared.infrastructure.dynamodb_repositories.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBProviderRepository') as mock_prov_repo:
             
             mock_svc_repo.return_value.list_by_tenant.return_value = []
             mock_prov_repo.return_value.list_by_tenant.return_value = []
@@ -317,8 +319,8 @@ class TestCompletenessChecklist:
             created_at=datetime.now(timezone.utc),
         )
         
-        with patch('public_link_status.handler.DynamoDBServiceRepository') as mock_svc_repo, \
-             patch('public_link_status.handler.DynamoDBProviderRepository') as mock_prov_repo, \
+        with patch('shared.infrastructure.dynamodb_repositories.DynamoDBServiceRepository') as mock_svc_repo, \
+             patch('shared.infrastructure.dynamodb_repositories.DynamoDBProviderRepository') as mock_prov_repo, \
              patch('shared.infrastructure.dynamodb_repositories.DynamoDBRoomRepository') as mock_room_repo:
             
             mock_svc_repo.return_value.list_by_tenant.return_value = []
@@ -335,4 +337,3 @@ class TestCompletenessChecklist:
             
             logo_item = next(i for i in checklist if i["item"] == "logo")
             assert logo_item["status"] == "COMPLETE"
-

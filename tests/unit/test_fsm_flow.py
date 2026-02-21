@@ -19,6 +19,10 @@ from shared.domain.entities import (
     Provider,
     ProviderAvailability,
     TimeRange,
+    Booking,
+    CustomerInfo,
+    BookingStatus,
+    PaymentStatus,
 )
 
 
@@ -33,6 +37,8 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.faq_repo = MagicMock()
         self.workflow_repo = MagicMock()
         self.tenant_repo = MagicMock()
+        self.booking_service = MagicMock()
+        self.tenant_id = TenantId("tenant-123")
 
         # Setup Service
         self.service = ChatAgentService(
@@ -44,6 +50,24 @@ class TestFSMBasicFlow(unittest.TestCase):
             self.faq_repo,
             self.workflow_repo,
             self.tenant_repo,
+            booking_service=self.booking_service,
+        )
+
+        self.booking_service.create_booking.return_value = Booking(
+            booking_id="bkg-1",
+            tenant_id=self.tenant_id,
+            service_id="svc-1",
+            provider_id="prov-1",
+            customer_info=CustomerInfo(
+                customer_id="c-1",
+                name="Test",
+                email="test@test.com",
+                phone="12345678",
+            ),
+            start_time=datetime.fromisoformat("2027-01-01T10:00:00"),
+            end_time=datetime.fromisoformat("2027-01-01T10:30:00"),
+            status=BookingStatus.PENDING,
+            payment_status=PaymentStatus.PENDING,
         )
 
         # Mock AI Handler to fail (forcing FSM)
@@ -51,7 +75,6 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.service.ai_handler.generate_response.side_effect = Exception("AI Offline")
 
         # Mock Data
-        self.tenant_id = TenantId("tenant-123")
         self.service_repo.list_by_tenant.return_value = [
             Service(
                 service_id="svc-1",
@@ -181,19 +204,6 @@ class TestFSMBasicFlow(unittest.TestCase):
         self.workflow_repo.get_by_id.return_value = self.workflow
 
     def test_service_flow(self):
-        """Test Start -> Service -> Provider -> Slot -> Confirm"""
-        # ... (Existing test logic adapted to new step names)
-        pass
-
-    def test_provider_flow(self):
-        """Test Start -> Provider -> Service -> Slot -> Confirm"""
-        pass
-
-    def test_faq_flow(self):
-        """Test Start -> FAQ"""
-        pass
-
-    def test_service_flow(self):
         print("\n--- Testing Service Flow ---")
         # 1. Start
         conv, resp = self.service.start_conversation(self.tenant_id)
@@ -239,7 +249,7 @@ class TestFSMBasicFlow(unittest.TestCase):
             self.tenant_id, conv.conversation_id, "Mis datos", "text", contact_data
         )
 
-        self.assertEqual(self.booking_repo.save.call_count, 1)
+        self.booking_service.create_booking.assert_called_once()
 
     def test_provider_flow(self):
         print("\n--- Testing Provider Flow ---")
@@ -285,7 +295,7 @@ class TestFSMBasicFlow(unittest.TestCase):
             self.tenant_id, conv.conversation_id, "Mis datos", "text", contact_data
         )
 
-        self.assertEqual(self.booking_repo.save.call_count, 1)  # Mock reset per test
+        self.booking_service.create_booking.assert_called_once()
 
     def test_faq_flow(self):
         print("\n--- Testing FAQ Flow ---")
