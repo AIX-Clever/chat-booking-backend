@@ -14,8 +14,8 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBConversationRepository,
     DynamoDBRoomRepository,
     DynamoDBProviderIntegrationRepository,
-    DynamoDBAvailabilityRepository,
 )
+from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
     EntityNotFoundError,
