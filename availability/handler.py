@@ -4,9 +4,7 @@ Availability Lambda Handler (Adapter Layer)
 AWS Lambda function for availability operations
 """
 
-import json
 import os
-from datetime import datetime
 
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
@@ -263,14 +261,14 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
             serialized_exceptions.append({
                 "date": ex.get("date"),
                 "timeRanges": [
-                    {"startTime": tr["startTime"], "endTime": tr["endTime"]} 
-                    if isinstance(tr, dict) else 
+                    {"startTime": tr["startTime"], "endTime": tr["endTime"]}
+                    if isinstance(tr, dict) else
                     {"startTime": tr.start_time, "endTime": tr.end_time}
                     for tr in ex.get("timeRanges", [])
                 ]
             })
         else:
-             serialized_exceptions.append({
+            serialized_exceptions.append({
                 "date": ex.date,
                 "timeRanges": [
                     {"startTime": tr.start_time, "endTime": tr.end_time}
@@ -322,8 +320,6 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     )
 
     # Serialize entities for response
-    logger.info(f"DEBUG: SERIALIZATION FIX V2 - Count: {len(updated_exceptions)}")
-    
     final_exceptions_list = []
     for ex in updated_exceptions:
         if isinstance(ex, dict):
@@ -334,12 +330,13 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
         else:
             final_exceptions_list.append({
                 "date": ex.date,
-                "timeRanges": [{"startTime": tr.start_time, "endTime": tr.end_time} for tr in ex.time_ranges] if ex.time_ranges else []
+                "timeRanges": [
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in ex.time_ranges
+                ] if ex.time_ranges else []
             })
 
     result = {"providerId": provider_id, "exceptions": final_exceptions_list}
-    logger.info("Returning result", result_keys=list(result.keys()))
-    
     return success_response(result)
 
 
@@ -363,20 +360,19 @@ def handle_get_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     )
 
     # Deserialize entities for response
-    # Deserialize entities for response
     serialized_exceptions = []
     for ex in exceptions:
-         if isinstance(ex, dict):
+        if isinstance(ex, dict):
             serialized_exceptions.append({
                 "date": ex.get("date"),
                 "timeRanges": [
-                     {"startTime": tr["startTime"], "endTime": tr["endTime"]} 
-                    if isinstance(tr, dict) else 
+                    {"startTime": tr["startTime"], "endTime": tr["endTime"]}
+                    if isinstance(tr, dict) else
                     {"startTime": tr.start_time, "endTime": tr.end_time}
                     for tr in ex.get("timeRanges", [])
                 ]
             })
-         else:
+        else:
             serialized_exceptions.append({
                 "date": ex.date,
                 "timeRanges": [
