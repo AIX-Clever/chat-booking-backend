@@ -38,22 +38,37 @@ def lambda_handler(event, context):
 
         # 2. Handle 'movement.created' (Payment Received)
         if event_type == 'movement.created':
-            # Logic for movements (manual transfers matched later)
-            print(f"Payment detected: {data.get('amount')} CLP")
+            # This happens when a transfer is detected
+            account_id = data.get('account_id')
+            amount = data.get('amount')
+            description = data.get('description')
+            
+            # TODO: Match movement to a tenant/subscription
+            # Fintoc doesn't utilize 'external_reference' like MP in movements easily.
+            # We need to match by 'holder_id' or a unique code in the description.
+            
+            print(f"Payment detected: {amount} CLP from Account {account_id}")
 
         # 3. Handle 'subscription_intent.succeeded' (Successful Payment)
         elif event_type == 'subscription_intent.succeeded':
             intent_id = data.get('id')
             print(f"Subscription Intent Succeeded: {intent_id}")
             
-            # Find the tenant associated with this intent ID
-            response = SUBSCRIPTIONS_TABLE.scan(
-                FilterExpression=boto3.dynamodb.conditions.Attr('mpPreapprovalId').eq(intent_id)
+            # Find the tenant associated with this intent ID (using GSI)
+            response = SUBSCRIPTIONS_TABLE.query(
+                IndexName='mpPreapprovalId-index',
+                KeyConditionExpression=boto3.dynamodb.conditions.Key('mpPreapprovalId').eq(intent_id)
             )
             items = response.get('Items', [])
             
             if not items:
-                print(f"No subscription found for intent ID: {intent_id}")
+                print(f"No subscription found for intent ID (GSI): {intent_id}")
+                # Fallback to Scan ONLY if necessary (for transition or if GSI is not ready)
+                # print("Fallback to Scan...")
+                # response = SUBSCRIPTIONS_TABLE.scan(
+                #     FilterExpression=boto3.dynamodb.conditions.Attr('mpPreapprovalId').eq(intent_id)
+                # )
+                # items = response.get('Items', [])
             else:
                 for item in items:
                     tenant_id = item['tenantId']

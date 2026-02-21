@@ -51,6 +51,13 @@ export class SubscriptionStack extends cdk.Stack {
             removalPolicy: cdk.RemovalPolicy.RETAIN,
         });
 
+        // Add GSI for efficient Lookup by external references (MP/Fintoc Intent ID)
+        this.subscriptionsTable.addGlobalSecondaryIndex({
+            indexName: 'mpPreapprovalId-index',
+            partitionKey: { name: 'mpPreapprovalId', type: dynamodb.AttributeType.STRING },
+            projectionType: dynamodb.ProjectionType.ALL,
+        });
+
         // 2. SQS: Webhooks Queue & DLQ
         this.webhooksDLQ = new sqs.Queue(this, 'WebhooksDLQ', {
             queueName: `ChatBooking-WebhooksDLQ-${props.envName}`,
@@ -182,6 +189,8 @@ export class SubscriptionStack extends cdk.Stack {
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
             handler: 'fintoc_webhook.lambda_handler',
         });
+        this.subscriptionsTable.grantReadWriteData(this.fintocWebhookFunction);
+        props.tenantsTable.grantReadWriteData(this.fintocWebhookFunction);
 
         const fintocWebhookUrl = this.fintocWebhookFunction.addFunctionUrl({
             authType: lambda.FunctionUrlAuthType.NONE,
