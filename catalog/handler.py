@@ -432,6 +432,37 @@ def service_to_dict(service) -> dict:
     }
 
 
+def transform_assets_url(url: Optional[str]) -> Optional[str]:
+    """
+    Transforms a direct S3 URL to a CloudFront URL if ASSETS_DOMAIN is configured.
+    Example:
+    S3: https://chat-booking-assets-dev-607250385528.s3.amazonaws.com/raw/filename.jpg
+    CF: https://dXXXXXXXXXXXXX.cloudfront.net/raw/filename.jpg
+    """
+    if not url:
+        return url
+
+    assets_domain = os.environ.get("ASSETS_DOMAIN")
+    if not assets_domain:
+        return url
+
+    # Check if it's already a CloudFront URL
+    if assets_domain in url:
+        return url
+
+    # Check if it's an S3 URL
+    if ".s3.amazonaws.com/" in url:
+        try:
+            # Extract the path after the bucket name
+            path = url.split(".s3.amazonaws.com/")[-1]
+            return f"https://{assets_domain}/{path}"
+        except Exception as e:
+            logger.warning("Failed to transform S3 URL", url=url, error=str(e))
+            return url
+
+    return url
+
+
 def provider_to_dict(provider) -> dict:
     """Convert Provider entity to dict"""
     return {
@@ -442,8 +473,8 @@ def provider_to_dict(provider) -> dict:
         "timezone": provider.timezone,
         "metadata": provider.metadata,
         "available": provider.active,
-        "photoUrl": provider.photo_url,
-        "photoUrlThumbnail": provider.photo_url_thumbnail,
+        "photoUrl": transform_assets_url(provider.photo_url),
+        "photoUrlThumbnail": transform_assets_url(provider.photo_url_thumbnail),
         "slug": provider.slug,
         "professionalLicense": getattr(provider, "professional_license", None),
         "hasGoogleCalendar": getattr(provider, "google_integration", None) is not None,

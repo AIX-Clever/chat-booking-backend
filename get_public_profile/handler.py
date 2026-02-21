@@ -1,8 +1,36 @@
 import os
 import boto3
 import json
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from shared.utils import Logger, error_response
+
+
+def transform_assets_url(url: Optional[str], logger: Logger) -> Optional[str]:
+    """
+    Transforms a direct S3 URL to a CloudFront URL if ASSETS_DOMAIN is configured.
+    """
+    if not url:
+        return url
+
+    assets_domain = os.environ.get("ASSETS_DOMAIN")
+    if not assets_domain:
+        return url
+
+    # Check if it's already a CloudFront URL
+    if assets_domain in url:
+        return url
+
+    # Check if it's an S3 URL
+    if ".s3.amazonaws.com/" in url:
+        try:
+            # Extract the path after the bucket name
+            path = url.split(".s3.amazonaws.com/")[-1]
+            return f"https://{assets_domain}/{path}"
+        except Exception as e:
+            logger.warning("Failed to transform S3 URL", url=url, error=str(e))
+            return url
+
+    return url
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -198,7 +226,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         "providerId": prov.get("providerId"),
                         "name": prov.get("name"),
                         "bio": prov.get("bio"),
-                        "photoUrl": prov.get("photoUrl"),
+                        "photoUrl": transform_assets_url(prov.get("photoUrl"), logger),
                         "timezone": prov.get("timezone", "America/Santiago"),
                         "serviceIds": prov.get(
                             "services", []
@@ -258,8 +286,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "name": tenant_data.get("name"),
             "slug": tenant_data.get("slug"),
             "bio": tenant_data.get("bio") or profile_settings.get("bio", ""),
-            "photoUrl": tenant_data.get("photoUrl")
-            or profile_settings.get("logoUrl", ""),
+            "photoUrl": transform_assets_url(tenant_data.get("photoUrl")
+            or profile_settings.get("logoUrl", ""), logger),
             "themeColor": tenant_data.get("themeColor")
             or (settings.get("widgetConfig") or {}).get("primaryColor", "#1976d2"),
             "primaryServiceId": tenant_data.get("primaryServiceId")

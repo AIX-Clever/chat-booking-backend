@@ -149,6 +149,11 @@ export class LambdaStack extends cdk.Stack {
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
+    // Import Assets Distribution Domain from SSM
+    const assetsDomain = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/assets-distribution-domain`
+    );
+
 
     // 1. Auth Resolver Lambda
     this.authResolverFunction = new lambda.Function(this, 'AuthResolverFunction', {
@@ -179,6 +184,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         ASSETS_BUCKET: props.assetsBucketName || '',
+        ASSETS_DOMAIN: assetsDomain,
       }
     });
 
@@ -497,6 +503,10 @@ export class LambdaStack extends cdk.Stack {
       code: lambda.Code.fromAsset(path.join(backendPath, 'get_public_profile')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        ASSETS_DOMAIN: assetsDomain,
+      },
     });
 
     // Grant permissions

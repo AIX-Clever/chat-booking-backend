@@ -80,5 +80,12 @@ export class AssetsStack extends cdk.Stack {
         new cdk.CfnOutput(this, 'AssetsDistributionDomain', {
             value: this.distribution.distributionDomainName,
         });
+
+        // Export to SSM for other stacks to consume
+        new cdk.aws_ssm.StringParameter(this, 'AssetsDistributionDomainParam', {
+            parameterName: `/chatbooking/${props.stage}/assets-distribution-domain`,
+            stringValue: this.distribution.distributionDomainName,
+            description: 'Domain name for the assets CloudFront distribution',
+        });
     }
 }
