@@ -298,11 +298,20 @@ class AvailabilityManagementService:
     def __init__(self, availability_repo: IAvailabilityRepository):
         self._availability_repo = availability_repo
 
-    def set_provider_availability(self, tenant_id, provider_id, schedule: List[ProviderAvailability]):
-        for s in schedule:
-            if s.tenant_id != tenant_id or s.provider_id != provider_id:
-                raise ValidationError("Invalid provider/tenant in schedule")
-        return self._availability_repo.save_availability_batch(schedule)
+    def set_provider_availability(self, tenant_id, provider_id, day_of_week, time_ranges, breaks, exceptions=None):
+        time_ranges_obj = [TimeRange(tr["startTime"], tr["endTime"]) for tr in time_ranges]
+        breaks_obj = [TimeRange(br["startTime"], br["endTime"]) for br in breaks]
+        
+        availability = ProviderAvailability(
+            tenant_id=tenant_id,
+            provider_id=provider_id,
+            day_of_week=day_of_week,
+            time_ranges=time_ranges_obj,
+            breaks=breaks_obj,
+            exceptions=exceptions or []
+        )
+        self._availability_repo.save_availability(availability)
+        return availability
 
     def add_exception(self, tenant_id, provider_id, start_time, end_time, reason=None, is_recurring=False):
         exception = ExceptionRule(
