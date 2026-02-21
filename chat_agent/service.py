@@ -64,6 +64,8 @@ class ChatAgentService:
         tenant_repo: ITenantRepository,
         limit_service: Optional[TenantLimitService] = None,
         metrics_service: Optional[MetricsService] = None,
+        availability_service=None,
+        booking_service=None,
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -75,9 +77,17 @@ class ChatAgentService:
         self._tenant_repo = tenant_repo
         self._limit_service = limit_service
         self._metrics_service = metrics_service
+        self._availability_service = availability_service
+        self._booking_service = booking_service
 
         self.workflow_engine = WorkflowEngine(
-            service_repo, provider_repo, faq_repo, availability_repo, booking_repo
+            service_repo,
+            provider_repo,
+            faq_repo,
+            availability_repo,
+            booking_repo,
+            availability_service=availability_service,
+            booking_service=booking_service,
         )
 
         # Initialize AI Handler if infrastructure is available
@@ -335,61 +345,54 @@ class ChatAgentService:
 
         try:
             ctx = conversation.context
-
-            # Validate required fields
-            required = [
-                "serviceId",
-                "providerId",
-                "selectedSlot",
-                "clientName",
-                "clientEmail",
-            ]
+            required = ["serviceId", "providerId", "selectedSlot", "clientName", "clientEmail"]
             missing = [f for f in required if not ctx.get(f)]
             if missing:
-                return conversation, ResponseBuilder.error_message(
-                    f"Faltan datos para la reserva: {', '.join(missing)}"
-                )
+                return conversation, ResponseBuilder.error_message(f"Faltan datos para la reserva: {', '.join(missing)}")
 
-            booking_id = generate_id("bk")
+            start_time_str = ctx["selectedSlot"]
+            try:
+                start_val = start_time_str.replace("Z", "+00:00")
+                start_time = datetime.fromisoformat(start_val)
+            except (ValueError, TypeError):
+                return conversation, ResponseBuilder.error_message("Formato de fecha inválido.")
 
-            booking = Booking(
-                booking_id=booking_id,
-                tenant_id=tenant_id,
-                service_id=ctx["serviceId"],
-                provider_id=ctx["providerId"],
-                customer_info=CustomerInfo(
-                    name=ctx["clientName"],
-                    email=ctx["clientEmail"],
-                    phone=ctx.get("clientPhone"),
-                ),
-                start_time=ctx["selectedSlot"],
-                status=BookingStatus.CONFIRMED,
-                created_at=datetime.now(UTC),
-                updated_at=datetime.now(UTC),
-            )
-
-            self._booking_repo.save(booking)
-
-            # Store booking id in context
-            conversation.context["bookingId"] = booking_id
-            self._conversation_repo.save(conversation)
-
-            # Construct booking dict for response
-            booking_dict = {
-                "bookingId": booking.booking_id,
-                "clientEmail": booking.customer_info.email,
-                "serviceName": ctx.get("serviceName", "Servicio"),
-                "providerName": ctx.get("providerName", "Profesional"),
-                "startTime": booking.start_time,
-            }
-
-            return conversation, ResponseBuilder.success_message(booking_dict)
-
+            if self._booking_service:
+                try:
+                    service = self._service_repo.get_by_id(tenant_id, ctx["serviceId"])
+                    if not service:
+                        return conversation, ResponseBuilder.error_message("Servicio no encontrado.")
+                    
+                    end_time = start_time + timedelta(minutes=service.duration_minutes)
+                    booking = self._booking_service.create_booking(
+                        tenant_id=tenant_id,
+                        service_id=ctx["serviceId"],
+                        provider_id=ctx["providerId"],
+                        start=start_time,
+                        end=end_time,
+                        client_name=ctx["clientName"],
+                        client_email=ctx["clientEmail"],
+                        client_phone=ctx.get("clientPhone"),
+                        notes=ctx.get("notes"),
+                        conversation_id=conversation_id
+                    )
+                    conversation.context["bookingId"] = booking.booking_id
+                    self._conversation_repo.save(conversation)
+                    
+                    return conversation, ResponseBuilder.success_message({
+                        "bookingId": booking.booking_id,
+                        "serviceName": ctx.get("serviceName", service.name),
+                        "providerName": ctx.get("providerName", "Profesional"),
+                        "startTime": booking.start_time.isoformat(),
+                    })
+                except Exception as e:
+                    print(f"BookingService Error: {e}")
+                    return conversation, ResponseBuilder.error_message(f"No pudimos procesar tu reserva: {str(e)}")
+            
+            return conversation, ResponseBuilder.error_message("Error interno en la creación de la reserva.")
         except Exception as e:
             print(f"Booking Error: {e}")
-            return conversation, ResponseBuilder.error_message(
-                "No pudimos procesar tu reserva. Intenta nuevamente."
-            )
+            return conversation, ResponseBuilder.error_message("No pudimos procesar tu reserva. Intenta nuevamente.")
 
     def _create_default_workflow(self, tenant_id: TenantId):
         from shared.domain.entities import Workflow, WorkflowStep

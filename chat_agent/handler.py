@@ -13,12 +13,18 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBFAQRepository,
     DynamoDBWorkflowRepository,
     DynamoDBTenantRepository,
+    DynamoDBRoomRepository,
+    DynamoDBProviderIntegrationRepository,
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, extract_appsync_event
 from shared.metrics import MetricsService
+from shared.infrastructure.notifications import EmailService
+from shared.application.booking_service import BookingService
+from shared.application.availability_service import AvailabilityService
+import os
 
 try:
     from shared.limit_service import TenantLimitService
@@ -36,13 +42,38 @@ booking_repo = DynamoDBBookingRepository()
 availability_repo = DynamoDBAvailabilityRepository()
 faq_repo = DynamoDBFAQRepository()
 workflow_repo = DynamoDBWorkflowRepository()
-metrics_service = MetricsService()
 tenant_repo = DynamoDBTenantRepository()
+room_repo = DynamoDBRoomRepository()
+provider_integration_repo = DynamoDBProviderIntegrationRepository()
+metrics_service = MetricsService()
+email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
 # Initialize Limit Service
 limit_service = None
 if TenantLimitService:
     limit_service = TenantLimitService(tenant_repo, metrics_service)
+
+# Initialize Domain Services
+availability_service = AvailabilityService(
+    availability_repo,
+    booking_repo,
+    service_repo,
+    provider_repo,
+    provider_integration_repo
+)
+
+booking_service = BookingService(
+    booking_repo,
+    service_repo,
+    provider_repo,
+    tenant_repo,
+    room_repo=room_repo,
+    provider_integration_repo=provider_integration_repo,
+    limit_service=limit_service,
+    email_service=email_service,
+    availability_service=availability_service,
+    metrics_service=metrics_service
+)
 
 chat_agent_service = ChatAgentService(
     conversation_repo,
@@ -55,6 +86,8 @@ chat_agent_service = ChatAgentService(
     tenant_repo=tenant_repo,
     limit_service=limit_service,
     metrics_service=metrics_service,
+    availability_service=availability_service,
+    booking_service=booking_service
 )
 
 logger = Logger()

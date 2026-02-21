@@ -14,6 +14,7 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBConversationRepository,
     DynamoDBRoomRepository,
     DynamoDBProviderIntegrationRepository,
+    DynamoDBAvailabilityRepository,
 )
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import (
@@ -37,8 +38,8 @@ from shared.infrastructure.notifications import EmailService
 from shared.limit_service import TenantLimitService
 import os
 
-from service import BookingService, BookingQueryService
-
+from shared.application.booking_service import BookingService, BookingQueryService
+from shared.application.availability_service import AvailabilityService
 
 # Initialize dependencies (singleton pattern)
 booking_repo = DynamoDBBookingRepository()
@@ -48,8 +49,18 @@ tenant_repo = DynamoDBTenantRepository()
 conversation_repo = DynamoDBConversationRepository()
 room_repo = DynamoDBRoomRepository()
 provider_integration_repo = DynamoDBProviderIntegrationRepository()
+availability_repo = DynamoDBAvailabilityRepository()
 metrics_service = MetricsService()
 email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
+
+# Initialize Availability Service
+availability_service = AvailabilityService(
+    availability_repo,
+    booking_repo,
+    service_repo,
+    provider_repo,
+    provider_integration_repo
+)
 
 # Initialize Limit Service
 limit_service = TenantLimitService(tenant_repo, metrics_service)
@@ -63,6 +74,7 @@ booking_service = BookingService(
     provider_integration_repo=provider_integration_repo,
     limit_service=limit_service,
     email_service=email_service,
+    availability_service=availability_service
 )
 
 booking_query_service = BookingQueryService(booking_repo, conversation_repo)

@@ -31,7 +31,7 @@ from shared.utils import (
     to_iso_string,
 )
 
-from service import AvailabilityService, AvailabilityManagementService
+from shared.application.availability_service import AvailabilityService, AvailabilityManagementService
 
 
 # Initialize dependencies (singleton pattern)

@@ -10,7 +10,7 @@ from shared.domain.entities import (
     TimeSlot,
     Booking,
 )
-from availability.service import AvailabilityService
+from shared.application.availability_service import AvailabilityService
 
 
 class TestAvailabilityService(unittest.TestCase):
