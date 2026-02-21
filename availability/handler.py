@@ -326,18 +326,17 @@ def handle_set_provider_exceptions(tenant_id: TenantId, input_data: dict) -> dic
     
     final_exceptions_list = []
     for ex in updated_exceptions:
-        # Explicit dict conversion
-        ex_dict = {
-            "date": ex.date,
-            "timeRanges": [
-                {"startTime": tr.start_time, "endTime": tr.end_time}
-                for tr in ex.time_ranges
-            ] if ex.time_ranges else [],
-        }
-        final_exceptions_list.append(ex_dict)
+        if isinstance(ex, dict):
+            final_exceptions_list.append({
+                "date": ex.get("date"),
+                "timeRanges": ex.get("timeRanges", [])
+            })
+        else:
+            final_exceptions_list.append({
+                "date": ex.date,
+                "timeRanges": [{"startTime": tr.start_time, "endTime": tr.end_time} for tr in ex.time_ranges] if ex.time_ranges else []
+            })
 
-    # Return object matches GraphQL schema ProviderExceptions!
-    # Ensure we return PURE python types (dicts/lists)
     result = {"providerId": provider_id, "exceptions": final_exceptions_list}
     logger.info("Returning result", result_keys=list(result.keys()))
     

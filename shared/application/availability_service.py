@@ -313,17 +313,9 @@ class AvailabilityManagementService:
         self._availability_repo.save_availability(availability)
         return availability
 
-    def add_exception(self, tenant_id, provider_id, start_time, end_time, reason=None, is_recurring=False):
-        exception = ExceptionRule(
-            exception_id=f"ex_{int(datetime.now().timestamp())}",
-            tenant_id=tenant_id,
-            provider_id=provider_id,
-            start_time=start_time,
-            end_time=end_time,
-            reason=reason,
-            is_recurring=is_recurring,
-        )
-        return self._availability_repo.save_exception(exception)
+    def get_provider_exceptions(self, tenant_id, provider_id):
+        return self._availability_repo.get_provider_exceptions(tenant_id, provider_id)
 
-    def delete_exception(self, tenant_id, provider_id, exception_id):
-        return self._availability_repo.delete_exception(tenant_id, provider_id, exception_id)
+    def set_provider_exceptions(self, tenant_id, provider_id, exceptions: list):
+        self._availability_repo.save_provider_exceptions(tenant_id, provider_id, exceptions)
+        return exceptions
