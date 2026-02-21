@@ -133,17 +133,23 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             metadata = json.loads(metadata_str) if isinstance(metadata_str, str) else metadata_str
             ai_drivers = metadata.get('aiDrivers', {})
             specializations = ai_drivers.get('specialties', [])
-            # profession logic: try to get from new_image.profession, else generic.
-            # 'profile' was undefined here. We should look at new_image or tenant settings defaults.
-            # Let's try to get it from new_image directly first.
             profession = new_image.get('profession', {}).get('S', 'Especialista')
         except Exception as e:
             logger.warning(f"Failed to parse provider metadata: {e}")
             profession = "Especialista"
 
         services = fetch_services(services_table, tenant_id)
-        # For professional landing, we only include this provider or highlight it
-        all_providers = fetch_providers(providers_table, tenant_id)
+        # For professional landing, we only include this provider in the 'providers' list
+        # OR we could include all but pre-select this one. 
+        # But if we show all providers on a professional's page, it might be confusing.
+        # Let's keep ONLY this provider for the personal page.
+        this_provider = {
+            "providerId": provider_id,
+            "name": name,
+            "photoUrl": photo_url,
+            "bio": bio,
+            "services": [s['S'] for s in new_image.get('services', {}).get('L', [])]
+        }
         
         profile_data = {
             "tenantId": tenant_id,
@@ -155,13 +161,68 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "profession": profession,
             "specializations": specializations,
             "services": services,
-            "providers": all_providers,
-            "preselectedProviderId": provider_id # Signal for frontend to open this one
+            "providers": [this_provider],
+            "preselectedProviderId": provider_id
+        }
+        
+        bake_profile(slug, profile_data, context)
+        
+        # [FIX] Also trigger a bake for the Tenant (Company page)
+        # This ensures that when a provider is added/modified, the company page is updated
+        tenant_slug = tenant_item.get('slug')
+        if tenant_slug:
+            logger.info(f"Triggering company rebake for tenant {tenant_id} (slug: {tenant_slug})")
+            # We already have tenant_item, construct tenant_image for process_tenant_record wrapper
+            # Simplest is to just call a modified process_tenant_record that takes the item
+            # instead of image from stream.
+            process_tenant_record_from_item(tenant_item, services_table, providers_table, context)
+
+    except Exception as e:
+        logger.error(f"Error baking provider profile for {slug}: {str(e)}")
+
+def process_tenant_record_from_item(item, services_table, providers_table, context):
+    tenant_id = item.get('tenantId')
+    slug = item.get('slug')
+    
+    if not slug: return
+
+    settings_raw = item.get('settings', '{}')
+    settings = json.loads(settings_raw) if isinstance(settings_raw, str) else settings_raw
+    profile = settings.get('profile', {})
+    
+    name = profile.get('centerName') or item.get('name', 'Profesional')
+    bio = profile.get('bio') or item.get('bio', '')
+    photo_url = profile.get('logoUrl') or item.get('photoUrl', '')
+    theme_color = settings.get('widgetConfig', {}).get('primaryColor') or item.get('themeColor', '#3b82f6')
+    profession = profile.get('profession', 'Especialista')
+    
+    # Handle address and other things easily from raw item
+    full_address = item.get('fullAddress', '')
+    operating_hours = profile.get('operatingHours', '')
+    specializations = item.get('specializations', [])
+
+    try:
+        services = fetch_services(services_table, tenant_id)
+        providers = fetch_providers(providers_table, tenant_id)
+        
+        profile_data = {
+            "tenantId": tenant_id,
+            "slug": slug,
+            "name": name,
+            "bio": bio,
+            "photoUrl": photo_url,
+            "themeColor": theme_color,
+            "profession": profession,
+            "specializations": specializations,
+            "fullAddress": full_address,
+            "operatingHours": operating_hours,
+            "services": services,
+            "providers": providers
         }
         
         bake_profile(slug, profile_data, context)
     except Exception as e:
-        logger.error(f"Error baking provider profile for {slug}: {str(e)}")
+        logger.error(f"Error during manual tenant bake for {slug}: {str(e)}")
 
 from boto3.dynamodb.types import TypeDeserializer
 
@@ -253,7 +314,8 @@ def fetch_providers(table, tenant_id):
             {
                 "providerId": i['providerId'],
                 "name": i['name'],
-                "photoUrl": i.get('photoUrl', '')
+                "photoUrl": i.get('photoUrl', ''),
+                "bio": i.get('bio', '')
             }
             for i in items
         ]

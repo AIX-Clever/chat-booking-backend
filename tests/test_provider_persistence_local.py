@@ -51,6 +51,7 @@ class TestProviderPersistence(unittest.TestCase):
             active=True,
             photo_url="https://example.com/photo.jpg",
             photo_url_thumbnail="https://example.com/thumb.jpg",
+            professional_license="REG-12345",
         )
 
         # Execute save
@@ -68,6 +69,7 @@ class TestProviderPersistence(unittest.TestCase):
         self.assertEqual(
             item_saved["photoUrlThumbnail"], "https://example.com/thumb.jpg"
         )
+        self.assertEqual(item_saved["professionalLicense"], "REG-12345")
 
         print(
             "\n✅ Verification Successful: 'photoUrl' and 'photoUrlThumbnail' persisted to DynamoDB item."
@@ -86,6 +88,7 @@ class TestProviderPersistence(unittest.TestCase):
             "active": True,
             "photoUrl": "https://example.com/photo.jpg",
             "photoUrlThumbnail": "https://example.com/thumb.jpg",
+            "professionalLicense": "REG-12345",
         }
 
         # Use private method to test conversion logic
@@ -93,6 +96,7 @@ class TestProviderPersistence(unittest.TestCase):
 
         self.assertEqual(provider.photo_url, "https://example.com/photo.jpg")
         self.assertEqual(provider.photo_url_thumbnail, "https://example.com/thumb.jpg")
+        self.assertEqual(provider.professional_license, "REG-12345")
 
         print(
             "✅ Verification Successful: 'photoUrl' correctly mapped back to Provider entity."

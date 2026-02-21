@@ -74,8 +74,7 @@ class DynamoDBTenantRepository(ITenantRepository):
     def get_by_slug(self, slug: str) -> Optional[Tenant]:
         try:
             response = self.table.query(
-                IndexName="slug-index",
-                KeyConditionExpression=Key("slug").eq(slug)
+                IndexName="slug-index", KeyConditionExpression=Key("slug").eq(slug)
             )
 
             items = response.get("Items", [])
@@ -365,6 +364,9 @@ class DynamoDBProviderRepository(IProviderRepository):
         if provider.photo_url_thumbnail:
             item["photoUrlThumbnail"] = provider.photo_url_thumbnail
 
+        if provider.professional_license:
+            item["professionalLicense"] = provider.professional_license
+
         self.table.put_item(Item=item)
 
     def delete(self, tenant_id: TenantId, provider_id: str) -> None:
@@ -385,6 +387,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             photo_url=item.get("photoUrl"),
             photo_url_thumbnail=item.get("photoUrlThumbnail"),
             slug=item.get("slug"),
+            professional_license=item.get("professionalLicense"),
             google_integration=item.get("googleIntegration"),
             microsoft_integration=item.get("microsoftIntegration"),
         )
@@ -815,10 +818,6 @@ class DynamoDBWorkflowRepository:
             created_at=datetime.fromisoformat(item["createdAt"]),
             updated_at=datetime.fromisoformat(item["updatedAt"]),
         )
-
-
-
-
 
 
 class DynamoDBRoomRepository(IRoomRepository):
