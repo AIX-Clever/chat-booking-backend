@@ -220,7 +220,16 @@ def handle_set_availability(tenant_id: TenantId, input_data: dict) -> dict:
             {"startTime": br.start_time, "endTime": br.end_time}
             for br in availability.breaks
         ],
-        "exceptions": availability.exceptions if isinstance(availability.exceptions, list) and (not availability.exceptions or isinstance(availability.exceptions[0], str)) else [ex.date for ex in availability.exceptions] if availability.exceptions else [],
+        "exceptions": [
+            {
+                "date": ex if isinstance(ex, str) else ex.date,
+                "timeRanges": [
+                    {"startTime": tr.start_time, "endTime": tr.end_time}
+                    for tr in (ex.time_ranges if not isinstance(ex, str) and hasattr(ex, "time_ranges") else [])
+                ]
+            }
+            for ex in availability.exceptions
+        ] if availability.exceptions else [],
     }
 
     return success_response(response_data)
