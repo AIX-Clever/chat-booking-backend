@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -83,8 +84,63 @@ export class AppSyncApiStack extends cdk.Stack {
       },
     });
 
+    // -------------------------------------------------------------------
+    // AWS WAF — Rate Limiting by IP (Capa 1 de protección)
+    // Blocks IPs that exceed 500 requests per 5-minute window.
+    // Cost: ~$6/month (WebACL $5 + 1 rule $1). First 10M requests free.
+    // -------------------------------------------------------------------
+    const webAcl = new wafv2.CfnWebACL(this, 'AppSyncWAF', {
+      scope: 'REGIONAL',
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: 'AppSyncWAFMetric',
+        sampledRequestsEnabled: true,
+      },
+      rules: [
+        {
+          name: 'RateLimitByIP',
+          priority: 1,
+          action: { block: {} },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'RateLimitByIPMetric',
+            sampledRequestsEnabled: true,
+          },
+          statement: {
+            rateBasedStatement: {
+              // Limit: 500 requests per 5-minute window per IP
+              limit: 500,
+              aggregateKeyType: 'IP',
+            },
+          },
+        },
+        {
+          // Block known bad bots and scanners for free (AWS Managed Rule)
+          name: 'AWSManagedRulesBotControlRuleSet',
+          priority: 2,
+          overrideAction: { none: {} },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'BotControlMetric',
+            sampledRequestsEnabled: false,
+          },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: 'AWS',
+              name: 'AWSManagedRulesAmazonIpReputationList',
+            },
+          },
+        },
+      ],
+    });
 
-    // Create Lambda data sources
+    // Associate WAF with the AppSync API
+    new wafv2.CfnWebACLAssociation(this, 'AppSyncWAFAssociation', {
+      resourceArn: this.api.arn,
+      webAclArn: webAcl.attrArn,
+    });
+
     const catalogDataSource = this.api.addLambdaDataSource(
       'CatalogDataSource',
       props.catalogFunction

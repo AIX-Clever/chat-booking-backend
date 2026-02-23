@@ -166,13 +166,19 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 256, // Less memory for simple validation
       environment: {
         ...commonProps.environment,
-        ALLOWED_IPS: process.env.ALLOWED_IPS || '181.166.197.80,191.113.67.147,191.113.66.51', // Use env var if available
+        ALLOWED_IPS: process.env.ALLOWED_IPS || '181.166.197.80,191.113.67.147,191.113.66.51',
+        // Rate limiting config (per API key, token bucket with DynamoDB TTL)
+        TENANT_USAGE_TABLE: props.tenantUsageTable.tableName,
+        RATE_LIMIT_MAX: '100',            // max requests per window
+        RATE_LIMIT_WINDOW_SECONDS: '60',  // 1-minute rolling window
       },
     });
 
     // Grant permissions
     props.tenantsTable.grantReadData(this.authResolverFunction);
     props.apiKeysTable.grantReadWriteData(this.authResolverFunction); // WriteData for lastUsedAt update
+    props.tenantUsageTable.grantReadWriteData(this.authResolverFunction); // For rate limit counters
+
 
     // 2. Catalog Lambda
     this.catalogFunction = new lambda.Function(this, 'CatalogFunction', {

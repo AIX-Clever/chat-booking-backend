@@ -5,7 +5,6 @@ AWS Lambda function that acts as AppSync authorizer
 Resolves tenantId from API Key in request headers
 """
 
-import json
 import os
 
 from shared.infrastructure.dynamodb_repositories import (
@@ -61,7 +60,7 @@ def lambda_handler(event: dict, context) -> dict:
 
         # Extract API key from authorization token
         api_key = event.get('authorizationToken', '')
-        
+
         if not api_key:
             logger.warning("Missing authorization token")
             return unauthorized_response()
@@ -70,20 +69,16 @@ def lambda_handler(event: dict, context) -> dict:
         allowed_ips = os.environ.get('ALLOWED_IPS')
         if allowed_ips:
             request_context = event.get('requestContext', {})
-            # AppSync passes client/source IP in different ways depending on setup, but typically in identity
-            # Ideally verify exact path for AppSync Direct Lambda Authorizer
             source_ip = request_context.get('identity', {}).get('sourceIp')
-            
-            # If not in identity, checks headers (X-Forwarded-For) as fallback roughly
+
             if not source_ip:
-                 # Attempt to find IP in headers if identity is missing (rare related to VTL but good backup)
-                 headers = event.get('headers', {})
-                 source_ip = headers.get('x-forwarded-for') or headers.get('X-Forwarded-For')
+                # Fallback: check X-Forwarded-For header
+                headers = event.get('headers', {})
+                source_ip = headers.get('x-forwarded-for') or headers.get('X-Forwarded-For')
 
             allowed_list = [ip.strip() for ip in allowed_ips.split(',') if ip.strip()]
-            
             logger.info(f"Checking IP {source_ip} against whitelist")
-            
+
             if source_ip and source_ip not in allowed_list:
                 logger.warning(f"IP {source_ip} not in allowed list")
                 return unauthorized_response("IP not allowed")
@@ -94,6 +89,12 @@ def lambda_handler(event: dict, context) -> dict:
 
         # Authenticate using service
         tenant_id = auth_service.authenticate_api_key(api_key, origin)
+
+        # [RATE LIMIT] Check per-API-key rate limit after successful auth
+        # Fail-open: if DynamoDB unavailable, traffic is not blocked
+        if not _check_rate_limit(api_key):
+            logger.warning("Rate limit exceeded", api_key_prefix=api_key[:8])
+            return unauthorized_response("Rate limit exceeded. Please try again in 1 minute.")
 
         # Return authorized response
         return authorized_response(str(tenant_id))
@@ -109,6 +110,63 @@ def lambda_handler(event: dict, context) -> dict:
     except Exception as e:
         logger.error("Unexpected error in auth resolver", error=e)
         return unauthorized_response("Internal error")
+
+
+def _check_rate_limit(api_key: str) -> bool:
+    """
+    Token-bucket rate limiter using DynamoDB atomic counter + TTL.
+
+    DynamoDB item:
+      pk:    "rate#<sha256[:16]>"
+      sk:    "rate_limit"
+      count: N  (atomic ADD, increments per request)
+      ttl:   epoch + WINDOW_SECONDS  (DynamoDB TTL auto-deletes the item)
+
+    Returns True if within limit, False if throttled.
+    Fails OPEN if DynamoDB is unavailable (avoids blocking legitimate traffic).
+    """
+    import time
+    import hashlib
+    import boto3
+
+    table_name = os.environ.get('TENANT_USAGE_TABLE')
+    if not table_name:
+        return True  # Fail open: rate limiting disabled if table not configured
+
+    max_requests = int(os.environ.get('RATE_LIMIT_MAX', '100'))
+    window_seconds = int(os.environ.get('RATE_LIMIT_WINDOW_SECONDS', '60'))
+
+    # Short hash of API key as PK — avoids storing the raw key in DynamoDB
+    key_hash = hashlib.sha256(api_key.encode()).hexdigest()[:16]
+    pk = f"rate#{key_hash}"
+    now = int(time.time())
+    expiry = now + window_seconds
+
+    try:
+        dynamodb = boto3.resource('dynamodb')
+        table = dynamodb.Table(table_name)
+
+        # Atomically increment. if_not_exists sets TTL only on first write (window start).
+        response = table.update_item(
+            Key={'pk': pk, 'sk': 'rate_limit'},
+            UpdateExpression='ADD #cnt :one SET #ttl = if_not_exists(#ttl, :expiry)',
+            ExpressionAttributeNames={'#cnt': 'count', '#ttl': 'ttl'},
+            ExpressionAttributeValues={':one': 1, ':expiry': expiry},
+            ReturnValues='UPDATED_NEW',
+        )
+
+        current_count = int(response['Attributes'].get('count', 1))
+
+        if current_count > max_requests:
+            logger.warning("Rate limit exceeded", key_hash=key_hash, count=current_count, max=max_requests)
+            return False
+
+        return True
+
+    except Exception as e:
+        # Fail open: don't block legitimate traffic if DynamoDB is degraded
+        logger.error(f"Rate limit check failed (fail-open): {e}")
+        return True
 
 
 def authorized_response(tenant_id: str) -> dict:
