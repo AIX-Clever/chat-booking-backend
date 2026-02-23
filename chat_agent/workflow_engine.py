@@ -9,7 +9,7 @@ from shared.domain.entities import (
     BookingStatus,
     CustomerInfo,
 )
-from shared.domain.exceptions import ValidationError
+from shared.domain.exceptions import ValidationError, SlotNotAvailableError
 from shared.utils import generate_id
 from zoneinfo import ZoneInfo
 
@@ -742,10 +742,32 @@ class WorkflowEngine:
                 # [LEGACY FALLBACK] matches old behavior but should be avoided
                 return ResponseBuilder.error_message("Error interno: Servicio de reservas no disponible.")
 
+            except SlotNotAvailableError as e:
+                print(f"SlotNotAvailableError in chat confirmBooking: {e}")
+                # Clear the selected slot so user must pick again
+                conversation.context.pop("selectedSlot", None)
+                return {
+                    "type": "options",
+                    "text": (
+                        "😕 Ups, ese horario ya no está disponible (alguien se adelantó).\n"
+                        "¿Te gustaría elegir otro horario?"
+                    ),
+                    "options": [
+                        {"label": "📅 Ver horarios disponibles", "value": "select_timeslot"},
+                        {"label": "🔄 Volver al inicio", "value": "restart"},
+                    ],
+                    "metadata": {"next_step_on_value": {
+                        "select_timeslot": "select_timeslot",
+                        "restart": "start",
+                    }},
+                }
+            except ValidationError as e:
+                print(f"ValidationError in chat confirmBooking: {e}")
+                return ResponseBuilder.error_message(str(e))
             except Exception as e:
-                print(f"Booking Error: {e}")
+                print(f"Booking Error in chat confirmBooking: {e}")
                 return ResponseBuilder.error_message(
-                    f"No pudimos procesar tu reserva: {str(e)}"
+                    "No pudimos procesar tu reserva. Por favor intenta nuevamente."
                 )
 
         return ResponseBuilder.error_message(f"Tool {tool_name} not implemented")
