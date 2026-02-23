@@ -32,7 +32,7 @@ logger = Logger()
 def lambda_handler(event: dict, context) -> dict:
     """
     Lambda handler for AppSync custom authorizer
-    
+
     Input event format:
     {
         "authorizationToken": "sk_...",
@@ -44,7 +44,7 @@ def lambda_handler(event: dict, context) -> dict:
             "origin": "https://example.com"
         }
     }
-    
+
     Output format:
     {
         "isAuthorized": true,
