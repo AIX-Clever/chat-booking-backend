@@ -315,7 +315,8 @@ def fetch_providers(table, tenant_id):
                 "providerId": i['providerId'],
                 "name": i['name'],
                 "photoUrl": i.get('photoUrl', ''),
-                "bio": i.get('bio', '')
+                "bio": i.get('bio', ''),
+                "services": i.get('services', [])
             }
             for i in items
         ]
