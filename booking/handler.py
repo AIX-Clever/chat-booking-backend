@@ -196,6 +196,13 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
     except ValueError as e:
         return error_response(f"Invalid date format: {e}", 400)
 
+    # Normalize naive datetimes to UTC (defensive: clients may omit timezone info)
+    from datetime import UTC as _UTC
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=_UTC)
+    if end.tzinfo is None:
+        end = end.replace(tzinfo=_UTC)
+
     # Create booking
     booking = booking_service.create_booking(
         tenant_id=tenant_id,

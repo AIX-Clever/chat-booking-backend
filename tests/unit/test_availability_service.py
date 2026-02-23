@@ -223,7 +223,69 @@ class TestAvailabilityService(unittest.TestCase):
         # Should be 3 slots: 09:00, 10:00, 11:00
         self.assertEqual(len(slots), 3)
 
+    def test_breaks_excluded_from_slots(self):
+        """Test that break periods are not offered as available slots"""
+        # Mon 09:00-17:00 with lunch break 12:00-13:00
+        from shared.domain.entities import ProviderAvailability, TimeRange
+        availability = ProviderAvailability(
+            tenant_id=self.tenant_id,
+            provider_id=self.provider_id,
+            day_of_week="MON",
+            time_ranges=[TimeRange("09:00", "17:00")],
+            breaks=[TimeRange("12:00", "13:00")],
+        )
+        self.mock_availability_repo.get_provider_availability.return_value = [availability]
+        self.mock_availability_repo.get_provider_exceptions.return_value = []
+
+        # 2026-03-23 is a Monday
+        from_date = datetime(2026, 3, 23, 0, 0)
+        to_date = datetime(2026, 3, 23, 23, 59)
+
+        slots = self.service.get_available_slots(
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+        )
+
+        slot_hours = [s.start.hour for s in slots]
+        # 12:00 UTC should NOT appear (break)
+        self.assertNotIn(12, slot_hours, "Break time slot at 12:00 should not be available")
+        # 11:00 and 13:00 UTC should appear (adjacent to break)
+        self.assertIn(11, slot_hours, "Slot at 11:00 should be available")
+        self.assertIn(13, slot_hours, "Slot at 13:00 should be available")
+        # Total: 9,10,11 + 13,14,15,16 = 7 slots (not 8)
+        self.assertEqual(len(slots), 7, f"Expected 7 slots (break excluded), got {len(slots)}: {slot_hours}")
+
+    def test_breaks_with_timezone(self):
+        """Test that break exclusion respects provider timezone"""
+        # Provider in Santiago (UTC-3 in March)
+        self.mock_provider_obj.timezone = "America/Santiago"
+
+        # Mon 09:00-12:00 local with break 10:00-11:00 local
+        availability = ProviderAvailability(
+            tenant_id=self.tenant_id,
+            provider_id=self.provider_id,
+            day_of_week="MON",
+            time_ranges=[TimeRange("09:00", "12:00")],
+            breaks=[TimeRange("10:00", "11:00")],
+        )
+        self.mock_availability_repo.get_provider_availability.return_value = [availability]
+        self.mock_availability_repo.get_provider_exceptions.return_value = []
+
+        from_date = datetime(2026, 3, 23, 0, 0)
+        to_date = datetime(2026, 3, 23, 23, 59)
+
+        slots = self.service.get_available_slots(
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+        )
+
+        # 09:00 Santiago = 12:00 UTC  → available
+        # 10:00 Santiago = 13:00 UTC  → break, should NOT appear
+        # 11:00 Santiago = 14:00 UTC  → available
+        slot_utc_hours = [s.start.hour for s in slots]
+        self.assertNotIn(13, slot_utc_hours, "Break at local 10:00 (UTC 13:00) should not be available")
+        self.assertIn(12, slot_utc_hours, "Slot at local 09:00 (UTC 12:00) should be available")
+        self.assertIn(14, slot_utc_hours, "Slot at local 11:00 (UTC 14:00) should be available")
+        self.assertEqual(len(slots), 2, f"Expected 2 slots (break excluded), got {len(slots)}: {slot_utc_hours}")
+
 
 if __name__ == "__main__":
     unittest.main()
-

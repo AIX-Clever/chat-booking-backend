@@ -223,6 +223,11 @@ class AvailabilityService:
         if not effective_ranges:
             return []
 
+        # Collect breaks for the day from standard rules (exceptions don't carry breaks)
+        day_breaks = []
+        for rule in day_rules:
+            day_breaks.extend(rule.breaks)
+
         for time_range in effective_ranges:
             start_h, start_m = map(int, time_range.start_time.split(":"))
             end_h, end_m = map(int, time_range.end_time.split(":"))
@@ -233,12 +238,15 @@ class AvailabilityService:
 
             while current_local + duration <= end_local_limit:
                 slot_end_local = current_local + duration
-                
-                # Convert to UTC for "external" checks (bookings, etc)
+
+                # Convert to UTC for external checks (bookings, external calendars)
                 current_utc = current_local.astimezone(UTC)
                 slot_end_utc = slot_end_local.astimezone(UTC)
 
-                if not self._is_busy(current_utc, slot_end_utc, bookings, external_busy_slots):
+                # Skip slots that fall within a break period
+                in_break = self._is_in_break(current_utc, slot_end_utc, day_breaks, day, tz)
+
+                if not in_break and not self._is_busy(current_utc, slot_end_utc, bookings, external_busy_slots):
                     slots.append(TimeSlot(
                         provider_id=provider_id,
                         service_id=service.service_id,
@@ -246,12 +254,30 @@ class AvailabilityService:
                         end=slot_end_utc,
                         is_available=True
                     ))
-                
+
                 # Use provided interval if set, otherwise default to service duration
                 interval = timedelta(minutes=self._slot_interval_minutes) if self._slot_interval_minutes else duration
                 current_local += interval
 
         return slots
+
+    def _is_in_break(self, start_utc: datetime, end_utc: datetime, breaks: list, day: date, tz) -> bool:
+        """
+        Check if a UTC slot overlaps with any break period.
+        Breaks are expressed in provider local time (HH:MM), so we convert them to UTC for comparison.
+        """
+        for br in breaks:
+            try:
+                br_start_h, br_start_m = map(int, br.start_time.split(":"))
+                br_end_h, br_end_m = map(int, br.end_time.split(":"))
+                br_start_utc = datetime.combine(day, time(br_start_h, br_start_m)).replace(tzinfo=tz).astimezone(UTC)
+                br_end_utc = datetime.combine(day, time(br_end_h, br_end_m)).replace(tzinfo=tz).astimezone(UTC)
+                # Overlap: slot starts before break ends AND slot ends after break starts
+                if not (end_utc <= br_start_utc or start_utc >= br_end_utc):
+                    return True
+            except (ValueError, AttributeError):
+                continue
+        return False
 
     def _is_busy(self, start, end, bookings, external_busy_slots):
         # 1. Check Bookings

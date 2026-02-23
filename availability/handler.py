@@ -146,6 +146,12 @@ def handle_get_available_slots(tenant_id: TenantId, input_data: dict) -> dict:
     if from_date >= to_date:
         return error_response("from date must be before to date", 400)
 
+    # Limit range to prevent abuse on public endpoint
+    from datetime import timedelta as _td
+    MAX_RANGE_DAYS = 7
+    if (to_date - from_date) > _td(days=MAX_RANGE_DAYS):
+        return error_response(f"Date range cannot exceed {MAX_RANGE_DAYS} days", 400)
+
     # Calculate slots
     slots = availability_service.get_available_slots(
         tenant_id, service_id, provider_id, from_date, to_date
@@ -278,7 +284,7 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
 
     # Convert to response format
     response_data = []
-    for avail in schedule:
+    for i, avail in enumerate(schedule):
         response_data.append(
             {
                 "providerId": avail.provider_id,
@@ -291,7 +297,8 @@ def handle_get_provider_availability(tenant_id: TenantId, input_data: dict) -> d
                     {"startTime": br.start_time, "endTime": br.end_time}
                     for br in avail.breaks
                 ],
-                "exceptions": serialized_exceptions,  # Include provider-level exceptions in first item
+                # Exceptions are provider-level, only attach to the first day item to avoid duplication
+                "exceptions": serialized_exceptions if i == 0 else [],
             }
         )
 

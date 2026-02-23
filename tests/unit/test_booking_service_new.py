@@ -1,6 +1,13 @@
 import unittest
+import os
 from datetime import datetime, timedelta, UTC
-from unittest.mock import Mock, patch
+from unittest.mock import Mock, patch, MagicMock
+
+# Prevent boto3/botocore NoRegionError during unit test imports
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
+
 from shared.domain.entities import (
     TenantId,
     Booking,
@@ -12,6 +19,7 @@ from shared.domain.entities import (
 from shared.application.booking_service import BookingService
 from shared.domain.exceptions import SlotNotAvailableError
 
+
 class TestBookingService(unittest.TestCase):
     def setUp(self):
         self.mock_booking_repo = Mock()
@@ -19,7 +27,7 @@ class TestBookingService(unittest.TestCase):
         self.mock_provider_repo = Mock()
         self.mock_tenant_repo = Mock()
         self.mock_availability_service = Mock()
-        
+
         self.service = BookingService(
             booking_repo=self.mock_booking_repo,
             service_repo=self.mock_service_repo,
@@ -116,6 +124,53 @@ class TestBookingService(unittest.TestCase):
             )
         
         self.mock_booking_repo.save.assert_not_called()
+
+    def test_max_advance_booking_rejected(self):
+        """Test booking too far in the future is rejected (Fix 5)"""
+        from shared.domain.exceptions import ValidationError
+        self.mock_availability_service.is_slot_available.return_value = True
+        self.mock_service.price = 0
+
+        # 200 days in the future, beyond default 180-day limit
+        start = datetime.now(UTC).replace(microsecond=0) + timedelta(days=200)
+        end = start + timedelta(minutes=60)
+
+        with patch.dict('os.environ', {'MAX_BOOKING_ADVANCE_DAYS': '180'}):
+            with self.assertRaises(ValidationError) as ctx:
+                self.service.create_booking(
+                    tenant_id=self.tenant_id,
+                    service_id=self.service_id,
+                    provider_id=self.provider_id,
+                    start=start,
+                    end=end,
+                    client_name="Test Client",
+                    client_email="test@example.com"
+                )
+        self.assertIn("180", str(ctx.exception))
+        self.mock_booking_repo.save.assert_not_called()
+
+    def test_max_advance_booking_allowed(self):
+        """Test booking within the 180-day window is allowed (Fix 5)"""
+        self.mock_availability_service.is_slot_available.return_value = True
+        self.mock_service.price = 0
+
+        # 90 days in the future, within default 180-day limit
+        start = datetime.now(UTC).replace(microsecond=0) + timedelta(days=90)
+        end = start + timedelta(minutes=60)
+
+        with patch.dict('os.environ', {'MAX_BOOKING_ADVANCE_DAYS': '180'}):
+            booking = self.service.create_booking(
+                tenant_id=self.tenant_id,
+                service_id=self.service_id,
+                provider_id=self.provider_id,
+                start=start,
+                end=end,
+                client_name="Test Client",
+                client_email="test@example.com"
+            )
+        self.assertIsNotNone(booking)
+        self.mock_booking_repo.save.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

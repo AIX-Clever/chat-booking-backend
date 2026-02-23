@@ -155,6 +155,13 @@ class BookingService:
         if start < datetime.now(UTC):
             raise ValidationError("No se pueden crear reservas en el pasado")
 
+        # Validate max advance booking window (default 180 days, configurable per-env)
+        max_advance_days = int(os.environ.get("MAX_BOOKING_ADVANCE_DAYS", "180"))
+        if start > datetime.now(UTC) + timedelta(days=max_advance_days):
+            raise ValidationError(
+                f"No se pueden crear reservas con más de {max_advance_days} días de anticipación"
+            )
+
         # Check Room
         assigned_room_id = None
         if service.required_room_ids and self._room_repo:
