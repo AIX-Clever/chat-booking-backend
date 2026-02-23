@@ -8,9 +8,12 @@ def calculate_shared_hash(shared_dir):
     
     hash_md5 = hashlib.md5()
     files = []
-    for root, _, filenames in os.walk(shared_dir):
+    for root, dirs, filenames in os.walk(shared_dir):
+        # Exclude __pycache__ and other hidden dirs
+        dirs[:] = [d for d in dirs if d not in ('__pycache__', '.git')]
+        
         for filename in filenames:
-            if not filename.endswith('.pyc') and '__pycache__' not in root:
+            if not filename.endswith('.pyc') and not filename.endswith('.pyo') and filename != '.DS_Store':
                 files.append(os.path.join(root, filename))
     
     # Sort for determinism
@@ -19,7 +22,10 @@ def calculate_shared_hash(shared_dir):
     for filepath in files:
         # Include relative path in hash to detect moves
         rel_path = os.path.relpath(filepath, shared_dir)
-        hash_md5.update(rel_path.encode())
+        # Use consistent path separators (forward slashes) for hashing
+        normalized_path = rel_path.replace(os.sep, '/')
+        
+        hash_md5.update(normalized_path.encode())
         
         with open(filepath, "rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
