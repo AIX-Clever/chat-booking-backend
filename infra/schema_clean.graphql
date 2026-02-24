@@ -270,6 +270,7 @@ type Invoice  {
   currency: String!
   status: InvoiceStatus!
   date: AWSDateTime!
+  pdfUrl: String
   dteFolio: String
   dtePdfUrl: String
   metadata: AWSJSON

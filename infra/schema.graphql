@@ -272,6 +272,7 @@ type Invoice @aws_cognito_user_pools {
   currency: String!
   status: InvoiceStatus!
   date: AWSDateTime!
+  pdfUrl: String
   dteFolio: String
   dtePdfUrl: String
   metadata: AWSJSON
