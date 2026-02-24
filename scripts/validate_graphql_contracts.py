@@ -12,7 +12,7 @@ except ImportError:
     sys.exit(1)
 
 # Configuration: Paths to repositories
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 SCHEMA_PATH = os.path.join(BASE_DIR, "chat-booking-backend/infra/schema.graphql")
 
 FRONTEND_REPOS = [
