@@ -39,10 +39,10 @@ def lambda_handler(event, context):
                 'amount': float(item.get('amount', 0)),
                 'currency': item.get('currency', 'CLP'),
                 'status': item.get('status', 'PENDING').upper(),
-                'date': item.get('processedAt') or item.get('createdAt'), # ISO String
+                'date': item.get('processedAt') or item.get('createdAt') or "2026-02-24T00:00:00Z", # Fallback to prevent non-nullable crash
                 'dteFolio': item.get('dteFolio'),
                 'dtePdfUrl': item.get('dtePdfUrl') or item.get('pdfUrl'),
-                'metadata': json.dumps(item.get('metadata', {})) if item.get('metadata') else None
+                'metadata': json.dumps(item.get('metadata', {})) if item.get('metadata') else "{}"
             }
             invoices.append(invoice)
             

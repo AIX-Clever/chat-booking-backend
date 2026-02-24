@@ -179,6 +179,7 @@ export class SubscriptionStack extends cdk.Stack {
             handler: 'list_invoices.lambda_handler',
         });
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
+        props.userPool.grant(this.listInvoicesFunction, 'cognito-idp:AdminGetUser');
 
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
 
