@@ -222,6 +222,16 @@ export class AppSyncApiStack extends cdk.Stack {
     );
 
     // Create resolvers
+    const listInvoicesDataSource = this.api.addLambdaDataSource(
+      'ListInvoicesDataSource',
+      props.listInvoicesFunction
+    );
+
+    const getPublicProfileDataSource = this.api.addLambdaDataSource(
+      'GetPublicProfileDataSource',
+      props.getPublicProfileFunction
+    );
+
     this.createResolvers(
       catalogDataSource,
       availabilityDataSource,
@@ -238,32 +248,12 @@ export class AppSyncApiStack extends cdk.Stack {
       apiKeyManagerDataSource,
       subscribeDataSource,
       downgradeDataSource,
-      supportManagerDataSource
+      supportManagerDataSource,
+      listInvoicesDataSource,
+      getPublicProfileDataSource
     );
 
-    const listInvoicesDataSource = this.api.addLambdaDataSource(
-      'ListInvoicesDataSource',
-      props.listInvoicesFunction
-    );
-
-    const getPublicProfileDataSource = this.api.addLambdaDataSource(
-      'GetPublicProfileDataSource',
-      props.getPublicProfileFunction
-    );
-
-    listInvoicesDataSource.createResolver('ListInvoicesResolver', {
-      typeName: 'Query',
-      fieldName: 'listInvoices',
-      requestMappingTemplate: requestTemplate,
-      responseMappingTemplate: responseTemplate,
-    });
-
-    getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
-      typeName: 'Query',
-      fieldName: 'getTenantPublicProfile',
-      requestMappingTemplate: requestTemplate,
-      responseMappingTemplate: responseTemplate,
-    });
+    // Public Link Status Data Source and Resolvers
 
     // Public Link Status Data Source and Resolvers
     const publicLinkStatusDataSource = this.api.addLambdaDataSource(
@@ -376,7 +366,9 @@ export class AppSyncApiStack extends cdk.Stack {
     apiKeyManagerDataSource: appsync.LambdaDataSource,
     subscribeDataSource: appsync.LambdaDataSource,
     downgradeDataSource: appsync.LambdaDataSource,
-    supportManagerDataSource: appsync.LambdaDataSource
+    supportManagerDataSource: appsync.LambdaDataSource,
+    listInvoicesDataSource: appsync.LambdaDataSource,
+    getPublicProfileDataSource: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -398,6 +390,21 @@ export class AppSyncApiStack extends cdk.Stack {
     userManagementDataSource.createResolver('ListTenantUsersResolver', {
       typeName: 'Query',
       fieldName: 'listTenantUsers',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Billing / Invoices Resolvers
+    listInvoicesDataSource.createResolver('ListInvoicesResolver', {
+      typeName: 'Query',
+      fieldName: 'listInvoices',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenantPublicProfile',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });
