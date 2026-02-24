@@ -466,6 +466,8 @@ def booking_to_dict(booking) -> dict:
         "totalAmount": (
             booking.total_amount if booking.total_amount is not None else 0.0
         ),
+        "dteFolio": booking.dte_folio,
+        "dtePdfUrl": booking.dte_pdf_url,
         "createdAt": created_at.isoformat(),
         "updatedAt": updated_at.isoformat(),
     }

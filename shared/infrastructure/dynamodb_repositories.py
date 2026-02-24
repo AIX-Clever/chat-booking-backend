@@ -492,6 +492,8 @@ class DynamoDBBookingRepository(IBookingRepository):
             "status": booking.status.value,
             "paymentStatus": booking.payment_status.value,
             "createdAt": booking.created_at.isoformat(),
+            "dteFolio": booking.dte_folio,
+            "dtePdfUrl": booking.dte_pdf_url,
         }
 
         if booking.payment_intent_id:
@@ -558,9 +560,13 @@ class DynamoDBBookingRepository(IBookingRepository):
             update_expr += ", paymentIntentId = :payment_id"
             expr_values[":payment_id"] = booking.payment_intent_id
 
-        if booking.total_amount is not None:
-            update_expr += ", totalAmount = :total_amount"
-            expr_values[":total_amount"] = str(booking.total_amount)
+        if booking.dte_folio:
+            update_expr += ", dteFolio = :dte_folio"
+            expr_values[":dte_folio"] = booking.dte_folio
+
+        if booking.dte_pdf_url:
+            update_expr += ", dtePdfUrl = :dte_pdf_url"
+            expr_values[":dte_pdf_url"] = booking.dte_pdf_url
 
         self.table.update_item(
             Key={"PK": pk, "SK": sk},
@@ -593,6 +599,8 @@ class DynamoDBBookingRepository(IBookingRepository):
             total_amount=(
                 float(item["totalAmount"]) if item.get("totalAmount") else None
             ),
+            dte_folio=item.get("dteFolio"),
+            dte_pdf_url=item.get("dtePdfUrl"),
             created_at=datetime.fromisoformat(item["createdAt"]),
         )
 

@@ -40,7 +40,8 @@ def lambda_handler(event, context):
                 'currency': item.get('currency', 'CLP'),
                 'status': item.get('status', 'PENDING').upper(),
                 'date': item.get('processedAt') or item.get('createdAt'), # ISO String
-                'pdfUrl': item.get('pdfUrl'),
+                'dteFolio': item.get('dteFolio'),
+                'dtePdfUrl': item.get('dtePdfUrl') or item.get('pdfUrl'),
                 'metadata': json.dumps(item.get('metadata', {})) if item.get('metadata') else None
             }
             invoices.append(invoice)

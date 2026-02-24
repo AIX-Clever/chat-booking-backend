@@ -4,6 +4,8 @@ import os
 import requests
 import hashlib
 import hmac
+import boto3
+from datetime import datetime
 from typing import Dict, Any, Optional
 
 from shared.infrastructure.dynamodb_repositories import DynamoDBBookingRepository
@@ -19,11 +21,22 @@ email_service = EmailService()
 
 def lambda_handler(event: Dict[str, Any], context):
     """
-    Webhook Handler for Mercado Pago.
-    Restored from historical implementation (HMAC + Idempotency).
+    Generic Webhook Handler for multiple payment providers:
+    - Mercado Pago (Default)
+    - Stripe (via headers)
+    - Fintoc (via headers)
     """
     try:
-        # 1. Parse Request
+        headers = event.get('headers', {})
+        headers_lower = {k.lower(): v for k, v in headers.items()}
+        
+        # Determine Provider
+        if 'stripe-signature' in headers_lower:
+            return _handle_stripe_webhook(event)
+        elif 'fintoc-signature' in headers_lower:
+            return _handle_fintoc_webhook(event)
+        
+        # Default: Mercado Pago
         query_params = event.get('queryStringParameters', {}) or {}
         topic = query_params.get('topic') or query_params.get('type')
         resource_id = query_params.get('id') or query_params.get('data.id')
@@ -35,20 +48,15 @@ def lambda_handler(event: Dict[str, Any], context):
             topic = body.get('type') or body.get('topic')
             resource_id = body.get('data', {}).get('id')
 
-        logger.info(f"Received Webhook: Topic={topic}, ID={resource_id}")
+        logger.info(f"Received MP Webhook: Topic={topic}, ID={resource_id}")
 
-        if topic != 'payment':
-            # We acknowledge but ignore non-payment topics
-            return {'statusCode': 200, 'body': 'OK'}
+        if topic != 'payment' and topic != 'merchant_order':
+            return {'statusCode': 200, 'body': 'Ignored topic'}
 
-        # 2. Verify HMAC Signature
-        if not _verify_signature(event, resource_id):
-            logger.warning("Invalid HMAC Signature. Verification failed.")
-            # We return 200 to prevent MP from retrying indefinitely, but we don't process it.
+        if not _verify_mp_signature(event, resource_id):
             return {'statusCode': 200, 'body': 'Invalid Signature'}
 
-        # 3. Process Payment
-        return process_payment(resource_id)
+        return process_mp_payment(resource_id)
 
     except Exception as e:
         logger.error(f"Webhook Error: {e}", exc_info=True)
@@ -57,7 +65,7 @@ def lambda_handler(event: Dict[str, Any], context):
             'body': json.dumps({'error': str(e)})
         }
 
-def _verify_signature(event: Dict[str, Any], data_id: str) -> bool:
+def _verify_mp_signature(event: Dict[str, Any], data_id: str) -> bool:
     """
     Verifies the x-signature header from Mercado Pago.
     Format: ts=[timestamp],v1=[hash]
@@ -110,10 +118,59 @@ def _verify_signature(event: Dict[str, Any], data_id: str) -> bool:
         return is_valid
 
     except Exception as e:
-        logger.error(f"Error validating signature: {e}")
+        logger.error(f"Error validating MP signature: {e}")
         return False
 
-def process_payment(payment_id: str):
+def _handle_stripe_webhook(event: Dict[str, Any]):
+    """Routing for Stripe events"""
+    from shared.infrastructure.payment_factory import PaymentGatewayFactory
+    try:
+        stripe_adapter = PaymentGatewayFactory.get_gateway_by_name('stripe')
+        webhook_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+        sig_header = event.get('headers', {}).get('stripe-signature')
+        
+        payload_data = stripe_adapter.verify_webhook_signature(
+            event.get('body', ''), sig_header, webhook_secret
+        )
+        
+        if payload_data['type'] == 'payment_intent.succeeded':
+            obj = payload_data['data']['object']
+            metadata = obj.get('metadata', {})
+            booking_id = metadata.get('booking_id')
+            tenant_id_str = metadata.get('tenant_id')
+            payment_id = obj.get('id')
+            
+            if tenant_id_str and booking_id:
+                _update_booking_status(tenant_id_str, booking_id, payment_id)
+                
+        return {'statusCode': 200, 'body': 'OK'}
+    except Exception as e:
+        logger.error(f"Stripe Webhook Error: {e}")
+        return {'statusCode': 400, 'body': 'Error'}
+
+def _handle_fintoc_webhook(event: Dict[str, Any]):
+    """Routing for Fintoc events (A2A Payments)"""
+    # Assuming Fintoc follows a similar pattern to MP/Stripe with metadata/reference
+    try:
+        body = json.loads(event.get('body', '{}'))
+        event_type = body.get('type')
+        data = body.get('data', {})
+        
+        if event_type == 'link_intent.succeeded' or event_type == 'payment_intent.succeeded':
+            # Fintoc usually puts refs in 'reference' or metadata
+            reference = data.get('reference')
+            payment_id = data.get('id')
+            
+            if reference and ':' in reference:
+                tenant_id_str, booking_id = reference.split(':')
+                _update_booking_status(tenant_id_str, booking_id, payment_id)
+                
+        return {'statusCode': 200, 'body': 'OK'}
+    except Exception as e:
+        logger.error(f"Fintoc Webhook Error: {e}")
+        return {'statusCode': 400, 'body': 'Error'}
+
+def process_mp_payment(payment_id: str):
     mp_token = os.environ.get('MP_ACCESS_TOKEN_PROD')
     if not mp_token:
         logger.error("MP_ACCESS_TOKEN_PROD missing")
@@ -173,3 +230,44 @@ def _update_booking_status(tenant_id_str: str, booking_id: str, payment_id: str)
         
     booking_repo.update(booking)
     logger.info(f"Booking {booking_id} successfully marked as PAID via MP {payment_id}")
+    
+    # Trigger DTE Issuance (Boleta)
+    _issue_dte(booking, payment_id)
+
+def _issue_dte(booking: Any, payment_id: str):
+    """
+    Enqueues the DTE issuance request into SQS for asynchronous processing.
+    """
+    queue_url = os.environ.get('DTE_QUEUE_URL')
+    if not queue_url:
+        logger.warning("DTE_QUEUE_URL not configured. Skipping SQS enqueuing.")
+        return
+
+    try:
+        sqs = boto3.client('sqs')
+        
+        # Prepare payload for the worker
+        payload = {
+            "bookingId": booking.booking_id,
+            "tenantId": str(booking.tenant_id),
+            "paymentId": payment_id,
+            "amount": float(booking.total_amount) if booking.total_amount else 0,
+            "customer": {
+                "name": booking.customer_info.name,
+                "email": booking.customer_info.email,
+                "phone": booking.customer_info.phone
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+
+        logger.info(f"Enqueuing DTE task for Booking {booking.booking_id} into SQS")
+        
+        sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=json.dumps(payload)
+        )
+        
+        logger.info(f"DTE task successfully enqueued for Booking {booking.booking_id}")
+
+    except Exception as e:
+        logger.error(f"Error enqueuing DTE task to SQS: {e}", exc_info=True)

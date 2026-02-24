@@ -270,7 +270,8 @@ type Invoice  {
   currency: String!
   status: InvoiceStatus!
   date: AWSDateTime!
-  pdfUrl: String
+  dteFolio: String
+  dtePdfUrl: String
   metadata: AWSJSON
 }
 
@@ -635,6 +636,7 @@ type Query {
   # Billing (Admin)
   # Billing (Admin)
   listInvoices: [Invoice!]! 
+  getInvoiceDownloadUrl(invoiceId: ID!): String!
 
   # Public Profile (Microsites)
   getTenantPublicProfile(slug: String!): PublicProfile  

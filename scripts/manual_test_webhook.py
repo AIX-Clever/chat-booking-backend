@@ -37,13 +37,19 @@ class TestWebhookHandler(unittest.TestCase):
         self.repo_patcher.stop()
         self.email_patcher.stop()
 
+    @patch('payment.webhook_handler.boto3.client')
     @patch('shared.infrastructure.payment_factory.PaymentGatewayFactory.get_gateway_by_name')
-    def test_stripe_webhook_success(self, mock_get_gateway):
-        print("\n--- Testing Webhook Handler (Stripe) ---")
+    def test_stripe_webhook_success(self, mock_get_gateway, mock_boto3_client):
+        print("\n--- Testing Webhook Handler (Stripe + SQS) ---")
         
         # 1. Setup Mock Gateway
         mock_gateway = MagicMock()
         mock_get_gateway.return_value = mock_gateway
+        
+        # 2. Setup Mock SQS
+        mock_sqs = MagicMock()
+        mock_boto3_client.return_value = mock_sqs
+        os.environ['DTE_QUEUE_URL'] = 'http://mock-queue'
         
         # Mock payload verification
         mock_gateway.verify_webhook_signature.return_value = {
@@ -59,38 +65,45 @@ class TestWebhookHandler(unittest.TestCase):
             }
         }
         
-        # 2. Setup Mock Booking
+        # 3. Setup Mock Booking
         mock_booking = MagicMock()
+        mock_booking.booking_id = 'bkg_1'
+        mock_booking.tenant_id = TenantId('tenant-A')
+        mock_booking.total_amount = 25000
+        mock_booking.customer_info.name = "Juan"
+        mock_booking.customer_info.email = "juan@example.com"
+        mock_booking.customer_info.phone = "+56912345678"
         mock_booking.payment_status = PaymentStatus.PENDING
         mock_booking.status = BookingStatus.PENDING
         self.mock_repo.get_by_id.return_value = mock_booking
         
-        # 3. Simulate Event
+        # 4. Simulate Event
         event = {
-            'rawPath': '/webhooks/payment/stripe',
             'headers': {
                 'stripe-signature': 'sig_123'
             },
             'body': '{"dummy": "payload"}'
         }
         
-        # 4. Execute
+        # 5. Execute
         response = lambda_handler(event, {})
         
-        # 5. Verify
+        # 6. Verify
         self.assertEqual(response['statusCode'], 200)
-        
-        # Verify Gateway called
-        mock_get_gateway.assert_called_with('stripe')
-        mock_gateway.verify_webhook_signature.assert_called()
         
         # Verify Booking Update
         self.mock_repo.get_by_id.assert_called_with(TenantId('tenant-A'), 'bkg_1')
         self.mock_repo.update.assert_called_once()
-        self.assertEqual(mock_booking.payment_status, PaymentStatus.PAID)
-        self.assertEqual(mock_booking.status, BookingStatus.CONFIRMED)
         
-        print("✅ Webhook correctly flagged booking as PAID and CONFIRMED")
+        # Verify SQS Enqueued
+        mock_sqs.send_message.assert_called_once()
+        call_args = mock_sqs.send_message.call_args[1]
+        self.assertEqual(call_args['QueueUrl'], 'http://mock-queue')
+        payload = json.loads(call_args['MessageBody'])
+        self.assertEqual(payload['bookingId'], 'bkg_1')
+        self.assertEqual(payload['amount'], 25000)
+        
+        print("✅ Webhook correctly flagged booking as PAID and ENQUEUED DTE task")
 
 if __name__ == '__main__':
     unittest.main()

@@ -257,7 +257,45 @@ export class LambdaStack extends cdk.Stack {
       resources: ['*'], // In production, restrict to specific identities
     }));
 
-    // 5. Payment Webhook Lambda
+    // --- SQS Resilience for DTE ---
+    const dteDLQ = new sqs.Queue(this, 'DteDLQ', {
+      queueName: `dte-issuance-dlq-${props.envName}`,
+    });
+
+    const dteQueue = new sqs.Queue(this, 'DteQueue', {
+      queueName: `dte-issuance-queue-${props.envName}`,
+      visibilityTimeout: cdk.Duration.seconds(45), // Higher than the lambda timeout
+      deadLetterQueue: {
+        queue: dteDLQ,
+        maxReceiveCount: 5,
+      },
+    });
+
+    const dteWorkerFunction = new lambda.Function(this, 'DteWorkerFunction', {
+      ...commonProps,
+      description: 'Worker to process DTE issuance asynchronously',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'payment')),
+      handler: 'dte_worker.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        DTE_API_URL: 'https://80dgp741uf.execute-api.us-east-1.amazonaws.com/dev/',
+      }
+    });
+
+    // Worker triggers from SQS
+    dteWorkerFunction.addEventSource(new lambdaEventSources.SqsEventSource(dteQueue, {
+      batchSize: 1,
+    }));
+
+    // Permissions for Worker
+    props.bookingsTable.grantReadWriteData(dteWorkerFunction);
+    dteWorkerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['execute-api:Invoke'],
+      resources: ['arn:aws:execute-api:us-east-1:607250385528:80dgp741uf/dev/*/*'],
+    }));
+
+    // --- Payment Webhook Lambda (Updated to use SQS) ---
     const paymentWebhookFunction = new lambda.Function(this, 'PaymentWebhookFunction', {
       ...commonProps,
       description: 'Generic Payment Webhook Handler',
@@ -270,8 +308,12 @@ export class LambdaStack extends cdk.Stack {
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '',
         MP_ACCESS_TOKEN_PROD: process.env.MP_ACCESS_TOKEN_PROD || '',
         MP_WEBHOOK_SECRET: process.env.MP_WEBHOOK_SECRET || '',
+        DTE_QUEUE_URL: dteQueue.queueUrl,
       }
     });
+
+    // Permissions for Webhook to write to SQS
+    dteQueue.grantSendMessages(paymentWebhookFunction);
 
     // Add Function URL (Public Webhook Endpoint)
     // This generates a unique HTTPS URL like https://<id>.lambda-url.<region>.on.aws/

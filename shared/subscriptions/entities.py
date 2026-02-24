@@ -60,13 +60,21 @@ class PaymentAudit:
     status: str
     processed_at: str
     raw_data: str
+    dte_folio: Optional[str] = None
+    dte_pdf_url: Optional[str] = None
 
     def to_item(self) -> Dict[str, Any]:
-        return {
+        item = {
             "tenantId": self.tenant_id,
+            "subscriptionId": f"PAYMENT#{self.payment_id}",  # SK pattern used in list_invoices
             "paymentId": self.payment_id,  # Range Key
             "amount": str(self.amount),
             "status": self.status,
             "processedAt": self.processed_at,
             "rawData": self.raw_data,
         }
+        if self.dte_folio:
+            item["dteFolio"] = self.dte_folio
+        if self.dte_pdf_url:
+            item["dtePdfUrl"] = self.dte_pdf_url
+        return item

@@ -179,6 +179,8 @@ type Booking @aws_api_key @aws_cognito_user_pools @aws_lambda {
   roomId: ID
   conversationId: ID
   metadata: AWSJSON
+  dteFolio: String
+  dtePdfUrl: String
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -270,7 +272,8 @@ type Invoice @aws_cognito_user_pools {
   currency: String!
   status: InvoiceStatus!
   date: AWSDateTime!
-  pdfUrl: String
+  dteFolio: String
+  dtePdfUrl: String
   metadata: AWSJSON
 }
 
@@ -636,6 +639,7 @@ type Query {
   # Billing (Admin)
   # Billing (Admin)
   listInvoices: [Invoice!]! @aws_cognito_user_pools
+  getInvoiceDownloadUrl(invoiceId: ID!): String! @aws_cognito_user_pools
 
   # Public Profile (Microsites)
   getTenantPublicProfile(slug: String!): PublicProfile @aws_api_key @aws_lambda

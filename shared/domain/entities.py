@@ -308,6 +308,8 @@ class Booking:
         None  # Not persisted usually, but needed for frontend
     )
     total_amount: Optional[float] = None
+    dte_folio: Optional[str] = None
+    dte_pdf_url: Optional[str] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 

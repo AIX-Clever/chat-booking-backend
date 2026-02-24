@@ -35,6 +35,8 @@ def lambda_handler(event: dict, context) -> dict:
             return handle_get_upload_url(tenant_id, input_data)
         elif field == "generatePresignedUrl":
             return handle_generate_presigned_url(tenant_id, input_data)
+        elif field == "getInvoiceDownloadUrl":
+            return handle_get_invoice_download_url(tenant_id, input_data)
         else:
             return error_response(f"Unknown operation: {field}", 400)
 
@@ -132,4 +134,45 @@ def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> str:
 
     except ClientError as e:
         logger.error("Presign Asset failed", error=str(e))
+        raise Exception(f"S3 Error: {str(e)}")
+
+
+def handle_get_invoice_download_url(tenant_id: TenantId, input_data: dict) -> str:
+    """
+    Generate presigned GET URL for an invoice PDF.
+    Expects invoiceId in input_data.
+    """
+    invoice_id = input_data.get("invoiceId")
+    if not invoice_id:
+        return error_response("Missing invoiceId", 400)
+
+    # In a real scenario, we'd verify the invoice exists and belongs to the tenant
+    # For now, we follow the pattern dtes/{tenantId}/{invoiceId}.pdf
+    # or dtes/{tenantId}/{folio}.pdf
+    
+    # Let's check if we have a bucket for DTEs
+    dte_bucket = os.environ.get("DTE_PDF_BUCKET")
+    if not dte_bucket:
+        dte_bucket = DOCUMENTS_BUCKET # Fallback
+        
+    if not dte_bucket:
+        return error_response("DTE Storage not configured", 503)
+
+    # Key pattern: dtes/{tenantId}/{invoiceId}.pdf
+    key = f"dtes/{tenant_id}/{invoice_id}.pdf"
+
+    try:
+        url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": dte_bucket,
+                "Key": key,
+                "ResponseContentDisposition": f"attachment; filename=factura_{invoice_id}.pdf"
+            },
+            ExpiresIn=3600, # 1 hour
+        )
+        return url
+
+    except ClientError as e:
+        logger.error("Presign Download failed", error=str(e))
         raise Exception(f"S3 Error: {str(e)}")

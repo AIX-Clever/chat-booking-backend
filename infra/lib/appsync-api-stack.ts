@@ -254,15 +254,15 @@ export class AppSyncApiStack extends cdk.Stack {
     listInvoicesDataSource.createResolver('ListInvoicesResolver', {
       typeName: 'Query',
       fieldName: 'listInvoices',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
       typeName: 'Query',
       fieldName: 'getTenantPublicProfile',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Public Link Status Data Source and Resolvers
@@ -588,6 +588,13 @@ export class AppSyncApiStack extends cdk.Stack {
       fieldName: 'generatePresignedUrl',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    presignDataSource.createResolver('GetInvoiceDownloadUrlResolver', {
+      typeName: 'Query',
+      fieldName: 'getInvoiceDownloadUrl',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
     catalogDataSource.createResolver('DeleteCategoryResolver', {
       typeName: 'Mutation',
