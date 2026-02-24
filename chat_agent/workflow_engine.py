@@ -1,16 +1,11 @@
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 from datetime import datetime, UTC, timedelta
 from shared.domain.entities import (
     Conversation,
     Workflow,
     WorkflowStep,
-    TenantId,
-    Booking,
-    BookingStatus,
-    CustomerInfo,
 )
 from shared.domain.exceptions import ValidationError, SlotNotAvailableError
-from shared.utils import generate_id
 from zoneinfo import ZoneInfo
 
 try:
@@ -86,7 +81,8 @@ class WorkflowEngine:
                 current_step, user_input, user_data, conversation, workflow
             )
 
-            # If no input matching happened, check if we should just auto-advance (e.g. invalid input but flow forces move)
+            # If no input matching happened, check if we should just auto-advance
+            # (e.g. invalid input but flow forces move)
             # But generally for selection tools we want to stay until valid selection
             if not next_step_id and current_step.next_step and not user_input:
                 # Only auto-advance if NO input was provided (e.g. just landing on step)
@@ -616,7 +612,7 @@ class WorkflowEngine:
         elif tool_name in ["checkAvailability", "check_availability"]:
             provider_id = conversation.context.get("providerId")
             service_id = conversation.context.get("serviceId")
-            
+
             if not provider_id:
                 return ResponseBuilder.error_message(
                     "Error: Profesional no seleccionado."
@@ -633,26 +629,26 @@ class WorkflowEngine:
                 # Calculate range for next 5 days
                 from_date = datetime.now(UTC)
                 to_date = from_date + timedelta(days=5)
-                
+
                 # Get slots from service
                 available_slots = self.availability_service.get_available_slots(
                     conversation.tenant_id, service_id, provider_id, from_date, to_date
                 )
-                
+
                 if not available_slots:
                     return ResponseBuilder.no_availability_message()
-                
+
                 # Format for UI
                 slots_data = [
                     {"start": s.start.isoformat(), "available": True}
                     for s in available_slots
                 ]
-                
+
                 return ResponseBuilder.date_selection_message(slots_data[:12])
-            
+
             # [LEGACY FALLBACK] - Keeping as safety but it's what we want to avoid
             # Get availability rules
-            availability = self.availability_repo.get_provider_availability(
+            _ = self.availability_repo.get_provider_availability(
                 conversation.tenant_id, provider_id
             )
             # ... (rest of old code removed for brevity in this replacement chunk) ...
@@ -665,12 +661,18 @@ class WorkflowEngine:
             if not ctx.get("clientName"):
                 return {
                     "type": "text",
-                    "text": "Perfecto. Para confirmar tu reserva, necesito algunos datos.\n\n¿Me podrías indicar tu **nombre completo**?",
+                    "text": (
+                        "Perfecto. Para confirmar tu reserva, necesito algunos datos.\n\n"
+                        "¿Me podrías indicar tu **nombre completo**?"
+                    ),
                 }
             if not ctx.get("clientEmail"):
                 return {
                     "type": "text",
-                    "text": f"Gracias {ctx.get('clientName')}. ¿Cual es tu correo electrónico para enviarte la confirmación?",
+                    "text": (
+                        f"Gracias {ctx.get('clientName')}. "
+                        "¿Cual es tu correo electrónico para enviarte la confirmación?"
+                    ),
                 }
             if not ctx.get("clientPhone"):
                 return {
@@ -717,7 +719,7 @@ class WorkflowEngine:
                         service_id=ctx["serviceId"],
                         provider_id=ctx["providerId"],
                         start=start_time,
-                        end=start_time + timedelta(minutes=ctx.get("duration", 60)), # Will be validated inside service
+                        end=start_time + timedelta(minutes=ctx.get("duration", 60)),  # Will be validated inside service
                         client_name=ctx["clientName"],
                         client_email=ctx["clientEmail"],
                         client_phone=ctx.get("clientPhone"),
@@ -727,7 +729,7 @@ class WorkflowEngine:
 
                     # Store booking id in context
                     conversation.context["bookingId"] = booking.booking_id
-                    
+
                     # Construct success message
                     booking_dict = {
                         "bookingId": booking.booking_id,
