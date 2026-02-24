@@ -294,6 +294,7 @@ export class LambdaStack extends cdk.Stack {
     props.providersTable.grantReadData(this.bookingFunction);
     props.tenantsTable.grantReadData(this.bookingFunction);
     props.conversationsTable.grantReadData(this.bookingFunction);
+    props.availabilityTable.grantReadData(this.bookingFunction); // Added permissions for Availability table
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
     props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');

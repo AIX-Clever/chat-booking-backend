@@ -118,6 +118,7 @@ class BookingService:
         client_phone: Optional[str] = None,
         notes: Optional[str] = None,
         conversation_id: Optional[str] = None,
+        ignore_availability: bool = False,
     ) -> Booking:
         # Validate tenant
         tenant = self._tenant_repo.get_by_id(tenant_id)
@@ -168,12 +169,13 @@ class BookingService:
             assigned_room_id = self._check_and_assign_room(tenant_id, service, start, end)
 
         # [CRITICAL FIX] Check slot availability (prevent overbooking and respect schedule)
-        if self._availability_service:
-            if not self._availability_service.is_slot_available(tenant_id, service_id, provider_id, start, end):
-                raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available or outside working hours")
-        else:
-            if not self._is_slot_available(tenant_id, provider_id, start, end):
-                raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available")
+        if not ignore_availability:
+            if self._availability_service:
+                if not self._availability_service.is_slot_available(tenant_id, service_id, provider_id, start, end):
+                    raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available or outside working hours")
+            else:
+                if not self._is_slot_available(tenant_id, provider_id, start, end):
+                    raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available")
 
         # Create booking entity
         booking_id = generate_id("bkg")

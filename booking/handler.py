@@ -215,6 +215,7 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
         client_phone=input_data.get("clientPhone"),
         notes=input_data.get("notes"),
         conversation_id=input_data.get("conversationId"),
+        ignore_availability=input_data.get("ignoreAvailability", False),
     )
 
     # Track booking metrics

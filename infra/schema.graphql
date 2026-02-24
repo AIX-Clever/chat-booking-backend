@@ -502,6 +502,7 @@ input CreateBookingInput {
   notes: String
   conversationId: ID
   roomId: ID
+  ignoreAvailability: Boolean
 }
 
 input ConfirmBookingInput {
