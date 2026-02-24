@@ -25,7 +25,7 @@ from shared.domain.repositories import (
     IWorkflowRepository,
     ITenantRepository,
 )
-from shared.domain.exceptions import EntityNotFoundError
+from shared.domain.exceptions import EntityNotFoundError, SlotNotAvailableError, ValidationError
 from shared.utils import generate_id
 from shared.metrics import MetricsService
 
@@ -385,9 +385,34 @@ class ChatAgentService:
                         "providerName": ctx.get("providerName", "Profesional"),
                         "startTime": booking.start_time.isoformat(),
                     })
+                except SlotNotAvailableError as e:
+                    print(f"SlotNotAvailableError in service confirmBooking: {e}")
+                    # Clear the stale selected slot so user must re-select
+                    conversation.context.pop("selectedSlot", None)
+                    self._conversation_repo.save(conversation)
+                    return conversation, {
+                        "type": "options",
+                        "text": (
+                            "\U0001F615 Ups, ese horario ya no est\u00e1 disponible (alguien se adelant\u00f3).\n"
+                            "\u00bfTe gustar\u00eda elegir otro horario?"
+                        ),
+                        "options": [
+                            {"label": "\U0001F4C5 Ver horarios disponibles", "value": "select_timeslot"},
+                            {"label": "\U0001F504 Volver al inicio", "value": "restart"},
+                        ],
+                        "metadata": {"next_step_on_value": {
+                            "select_timeslot": "select_timeslot",
+                            "restart": "start",
+                        }},
+                    }
+                except ValidationError as e:
+                    print(f"ValidationError in service confirmBooking: {e}")
+                    return conversation, ResponseBuilder.error_message(str(e))
                 except Exception as e:
-                    print(f"BookingService Error: {e}")
-                    return conversation, ResponseBuilder.error_message(f"No pudimos procesar tu reserva: {str(e)}")
+                    print(f"BookingService Error in service confirmBooking: {e}")
+                    return conversation, ResponseBuilder.error_message(
+                        "No pudimos procesar tu reserva. Por favor intenta nuevamente."
+                    )
             
             return conversation, ResponseBuilder.error_message("Error interno en la creación de la reserva.")
         except Exception as e:
