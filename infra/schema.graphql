@@ -673,6 +673,7 @@ type PublicProfile @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providers: [Provider]
   tenantPlan: String
   isPublished: Boolean
+  preselectedProviderId: ID
 }
 
 # Public Link Status for Admin Panel
