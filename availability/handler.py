@@ -148,7 +148,7 @@ def handle_get_available_slots(tenant_id: TenantId, input_data: dict) -> dict:
 
     # Limit range to prevent abuse on public endpoint
     from datetime import timedelta as _td
-    MAX_RANGE_DAYS = 7
+    MAX_RANGE_DAYS = 35
     if (to_date - from_date) > _td(days=MAX_RANGE_DAYS):
         return error_response(f"Date range cannot exceed {MAX_RANGE_DAYS} days", 400)
 
