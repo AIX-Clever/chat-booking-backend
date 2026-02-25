@@ -130,6 +130,16 @@ class Tenant:
     owner_user_id: str
     billing_email: str
     settings: Dict[str, Any] = field(default_factory=dict)
+    # Note on settings['dte']: Used for Chilean DTE (Factura/Boleta) emission.
+    # Expected structure:
+    # {
+    #   "rut_emisor": "...",
+    #   "razon_social": "...",
+    #   "giro": "...",
+    #   "sucursal": "0",
+    #   "direccion": "...",
+    #   "comuna": "..."
+    # }
     is_published: bool = False
     published_at: Optional[datetime] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
