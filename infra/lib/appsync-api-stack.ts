@@ -39,6 +39,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   checkPaymentStatusFunction: lambda.IFunction;
   clientsFunction: lambda.IFunction;
   supportManagerFunction: lambda.IFunction;
+  cafManagerFunction?: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
 
@@ -250,7 +251,8 @@ export class AppSyncApiStack extends cdk.Stack {
       downgradeDataSource,
       supportManagerDataSource,
       listInvoicesDataSource,
-      getPublicProfileDataSource
+      getPublicProfileDataSource,
+      props.cafManagerFunction ? this.api.addLambdaDataSource('CafManagerDataSource', props.cafManagerFunction) : undefined
     );
 
     // Public Link Status Data Source and Resolvers
@@ -368,7 +370,8 @@ export class AppSyncApiStack extends cdk.Stack {
     downgradeDataSource: appsync.LambdaDataSource,
     supportManagerDataSource: appsync.LambdaDataSource,
     listInvoicesDataSource: appsync.LambdaDataSource,
-    getPublicProfileDataSource: appsync.LambdaDataSource
+    getPublicProfileDataSource: appsync.LambdaDataSource,
+    cafManagerDataSource?: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -401,6 +404,15 @@ export class AppSyncApiStack extends cdk.Stack {
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });
+
+    if (cafManagerDataSource) {
+      cafManagerDataSource.createResolver('UploadCafResolver', {
+        typeName: 'Mutation',
+        fieldName: 'uploadCaf',
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    }
 
     getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
       typeName: 'Query',

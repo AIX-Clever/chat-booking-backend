@@ -49,6 +49,7 @@ interface LambdaStackProps extends cdk.StackProps {
   subscriptionsTable: dynamodb.ITable;
   clientsTable: dynamodb.ITable;
   clientAuditLogsTable: dynamodb.ITable;
+  dteFoliosTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -70,6 +71,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly userManagementFunction: lambda.Function;
   public readonly apiKeyManagerFunction: lambda.Function;
   public readonly clientSyncFunction: lambda.Function;
+  public readonly cafManagerFunction: lambda.Function;
 
   public readonly getPublicProfileFunction: lambda.Function;
   public readonly publicLinkStatusFunction: lambda.Function;
@@ -131,6 +133,7 @@ export class LambdaStack extends cdk.Stack {
         WORKFLOWS_TABLE: props.workflowsTable.tableName,
         FAQS_TABLE: props.faqsTable.tableName,
         CLIENTS_TABLE: props.clientsTable.tableName,
+        DTE_FOLIOS_TABLE: props.dteFoliosTable.tableName,
         LOG_LEVEL: 'INFO',
         // Aliases for legacy/shared code compatibility
         DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
@@ -631,6 +634,19 @@ export class LambdaStack extends cdk.Stack {
         // The handler should use the 'Host' header to build the redirect URI.
       }
     });
+
+    // 19. CAF Manager Lambda
+    this.cafManagerFunction = new lambda.Function(this, 'CafManagerFunction', {
+      ...commonProps,
+      description: 'Manager for uploading CAF XMLs and extracting folio limits',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'caf_manager')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+    });
+
+    // Grant permissions
+    props.dteFoliosTable.grantReadWriteData(this.cafManagerFunction);
+    props.userPool.grant(this.cafManagerFunction, 'cognito-idp:AdminGetUser');
 
     // Add Function URL
     const googleIntegrationUrl = this.googleIntegrationFunction.addFunctionUrl({

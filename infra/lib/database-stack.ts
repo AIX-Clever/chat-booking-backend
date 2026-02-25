@@ -33,6 +33,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly userRolesTable: dynamodb.Table;
   public readonly clientsTable: dynamodb.Table;
   public readonly clientAuditLogsTable: dynamodb.Table;
+  public readonly dteFoliosTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -544,9 +545,26 @@ export class DatabaseStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    // 17. DTE Folios Table (CAF Management)
+    this.dteFoliosTable = new dynamodb.Table(this, 'DTEFoliosTable', {
+      tableName: 'ChatBooking-DTEFolios',
+      partitionKey: {
+        name: 'tenantId_tipoDte', // Format: {tenantId}#{tipoDte}
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     new cdk.CfnOutput(this, 'ClientAuditLogsTableName', {
       value: this.clientAuditLogsTable.tableName,
       description: 'Client Audit Logs table name',
+    });
+
+    new cdk.CfnOutput(this, 'DTEFoliosTableName', {
+      value: this.dteFoliosTable.tableName,
+      description: 'DTE Folios table name',
     });
   }
 }

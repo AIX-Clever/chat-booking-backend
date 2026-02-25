@@ -793,6 +793,16 @@ type Mutation {
   # Client Management
   createClient(input: CreateClientInput!): Client! @aws_cognito_user_pools
   updateClient(input: UpdateClientInput!): Client! @aws_cognito_user_pools
+
+  # Folio Management (CAF)
+  uploadCaf(base64Xml: String!, tipoDte: Int!): CafUploadResponse! @aws_cognito_user_pools
+}
+
+type CafUploadResponse @aws_cognito_user_pools {
+  success: Boolean!
+  message: String!
+  folioInicial: Int
+  folioFinal: Int
 }
 
 input ExceptionRuleInput {
