@@ -68,6 +68,7 @@ export class FrontendLinkStack extends cdk.Stack {
                     responsePagePath: '/404.html',
                 }
             ],
+            comment: `Public Link App (${props.envName || 'dev'})`,
         });
 
         // 4. Route53 Alias Record

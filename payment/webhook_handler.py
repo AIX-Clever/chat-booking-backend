@@ -257,6 +257,7 @@ def _issue_dte(booking: Any, payment_id: str):
                 "email": booking.customer_info.email,
                 "phone": booking.customer_info.phone
             },
+            "tipoDte": 39,
             "timestamp": datetime.now().isoformat()
         }
 

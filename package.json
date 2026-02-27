@@ -1,0 +1,25 @@
+{
+  "name": "chat-booking-backend",
+  "version": "1.0.0",
+  "description": "Este repositorio contiene todas las funciones Lambda (Python) que implementan la lógica de negocio del sistema.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@sparticuz/chromium": "^143.0.4",
+    "aws-sdk": "^2.1693.0",
+    "puppeteer-core": "^24.37.5",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.37.5"
+  }
+}

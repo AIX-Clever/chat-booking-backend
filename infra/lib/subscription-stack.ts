@@ -28,6 +28,7 @@ export class SubscriptionStack extends cdk.Stack {
     public readonly subscriptionWorkerFunction: lambda.Function;
     public readonly listInvoicesFunction: lambda.Function;
     public readonly fintocWebhookFunction: lambda.Function;
+    public readonly siiStatusSyncFunction: lambda.Function;
 
     constructor(scope: Construct, id: string, props: SubscriptionStackProps) {
 
@@ -196,6 +197,21 @@ export class SubscriptionStack extends cdk.Stack {
         const fintocWebhookUrl = this.fintocWebhookFunction.addFunctionUrl({
             authType: lambda.FunctionUrlAuthType.NONE,
         });
+
+        // H. SII Status Sync Worker
+        this.siiStatusSyncFunction = new lambda.Function(this, 'SiiStatusSyncFunction', {
+            ...commonProps,
+            description: 'Synchronize DTE processing status with SII',
+            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/workers')),
+            handler: 'sii_status_sync.lambda_handler',
+        });
+        this.subscriptionsTable.grantReadWriteData(this.siiStatusSyncFunction);
+
+        // Hourly trigger for SII Status Sync
+        const syncRule = new (require('aws-cdk-lib/aws-events').Rule)(this, 'SiiStatusSyncRule', {
+            schedule: (require('aws-cdk-lib/aws-events').Schedule).cron({ minute: '0' }),
+        });
+        syncRule.addTarget(new (require('aws-cdk-lib/aws-events-targets').LambdaFunction)(this.siiStatusSyncFunction));
 
         // 5. IAM Role for EventBridge Scheduler
 

@@ -275,6 +275,9 @@ type Invoice @aws_cognito_user_pools {
   pdfUrl: String
   dteFolio: String
   dtePdfUrl: String
+  dteTrackId: String
+  dteSiiStatus: String
+  dteLastSync: String
   metadata: AWSJSON
 }
 

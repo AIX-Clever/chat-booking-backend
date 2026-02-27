@@ -23,13 +23,15 @@ def lambda_handler(event: Dict[str, Any], context):
         try:
             body = json.loads(record['body'])
             booking_id = body.get('bookingId')
+            payment_id = body.get('paymentId')
             tenant_id_str = body.get('tenantId')
             
-            if not booking_id or not tenant_id_str:
+            if not tenant_id_str or (not booking_id and not payment_id):
                 logger.error(f"Invalid message payload: {body}")
                 continue
 
-            logger.info(f"Processing DTE issuance for Booking: {booking_id}")
+            msg_type = "Booking" if booking_id else "Subscription"
+            logger.info(f"Processing DTE issuance for {msg_type}: {booking_id or payment_id}")
             
             # Call LibreDTE Microservice
             _process_dte_issuance(body)
@@ -52,7 +54,8 @@ def _process_dte_issuance(payload: Dict[str, Any]):
 
     booking_id = payload.get('bookingId')
     payment_id = payload.get('paymentId')
-    tenant_id_str = payload.get('tenantId')
+    tenant_id_str = payload.get('tenantId') # Emisor
+    subscription_tenant_id = payload.get('subscription_tenant_id') # Customer (for subscriptions)
     tenant_id = TenantId(tenant_id_str)
 
     try:
@@ -96,9 +99,12 @@ def _process_dte_issuance(payload: Dict[str, Any]):
             dynamodb = boto3.resource('dynamodb')
             table = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
             
+            # Use subscription_tenant_id if provided, else emisor tenant_id_str
+            target_tenant = subscription_tenant_id or tenant_id_str
+
             table.update_item(
                 Key={
-                    'tenantId': tenant_id_str,
+                    'tenantId': target_tenant,
                     'subscriptionId': f"PAYMENT#{payment_id}"
                 },
                 UpdateExpression="set dteFolio = :f, dtePdfUrl = :u",
@@ -107,7 +113,10 @@ def _process_dte_issuance(payload: Dict[str, Any]):
                     ':u': dte_pdf_url
                 }
             )
-            logger.info(f"Subscription Payment {payment_id} updated with DTE Folio {dte_folio}")
+            logger.info(
+                f"Subscription Payment {payment_id} for {target_tenant} "
+                f"updated with DTE Folio {dte_folio}"
+            )
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Connection error to DTE Microservice: {e}")

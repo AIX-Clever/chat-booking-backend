@@ -1,6 +1,8 @@
 import json
 import boto3
 from datetime import datetime
+from typing import Any
+import os
 from shared.subscriptions.mercadopago_client import MercadoPagoClient
 from shared.subscriptions.config import SubscriptionConfig
 from shared.subscriptions.entities import Subscription, SubscriptionStatus, PaymentAudit
@@ -189,8 +191,12 @@ def process_payment(payment_id, raw_data):
                         )
                     else:
                         print(f"Warning: Unknown plan {new_plan_str}")
+                    
+                    # Trigger DTE Issuance for Subscription
+                    # Hola Lucia is the Emisor, Tenant is the Receptor
+                    _issue_subscription_dte(tenant, payment_id, amount)
         except Exception as e:
-            print(f"Failed to sync tenant plan: {e}")
+            print(f"Failed to sync tenant plan or issue DTE: {e}")
 
     elif status == 'rejected' or status == 'cancelled':
         print(f"Payment {payment_id} rejected/cancelled. Not activating plan.")
@@ -325,3 +331,59 @@ def process_subscription_update(preapproval_id):
 
     except Exception as e:
         print(f"Error processing subscription update: {e}")
+
+
+def _issue_subscription_dte(tenant: Any, payment_id: str, amount: float):
+    """
+    Triggers DTE issuance for a subscription payment.
+    Hola Lucia acts as the Emisor (Master Tenant).
+    """
+    queue_url = os.environ.get('DTE_QUEUE_URL')
+    if not queue_url:
+        print("DTE_QUEUE_URL not configured. Skipping DTE issuance for subscription.")
+        return
+
+    # Hola Lucia's Master Tenant ID (from env or default)
+    # This tenant MUST be configured with DTE settings in the Tenants table
+    master_tenant_id = os.environ.get('MASTER_TENANT_ID', 'holalucia')
+
+    try:
+        sqs = boto3.client('sqs')
+        
+        # Determine DTE Type: Factura (33) if we have billing info, otherwise Boleta (39)
+        # Assuming billing info might be in settings['billing']
+        billing_info = tenant.settings.get('billing', {})
+        tipo_dte = 33 if billing_info.get('rut') else 39
+        
+        payload = {
+            "tenantId": master_tenant_id,  # EMISOR: Hola Lucia
+            "paymentId": payment_id,
+            "amount": amount,
+            "tipoDte": tipo_dte,
+            "customer": {
+                "name": billing_info.get(
+                    'name', tenant.name or "Suscripción Hola Lucia"
+                ),
+                "email": tenant.billing_email or billing_info.get('email'),
+                "rut": billing_info.get('rut'),
+                "address": billing_info.get('address'),
+                "comuna": billing_info.get('comuna'),
+                "giro": billing_info.get('giro')
+            },
+            # To update the right subscription record later
+            "subscription_tenant_id": str(tenant.tenant_id),
+            "timestamp": datetime.now().isoformat()
+        }
+
+        print(
+            f"Enqueuing DTE {tipo_dte} for Subscription Payment {payment_id} "
+            f"(Emisor: {master_tenant_id})"
+        )
+        
+        sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=json.dumps(payload)
+        )
+        
+    except Exception as e:
+        print(f"Error enqueuing subscription DTE: {str(e)}")

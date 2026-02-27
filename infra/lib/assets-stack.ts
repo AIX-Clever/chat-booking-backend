@@ -50,7 +50,7 @@ export class AssetsStack extends cdk.Stack {
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
                 compress: true,
             },
-            comment: `Assets for Chat Booking (${props.stage})`,
+            comment: `Assets App (${props.stage})`,
             enableLogging: true,
             enableIpv6: true,
             httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,

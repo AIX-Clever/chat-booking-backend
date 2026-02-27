@@ -72,6 +72,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly apiKeyManagerFunction: lambda.Function;
   public readonly clientSyncFunction: lambda.Function;
   public readonly cafManagerFunction: lambda.Function;
+  public readonly siiScraperFunction: lambda.Function;
 
   public readonly getPublicProfileFunction: lambda.Function;
   public readonly publicLinkStatusFunction: lambda.Function;
@@ -931,7 +932,28 @@ export class LambdaStack extends cdk.Stack {
     });
     props.userPool.grant(this.clientsFunction, 'cognito-idp:AdminGetUser');
 
-    // 21. Client Synchronization Lambda (Stream Trigger)
+    // 21. SII Scraper Function (Puppeteer Auto-Provisioning)
+    this.siiScraperFunction = new lambda.Function(this, 'SiiScraperFunction', {
+      runtime: lambda.Runtime.NODEJS_20_X,
+      code: lambda.Code.fromAsset(path.join(backendPath, 'sii_scraper')),
+      handler: 'index.handler',
+      timeout: cdk.Duration.minutes(5), // Scraping can be slow
+      memorySize: 2048, // Headless chrome needs memory
+      environment: {
+        DTE_FOLIOS_TABLE: props.dteFoliosTable.tableName,
+        TENANTS_TABLE: props.tenantsTable.tableName,
+      },
+      logRetention: logs.RetentionDays.ONE_WEEK,
+    });
+    props.dteFoliosTable.grantReadWriteData(this.siiScraperFunction);
+
+    // Allow reading from secrets manager for the SII credentials
+    this.siiScraperFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['secretsmanager:GetSecretValue'],
+      resources: [`arn:aws:secretsmanager:${cdk.Aws.REGION}:${cdk.Aws.ACCOUNT_ID}:secret:prod/sii/credentials/*`]
+    }));
+
+    // 22. Client Synchronization Lambda (Stream Trigger)
     this.clientSyncFunction = new lambda.Function(this, 'ClientSyncFunction', {
       ...commonProps,
       description: 'Synchronizes Booking data to Client File automatically',
