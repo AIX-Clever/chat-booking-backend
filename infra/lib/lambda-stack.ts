@@ -348,7 +348,7 @@ export class LambdaStack extends cdk.Stack {
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');
 
     // 5. Chat Agent Lambda
-    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunctionV2', {
+    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
       ...commonProps,
       description: 'Conversational FSM agent for booking flow',
       code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
@@ -933,10 +933,10 @@ export class LambdaStack extends cdk.Stack {
     props.userPool.grant(this.clientsFunction, 'cognito-idp:AdminGetUser');
 
     // 21. SII Scraper Function (Puppeteer Auto-Provisioning)
-    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
+    this.siiScraperFunction = new lambda.Function(this, 'SiiScraperFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
-      handler: 'handler.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'sii_scraper')),
+      handler: 'index.handler',
       timeout: cdk.Duration.minutes(5), // Scraping can be slow
       memorySize: 2048, // Headless chrome needs memory
       environment: {
