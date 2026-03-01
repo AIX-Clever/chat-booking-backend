@@ -348,7 +348,7 @@ export class LambdaStack extends cdk.Stack {
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');
 
     // 5. Chat Agent Lambda
-    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
+    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunctionV2', {
       ...commonProps,
       description: 'Conversational FSM agent for booking flow',
       code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
