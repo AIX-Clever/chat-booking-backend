@@ -135,9 +135,31 @@ jobs:
 
       - name: Deploy with CDK
         working-directory: infra
-        run: npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
+        run: |
+          # Map branch to environment variables
+          if [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "prod" ] || [ "${{ github.ref_name }}" == "dev" ]; then
+            export ENV="prod"
+            export DOMAIN_NAME="media.holalucia.cl"
+            export CERTIFICATE_ARN="$CERT_PROD"
+          else
+            export ENV="${{ github.ref_name }}"
+            export DOMAIN_NAME="${ENV}.media.holalucia.cl"
+            
+            ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
+            var_name="CERT_${ENV_UPPER}"
+            export CERTIFICATE_ARN="${!var_name}"
+          fi
+          
+          echo "Deploying to environment: $ENV with domain: $DOMAIN_NAME"
+          
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
           ENV: dev
+          DOMAIN_NAME: media.holalucia.cl
+          CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
+          CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
+          CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
+          CERT_PROD: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}

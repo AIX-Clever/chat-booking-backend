@@ -71,6 +71,8 @@ const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
   description: 'S3 + CloudFront for Assets',
   tags,
   stage: env,
+  domainName: process.env.DOMAIN_NAME,
+  certificateArn: process.env.CERTIFICATE_ARN,
 });
 
 // 2.7 Subscription Stack - Billing & Payments (Secure)

@@ -6,6 +6,8 @@ import { Construct } from 'constructs';
 
 interface AssetsStackProps extends cdk.StackProps {
     stage: string;
+    domainName?: string;
+    certificateArn?: string;
 }
 
 export class AssetsStack extends cdk.Stack {
@@ -41,6 +43,19 @@ export class AssetsStack extends cdk.Stack {
             },
         });
 
+        // Setup Certificate if provided
+        let certificate: cdk.aws_certificatemanager.ICertificate | undefined;
+        let domainNames: string[] | undefined;
+
+        if (props.domainName && props.certificateArn) {
+            certificate = cdk.aws_certificatemanager.Certificate.fromCertificateArn(
+                this,
+                'AssetsCertificate',
+                props.certificateArn
+            );
+            domainNames = [props.domainName];
+        }
+
         // 3. CloudFront Distribution
         this.distribution = new cloudfront.Distribution(this, 'AssetsDistribution', {
             defaultBehavior: {
@@ -50,6 +65,8 @@ export class AssetsStack extends cdk.Stack {
                 allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
                 compress: true,
             },
+            domainNames: domainNames,
+            certificate: certificate,
             comment: `Assets App (${props.stage})`,
             enableLogging: true,
             enableIpv6: true,
