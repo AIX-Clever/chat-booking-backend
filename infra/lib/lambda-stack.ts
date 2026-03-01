@@ -933,10 +933,10 @@ export class LambdaStack extends cdk.Stack {
     props.userPool.grant(this.clientsFunction, 'cognito-idp:AdminGetUser');
 
     // 21. SII Scraper Function (Puppeteer Auto-Provisioning)
-    this.siiScraperFunction = new lambda.Function(this, 'SiiScraperFunction', {
+    this.chatAgentFunction = new lambda.Function(this, 'ChatAgentFunction', {
       runtime: lambda.Runtime.NODEJS_20_X,
-      code: lambda.Code.fromAsset(path.join(backendPath, 'sii_scraper')),
-      handler: 'index.handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'chat_agent')),
+      handler: 'handler.handler',
       timeout: cdk.Duration.minutes(5), // Scraping can be slow
       memorySize: 2048, // Headless chrome needs memory
       environment: {
