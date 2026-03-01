@@ -152,7 +152,7 @@ jobs:
           
           echo "Deploying to environment: $ENV with domain: $DOMAIN_NAME"
           
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV
         env:
           ENV: dev
           DOMAIN_NAME: media.holalucia.cl
