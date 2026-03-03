@@ -131,8 +131,12 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
 
     # 6. From args (Only if NO identity is present - e.g. Public API Key)
     # WARNING: trusting client input is dangerous. We only allow this if no identity is found.
-    if event.get("arguments") and event["arguments"].get("tenantId"):
-        return event["arguments"]["tenantId"]
+    if event.get("arguments"):
+        args = event["arguments"]
+        if "tenantId" in args:
+            return args["tenantId"]
+        if "input" in args and isinstance(args["input"], dict) and "tenantId" in args["input"]:
+            return args["input"]["tenantId"]
 
     # 7. From headers (API Key / Custom Auth)
     if event.get("request") and event["request"].get("headers"):
