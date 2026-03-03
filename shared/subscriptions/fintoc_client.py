@@ -24,18 +24,9 @@ class FintocClient:
         NOTE: The `link_intents` manager does not exist in the Fintoc Python SDK.
         The correct resource for subscriptions is `subscription_intents`.
         """
-        import fintoc as fintoc_module
-        print(f"[INTERNAL_LOG] Fintoc SDK Version: {getattr(fintoc_module, '__version__', 'UNKNOWN')}")
-        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Using: subscription_intents")
         try:
             self.client = Fintoc(self.api_key)
-            print(f"[INTERNAL_LOG] Available managers: {[a for a in dir(self.client) if not a.startswith('_')]}")
-
-            print(f"[INTERNAL_LOG] Calling self.client.subscription_intents.create()")
             subscription_intent = self.client.subscription_intents.create()
-
-            print(f"[INTERNAL_LOG] subscription_intent type: {type(subscription_intent)}")
-            print(f"[INTERNAL_LOG] subscription_intent attrs: {dir(subscription_intent)}")
 
             if not subscription_intent:
                 raise ValueError("Fintoc API returned None for subscription_intent")
