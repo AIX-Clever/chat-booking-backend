@@ -68,7 +68,8 @@ def test_lambda_handler_insert_new_client(mock_dynamodb, mock_env):
         item = call_args.kwargs['Item']
         
         assert item['email'] == 'test@example.com'
-        assert item['names']['given'] == 'Test Client'
+        assert item['names']['given'] == 'Test'
+        assert item['names']['family'] == 'Client'
         assert item['source'] == 'BOOKING'
         
         # Verify Audit Log
@@ -127,7 +128,7 @@ def test_lambda_handler_update_existing_client(mock_dynamodb, mock_env):
             'Count': 1,
             'Items': [{
                 'id': 'client-123',
-                'names': {'given': 'Old Name'},
+                'names': {'given': 'Old', 'family': 'Name'},
                 'contactInfo': [{'system': 'email', 'value': 'test@example.com'}]
             }]
         }
@@ -157,7 +158,8 @@ def test_lambda_handler_update_existing_client(mock_dynamodb, mock_env):
         item = call_args.kwargs['Item']
         
         assert item['id'] == 'client-123'
-        assert item['names']['given'] == 'New Name' # Name updated
+        assert item['names']['given'] == 'New' # Name updated
+        assert item['names']['family'] == 'Name' # Name updated
         # Phone added
         assert any(c['system'] == 'phone' and c['value'] == '+999999999' for c in item['contactInfo'])
         

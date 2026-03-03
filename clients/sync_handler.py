@@ -62,9 +62,13 @@ def lambda_handler(event, context):
 
 def _sync_client(tenant_id, booking_id, customer_info):
     email = customer_info.get('email')
-    given_name = customer_info.get('name', 'Cliente')
+    full_name = customer_info.get('name', 'Cliente').strip()
     phone = customer_info.get('phone')
-    # booking_id passed as arg now
+    
+    # Split the full name into given and family names
+    name_parts = full_name.split(' ', 1)
+    given_name = name_parts[0]
+    family_name = name_parts[1] if len(name_parts) > 1 else ''
 
     # 1. Lookup client by email GSI
     response = clients_table.query(
@@ -76,9 +80,8 @@ def _sync_client(tenant_id, booking_id, customer_info):
     timestamp = to_iso_string(datetime.utcnow())
 
     if response.get('Count', 0) > 0:
-        # Existing client
-        client = response['Items'][0]
-        _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp)
+        # Existing client: we pass full_name here to be evaluated in _update_if_changed 
+        _update_if_changed(tenant_id, response['Items'][0], customer_info, booking_id, timestamp)
     else:
         # New client
         client_id = str(uuid.uuid4())
@@ -90,7 +93,7 @@ def _sync_client(tenant_id, booking_id, customer_info):
             'email': email,
             'names': {
                 'given': given_name,
-                'family': ''
+                'family': family_name
             },
             'contactInfo': [
                 {'system': 'email', 'value': email},
@@ -120,12 +123,30 @@ def _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp):
     changes = []
 
     # 1. Check Name
-    new_name = customer_info.get('name')
-    old_name = client.get('names', {}).get('given')
-    if new_name and new_name != old_name:
-        updates['names'] = client.get('names', {})
-        updates['names']['given'] = new_name
-        changes.append(('names.given', old_name, new_name))
+    full_name = customer_info.get('name', '').strip()
+    if full_name:
+        name_parts = full_name.split(' ', 1)
+        new_given = name_parts[0]
+        new_family = name_parts[1] if len(name_parts) > 1 else ''
+        
+        old_given = client.get('names', {}).get('given', '')
+        old_family = client.get('names', {}).get('family', '')
+        
+        name_updated = False
+        names_obj = client.get('names', {})
+        
+        if new_given and new_given != old_given:
+            names_obj['given'] = new_given
+            changes.append(('names.given', old_given, new_given))
+            name_updated = True
+            
+        if new_family and new_family != old_family:
+            names_obj['family'] = new_family
+            changes.append(('names.family', old_family, new_family))
+            name_updated = True
+            
+        if name_updated:
+            updates['names'] = names_obj
 
     # 2. Check Phone
     new_phone = customer_info.get('phone')
