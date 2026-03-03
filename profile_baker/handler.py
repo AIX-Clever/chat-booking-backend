@@ -93,8 +93,90 @@ def process_tenant_record(new_image, services_table, providers_table, context):
         }
         
         bake_profile(slug, profile_data, context)
+        
+        # [FIX] Also trigger a bake for all Providers under this Tenant
+        # This ensures that when tenant branding or address/hours are changed, all provider pages reflect it
+        for provider in providers:
+            # provider dict from fetch_providers only has subset of fields.
+            # We need to fetch the full provider items, or at least enough to bake.
+            # Let's fetch the full provider items from the table.
+            provider_resp = providers_table.get_item(Key={'providerId': provider['providerId'], 'tenantId': tenant_id})
+            provider_item = provider_resp.get('Item')
+            if provider_item:
+                logger.info(f"Triggering provider rebake for {provider['providerId']}")
+                process_provider_record_from_item(provider_item, new_image, services_table, context)
+                
     except Exception as e:
         logger.error(f"Error baking tenant profile for {slug}: {str(e)}")
+
+def process_provider_record_from_item(provider_item, tenant_item, services_table, context):
+    tenant_id = provider_item.get('tenantId')
+    provider_id = provider_item.get('providerId')
+    slug = provider_item.get('slug')
+    
+    if not slug: return
+
+    # Parse tenant settings
+    settings_raw = tenant_item.get('settings', '{}')
+    # Since tenant_item came from new_image (Stream), it's in DynamoDB JSON format?
+    # Wait, new_image is stream format.
+    settings = parse_settings(tenant_item)
+    settings_profile = settings.get('profile', {})
+    
+    # Provider specific data (from standard dict, since provider_item is from get_item)
+    name = provider_item.get('name', 'Profesional')
+    bio = provider_item.get('bio', '')
+    photo_url = provider_item.get('photoUrl', '')
+    
+    # Tenant branding & info
+    theme_color = settings.get('widgetConfig', {}).get('primaryColor') or '#3b82f6'
+    
+    # Address & Hours inherited from Tenant
+    # tenant_item from stream has {"S": "..."} format
+    full_address = tenant_item.get('fullAddress', {}).get('S', '') if isinstance(tenant_item.get('fullAddress'), dict) else tenant_item.get('fullAddress', '')
+    if settings_profile.get('address'):
+        addr_parts = [
+            settings_profile['address'].get('street'),
+            settings_profile['address'].get('city'),
+            settings_profile['address'].get('state'),
+            settings_profile['address'].get('country')
+        ]
+        full_address = ", ".join([p for p in addr_parts if p])
+        
+    operating_hours = settings_profile.get('operatingHours', '')
+    
+    specializations = provider_item.get('specializations', [])
+    profession = provider_item.get('profession', 'Especialista')
+
+    try:
+        services = fetch_services(services_table, tenant_id)
+        this_provider = {
+            "providerId": provider_id,
+            "name": name,
+            "photoUrl": photo_url,
+            "bio": bio,
+            "services": provider_item.get('services', [])
+        }
+        
+        profile_data = {
+            "tenantId": tenant_id,
+            "slug": slug,
+            "name": name,
+            "bio": bio,
+            "photoUrl": photo_url,
+            "themeColor": theme_color,
+            "profession": profession,
+            "specializations": specializations,
+            "fullAddress": full_address,
+            "operatingHours": operating_hours,
+            "services": services,
+            "providers": [this_provider],
+            "preselectedProviderId": provider_id
+        }
+        
+        bake_profile(slug, profile_data, context)
+    except Exception as e:
+        logger.error(f"Error during manual provider bake for {slug}: {str(e)}")
 
 def process_provider_record(new_image, tenants_table, services_table, providers_table, context):
     tenant_id = new_image.get('tenantId', {}).get('S')
