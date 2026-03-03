@@ -9,7 +9,7 @@ class TestDteSchemaMapping(unittest.TestCase):
         self.tenant_id = TenantId("tenant-123")
         self.customer_info = CustomerInfo(
             customer_id="cust-123",
-            name="Test Client",
+            given_name="Test", family_name="Client",
             email="test@example.com",
             phone="+56912345678"
         )

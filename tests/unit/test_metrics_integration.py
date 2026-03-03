@@ -70,7 +70,8 @@ class TestBookingServiceMetrics(unittest.TestCase):
             provider_id=provider_id,
             start=start,
             end=end,
-            client_name="John Doe",
+            client_first_name="John",
+            client_last_name="Doe",
             client_email="john@example.com",
         )
 

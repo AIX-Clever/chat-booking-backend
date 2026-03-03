@@ -70,7 +70,8 @@ def test_booking_limit_enforcement():
             provider_id="prov-1",
             start=start,
             end=end,
-            client_name="John Doe",
+            client_first_name="John",
+            client_last_name="Doe",
             client_email="john@example.com",
         )
 

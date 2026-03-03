@@ -253,7 +253,7 @@ def _issue_dte(booking: Any, payment_id: str):
             "paymentId": payment_id,
             "amount": float(booking.total_amount) if booking.total_amount else 0,
             "customer": {
-                "name": booking.customer_info.name,
+                "name": f"{booking.customer_info.given_name} {booking.customer_info.family_name}",
                 "email": booking.customer_info.email,
                 "phone": booking.customer_info.phone
             },

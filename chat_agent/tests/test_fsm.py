@@ -121,7 +121,8 @@ class TestChatFSM:
             "serviceId": "svc_123",
             "providerId": "pro_123",
             "selectedSlot": {"start": "2025-12-15T10:00:00Z"},
-            "clientName": "John Doe",
+            "clientFirstName": "John",
+            "clientLastName": "Doe",
             "clientEmail": "john@example.com",
         }
 
@@ -196,7 +197,8 @@ class TestResponseBuilder:
 
         # Check required fields
         field_names = [f["name"] for f in response["fields"]]
-        assert "clientName" in field_names
+        assert "clientFirstName" in field_names
+        assert "clientLastName" in field_names
         assert "clientEmail" in field_names
 
     def test_confirmation_message(self):

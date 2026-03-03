@@ -511,8 +511,10 @@ class DynamoDBBookingRepository(IBookingRepository):
             item["customerId"] = booking.customer_info.customer_id
             item["GSI1PK"] = f"{booking.tenant_id}#{booking.customer_info.customer_id}"
             item["GSI1SK"] = sk
-        if booking.customer_info.name:
-            item["clientName"] = booking.customer_info.name
+        if booking.customer_info.given_name:
+            item["clientFirstName"] = booking.customer_info.given_name
+        if booking.customer_info.family_name:
+            item["clientLastName"] = booking.customer_info.family_name
         if booking.customer_info.email:
             item["clientEmail"] = booking.customer_info.email
         if booking.customer_info.phone:
@@ -576,9 +578,20 @@ class DynamoDBBookingRepository(IBookingRepository):
         )
 
     def _item_to_entity(self, item: dict) -> Booking:
+        raw_name = item.get("clientName") or item.get("customerName")
+        given_name = item.get("clientFirstName")
+        family_name = item.get("clientLastName")
+        
+        if not given_name and raw_name:
+            # Fallback for legacy records
+            parts = raw_name.split(' ', 1)
+            given_name = parts[0]
+            family_name = parts[1] if len(parts) > 1 else ""
+
         customer_info = CustomerInfo(
             customer_id=item.get("customerId"),
-            name=item.get("clientName") or item.get("customerName"),
+            given_name=given_name,
+            family_name=family_name,
             email=item.get("clientEmail") or item.get("customerEmail"),
             phone=item.get("clientPhone") or item.get("customerPhone"),
         )

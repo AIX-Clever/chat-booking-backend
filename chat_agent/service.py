@@ -345,7 +345,7 @@ class ChatAgentService:
 
         try:
             ctx = conversation.context
-            required = ["serviceId", "providerId", "selectedSlot", "clientName", "clientEmail"]
+            required = ["serviceId", "providerId", "selectedSlot", "clientFirstName", "clientLastName", "clientEmail"]
             missing = [f for f in required if not ctx.get(f)]
             if missing:
                 return conversation, ResponseBuilder.error_message(f"Faltan datos para la reserva: {', '.join(missing)}")
@@ -370,7 +370,8 @@ class ChatAgentService:
                         provider_id=ctx["providerId"],
                         start=start_time,
                         end=end_time,
-                        client_name=ctx["clientName"],
+                        client_first_name=ctx["clientFirstName"],
+                        client_last_name=ctx["clientLastName"],
                         client_email=ctx["clientEmail"],
                         client_phone=ctx.get("clientPhone"),
                         notes=ctx.get("notes"),

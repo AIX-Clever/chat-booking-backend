@@ -46,7 +46,8 @@ class TestBookingServiceValidation(unittest.TestCase):
                 provider_id="prov-1",
                 start=past_time,
                 end=past_time + timedelta(minutes=30),
-                client_name="Test User",
+                client_first_name="Test",
+                client_last_name="User",
                 client_email="test@example.com",
             )
 

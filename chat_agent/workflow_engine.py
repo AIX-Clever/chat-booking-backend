@@ -474,8 +474,10 @@ class WorkflowEngine:
             data = user_data if user_data else {}
 
             # 1. Structure Input (Form)
-            if data.get("clientName"):
-                conversation.context["clientName"] = data.get("clientName")
+            if data.get("clientFirstName"):
+                conversation.context["clientFirstName"] = data.get("clientFirstName")
+            if data.get("clientLastName"):
+                conversation.context["clientLastName"] = data.get("clientLastName")
             if data.get("clientEmail"):
                 conversation.context["clientEmail"] = data.get("clientEmail")
             if data.get("clientPhone"):
@@ -488,10 +490,12 @@ class WorkflowEngine:
                 if "@" in text:
                     conversation.context["clientEmail"] = text
                 # Heuristic: If we don't have a name yet, and this doesn't look like an email
-                elif not conversation.context.get("clientName"):
+                elif not conversation.context.get("clientFirstName"):
                     # Only accept if it looks like a name (not a question, not too short)
                     if "?" not in text and len(text) > 2:
-                        conversation.context["clientName"] = text
+                        parts = text.split(" ", 1)
+                        conversation.context["clientFirstName"] = parts[0]
+                        conversation.context["clientLastName"] = parts[1] if len(parts) > 1 else ""
                     else:
                         # It's a question or garbage. We ignore it, so the prompt repeats.
                         pass
@@ -503,9 +507,10 @@ class WorkflowEngine:
                 if not conversation.context.get("clientPhone") and len(digits) >= 8:
                     conversation.context["clientPhone"] = text
 
-            # Check completion - REQUIRE ALL 3
+            # Check completion - REQUIRE ALL 3 (now 4 info parts: first name, last name, email, phone)
             if (
-                conversation.context.get("clientName")
+                conversation.context.get("clientFirstName")
+                and conversation.context.get("clientLastName")
                 and conversation.context.get("clientEmail")
                 and conversation.context.get("clientPhone")
             ):
@@ -658,7 +663,7 @@ class WorkflowEngine:
             # Dynamic Prompting based on missing slots
             ctx = conversation.context
             missing = []
-            if not ctx.get("clientName"):
+            if not ctx.get("clientFirstName") or not ctx.get("clientLastName"):
                 return {
                     "type": "text",
                     "text": (
@@ -670,7 +675,7 @@ class WorkflowEngine:
                 return {
                     "type": "text",
                     "text": (
-                        f"Gracias {ctx.get('clientName')}. "
+                        f"Gracias {ctx.get('clientFirstName')}. "
                         "¿Cual es tu correo electrónico para enviarte la confirmación?"
                     ),
                 }
@@ -692,7 +697,8 @@ class WorkflowEngine:
                     "serviceId",
                     "providerId",
                     "selectedSlot",
-                    "clientName",
+                    "clientFirstName",
+                    "clientLastName",
                     "clientEmail",
                 ]
                 missing = [f for f in required if not ctx.get(f)]
@@ -720,7 +726,8 @@ class WorkflowEngine:
                         provider_id=ctx["providerId"],
                         start=start_time,
                         end=start_time + timedelta(minutes=ctx.get("duration", 60)),  # Will be validated inside service
-                        client_name=ctx["clientName"],
+                        client_first_name=ctx["clientFirstName"],
+                        client_last_name=ctx["clientLastName"],
                         client_email=ctx["clientEmail"],
                         client_phone=ctx.get("clientPhone"),
                         notes=ctx.get("notes"),
@@ -736,7 +743,7 @@ class WorkflowEngine:
                         "serviceName": ctx.get("serviceName", "Servicio"),
                         "providerName": ctx.get("providerName", "Profesional"),
                         "startTime": booking.start_time.isoformat(),
-                        "clientName": ctx.get("clientName"),
+                        "clientName": f"{ctx.get('clientFirstName', '')} {ctx.get('clientLastName', '')}".strip(),
                         "clientEmail": ctx.get("clientEmail"),
                     }
                     return ResponseBuilder.success_message(booking_dict)

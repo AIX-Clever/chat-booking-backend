@@ -121,7 +121,8 @@ class ChatFSM:
                     "serviceId",
                     "providerId",
                     "selectedSlot",
-                    "clientName",
+                    "clientFirstName",
+                    "clientLastName",
                     "clientEmail",
                     "bookingId",
                 ],
@@ -231,14 +232,16 @@ class ChatFSM:
                 "serviceId",
                 "providerId",
                 "selectedSlot",
-                "clientName",
+                "clientFirstName",
+                "clientLastName",
                 "clientEmail",
             ],
             ConversationState.BOOKING_CONFIRMED: [
                 "serviceId",
                 "providerId",
                 "selectedSlot",
-                "clientName",
+                "clientFirstName",
+                "clientLastName",
                 "clientEmail",
                 "bookingId",
             ],
@@ -338,8 +341,14 @@ class ResponseBuilder:
             "form_schema": {
                 "fields": [
                     {
-                        "key": "clientName",
-                        "label": "Nombre",
+                        "key": "clientFirstName",
+                        "label": "Nombre(s)",
+                        "type": "text",
+                        "required": True,
+                    },
+                    {
+                        "key": "clientLastName",
+                        "label": "Apellidos",
                         "type": "text",
                         "required": True,
                     },
@@ -382,8 +391,14 @@ class ResponseBuilder:
             "text": "Para finalizar, necesito tus datos de contacto.",
             "fields": [
                 {
-                    "name": "clientName",
-                    "label": "Nombre completo",
+                    "name": "clientFirstName",
+                    "label": "Nombre(s)",
+                    "type": "text",
+                    "required": True,
+                },
+                {
+                    "name": "clientLastName",
+                    "label": "Apellidos",
                     "type": "text",
                     "required": True,
                 },
@@ -447,7 +462,7 @@ class ResponseBuilder:
             f"👨‍💻 Profesional: {booking.get('providerName')}\n"
             f"📅 Fecha: {date_str}\n\n"
             f"**Tus datos:**\n"
-            f"👤 Nombre: {booking.get('clientName')}\n"
+            f"👤 Nombre: {booking.get('clientFirstName', '')} {booking.get('clientLastName', '')}\n"
             f"📧 Email: {booking.get('clientEmail')}\n"
             f"📱 Teléfono: {booking.get('clientPhone')}\n\n"
             f"Hemos enviado los detalles a tu correo. ¡Te esperamos!"

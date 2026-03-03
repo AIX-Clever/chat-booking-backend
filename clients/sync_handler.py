@@ -38,10 +38,21 @@ def lambda_handler(event, context):
             booking = _unmarshal(new_image)
             tenant_id = booking.get('tenantId')
             
+            # Extract names with fallback for legacy clientName
+            client_name = booking.get('clientName') or booking.get('customerName') or ''
+            first_name = booking.get('clientFirstName') or booking.get('customerFirstName')
+            last_name = booking.get('clientLastName') or booking.get('customerLastName')
+
+            if not first_name and client_name:
+                name_parts = client_name.split(' ', 1)
+                first_name = name_parts[0]
+                last_name = name_parts[1] if len(name_parts) > 1 else ''
+
             # Map flattened fields to customer_info structure
             customer_info = {
                 'email': booking.get('clientEmail') or booking.get('customerEmail'),
-                'name': booking.get('clientName') or booking.get('customerName'),
+                'firstName': first_name or '',
+                'lastName': last_name or '',
                 'phone': booking.get('clientPhone') or booking.get('customerPhone')
             }
 
@@ -62,13 +73,9 @@ def lambda_handler(event, context):
 
 def _sync_client(tenant_id, booking_id, customer_info):
     email = customer_info.get('email')
-    full_name = customer_info.get('name', 'Cliente').strip()
+    given_name = customer_info.get('firstName', '').strip()
+    family_name = customer_info.get('lastName', '').strip()
     phone = customer_info.get('phone')
-    
-    # Split the full name into given and family names
-    name_parts = full_name.split(' ', 1)
-    given_name = name_parts[0]
-    family_name = name_parts[1] if len(name_parts) > 1 else ''
 
     # 1. Lookup client by email GSI
     response = clients_table.query(
@@ -123,12 +130,10 @@ def _update_if_changed(tenant_id, client, customer_info, booking_id, timestamp):
     changes = []
 
     # 1. Check Name
-    full_name = customer_info.get('name', '').strip()
-    if full_name:
-        name_parts = full_name.split(' ', 1)
-        new_given = name_parts[0]
-        new_family = name_parts[1] if len(name_parts) > 1 else ''
+    new_given = customer_info.get('firstName', '').strip()
+    new_family = customer_info.get('lastName', '').strip()
         
+    if new_given or new_family:
         old_given = client.get('names', {}).get('given', '')
         old_family = client.get('names', {}).get('family', '')
         

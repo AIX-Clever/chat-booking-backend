@@ -287,7 +287,8 @@ class CustomerInfo:
     """Value Object for customer information"""
 
     customer_id: Optional[str]
-    name: Optional[str]
+    given_name: Optional[str]
+    family_name: Optional[str]
     email: Optional[str]
     phone: Optional[str]
 

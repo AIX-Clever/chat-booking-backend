@@ -142,7 +142,8 @@ class TestBooking:
         end = datetime(2025, 12, 15, 11, 0)
         customer = CustomerInfo(
             customer_id="cust_123",
-            name="Jane Smith",
+            given_name="Jane",
+            family_name="Smith",
             email="jane@example.com",
             phone="+1234567890",
         )
@@ -164,7 +165,8 @@ class TestBooking:
     def test_booking_confirmation(self):
         customer = CustomerInfo(
             customer_id="cust_123",
-            name="Jane Smith",
+            given_name="Jane",
+            family_name="Smith",
             email="jane@example.com",
             phone="+1234567890",
         )
@@ -187,7 +189,8 @@ class TestBooking:
     def test_booking_cancellation(self):
         customer = CustomerInfo(
             customer_id="cust_123",
-            name="Jane Smith",
+            given_name="Jane",
+            family_name="Smith",
             email="jane@example.com",
             phone="+1234567890",
         )
@@ -211,7 +214,8 @@ class TestBooking:
     def test_booking_overlap_detection(self):
         customer = CustomerInfo(
             customer_id="cust_123",
-            name="Jane Smith",
+            given_name="Jane",
+            family_name="Smith",
             email="jane@example.com",
             phone="+1234567890",
         )

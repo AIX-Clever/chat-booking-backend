@@ -69,7 +69,8 @@ class TestBookingService(unittest.TestCase):
             provider_id=self.provider_id,
             start=start,
             end=end,
-            client_name="Test Client",
+            client_first_name="Test",
+            client_last_name="Client",
             client_email="test@example.com"
         )
         
@@ -94,7 +95,8 @@ class TestBookingService(unittest.TestCase):
             provider_id=self.provider_id,
             start=start,
             end=end,
-            client_name="Test Client",
+            client_first_name="Test",
+            client_last_name="Client",
             client_email="test@example.com"
         )
         
@@ -119,7 +121,8 @@ class TestBookingService(unittest.TestCase):
                 provider_id=self.provider_id,
                 start=start,
                 end=end,
-                client_name="Test Client",
+                client_first_name="Test",
+                client_last_name="Client",
                 client_email="test@example.com"
             )
         
@@ -143,7 +146,8 @@ class TestBookingService(unittest.TestCase):
                     provider_id=self.provider_id,
                     start=start,
                     end=end,
-                    client_name="Test Client",
+                    client_first_name="Test",
+                    client_last_name="Client",
                     client_email="test@example.com"
                 )
         self.assertIn("180", str(ctx.exception))
@@ -165,7 +169,8 @@ class TestBookingService(unittest.TestCase):
                 provider_id=self.provider_id,
                 start=start,
                 end=end,
-                client_name="Test Client",
+                client_first_name="Test",
+                client_last_name="Client",
                 client_email="test@example.com"
             )
         self.assertIsNotNone(booking)

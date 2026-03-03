@@ -26,7 +26,8 @@ class TestDynamicDteIntegration(unittest.TestCase):
         booking.total_amount = 10000
         booking.customer_info = CustomerInfo(
             customer_id="cust-1",
-            name="John Doe",
+            given_name="John",
+            family_name="Doe",
             email="john@example.com",
             phone="+56912345678"
         )

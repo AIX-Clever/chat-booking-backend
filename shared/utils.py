@@ -162,6 +162,7 @@ def extract_appsync_event(event: Dict[str, Any]) -> tuple[str, str, Dict[str, An
     Raises:
         ValueError: If required data is missing
     """
+    print(f"RAW EVENT DEBUG: {event}")
     # Extract field name
     field = None
     if "info" in event and "fieldName" in event["info"]:

@@ -172,7 +172,8 @@ type Booking    {
   end: AWSDateTime!
   status: BookingStatus!
   paymentStatus: PaymentStatus
-  clientName: String
+  clientFirstName: String
+  clientLastName: String
   clientEmail: String
   clientPhone: String
   notes: String
@@ -499,7 +500,8 @@ input CreateBookingInput {
   providerId: ID!
   start: AWSDateTime!
   end: AWSDateTime!
-  clientName: String!
+  clientFirstName: String!
+  clientLastName: String!
   clientEmail: String!
   clientPhone: String
   notes: String

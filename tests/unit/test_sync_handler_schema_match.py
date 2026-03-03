@@ -24,7 +24,8 @@ class TestSyncHandlerSchema(unittest.TestCase):
                             'bookingId': {'S': 'bk-123'},
                             'tenantId': {'S': 'tenant-1'},
                             'clientEmail': {'S': 'test@example.com'},
-                            'clientName': {'S': 'Test User'},
+                            'clientFirstName': {'S': 'Test'},
+                            'clientLastName': {'S': 'User'},
                             'clientPhone': {'S': '+1234567890'},
                             'PK': {'S': 'tenant-1#prov-1'},
                             'SK': {'S': '2026-02-17T10:00:00'}
@@ -44,7 +45,8 @@ class TestSyncHandlerSchema(unittest.TestCase):
         self.assertEqual(tenant_id, 'tenant-1')
         self.assertEqual(booking_id, 'bk-123')
         self.assertEqual(customer_info['email'], 'test@example.com')
-        self.assertEqual(customer_info['name'], 'Test User')
+        self.assertEqual(customer_info['firstName'], 'Test')
+        self.assertEqual(customer_info['lastName'], 'User')
         self.assertEqual(customer_info['phone'], '+1234567890')
 
 if __name__ == '__main__':

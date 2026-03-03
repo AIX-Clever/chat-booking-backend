@@ -113,13 +113,15 @@ class TestBookingService:
             provider_id="pro_123",
             start=start,
             end=end,
-            client_name="Jane Smith",
+            client_first_name="Jane",
+            client_last_name="Smith",
             client_email="jane@example.com",
         )
 
         # Assert
         assert booking.status == BookingStatus.PENDING
-        assert booking.customer_info.name == "Jane Smith"
+        assert booking.customer_info.given_name == "Jane"
+        assert booking.customer_info.family_name == "Smith"
         assert booking.customer_info.email == "jane@example.com"
         assert booking.start_time == start
         assert booking.end_time == end
@@ -151,7 +153,8 @@ class TestBookingService:
                 provider_id="pro_123",
                 start=start,
                 end=end,
-                client_name="Jane Smith",
+                client_first_name="Jane",
+                client_last_name="Smith",
                 client_email="jane@example.com",
             )
 
@@ -183,7 +186,8 @@ class TestBookingService:
                 provider_id="pro_123",
                 start=start,
                 end=end,
-                client_name="Jane Smith",
+                client_first_name="Jane",
+                client_last_name="Smith",
                 client_email="jane@example.com",
             )
 
@@ -215,7 +219,8 @@ class TestBookingService:
                 provider_id="pro_123",
                 start=start,
                 end=end,
-                client_name="Jane Smith",
+                client_first_name="Jane",
+                client_last_name="Smith",
                 client_email="jane@example.com",
             )
 
@@ -228,7 +233,7 @@ class TestBookingService:
 
         # Existing booking
         customer = CustomerInfo(
-            customer_id=None, name="Someone Else", email="other@example.com", phone=None
+            customer_id=None, given_name="Someone", family_name="Else", email="other@example.com", phone=None
         )
         existing_booking = Booking(
             booking_id="bkg_existing",
@@ -254,7 +259,8 @@ class TestBookingService:
                 provider_id="pro_123",
                 start=start,
                 end=end,
-                client_name="Jane Smith",
+                client_first_name="Jane",
+                client_last_name="Smith",
                 client_email="jane@example.com",
             )
 
@@ -276,14 +282,15 @@ class TestBookingService:
                 provider_id="pro_123",
                 start=start,
                 end=end,
-                client_name="Jane Smith",
+                client_first_name="Jane",
+                client_last_name="Smith",
                 client_email="jane@example.com",
             )
 
     def test_confirm_booking(self, booking_service, mock_repos, tenant_id):
         """Test booking confirmation"""
         customer = CustomerInfo(
-            customer_id=None, name="Jane Smith", email="jane@example.com", phone=None
+            customer_id=None, given_name="Jane", family_name="Smith", email="jane@example.com", phone=None
         )
         booking = Booking(
             booking_id="bkg_123",
@@ -307,7 +314,7 @@ class TestBookingService:
     def test_cancel_booking(self, booking_service, mock_repos, tenant_id):
         """Test booking cancellation"""
         customer = CustomerInfo(
-            customer_id=None, name="Jane Smith", email="jane@example.com", phone=None
+            customer_id=None, given_name="Jane", family_name="Smith", email="jane@example.com", phone=None
         )
         booking = Booking(
             booking_id="bkg_123",
@@ -333,7 +340,7 @@ class TestBookingService:
     def test_mark_as_no_show(self, booking_service, mock_repos, tenant_id):
         """Test marking booking as no show"""
         customer = CustomerInfo(
-            customer_id=None, name="Jane Smith", email="jane@example.com", phone=None
+            customer_id=None, given_name="Jane", family_name="Smith", email="jane@example.com", phone=None
         )
         booking = Booking(
             booking_id="bkg_123",
@@ -375,7 +382,7 @@ class TestBookingQueryService:
     def test_get_booking_success(self, query_service, mock_repos, tenant_id):
         """Test getting booking by ID"""
         customer = CustomerInfo(
-            customer_id=None, name="Jane Smith", email="jane@example.com", phone=None
+            customer_id=None, given_name="Jane", family_name="Smith", email="jane@example.com", phone=None
         )
         booking = Booking(
             booking_id="bkg_123",
@@ -435,7 +442,7 @@ class TestBookingQueryService:
     def test_get_booking_by_conversation(self, query_service, mock_repos, tenant_id):
         """Test getting booking by conversation ID"""
         customer = CustomerInfo(
-            customer_id=None, name="Jane Smith", email="jane@example.com", phone=None
+            customer_id=None, given_name="Jane", family_name="Smith", email="jane@example.com", phone=None
         )
         booking = Booking(
             booking_id="bkg_123",

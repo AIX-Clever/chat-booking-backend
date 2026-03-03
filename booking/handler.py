@@ -176,7 +176,8 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
         "providerId": "pro_456",
         "start": "2025-12-05T10:00:00Z",
         "end": "2025-12-05T11:00:00Z",
-        "clientName": "John Doe",
+        "clientFirstName": "John",
+        "clientLastName": "Doe",
         "clientEmail": "john@example.com",
         "clientPhone": "+1234567890",
         "notes": "First time client",
@@ -184,7 +185,7 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
     }
     """
     # Validate required fields
-    required = ["serviceId", "providerId", "start", "end", "clientName", "clientEmail"]
+    required = ["serviceId", "providerId", "start", "end", "clientFirstName", "clientLastName", "clientEmail"]
     missing = [f for f in required if not input_data.get(f)]
     if missing:
         return error_response(f"Missing required fields: {', '.join(missing)}", 400)
@@ -210,7 +211,8 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
         provider_id=input_data["providerId"],
         start=start,
         end=end,
-        client_name=input_data["clientName"],
+        client_first_name=input_data["clientFirstName"],
+        client_last_name=input_data["clientLastName"],
         client_email=input_data["clientEmail"],
         client_phone=input_data.get("clientPhone"),
         notes=input_data.get("notes"),
@@ -454,7 +456,8 @@ def booking_to_dict(booking) -> dict:
         "start": start_time.isoformat(),
         "end": end_time.isoformat(),
         "status": booking.status.value,
-        "clientName": booking.customer_info.name or "Unknown Client",
+        "clientFirstName": booking.customer_info.given_name or "Unknown",
+        "clientLastName": booking.customer_info.family_name or "Client",
         "clientEmail": booking.customer_info.email or "no-email@example.com",
         "clientPhone": booking.customer_info.phone,
         "notes": booking.notes,

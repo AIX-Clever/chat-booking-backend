@@ -48,7 +48,8 @@ def test_lambda_handler_insert_new_client(mock_dynamodb, mock_env):
                         'NewImage': {
                             'tenantId': {'S': 'tenant-1'},
                             'bookingId': {'S': 'booking-1'},
-                            'clientName': {'S': 'Test Client'},
+                            'clientFirstName': {'S': 'Test'},
+                            'clientLastName': {'S': 'Client'},
                             'clientEmail': {'S': 'test@example.com'},
                             'clientPhone': {'S': '+123456789'},
                         }
@@ -141,7 +142,8 @@ def test_lambda_handler_update_existing_client(mock_dynamodb, mock_env):
                         'NewImage': {
                             'tenantId': {'S': 'tenant-1'},
                             'bookingId': {'S': 'booking-3'},
-                            'clientName': {'S': 'New Name'},
+                            'clientFirstName': {'S': 'New'},
+                            'clientLastName': {'S': 'Name'},
                             'clientEmail': {'S': 'test@example.com'},
                             'clientPhone': {'S': '+999999999'},
                         }

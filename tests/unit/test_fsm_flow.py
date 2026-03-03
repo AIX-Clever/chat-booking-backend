@@ -60,7 +60,8 @@ class TestFSMBasicFlow(unittest.TestCase):
             provider_id="prov-1",
             customer_info=CustomerInfo(
                 customer_id="c-1",
-                name="Test",
+                given_name="Test",
+                family_name="User",
                 email="test@test.com",
                 phone="12345678",
             ),

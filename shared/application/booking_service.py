@@ -113,7 +113,8 @@ class BookingService:
         provider_id: str,
         start: datetime,
         end: datetime,
-        client_name: str,
+        client_first_name: str,
+        client_last_name: str,
         client_email: str,
         client_phone: Optional[str] = None,
         notes: Optional[str] = None,
@@ -180,7 +181,7 @@ class BookingService:
         # Create booking entity
         booking_id = generate_id("bkg")
         customer_id = hashlib.md5(client_email.lower().strip().encode()).hexdigest() if client_email else None
-        customer_info = CustomerInfo(customer_id=customer_id, name=client_name, email=client_email, phone=client_phone)
+        customer_info = CustomerInfo(customer_id=customer_id, given_name=client_first_name, family_name=client_last_name, email=client_email, phone=client_phone)
 
         status = BookingStatus.CONFIRMED if not service.price or service.price <= 0 else BookingStatus.PENDING
         payment_status = PaymentStatus.NONE if not service.price or service.price <= 0 else PaymentStatus.PENDING
@@ -222,14 +223,15 @@ class BookingService:
             raise SlotNotAvailableError(f"Time slot {start.isoformat()} was just booked")
 
         # Syncs
+        full_name = f"{client_first_name} {client_last_name}".strip()
         if self.google_auth_service and self._provider_integration_repo:
-            self._sync_to_google_calendar(tenant_id, provider_id, booking, client_name, client_email, service.name)
+            self._sync_to_google_calendar(tenant_id, provider_id, booking, full_name, client_email, service.name)
         if self.microsoft_auth_service and self._provider_integration_repo:
-            self._sync_to_microsoft_calendar(tenant_id, provider_id, booking, client_name, client_email, service.name)
+            self._sync_to_microsoft_calendar(tenant_id, provider_id, booking, full_name, client_email, service.name)
 
         # Notifications
         if self._email_service and client_email:
-            self._send_confirmation_email(provider, service, booking, client_name, client_email, start)
+            self._send_confirmation_email(provider, service, booking, full_name, client_email, start)
 
         # Metrics
         if self._metrics_service:
