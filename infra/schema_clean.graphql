@@ -362,6 +362,7 @@ input RegisterTenantInput {
   password: String!
   companyName: String!
   plan: TenantPlan
+  recaptchaToken: String
 }
 
 input UpdateTenantInput {
