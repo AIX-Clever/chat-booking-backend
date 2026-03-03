@@ -117,14 +117,28 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             
         settings_raw = tenant_item.get('settings', '{}')
         settings = json.loads(settings_raw) if isinstance(settings_raw, str) else settings_raw
+        settings_profile = settings.get('profile', {})
         
         # Provider specific data
         name = new_image.get('name', {}).get('S', 'Profesional')
         bio = new_image.get('bio', {}).get('S', '')
         photo_url = new_image.get('photoUrl', {}).get('S', '')
         
-        # Tenant branding
+        # Tenant branding & info
         theme_color = settings.get('widgetConfig', {}).get('primaryColor') or '#3b82f6'
+        
+        # Address & Hours inherited from Tenant
+        full_address = tenant_item.get('fullAddress', '')
+        if settings_profile.get('address'):
+            addr_parts = [
+                settings_profile['address'].get('street'),
+                settings_profile['address'].get('city'),
+                settings_profile['address'].get('state'),
+                settings_profile['address'].get('country')
+            ]
+            full_address = ", ".join([p for p in addr_parts if p])
+            
+        operating_hours = settings_profile.get('operatingHours', '')
         
         # Metadata / Profession from provider if available, else generic
         specializations = []
@@ -160,6 +174,8 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "themeColor": theme_color,
             "profession": profession,
             "specializations": specializations,
+            "fullAddress": full_address,
+            "operatingHours": operating_hours,
             "services": services,
             "providers": [this_provider],
             "preselectedProviderId": provider_id
@@ -359,10 +375,15 @@ def bake_profile(slug, profile_data, context=None):
     specialties_text = ", ".join(profile_data.get('specializations', []))
     services_text = ", ".join([s['name'] for s in profile_data.get('services', [])])
     
+    address_html = f"<h2>Ubicación</h2><p>{profile_data.get('fullAddress', '')}</p>" if profile_data.get('fullAddress') else ""
+    hours_html = f"<h2>Horarios</h2><p>{profile_data.get('operatingHours', '')}</p>" if profile_data.get('operatingHours') else ""
+    
     seo_body = f"""
     <div style="display:none;" id="seo-content" aria-hidden="true">
         <h1>{name}</h1>
         <p>{bio}</p>
+        {address_html}
+        {hours_html}
         <h2>Especialidades</h2>
         <p>{specialties_text}</p>
         <h2>Servicios</h2>
