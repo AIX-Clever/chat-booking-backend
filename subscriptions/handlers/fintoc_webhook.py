@@ -12,9 +12,7 @@ from shared.subscriptions.entities import SubscriptionStatus
 dynamodb = boto3.resource("dynamodb")
 SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
 
-TENANT_REGEX = re.compile(
-    r"(?:tenant_id|tenantId|tenant)\s*[:=#]\s*([A-Za-z0-9_-]+)"
-)
+TENANT_REGEX = re.compile(r"(?:tenant_id|tenantId|tenant)\s*[:=#]\s*([A-Za-z0-9_-]+)")
 INTENT_REGEX = re.compile(
     r"(?:subscription_intent_id|subscriptionIntentId|link_intent_id|"
     r"linkIntentId|intent|subscription)\s*[:=#]\s*([A-Za-z0-9_-]+)"
@@ -41,9 +39,7 @@ def _extract_refs_from_description(description: str) -> dict:
     return refs
 
 
-def _extract_intent_candidates(
-    data: dict, description_intent: str = None
-) -> list:
+def _extract_intent_candidates(data: dict, description_intent: str = None) -> list:
     candidates = []
     direct_refs = [
         data.get("subscription_intent_id"),
@@ -91,9 +87,7 @@ def _find_subscription_for_movement(data: dict):
         items = _query_subscription_by_preapproval(candidate)
         if items:
             non_current = [
-                item
-                for item in items
-                if item.get("subscriptionId") != "CURRENT"
+                item for item in items if item.get("subscriptionId") != "CURRENT"
             ]
             chosen = non_current[0] if non_current else items[0]
             return chosen, f"intent:{candidate}"
@@ -197,7 +191,7 @@ def lambda_handler(event, context):
             )
         else:
             try:
-                from fintoc import WebhookSignature
+                from fintoc.webhook import WebhookSignature
 
                 WebhookSignature.verify_header(
                     raw_body, signature_header, fintoc_webhook_secret
@@ -222,9 +216,7 @@ def lambda_handler(event, context):
                 f"description={description}"
             )
 
-            matched_subscription, match_source = (
-                _find_subscription_for_movement(data)
-            )
+            matched_subscription, match_source = _find_subscription_for_movement(data)
             if not matched_subscription:
                 print(
                     "No subscription match for movement.created. "
@@ -257,9 +249,7 @@ def lambda_handler(event, context):
 
             items = _query_subscription_by_preapproval(intent_id)
             if not items:
-                print(
-                    f"No subscription found for intent ID (GSI): {intent_id}"
-                )
+                print(f"No subscription found for intent ID (GSI): {intent_id}")
             else:
                 for item in items:
                     tenant_id = item["tenantId"]
@@ -275,8 +265,7 @@ def lambda_handler(event, context):
                         continue
 
                     print(
-                        f"Activating subscription {sub_id} "
-                        f"for tenant {tenant_id}"
+                        f"Activating subscription {sub_id} " f"for tenant {tenant_id}"
                     )
                     _activate_subscription(tenant_id, sub_id)
                     _sync_tenant_plan_and_status(tenant_id, plan_id)
