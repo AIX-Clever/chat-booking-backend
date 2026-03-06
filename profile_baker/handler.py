@@ -439,14 +439,24 @@ def bake_profile(slug, profile_data, context=None):
     title = f"Reserva con {name} | Lucia"
     description = bio[:160] if bio else f"Agenda tu cita con {name} de forma fácil y rápida."
     
+    slug = profile_data['slug']
+    canonical_url = f"https://agendar.holalucia.cl/{slug}"
+    
     meta_tags = f"""
     <!-- SEO Injected by Baker -->
     <title>{title}</title>
     <meta name="description" content="{description}">
+    <link rel="canonical" href="{canonical_url}">
     <meta property="og:title" content="{title}">
     <meta property="og:description" content="{description}">
     <meta property="og:image" content="{photo_url}">
+    <meta property="og:image:width" content="400">
+    <meta property="og:image:height" content="400">
+    <meta property="og:image:type" content="image/jpeg">
+    <meta property="og:url" content="{canonical_url}">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Hola Lucia">
+    <meta property="og:locale" content="es_CL">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{title}">
     <meta name="twitter:description" content="{description}">
