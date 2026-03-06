@@ -491,11 +491,9 @@ def bake_profile(slug, profile_data, context=None):
     if "<head>" in template_html:
         template_html = template_html.replace("<head>", f"<head>{meta_tags}{script_injection}")
     
-    if "<body>" in template_html:
-        template_html = template_html.replace("<body>", f"<body>{seo_body}")
-    elif "<body " in template_html: # Handle body with attributes
-        import re
-        template_html = re.sub(r'(<body[^>]*>)', rf'\1{seo_body}', template_html)
+    # Inject SEO body BEFORE </body> to avoid disturbing React's hydration root
+    if "</body>" in template_html:
+        template_html = template_html.replace("</body>", f"{seo_body}</body>")
     # 5. Upload
     target_key = f"{slug}/index.html"
     logger.info(f"Uploading baked HTML to {target_key}")
