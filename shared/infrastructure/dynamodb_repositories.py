@@ -367,6 +367,9 @@ class DynamoDBProviderRepository(IProviderRepository):
         if provider.professional_license:
             item["professionalLicense"] = provider.professional_license
 
+        if provider.email:
+            item["email"] = provider.email
+
         self.table.put_item(Item=item)
 
     def delete(self, tenant_id: TenantId, provider_id: str) -> None:
@@ -388,6 +391,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             photo_url_thumbnail=item.get("photoUrlThumbnail"),
             slug=item.get("slug"),
             professional_license=item.get("professionalLicense"),
+            email=item.get("email"),
             google_integration=item.get("googleIntegration"),
             microsoft_integration=item.get("microsoftIntegration"),
         )

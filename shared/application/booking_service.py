@@ -232,6 +232,8 @@ class BookingService:
         # Notifications
         if self._email_service and client_email:
             self._send_confirmation_email(provider, service, booking, full_name, client_email, start)
+        if self._email_service and getattr(provider, "email", None):
+            self._send_provider_notification_email(provider, service, booking, full_name, start)
 
         # Metrics
         if self._metrics_service:
@@ -272,6 +274,57 @@ class BookingService:
         sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
         body_html = f"<html><body><h2>¡Reserva Confirmada!</h2><p>Hola {client_name}, tu reserva para {service.name} con {provider.name} ha sido confirmada para el {local_start.strftime('%Y-%m-%d %H:%M')}.</p></body></html>"
         self._email_service.send_email(source=sender, to_addresses=[client_email], subject=subject, body_html=body_html, body_text=f"Reserva confirmada para {local_start.strftime('%Y-%m-%d %H:%M')}")
+
+    def _send_provider_notification_email(self, provider, service, booking, client_name, start):
+        """Send booking notification email to the provider with a friendly time label."""
+        try:
+            from zoneinfo import ZoneInfo
+            tz = ZoneInfo(provider.timezone or "UTC")
+        except Exception:
+            from datetime import timezone
+            tz = timezone.utc
+
+        local_start = start.astimezone(tz)
+        today = datetime.now(tz).date()
+        booking_date = local_start.date()
+        days_diff = (booking_date - today).days
+
+        if days_diff == 0:
+            time_label = "hoy"
+        elif days_diff == 1:
+            time_label = "mañana"
+        elif days_diff > 1:
+            time_label = f"en {days_diff} días"
+        else:
+            time_label = local_start.strftime('%Y-%m-%d')
+
+        sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
+        subject = f"Nueva reserva: {service.name} – {time_label}"
+        body_html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; color: #333;">
+  <h2 style="color: #4A90D9;">📅 Nueva Reserva – <strong>{time_label}</strong></h2>
+  <p>Hola <strong>{provider.name}</strong>, tienes una nueva reserva.</p>
+  <table style="border-collapse:collapse; width:100%; max-width:500px;">
+    <tr><td style="padding:8px; font-weight:bold;">Servicio</td><td style="padding:8px;">{service.name}</td></tr>
+    <tr style="background:#f5f5f5;"><td style="padding:8px; font-weight:bold;">Cliente</td><td style="padding:8px;">{client_name}</td></tr>
+    <tr><td style="padding:8px; font-weight:bold;">Fecha y hora</td><td style="padding:8px;">{local_start.strftime('%A %d de %B, %Y a las %H:%M')}</td></tr>
+    <tr style="background:#f5f5f5;"><td style="padding:8px; font-weight:bold;">Cuándo</td><td style="padding:8px; font-weight:bold; color:#4A90D9;">{time_label.upper()}</td></tr>
+  </table>
+  <p style="margin-top:16px;">Esta es una notificación automática de Hola Lucía.</p>
+</body>
+</html>"""
+        body_text = f"Nueva reserva {time_label}: {service.name} con {client_name} el {local_start.strftime('%Y-%m-%d %H:%M')}."
+        try:
+            self._email_service.send_email(
+                source=sender,
+                to_addresses=[provider.email],
+                subject=subject,
+                body_html=body_html,
+                body_text=body_text,
+            )
+        except Exception as e:
+            print(f"[BookingService] Error sending provider notification: {e}")
 
     def _sync_to_google_calendar(self, tenant_id, provider_id, booking, client_name, client_email, service_name):
         try:

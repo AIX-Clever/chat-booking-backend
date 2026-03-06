@@ -318,6 +318,7 @@ type Provider @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID!
   name: String!
   bio: String
+  email: String
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
@@ -420,6 +421,7 @@ input UpdateServiceInput {
 input CreateProviderInput {
   name: String!
   bio: String
+  email: String
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
@@ -433,6 +435,7 @@ input UpdateProviderInput {
   providerId: ID!
   name: String
   bio: String
+  email: String
   serviceIds: [ID!]
   timezone: String
   metadata: AWSJSON

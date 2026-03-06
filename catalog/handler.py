@@ -374,6 +374,7 @@ def handle_create_provider(tenant_id: TenantId, input_data: dict) -> dict:
         photo_url_thumbnail=input_data.get("photoUrlThumbnail"),
         slug=input_data.get("slug"),
         professional_license=input_data.get("professionalLicense"),
+        email=input_data.get("email"),
     )
     return success_response(provider_to_dict(provider))
 
@@ -388,7 +389,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         bio=input_data.get("bio"),
         service_ids=input_data.get("serviceIds"),
         timezone=input_data.get("timezone"),
-        metadata=input_data.get("metadata"),  # Added metadata
+        metadata=input_data.get("metadata"),
         active=(
             input_data.get("active")
             if "active" in input_data
@@ -398,6 +399,7 @@ def handle_update_provider(tenant_id: TenantId, input_data: dict) -> dict:
         photo_url_thumbnail=input_data.get("photoUrlThumbnail"),
         slug=input_data.get("slug"),
         professional_license=input_data.get("professionalLicense"),
+        email=input_data.get("email"),
     )
     logger.info(f"Updated provider result: {provider_to_dict(provider)}")  # DEBUG LOG
     return success_response(provider_to_dict(provider))
@@ -470,6 +472,7 @@ def provider_to_dict(provider) -> dict:
         "providerId": provider.provider_id,
         "name": provider.name,
         "bio": provider.bio,
+        "email": getattr(provider, "email", None),
         "serviceIds": provider.service_ids,
         "timezone": provider.timezone,
         "metadata": provider.metadata,

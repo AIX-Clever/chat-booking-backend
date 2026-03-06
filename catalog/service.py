@@ -429,6 +429,7 @@ class ProviderManagementService:
         photo_url_thumbnail: Optional[str] = None,
         slug: Optional[str] = None,
         professional_license: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> Provider:
         """
         Create new provider
@@ -477,6 +478,7 @@ class ProviderManagementService:
             photo_url_thumbnail=photo_url_thumbnail,
             slug=slug,
             professional_license=professional_license,
+            email=email,
         )
 
         # 4. Persist
@@ -506,6 +508,7 @@ class ProviderManagementService:
         photo_url_thumbnail: Optional[str] = None,
         slug: Optional[str] = None,
         professional_license: Optional[str] = None,
+        email: Optional[str] = None,
     ) -> Provider:
         """
         Update existing provider
@@ -542,6 +545,8 @@ class ProviderManagementService:
             provider.slug = slug
         if professional_license is not None:
             provider.professional_license = professional_license
+        if email is not None:
+            provider.email = email
 
         # Persist
         self.provider_repo.save(provider)
