@@ -282,6 +282,50 @@ def lambda_handler(event, context):
                 f"New Bank Account Connected: {username} ({holder_id}) "
                 f"link_token={link_token}"
             )
+            
+        elif event_type in ["subscription.canceled", "subscription_intent.failed", "subscription_intent.rejected"]:
+            intent_id = data.get("id") or data.get("subscription_id")
+            print(f"Subscription canceled or failed ({event_type}): {intent_id}")
+            
+            items = _query_subscription_by_preapproval(intent_id)
+            if not items:
+                print(f"No subscription found to cancel for intent ID (GSI): {intent_id}")
+            else:
+                for item in items:
+                    tenant_id = item["tenantId"]
+                    sub_id = item["subscriptionId"]
+                    
+                    print(f"Canceling subscription {sub_id} for tenant {tenant_id}")
+                    
+                    # 1. Update Subscription to CANCELLED
+                    SUBSCRIPTIONS_TABLE.update_item(
+                        Key={'tenantId': tenant_id, 'subscriptionId': sub_id},
+                        UpdateExpression="set #s = :s",
+                        ExpressionAttributeNames={'#s': 'status'},
+                        ExpressionAttributeValues={':s': SubscriptionStatus.CANCELLED.value}
+                    )
+                    
+                    if sub_id != "CURRENT":
+                        SUBSCRIPTIONS_TABLE.update_item(
+                            Key={'tenantId': tenant_id, 'subscriptionId': 'CURRENT'},
+                            UpdateExpression="set #s = :s",
+                            ExpressionAttributeNames={'#s': 'status'},
+                            ExpressionAttributeValues={':s': SubscriptionStatus.CANCELLED.value}
+                        )
+                    
+                    # 2. Downgrade Tenant to LITE
+                    try:
+                        from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+                        from shared.domain.entities import TenantPlan
+                        
+                        repo = DynamoDBTenantRepository()
+                        tenant = repo.get_by_id(tenant_id)
+                        if tenant:
+                            tenant.plan = TenantPlan.LITE
+                            repo.save(tenant)
+                            print(f"Downgraded tenant {tenant_id} to LITE (Reason: {event_type})")
+                    except Exception as downgrade_err:
+                        print(f"Failed to downgrade tenant {tenant_id}: {downgrade_err}")
 
         return {"statusCode": 200, "body": "OK"}
 
