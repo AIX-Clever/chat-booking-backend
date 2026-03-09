@@ -155,7 +155,8 @@ def process_provider_record_from_item(provider_item, tenant_item, services_table
             "name": name,
             "photoUrl": photo_url,
             "bio": bio,
-            "services": provider_item.get('services', [])
+            "services": provider_item.get('services', []),
+            "profession": provider_item.get('profession'),
         }
         
         profile_data = {
@@ -244,7 +245,8 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "name": name,
             "photoUrl": photo_url,
             "bio": bio,
-            "services": [s['S'] for s in new_image.get('services', {}).get('L', [])]
+            "services": [s['S'] for s in new_image.get('services', {}).get('L', [])],
+            "profession": new_image.get('profession', {}).get('S'),
         }
         
         profile_data = {
@@ -414,7 +416,8 @@ def fetch_providers(table, tenant_id):
                 "name": i['name'],
                 "photoUrl": i.get('photoUrl', ''),
                 "bio": i.get('bio', ''),
-                "services": i.get('services', [])
+                "services": i.get('services', []),
+                "profession": i.get('profession'),  # Individual provider profession
             }
             for i in items
         ]
@@ -435,9 +438,14 @@ def bake_profile(slug, profile_data, context=None):
     name = profile_data['name']
     bio = profile_data['bio']
     photo_url = profile_data['photoUrl']
+    profession = profile_data.get('profession', '')
     
-    title = f"Reserva con {name} | Lucia"
-    description = bio[:160] if bio else f"Agenda tu cita con {name} de forma fácil y rápida."
+    # Build title: "Nombre — Profesión | Lucia" for professionals, "Nombre | Lucia" for centers
+    if profession:
+        title = f"{name} — {profession} | Lucia"
+    else:
+        title = f"Reserva con {name} | Lucia"
+    description = bio[:160] if bio else f"Agenda tu cita con {name}{' — ' + profession if profession else ''} de forma fácil y rápida."
     
     slug = profile_data['slug']
     canonical_url = f"https://agendar.holalucia.cl/{slug}"

@@ -328,6 +328,7 @@ type Provider @aws_api_key @aws_cognito_user_pools @aws_lambda {
   hasGoogleCalendar: Boolean
   slug: String
   professionalLicense: String
+  profession: String
 }
 
 # Types - Availability
@@ -429,6 +430,7 @@ input CreateProviderInput {
   photoUrlThumbnail: String
   slug: String
   professionalLicense: String
+  profession: String
 }
 
 input UpdateProviderInput {
@@ -444,6 +446,7 @@ input UpdateProviderInput {
   available: Boolean
   slug: String
   professionalLicense: String
+  profession: String
 }
 
 input CreateRoomInput {

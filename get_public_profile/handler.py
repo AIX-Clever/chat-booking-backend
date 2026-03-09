@@ -235,6 +235,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                         "available": prov.get(
                             "active", True
                         ),  # distinct from specific availability logic, just means "active provider"
+                        "profession": prov.get("profession"),  # Individual provider profession
                         # Exclude metadata for public
                     }
                 )
@@ -326,8 +327,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
                     target_provider.get("specializations")
                     or public_profile["specializations"]
                 )
+                # Use provider's own profession if set; otherwise keep tenant's profession
                 public_profile["profession"] = (
-                    "Especialista"  # Or from provider metadata if available
+                    target_provider.get("profession") or public_profile["profession"]
                 )
 
             # [FIX] If this is a direct professional profile, ONLY show this professional
