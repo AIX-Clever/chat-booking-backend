@@ -243,10 +243,12 @@ def lambda_handler(event, context):
                 _activate_subscription(tenant_id, sub_id)
                 _sync_tenant_plan_and_status(tenant_id, plan_id)
 
-        elif event_type == "subscription_intent.succeeded":
+        elif event_type in ["subscription_intent.succeeded", "checkout_session.succeeded"]:
             intent_id = data.get("id")
-            print(f"Subscription Intent Succeeded: {intent_id}")
-
+            print(f"Subscription/Checkout Intent Succeeded ({event_type}): {intent_id}")
+            
+            # The intent_id from checkout_session might be different from the subscription id inside it
+            # But we saved the checkout session id as 'subscriptionId' (link_intent_id matches session_id)
             items = _query_subscription_by_preapproval(intent_id)
             if not items:
                 print(f"No subscription found for intent ID (GSI): {intent_id}")

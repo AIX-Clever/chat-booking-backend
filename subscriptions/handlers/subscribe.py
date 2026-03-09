@@ -76,8 +76,15 @@ def lambda_handler(event, _context):
                 fintoc_env = os.environ.get('FINTOC_ENV', 'test')
                 fintoc_client.environment = fintoc_env
                 
-                print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env}")
-                result = fintoc_client.create_link_intent()
+                if plan_id_str == 'lite':
+                    print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env} for LITE promo")
+                    # For Lite, we rely on Fintoc dashboard configuration to handle the trial properly
+                    result = fintoc_client.create_link_intent()
+                else:
+                    print(f"[INTERNAL_LOG] Calling fintoc_client.create_checkout_session() in {fintoc_env} for plan {plan_id_str} at price {price}")
+                    # For Pro and future plans, we pass the price dynamically
+                    result = fintoc_client.create_checkout_session(price=price, customer_email=payer_email, success_url=back_url)
+                    
                 print(f"[INTERNAL_LOG] Fintoc Result: {result}")
                 
                 if not result or 'widget_token' not in result or 'link_intent_id' not in result:
@@ -164,6 +171,38 @@ def lambda_handler(event, _context):
                         'initPoint': '',
                         'message': f"MercadoPago Error: {str(e)}"
                 }
+                
+        # 3. Schedule Promo Removal (if applicable, only for MP because Fintoc doesn't support price updates)
+        scheduler_arn = None
+        if payment_method == 'mercadopago' and price < full_price:
+            try:
+                WORKER_ARN = os.getenv('WORKER_ARN', '')
+                SCHEDULER_ROLE_ARN = os.getenv('SCHEDULER_ROLE_ARN', '')
+                if WORKER_ARN and SCHEDULER_ROLE_ARN:
+                    end_promo_date = datetime.utcnow() + timedelta(days=30 * SubscriptionConfig.PROMO_DURATION_MONTHS)
+                    schedule_name = f"PromoEnd_{tenant_id}_{preapproval_id}"
+                    at_expression = f"at({end_promo_date.strftime('%Y-%m-%dT%H:%M:%S')})"
+
+                    response = scheduler.create_schedule(
+                        Name=schedule_name,
+                        ScheduleExpression=at_expression,
+                        Target={
+                            'Arn': WORKER_ARN,
+                            'RoleArn': SCHEDULER_ROLE_ARN,
+                            'Input': json.dumps({
+                                'action': 'REMOVE_PROMO',
+                                'tenant_id': tenant_id,
+                                'subscription_id': preapproval_id,
+                                'target_price': full_price
+                            })
+                        },
+                        FlexibleTimeWindow={'Mode': 'OFF'}
+                    )
+                    scheduler_arn = response['ScheduleArn']
+                    print(f"[INTERNAL_LOG] MP Promo Scheduler Created: {scheduler_arn}")
+            except Exception as e:
+                print(f"[INTERNAL_LOG] Scheduler Error: {str(e)}")
+                # Continue, don't block subscription, but log error (manual fix needed)
 
         # Final check before persistence
         if not preapproval_id or not init_point:
@@ -181,6 +220,8 @@ def lambda_handler(event, _context):
             SUBSCRIPTIONS_TABLE_NAME = SubscriptionConfig.SUBSCRIPTIONS_TABLE
             table = dynamodb.Table(SUBSCRIPTIONS_TABLE_NAME)
             
+            is_promo = (price < full_price)
+            
             sub = Subscription(
                 tenant_id=tenant_id,
                 subscription_id=preapproval_id,
@@ -188,7 +229,8 @@ def lambda_handler(event, _context):
                 plan_id=plan_enum,
                 current_price=price,
                 mp_preapproval_id=preapproval_id,
-                is_promo_active=True
+                is_promo_active=is_promo,
+                promo_scheduler_arn=scheduler_arn
             )
             table.put_item(Item=sub.to_item())
             
@@ -200,7 +242,8 @@ def lambda_handler(event, _context):
                 plan_id=plan_enum,
                 current_price=price,
                 mp_preapproval_id=preapproval_id,
-                is_promo_active=True
+                is_promo_active=is_promo,
+                promo_scheduler_arn=scheduler_arn
             )
             table.put_item(Item=sub_current.to_item())
         except Exception as e:
