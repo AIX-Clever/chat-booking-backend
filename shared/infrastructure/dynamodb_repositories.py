@@ -367,6 +367,9 @@ class DynamoDBProviderRepository(IProviderRepository):
         if provider.professional_license:
             item["professionalLicense"] = provider.professional_license
 
+        if provider.profession:
+            item["profession"] = provider.profession
+
         if provider.email:
             item["email"] = provider.email
 
@@ -391,6 +394,7 @@ class DynamoDBProviderRepository(IProviderRepository):
             photo_url_thumbnail=item.get("photoUrlThumbnail"),
             slug=item.get("slug"),
             professional_license=item.get("professionalLicense"),
+            profession=item.get("profession"),
             email=item.get("email"),
             google_integration=item.get("googleIntegration"),
             microsoft_integration=item.get("microsoftIntegration"),

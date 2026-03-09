@@ -223,6 +223,7 @@ class Provider:
     metadata: Dict[str, Any] = field(default_factory=dict)
     active: bool = True
     professional_license: Optional[str] = None
+    profession: Optional[str] = None
     email: Optional[str] = None
     google_integration: Optional[Dict[str, Any]] = None
     microsoft_integration: Optional[Dict[str, Any]] = None
