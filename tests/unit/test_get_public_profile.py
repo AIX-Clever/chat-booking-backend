@@ -173,3 +173,62 @@ def test_get_public_profile_with_null_profile_section(mock_dynamodb):
 
         assert response["name"] == "Test 2"
         assert response["profession"] == ""
+
+
+def test_get_public_profile_provider_slug_uses_provider_profession():
+    """When a slug belongs to a provider, their profession should be used (not hardcoded)."""
+    mock_service_table = MagicMock()
+    mock_provider_table = MagicMock()
+    mock_tenant_table = MagicMock()
+
+    def mock_table_side_effect(name):
+        if name == "ChatBooking-Services":
+            return mock_service_table
+        if name == "ChatBooking-Providers":
+            return mock_provider_table
+        return mock_tenant_table
+
+    with patch("boto3.resource") as resource_mock:
+        resource_mock.return_value.Table.side_effect = mock_table_side_effect
+
+        # Tenant slug query returns nothing (it's a provider slug)
+        mock_tenant_table.query.return_value = {"Items": [], "Count": 0}
+
+        # Provider scan returns a match with profession
+        mock_provider_table.scan.return_value = {
+            "Items": [
+                {
+                    "providerId": "p1",
+                    "tenantId": "t1",
+                    "name": "Dr. Mario",
+                    "slug": "dr-mario",
+                    "bio": "Psicologo clinico",
+                    "profession": "Psicólogo",
+                    "services": ["s1"],
+                    "active": True,
+                    "timezone": "America/Santiago",
+                }
+            ]
+        }
+
+        # Tenant lookup for branding
+        mock_tenant_table.get_item.return_value = {
+            "Item": {
+                "tenantId": "t1",
+                "name": "Centro Medico",
+                "slug": "centro-medico",
+                "settings": "{}",
+            }
+        }
+
+        mock_service_table.scan.return_value = {"Items": []}
+
+        event = {"slug": "dr-mario"}
+        from get_public_profile.handler import lambda_handler
+        response = lambda_handler(event, {})
+
+        assert response is not None
+        assert response["name"] == "Dr. Mario"
+        # Must use provider's profession, not the old hardcoded "Especialista"
+        assert response["profession"] == "Psicólogo"
+        assert response["preselectedProviderId"] == "p1"

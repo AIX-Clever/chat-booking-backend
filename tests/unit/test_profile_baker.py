@@ -209,3 +209,74 @@ def test_profile_baker_skip_no_slug_or_id():
         response = lambda_handler(event, {})
         assert response["status"] == "success"
         mock_s3.put_object.assert_not_called()
+
+
+def test_profile_baker_provider_profession_in_seo():
+    """Provider with a profession should have it reflected in baked SEO title."""
+    mock_s3 = MagicMock()
+    mock_cloudfront = MagicMock()
+    mock_dynamodb = MagicMock()
+
+    mock_s3.get_object.return_value = {
+        "Body": MagicMock(
+            read=lambda: b"<html><head><title>Original</title></head><body></body></html>"
+        )
+    }
+
+    mock_tenants_table = MagicMock()
+    mock_services_table = MagicMock()
+    mock_providers_table = MagicMock()
+
+    def get_table(name):
+        if name == "Tenants":
+            return mock_tenants_table
+        if name == "Services":
+            return mock_services_table
+        if name == "Providers":
+            return mock_providers_table
+        return MagicMock()
+
+    mock_dynamodb.Table.side_effect = get_table
+    mock_tenants_table.get_item.return_value = {
+        "Item": {
+            "tenantId": "t1",
+            "settings": json.dumps({"widgetConfig": {"primaryColor": "#3b82f6"}}),
+        }
+    }
+    mock_services_table.scan.return_value = {"Items": []}
+    mock_providers_table.scan.return_value = {"Items": []}
+
+    with patch("profile_baker.handler.s3", mock_s3), patch(
+        "profile_baker.handler.cloudfront", mock_cloudfront
+    ), patch("profile_baker.handler.dynamodb", mock_dynamodb):
+
+        event = {
+            "Records": [
+                {
+                    "eventName": "INSERT",
+                    "dynamodb": {
+                        "NewImage": {
+                            "tenantId": {"S": "t1"},
+                            "providerId": {"S": "p1"},
+                            "slug": {"S": "dr-mario"},
+                            "name": {"S": "Dr. Mario"},
+                            "bio": {"S": "Especialista en psicología"},
+                            "photoUrl": {"S": "http://image.jpg"},
+                            "profession": {"S": "Psicólogo"},
+                        }
+                    },
+                }
+            ]
+        }
+
+        response = lambda_handler(event, MagicMock(aws_request_id="req-789"))
+        assert response["status"] == "success"
+
+        _, kwargs = mock_s3.put_object.call_args
+        uploaded_html = kwargs["Body"].decode("utf-8")
+
+        # Profession should appear in the SEO title
+        assert "Psicólogo" in uploaded_html
+        assert "Dr. Mario — Psicólogo" in uploaded_html
+        # preselectedProviderId should be set for provider pages
+        assert '"preselectedProviderId": "p1"' in uploaded_html
