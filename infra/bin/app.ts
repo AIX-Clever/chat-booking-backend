@@ -87,6 +87,14 @@ const subscriptionStack = new SubscriptionStack(app, `${stackPrefix}-Subscriptio
 });
 subscriptionStack.addDependency(databaseStack);
 
+// 2.8 WhatsApp Stack - Messaging Infrastructure
+import { WhatsappStack } from '../lib/whatsapp-stack';
+const whatsappStack = new WhatsappStack(app, `${stackPrefix}-Whatsapp`, {
+  env: { account, region },
+  description: 'Messaging Infrastructure (SNS + SQS) for WhatsApp',
+  tags,
+});
+
 // 3. Backend Stack - Business Logic
 const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
@@ -117,12 +125,14 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   clientsTable: databaseStack.clientsTable,
   clientAuditLogsTable: databaseStack.clientAuditLogsTable,
   dteFoliosTable: databaseStack.dteFoliosTable,
+  whatsappMessagesTable: databaseStack.whatsappMessagesTable,
+  whatsappNotificationTopic: whatsappStack.notificationTopic,
+  whatsappSenderQueue: whatsappStack.senderQueue,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(subscriptionStack);
 lambdaStack.addDependency(authStack);
-// lambdaStack.addDependency(vectorDbStack); // Removed
-// lambdaStack.addDependency(assetsStack); // If lambda needs to read/write, passed as prop?
+lambdaStack.addDependency(whatsappStack);
 
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {

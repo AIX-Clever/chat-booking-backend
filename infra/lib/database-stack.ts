@@ -34,6 +34,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly clientsTable: dynamodb.Table;
   public readonly clientAuditLogsTable: dynamodb.Table;
   public readonly dteFoliosTable: dynamodb.Table;
+  public readonly whatsappMessagesTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -557,6 +558,76 @@ export class DatabaseStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    // 18. Whatsapp Messages Table
+    this.whatsappMessagesTable = new dynamodb.Table(this, 'WhatsappMessagesTable', {
+      tableName: 'ChatBooking-WhatsappMessages',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'messageId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+      timeToLiveAttribute: 'ttl', // Auto-cleanup old messages
+    });
+
+    // GSI: messageId index for webhook lookups
+    this.whatsappMessagesTable.addGlobalSecondaryIndex({
+      indexName: 'messageId-index',
+      partitionKey: {
+        name: 'messageId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // GSI: status index for querying messages by status
+    this.whatsappMessagesTable.addGlobalSecondaryIndex({
+      indexName: 'status-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'status',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // GSI: bookingId index for querying messages related to a booking
+    this.whatsappMessagesTable.addGlobalSecondaryIndex({
+      indexName: 'bookingId-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'bookingId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    // GSI: destinationPhone index for querying messages sent to a phone
+    this.whatsappMessagesTable.addGlobalSecondaryIndex({
+      indexName: 'destinationPhone-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'destinationPhone',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     new cdk.CfnOutput(this, 'ClientAuditLogsTableName', {
       value: this.clientAuditLogsTable.tableName,
       description: 'Client Audit Logs table name',
@@ -565,6 +636,11 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'DTEFoliosTableName', {
       value: this.dteFoliosTable.tableName,
       description: 'DTE Folios table name',
+    });
+
+    new cdk.CfnOutput(this, 'WhatsappMessagesTableName', {
+      value: this.whatsappMessagesTable.tableName,
+      description: 'Whatsapp Messages table name',
     });
   }
 }

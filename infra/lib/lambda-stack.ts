@@ -50,6 +50,9 @@ interface LambdaStackProps extends cdk.StackProps {
   clientsTable: dynamodb.ITable;
   clientAuditLogsTable: dynamodb.ITable;
   dteFoliosTable: dynamodb.ITable;
+  whatsappMessagesTable: dynamodb.ITable;
+  whatsappNotificationTopic: cdk.aws_sns.ITopic;
+  whatsappSenderQueue: cdk.aws_sqs.IQueue;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -80,6 +83,8 @@ export class LambdaStack extends cdk.Stack {
   public readonly microsoftIntegrationFunction: lambda.Function;
   public readonly checkPaymentStatusFunction: lambda.Function;
   public readonly supportManagerFunction: lambda.Function; // New function
+  public readonly whatsappSenderFunction: lambda.Function;
+  public readonly whatsappWebhookFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -253,6 +258,7 @@ export class LambdaStack extends cdk.Stack {
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+        WHATSAPP_NOTIFICATION_TOPIC: props.whatsappNotificationTopic.topicArn,
       }
     });
 
@@ -261,6 +267,7 @@ export class LambdaStack extends cdk.Stack {
       actions: ['ses:SendEmail', 'ses:SendRawEmail'],
       resources: ['*'], // In production, restrict to specific identities
     }));
+    props.whatsappNotificationTopic.grantPublish(this.bookingFunction);
 
     // --- SQS Resilience for DTE ---
     const dteDLQ = new sqs.Queue(this, 'DteDLQ', {
@@ -987,6 +994,61 @@ export class LambdaStack extends cdk.Stack {
         }),
       ],
     }));
+    // 23. WhatsApp Sender Lambda (SQS Triggered)
+    this.whatsappSenderFunction = new lambda.Function(this, 'WhatsappSenderFunction', {
+      ...commonProps,
+      description: 'Processes messages from SQS, checks quota, and sends via Twilio/ISV',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'whatsapp_sender')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        ...commonProps.environment,
+        WHATSAPP_MESSAGES_TABLE: props.whatsappMessagesTable.tableName,
+        TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID || '',
+        TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
+      }
+    });
+
+    // Add SQS Event Source
+    this.whatsappSenderFunction.addEventSource(new lambdaEventSources.SqsEventSource(props.whatsappSenderQueue, {
+      batchSize: 10,
+      maxBatchingWindow: cdk.Duration.seconds(5),
+    }));
+
+    // Grant permissions to Sender
+    props.tenantsTable.grantReadWriteData(this.whatsappSenderFunction); // To read plan and update used quota
+    props.whatsappMessagesTable.grantReadWriteData(this.whatsappSenderFunction);
+
+    // Explicitly grant KMS decrypt if SQS is encrypted with AWS managed key
+    props.whatsappSenderQueue.grantConsumeMessages(this.whatsappSenderFunction);
+
+    // 24. WhatsApp Webhook Lambda
+    this.whatsappWebhookFunction = new lambda.Function(this, 'WhatsappWebhookFunction', {
+      ...commonProps,
+      description: 'Receives delivery status and inbound messages from Twilio/ISV',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'whatsapp_webhook')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      environment: {
+        ...commonProps.environment,
+        WHATSAPP_MESSAGES_TABLE: props.whatsappMessagesTable.tableName,
+        TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
+      }
+    });
+
+    // Grant permissions to Webhook
+    props.whatsappMessagesTable.grantReadWriteData(this.whatsappWebhookFunction);
+
+    // Add Function URL for webhook
+    const whatsappWebhookUrl = this.whatsappWebhookFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    new cdk.CfnOutput(this, 'WhatsappWebhookUrl', {
+      value: whatsappWebhookUrl.url,
+      description: 'Public URL to configure in Twilio/ISV as the WhatsApp webhook',
+    });
   }
 
   private createAlarms(): void {
