@@ -34,7 +34,7 @@ from shared.utils import (
     extract_appsync_event,
 )
 from shared.metrics import MetricsService
-from shared.infrastructure.notifications import EmailService
+from shared.infrastructure.notifications import EmailService, SnsService
 from shared.limit_service import TenantLimitService
 import os
 
@@ -52,6 +52,7 @@ provider_integration_repo = DynamoDBProviderIntegrationRepository()
 availability_repo = DynamoDBAvailabilityRepository()
 metrics_service = MetricsService()
 email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
+sns_service = SnsService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
 # Initialize Availability Service
 availability_service = AvailabilityService(
@@ -74,6 +75,7 @@ booking_service = BookingService(
     provider_integration_repo=provider_integration_repo,
     limit_service=limit_service,
     email_service=email_service,
+    sns_service=sns_service,
     availability_service=availability_service
 )
 

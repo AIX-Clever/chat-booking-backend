@@ -11,6 +11,7 @@ except ImportError:
     UTC = timezone.utc
 import hashlib
 import os
+import json
 from typing import Optional, List
 from shared.domain.entities import (
     TenantId,
@@ -48,9 +49,10 @@ except ImportError:
     TenantLimitService = None
 
 try:
-    from shared.infrastructure.notifications import EmailService
+    from shared.infrastructure.notifications import EmailService, SnsService
 except ImportError:
     EmailService = None
+    SnsService = None
 
 try:
     from shared.infrastructure.payment_factory import PaymentGatewayFactory
@@ -74,6 +76,7 @@ class BookingService:
         provider_integration_repo: Optional[IProviderIntegrationRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
         email_service: Optional[EmailService] = None,
+        sns_service: Optional[SnsService] = None,
         metrics_service: Optional[MetricsService] = None,
         availability_service=None,
     ):
@@ -85,6 +88,7 @@ class BookingService:
         self._provider_integration_repo = provider_integration_repo
         self._limit_service = limit_service
         self._email_service = email_service
+        self._sns_service = sns_service
         self._availability_service = availability_service
         self._metrics_service = metrics_service or (
             MetricsService() if MetricsService else None
@@ -234,6 +238,14 @@ class BookingService:
             self._send_confirmation_email(provider, service, booking, full_name, client_email, start)
         if self._email_service and getattr(provider, "email", None):
             self._send_provider_notification_email(provider, service, booking, full_name, start)
+            
+        if self._sns_service and client_phone:
+            # We are sending to Whatsapp only if they provided a phone
+            try:
+                self._send_whatsapp_notification(provider, service, booking, full_name, client_phone, start)
+            except Exception as e:
+                import logging
+                logging.getLogger().warning(f"Failed to enqueue WhatsApp notification: {str(e)}")
 
         # Metrics
         if self._metrics_service:
@@ -325,6 +337,44 @@ class BookingService:
             )
         except Exception as e:
             print(f"[BookingService] Error sending provider notification: {e}")
+
+    def _send_whatsapp_notification(self, provider, service, booking, client_name, client_phone, start):
+        """Send a WhatsApp notification via SNS to the configured Sender Lambda."""
+        topic_arn = os.environ.get("WHATSAPP_NOTIFICATION_TOPIC")
+        if not topic_arn:
+            return  # WhatsApp not configured for this environment
+            
+        try:
+            from zoneinfo import ZoneInfo
+            tz = ZoneInfo(provider.timezone or "UTC")
+        except Exception:
+            from datetime import timezone
+            tz = timezone.utc
+
+        local_start = start.astimezone(tz)
+        formatted_date = local_start.strftime('%d/%m/%Y a las %H:%M')
+
+        # Using a reliable template that matches a likely Twilio approved template, 
+        # or just sending the body (the sender lambda handles Twilio integration).
+        # We pass the necessary variables so the sender lambda can format the final message.
+        payload = {
+            "tenantId": booking.tenant_id.value,
+            "bookingId": booking.booking_id,
+            "destinationPhone": client_phone,
+            "templateName": "booking_confirmation", # Assuming we have templates later
+            "parameters": {
+                "clientName": client_name,
+                "serviceName": service.name,
+                "providerName": provider.name,
+                "dateTime": formatted_date
+            }
+        }
+        
+        # Publish the event to SNS
+        self._sns_service.publish_message(
+            topic_arn=topic_arn,
+            message=json.dumps(payload)
+        )
 
     def _sync_to_google_calendar(self, tenant_id, provider_id, booking, client_name, client_email, service_name):
         try:

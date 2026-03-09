@@ -59,3 +59,42 @@ class EmailService:
         except Exception as e:
             logger.error(f"Unexpected error sending email to {to_addresses}: {str(e)}")
             return False
+
+
+class SnsService:
+    """
+    Generic Infrastructure Adapter for publishing messages via Amazon SNS.
+    """
+
+    def __init__(self, region_name: str = "us-east-1"):
+        self.client = boto3.client("sns", region_name=region_name)
+
+    def publish_message(self, topic_arn: str, message: str, message_attributes: Optional[dict] = None) -> bool:
+        """
+        Publishes a message to an SNS Topic.
+
+        Args:
+            topic_arn: The ARN of the SNS Topic.
+            message: The JSON or text message to send.
+            message_attributes: Optional attributes for message filtering.
+
+        Returns:
+            bool: True if successful, False otherwise.
+        """
+        try:
+            kwargs = {
+                "TopicArn": topic_arn,
+                "Message": message
+            }
+            if message_attributes:
+                kwargs["MessageAttributes"] = message_attributes
+
+            response = self.client.publish(**kwargs)
+            logger.info(f"Message published to SNS {topic_arn}. MessageId: {response.get('MessageId')}")
+            return True
+        except ClientError as e:
+            logger.error(f"Failed to publish to SNS {topic_arn}. Error: {e.response['Error']['Message']}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error publishing to SNS {topic_arn}: {str(e)}")
+            return False
