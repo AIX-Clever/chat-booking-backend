@@ -26,15 +26,18 @@ GOOD_EVENT = {
 }
 
 
+def _make_mock_response(payload):
+    """Creates a single context-manager mock that returns payload as JSON bytes."""
+    m = MagicMock()
+    m.__enter__ = MagicMock(return_value=m)
+    m.__exit__ = MagicMock(return_value=False)
+    m.read.return_value = json.dumps(payload).encode()
+    return m
+
+
 def _make_mock_urlopen(responses: list):
-    """Returns a context-manager mock for multiple sequential urlopen calls."""
-    mocks = []
-    for payload in responses:
-        m = MagicMock()
-        m.__enter__ = lambda s, p=payload: s
-        m.__exit__ = MagicMock(return_value=False)
-        m.read.return_value = json.dumps(p).encode()
-        mocks.append(m)
+    """Returns a side_effect function for multiple sequential urlopen calls."""
+    mocks = [_make_mock_response(payload) for payload in responses]
     side_effect_iter = iter(mocks)
 
     def _open(_req):
