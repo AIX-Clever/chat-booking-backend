@@ -1027,7 +1027,7 @@ export class LambdaStack extends cdk.Stack {
     this.whatsappWebhookFunction = new lambda.Function(this, 'WhatsappWebhookFunction', {
       ...commonProps,
       description: 'Receives delivery status and inbound messages from Twilio/ISV',
-      code: lambda.Code.fromAsset(path.join(backendPath, 'whatsapp_webhook')),
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'whatsapp_webhook')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
       environment: {
