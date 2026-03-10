@@ -127,7 +127,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "settings": settings if settings else None,
             # WhatsApp fields — read from tenant entity or from settings
             "whatsappEnabled": settings.get("whatsappEnabled", False),
-            "whatsappQuota": getattr(tenant, "whatsapp_quota", None),
+            "whatsappQuota": int(tenant.whatsapp_quota) if getattr(tenant, "whatsapp_quota", None) is not None else None,
             "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
             "whatsappNotificationRules": json.dumps(settings["notification_rules"])
                 if "notification_rules" in settings else None,
