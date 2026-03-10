@@ -1,5 +1,6 @@
 import os
 import json
+from decimal import Decimal
 from typing import Dict, Any
 import uuid
 from datetime import datetime, timezone
@@ -21,6 +22,14 @@ try:
 except Exception as e:
     print(f"Warning: Could not load default flow from local file: {e}")
     DEFAULT_FLOW = {}
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """JSON encoder that converts Decimal to int or float."""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return int(obj) if obj == int(obj) else float(obj)
+        return super().default(obj)
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -129,13 +138,16 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "whatsappEnabled": settings.get("whatsappEnabled", False),
             "whatsappQuota": int(tenant.whatsapp_quota) if getattr(tenant, "whatsapp_quota", None) is not None else None,
             "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
-            "whatsappNotificationRules": json.dumps(settings["notification_rules"])
+            "whatsappNotificationRules": json.dumps(settings["notification_rules"], cls=DecimalEncoder)
                 if "notification_rules" in settings else None,
             "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
             "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
 
-        logger.info("Get tenant success", response=response)
+        try:
+            logger.info("Get tenant success", tenantId=str(tenant.tenant_id))
+        except Exception:
+            pass  # Don't let logging crash the response
         return response
 
     except Exception as e:
