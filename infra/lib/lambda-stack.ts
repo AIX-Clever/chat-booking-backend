@@ -53,6 +53,8 @@ interface LambdaStackProps extends cdk.StackProps {
   whatsappMessagesTable: dynamodb.ITable;
   whatsappNotificationTopic: cdk.aws_sns.ITopic;
   whatsappSenderQueue: cdk.aws_sqs.IQueue;
+  whatsappSchedulerRoleArn?: string;
+  whatsappSchedulerGroupName?: string;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -86,6 +88,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly whatsappSenderFunction: lambda.Function;
   public readonly whatsappWebhookFunction: lambda.Function;
   public readonly twilioConnectFunction: lambda.Function;
+  public readonly whatsappSchedulerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -1087,6 +1090,54 @@ export class LambdaStack extends cdk.Stack {
       value: twilioConnectUrl.url,
       description: 'Redirect URI to register in Twilio Connected App (OAuth callback)',
     });
+
+    // 26. WhatsApp Scheduler Lambda (reads tenant rules → EventBridge Scheduler)
+    this.whatsappSchedulerFunction = new lambda.Function(this, 'WhatsappSchedulerFunction', {
+      ...commonProps,
+      description: 'Reads tenant notification rules and schedules timed WhatsApp reminders via EventBridge Scheduler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'whatsapp_scheduler')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(60),
+      environment: {
+        ...commonProps.environment,
+        WHATSAPP_SNS_TOPIC_ARN: props.whatsappNotificationTopic.topicArn,
+        SCHEDULER_GROUP_NAME: props.whatsappSchedulerGroupName || 'ChatBooking-WhatsappSchedules',
+        SCHEDULER_ROLE_ARN: props.whatsappSchedulerRoleArn || '',
+      }
+    });
+
+    // DynamoDB read for tenant rules
+    props.tenantsTable.grantReadData(this.whatsappSchedulerFunction);
+
+    // SNS publish for immediate (on_booking) notifications
+    props.whatsappNotificationTopic.grantPublish(this.whatsappSchedulerFunction);
+
+    // EventBridge Scheduler permissions to create/delete schedules
+    this.whatsappSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: [
+        'scheduler:CreateSchedule',
+        'scheduler:DeleteSchedule',
+        'scheduler:GetSchedule',
+      ],
+      resources: [`arn:aws:scheduler:${this.region}:${this.account}:schedule/ChatBooking-WhatsappSchedules/*`],
+    }));
+    // Pass role so EventBridge Scheduler can publish to SNS
+    this.whatsappSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['iam:PassRole'],
+      resources: [props.whatsappSchedulerRoleArn || '*'],
+    }));
+
+    // Subscribe this Lambda directly to the SNS topic (filtered to BOOKING_CONFIRMED)
+    props.whatsappNotificationTopic.addSubscription(
+      new (require('aws-cdk-lib/aws-sns-subscriptions').LambdaSubscription)(this.whatsappSchedulerFunction, {
+        filterPolicy: {
+          event_type: cdk.aws_sns.SubscriptionFilter.stringFilter({
+            allowlist: ['BOOKING_CONFIRMED'],
+          }),
+        },
+      })
+    );
   }
 
   private createAlarms(): void {

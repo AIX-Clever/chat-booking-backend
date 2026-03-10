@@ -94,6 +94,7 @@ type Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda {
   whatsappEnabled: Boolean
   whatsappQuota: Int
   twilioPhoneNumber: String
+  whatsappNotificationRules: AWSJSON
 }
 
 type ApiKey @aws_cognito_user_pools {
