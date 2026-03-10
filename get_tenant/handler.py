@@ -114,6 +114,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # Schema expects Tenant! (object), success_response returns raw data?
         # shared/utils.py success_response returns data directly.
 
+        settings = tenant.settings or {}
+
         response = {
             "tenantId": str(tenant.tenant_id),
             "name": tenant.name,
@@ -122,7 +124,13 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "plan": tenant.plan.value,
             "ownerUserId": tenant.owner_user_id,
             "billingEmail": tenant.billing_email,
-            "settings": tenant.settings if tenant.settings else None,
+            "settings": settings if settings else None,
+            # WhatsApp fields — read from tenant entity or from settings
+            "whatsappEnabled": settings.get("whatsappEnabled", False),
+            "whatsappQuota": getattr(tenant, "whatsapp_quota", None),
+            "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
+            "whatsappNotificationRules": json.dumps(settings["notification_rules"])
+                if "notification_rules" in settings else None,
             "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
             "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
