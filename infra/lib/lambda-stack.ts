@@ -85,6 +85,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly supportManagerFunction: lambda.Function; // New function
   public readonly whatsappSenderFunction: lambda.Function;
   public readonly whatsappWebhookFunction: lambda.Function;
+  public readonly twilioConnectFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -1048,6 +1049,43 @@ export class LambdaStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'WhatsappWebhookUrl', {
       value: whatsappWebhookUrl.url,
       description: 'Public URL to configure in Twilio/ISV as the WhatsApp webhook',
+    });
+
+    // 25. Twilio Connect Lambda (OAuth Embedded Signup callback)
+    const twilioMasterSecret = secretsmanager.Secret.fromSecretNameV2(
+      this, 'TwilioMasterSecret', 'prod/twilio/master'
+    );
+
+    this.twilioConnectFunction = new lambda.Function(this, 'TwilioConnectFunction', {
+      ...commonProps,
+      description: 'Handles Twilio Embedded Signup OAuth callback and stores per-tenant WABA credentials',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'twilio_connect')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(30),
+      environment: {
+        ...commonProps.environment,
+        TWILIO_MASTER_SECRET_NAME: 'prod/twilio/master',
+        DASHBOARD_URL: `https://admin.holalucia.cl/settings?tab=whatsapp&connected=true`,
+        TWILIO_CONNECTED_APP_SID: process.env.TWILIO_CONNECTED_APP_SID || '',
+        TWILIO_CONNECTED_APP_SECRET: process.env.TWILIO_CONNECTED_APP_SECRET || '',
+      }
+    });
+
+    // Secrets Manager read access for master Twilio credentials
+    twilioMasterSecret.grantRead(this.twilioConnectFunction);
+
+    // DynamoDB write access to update tenant settings
+    props.tenantsTable.grantReadWriteData(this.twilioConnectFunction);
+
+    // Public HTTP Function URL for OAuth redirect
+    const twilioConnectUrl = this.twilioConnectFunction.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+    });
+
+    new cdk.CfnOutput(this, 'TwilioConnectCallbackUrl', {
+      value: twilioConnectUrl.url,
+      description: 'Redirect URI to register in Twilio Connected App (OAuth callback)',
     });
   }
 

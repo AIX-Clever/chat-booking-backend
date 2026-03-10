@@ -93,6 +93,7 @@ type Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda {
   updatedAt: AWSDateTime!
   whatsappEnabled: Boolean
   whatsappQuota: Int
+  twilioPhoneNumber: String
 }
 
 type ApiKey @aws_cognito_user_pools {
