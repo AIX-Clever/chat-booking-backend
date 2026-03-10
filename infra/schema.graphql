@@ -384,6 +384,7 @@ input UpdateTenantInput {
   settings: AWSJSON
   whatsappEnabled: Boolean
   whatsappQuota: Int
+  whatsappNotificationRules: AWSJSON
 }
 
 input CreateCategoryInput {

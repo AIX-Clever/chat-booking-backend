@@ -93,6 +93,14 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             )
             tenant.settings.update(new_settings)
 
+        if "whatsappNotificationRules" in inputs:
+            # Store notification rules inside settings so whatsapp_scheduler can read them
+            raw = inputs["whatsappNotificationRules"]
+            rules = json.loads(raw) if isinstance(raw, str) else raw
+            if tenant.settings is None:
+                tenant.settings = {}
+            tenant.settings["notification_rules"] = rules
+
         # 6. Save
         tenant_repo.save(tenant)
 
@@ -110,6 +118,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "plan": tenant.plan.value,
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings if tenant.settings else None,
+            "whatsappNotificationRules": json.dumps(
+                tenant.settings.get("notification_rules", [])
+            ) if tenant.settings else None,
             "createdAt": tenant.created_at.isoformat() + "Z",
             "updatedAt": now.isoformat() + "Z",
         }
