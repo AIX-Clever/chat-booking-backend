@@ -1,217 +1,272 @@
-"""Unit tests for whatsapp_scheduler Lambda handler."""
+"""
+Unit tests for whatsapp_scheduler — hexagonal architecture.
+
+Tests are organized by layer:
+  - Domain: NotificationRule, BookingEvent, message_builder (pure, no mocks needed)
+  - Application: ScheduleNotificationsUseCase (inject mock ports)
+  - Handler: record parsing, BookingEvent construction
+"""
 import json
 import unittest
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call
 
 import pytest
 
+from backend.whatsapp_scheduler.domain.models import (
+    NotificationRule, BookingEvent, TriggerType,
+    INotificationPublisher, INotificationScheduler,
+)
+from backend.whatsapp_scheduler.domain.message_builder import build_message, _hours_label
+from backend.whatsapp_scheduler.application.schedule_notifications import (
+    ScheduleNotificationsUseCase, DEFAULT_RULES,
+)
+from backend.whatsapp_scheduler.handler import _parse_record, _to_booking_event
+
+
 # ---------------------------------------------------------------------------
-# Fixtures and helpers
+# Fixtures
 # ---------------------------------------------------------------------------
 
-def _make_event(payload: dict) -> dict:
-    """Wrap a payload in an SNS-style record as whatsapp_scheduler expects."""
-    return {
-        "Records": [
-            {"body": json.dumps({"Message": json.dumps(payload)})}
-        ]
-    }
+def _future_dt(hours: int = 48) -> datetime:
+    return datetime.now(timezone.utc) + timedelta(hours=hours)
 
 
-def _booking_payload(
-    tenant_id="tenant-1",
-    event_type="BOOKING_CONFIRMED",
-    hours_offset=48,
-    customer_phone="+56912345678",
-    customer_name="Carlos",
-    service_name="Consulta General",
-):
-    start = datetime.now(timezone.utc) + timedelta(hours=hours_offset)
-    return {
-        "event_type": event_type,
-        "tenant_id": tenant_id,
-        "booking_id": "booking-abc",
-        "booking_start_time": start.isoformat(),
-        "customer_phone": customer_phone,
-        "customer_name": customer_name,
-        "service_name": service_name,
-    }
+def _booking(hours_offset: int = 48, phone: str = "+56912345678") -> BookingEvent:
+    return BookingEvent(
+        tenant_id="tenant-1",
+        booking_id="booking-abc",
+        booking_start_time=_future_dt(hours_offset),
+        customer_phone=phone,
+        customer_name="Ana",
+        service_name="Masaje",
+    )
 
 
-def _make_tenant(rules=None):
+def _rule(trigger=TriggerType.ON_BOOKING, active=True, hours=None) -> NotificationRule:
+    return NotificationRule(
+        id="r1", name="Test rule", trigger=trigger, active=active, hours_before=hours
+    )
+
+
+def _mock_tenant(rules=None):
     tenant = MagicMock()
-    tenant.tenant_id.value = "tenant-1"
     tenant.settings = {"notification_rules": rules} if rules is not None else {}
     return tenant
 
 
-# ---------------------------------------------------------------------------
-# Tests
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# DOMAIN LAYER
+# ===========================================================================
+
+class TestNotificationRule(unittest.TestCase):
+    def test_on_booking_trigger(self):
+        r = _rule(trigger=TriggerType.ON_BOOKING)
+        self.assertTrue(r.is_on_booking())
+        self.assertFalse(r.is_hours_before())
+
+    def test_hours_before_trigger(self):
+        r = _rule(trigger=TriggerType.HOURS_BEFORE, hours=24)
+        self.assertFalse(r.is_on_booking())
+        self.assertTrue(r.is_hours_before())
+
+    def test_from_dict(self):
+        d = {"id": "x", "name": "N", "trigger": "hours_before", "active": True, "hours_before": 12}
+        r = NotificationRule.from_dict(d)
+        self.assertEqual(r.hours_before, 12)
+
+    def test_from_dict_defaults(self):
+        r = NotificationRule.from_dict({"id": "x"})
+        self.assertFalse(r.active)
+
+    def test_immutable(self):
+        r = _rule()
+        with self.assertRaises(Exception):
+            r.active = False  # frozen dataclass
+
+
+class TestBookingEvent(unittest.TestCase):
+    def test_fire_time_for_on_booking_returns_none(self):
+        b = _booking()
+        r = _rule(trigger=TriggerType.ON_BOOKING)
+        self.assertIsNone(b.fire_time_for_rule(r))
+
+    def test_fire_time_for_hours_before(self):
+        start = _future_dt(48)
+        b = BookingEvent("t", "b", start, "+56912345678", "Ana", "Yoga")
+        r = _rule(trigger=TriggerType.HOURS_BEFORE, hours=24)
+        expected = start - timedelta(hours=24)
+        self.assertEqual(b.fire_time_for_rule(r), expected)
+
+    def test_fire_time_none_hours_before_is_none(self):
+        b = _booking()
+        r = NotificationRule("x", "n", TriggerType.HOURS_BEFORE, True, None)
+        self.assertIsNone(b.fire_time_for_rule(r))
+
+
+class TestMessageBuilder(unittest.TestCase):
+    def test_on_booking_contains_name_and_service(self):
+        b = _booking()
+        r = _rule(trigger=TriggerType.ON_BOOKING)
+        msg = build_message(r, b)
+        self.assertIn("Ana", msg)
+        self.assertIn("Masaje", msg)
+        self.assertIn("confirmada", msg)
+
+    def test_hours_before_24_label(self):
+        b = _booking()
+        r = _rule(trigger=TriggerType.HOURS_BEFORE, hours=24)
+        msg = build_message(r, b)
+        self.assertIn("1 día", msg)
+
+    def test_hours_before_2_label(self):
+        b = _booking()
+        r = _rule(trigger=TriggerType.HOURS_BEFORE, hours=2)
+        msg = build_message(r, b)
+        self.assertIn("2 horas", msg)
+
+    def test_hours_before_48_label(self):
+        self.assertEqual(_hours_label(48), "2 días")
+
+    def test_no_customer_name(self):
+        b = BookingEvent("t", "b", _future_dt(), "+56912345678", "", "Yoga")
+        r = _rule()
+        msg = build_message(r, b)
+        self.assertTrue(msg.startswith("Hola,"))
+
+
+# ===========================================================================
+# APPLICATION LAYER
+# ===========================================================================
+
+class TestScheduleNotificationsUseCase(unittest.TestCase):
+
+    def _make_use_case(self, tenant=None, rules=None):
+        repo = MagicMock()
+        repo.get_by_id.return_value = tenant or _mock_tenant(rules)
+        publisher = MagicMock(spec=INotificationPublisher)
+        scheduler = MagicMock(spec=INotificationScheduler)
+        uc = ScheduleNotificationsUseCase(
+            tenant_repository=repo,
+            publisher=publisher,
+            scheduler=scheduler,
+        )
+        return uc, publisher, scheduler
+
+    def test_on_booking_active_publishes(self):
+        rules = [{"id": "on_booking", "name": "N", "trigger": "on_booking", "active": True, "hours_before": None}]
+        uc, publisher, sched = self._make_use_case(rules=rules)
+        uc.execute(_booking())
+        publisher.publish.assert_called_once()
+        sched.schedule.assert_not_called()
+
+    def test_hours_before_active_schedules(self):
+        rules = [{"id": "r24h", "name": "24h", "trigger": "hours_before", "active": True, "hours_before": 24}]
+        uc, publisher, sched = self._make_use_case(rules=rules)
+        uc.execute(_booking(hours_offset=48))
+        sched.schedule.assert_called_once()
+        publisher.publish.assert_not_called()
+
+    def test_inactive_rule_is_skipped(self):
+        rules = [{"id": "on_booking", "name": "N", "trigger": "on_booking", "active": False, "hours_before": None}]
+        uc, publisher, sched = self._make_use_case(rules=rules)
+        uc.execute(_booking())
+        publisher.publish.assert_not_called()
+        sched.schedule.assert_not_called()
+
+    def test_past_fire_time_is_skipped(self):
+        rules = [{"id": "r24h", "name": "24h", "trigger": "hours_before", "active": True, "hours_before": 24}]
+        uc, publisher, sched = self._make_use_case(rules=rules)
+        uc.execute(_booking(hours_offset=10))  # only 10h away, 24h window already passed
+        sched.schedule.assert_not_called()
+
+    def test_no_phone_skips_all(self):
+        uc, publisher, sched = self._make_use_case()
+        uc.execute(_booking(phone=""))
+        publisher.publish.assert_not_called()
+        sched.schedule.assert_not_called()
+
+    def test_tenant_not_found_raises(self):
+        repo = MagicMock()
+        repo.get_by_id.return_value = None
+        uc = ScheduleNotificationsUseCase(repo, MagicMock(), MagicMock())
+        with self.assertRaises(ValueError):
+            uc.execute(_booking())
+
+    def test_default_rules_applied_when_settings_empty(self):
+        """When tenant has no notification_rules, default rules should apply."""
+        repo = MagicMock()
+        tenant = MagicMock()
+        tenant.settings = {}  # no notification_rules key
+        repo.get_by_id.return_value = tenant
+        publisher = MagicMock(spec=INotificationPublisher)
+        sched = MagicMock(spec=INotificationScheduler)
+        uc = ScheduleNotificationsUseCase(repo, publisher, sched)
+        uc.execute(_booking())
+        # Default has on_booking=True, so publisher should be called
+        publisher.publish.assert_called_once()
+
+    def test_multiple_rules_dispatched(self):
+        rules = [
+            {"id": "on_booking", "name": "N", "trigger": "on_booking", "active": True, "hours_before": None},
+            {"id": "r24h", "name": "24h", "trigger": "hours_before", "active": True, "hours_before": 24},
+        ]
+        uc, publisher, sched = self._make_use_case(rules=rules)
+        uc.execute(_booking(hours_offset=48))
+        publisher.publish.assert_called_once()
+        sched.schedule.assert_called_once()
+
+
+# ===========================================================================
+# HANDLER (record parsing)
+# ===========================================================================
 
 class TestParseRecord(unittest.TestCase):
-    def test_parse_sns_wrapped_record(self):
-        from backend.whatsapp_scheduler.handler import _parse_record
+    def test_sns_wrapped(self):
         payload = {"event_type": "BOOKING_CONFIRMED", "tenant_id": "t1"}
         record = {"body": json.dumps({"Message": json.dumps(payload)})}
         result = _parse_record(record)
         self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
 
-    def test_parse_raw_record(self):
-        from backend.whatsapp_scheduler.handler import _parse_record
+    def test_raw_body(self):
         payload = {"event_type": "BOOKING_CONFIRMED"}
         record = {"body": json.dumps(payload)}
         result = _parse_record(record)
         self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
 
-    def test_parse_invalid_json_returns_none(self):
-        from backend.whatsapp_scheduler.handler import _parse_record
-        record = {"body": "NOT_JSON"}
-        result = _parse_record(record)
-        self.assertIsNone(result)
+    def test_invalid_json_returns_none(self):
+        self.assertIsNone(_parse_record({"body": "NOT_JSON"}))
 
 
-class TestParseIso(unittest.TestCase):
-    def test_valid_utc_z(self):
-        from backend.whatsapp_scheduler.handler import _parse_iso
-        result = _parse_iso("2025-06-15T14:00:00Z")
-        self.assertIsNotNone(result)
-        self.assertEqual(result.tzinfo, timezone.utc)
+class TestToBookingEvent(unittest.TestCase):
+    def _payload(self, **overrides):
+        base = {
+            "event_type": "BOOKING_CONFIRMED",
+            "tenant_id": "t1",
+            "booking_id": "b1",
+            "booking_start_time": (_future_dt()).isoformat(),
+            "customer_phone": "+56912345678",
+            "customer_name": "Ana",
+            "service_name": "Yoga",
+        }
+        base.update(overrides)
+        return base
 
-    def test_valid_offset(self):
-        from backend.whatsapp_scheduler.handler import _parse_iso
-        result = _parse_iso("2025-06-15T11:00:00-03:00")
-        self.assertIsNotNone(result)
+    def test_valid_payload(self):
+        ev = _to_booking_event(self._payload())
+        self.assertIsNotNone(ev)
+        self.assertEqual(ev.tenant_id, "t1")
 
-    def test_invalid_returns_none(self):
-        from backend.whatsapp_scheduler.handler import _parse_iso
-        self.assertIsNone(_parse_iso("not-a-date"))
+    def test_missing_tenant_id_returns_none(self):
+        self.assertIsNone(_to_booking_event(self._payload(tenant_id="")))
 
+    def test_invalid_booking_time_returns_none(self):
+        self.assertIsNone(_to_booking_event(self._payload(booking_start_time="not-a-date")))
 
-class TestBuildMessage(unittest.TestCase):
-    def test_on_booking_message(self):
-        from backend.whatsapp_scheduler.handler import _build_message
-        rule = {"trigger": "on_booking"}
-        dt = datetime(2025, 6, 15, 14, 0, tzinfo=timezone.utc)
-        msg = _build_message(rule, "Ana", "Masaje", dt)
-        self.assertIn("Ana", msg)
-        self.assertIn("Masaje", msg)
-        self.assertIn("confirmada", msg)
-
-    def test_hours_before_24(self):
-        from backend.whatsapp_scheduler.handler import _build_message
-        rule = {"trigger": "hours_before", "hours_before": 24}
-        dt = datetime(2025, 6, 15, 14, 0, tzinfo=timezone.utc)
-        msg = _build_message(rule, "Juan", "Yoga", dt)
-        self.assertIn("Juan", msg)
-        self.assertIn("Yoga", msg)
-
-    def test_hours_before_2(self):
-        from backend.whatsapp_scheduler.handler import _build_message
-        rule = {"trigger": "hours_before", "hours_before": 2}
-        dt = datetime(2025, 6, 15, 14, 0, tzinfo=timezone.utc)
-        msg = _build_message(rule, "Laura", "Pilates", dt)
-        self.assertIn("2 hora(s)", msg)
-
-    def test_no_customer_name(self):
-        from backend.whatsapp_scheduler.handler import _build_message
-        rule = {"trigger": "on_booking"}
-        dt = datetime(2025, 6, 15, 14, 0, tzinfo=timezone.utc)
-        msg = _build_message(rule, "", "Consulta", dt)
-        self.assertTrue(msg.startswith("Hola,"))
-
-
-class TestLambdaHandler(unittest.TestCase):
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_handler_skips_non_booking_confirmed(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        event = _make_event({"event_type": "SOME_OTHER_EVENT", "tenant_id": "t1"})
-        result = lambda_handler(event, {})
-        self.assertEqual(result["processed"], 0)
-        mock_sns.publish.assert_not_called()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_handler_returns_zero_for_tenant_not_found(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        mock_repo.get_by_id.return_value = None
-        event = _make_event(_booking_payload())
-        result = lambda_handler(event, {})
-        # Processed = 1 (record was processed), but internally skipped due to missing tenant
-        self.assertEqual(result["errors"], 0)
-        mock_sns.publish.assert_not_called()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_on_booking_rule_publishes_to_sns(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        rules = [
-            {"id": "on_booking", "name": "Confirmación", "trigger": "on_booking", "active": True, "hours_before": None},
-        ]
-        mock_repo.get_by_id.return_value = _make_tenant(rules)
-        event = _make_event(_booking_payload())
-        result = lambda_handler(event, {})
-        self.assertEqual(result["processed"], 1)
-        mock_sns.publish.assert_called_once()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_hours_before_rule_creates_schedule(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        rules = [
-            {"id": "remind_24h", "name": "24h", "trigger": "hours_before", "active": True, "hours_before": 24},
-        ]
-        mock_repo.get_by_id.return_value = _make_tenant(rules)
-        event = _make_event(_booking_payload(hours_offset=48))  # booking 48h from now
-        result = lambda_handler(event, {})
-        self.assertEqual(result["processed"], 1)
-        mock_sched.create_schedule.assert_called_once()
-        mock_sns.publish.assert_not_called()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_past_schedule_is_skipped(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        rules = [
-            {"id": "remind_24h", "name": "24h", "trigger": "hours_before", "active": True, "hours_before": 24},
-        ]
-        mock_repo.get_by_id.return_value = _make_tenant(rules)
-        # booking is only 10 hours from now, but rule wants 24h before = already past
-        event = _make_event(_booking_payload(hours_offset=10))
-        result = lambda_handler(event, {})
-        self.assertEqual(result["processed"], 1)
-        mock_sched.create_schedule.assert_not_called()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_inactive_rule_is_skipped(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        rules = [
-            {"id": "on_booking", "name": "Confirmación", "trigger": "on_booking", "active": False, "hours_before": None},
-        ]
-        mock_repo.get_by_id.return_value = _make_tenant(rules)
-        event = _make_event(_booking_payload())
-        result = lambda_handler(event, {})
-        mock_sns.publish.assert_not_called()
-        mock_sched.create_schedule.assert_not_called()
-
-    @patch("backend.whatsapp_scheduler.handler.sns_client")
-    @patch("backend.whatsapp_scheduler.handler.scheduler_client")
-    @patch("backend.whatsapp_scheduler.handler.tenant_repo")
-    def test_no_phone_skips_dispatch(self, mock_repo, mock_sched, mock_sns):
-        from backend.whatsapp_scheduler.handler import lambda_handler
-        mock_repo.get_by_id.return_value = _make_tenant()
-        event = _make_event(_booking_payload(customer_phone=""))
-        result = lambda_handler(event, {})
-        mock_sns.publish.assert_not_called()
+    def test_z_suffix_parsed(self):
+        ev = _to_booking_event(self._payload(booking_start_time="2025-06-15T14:00:00Z"))
+        self.assertIsNotNone(ev)
+        self.assertEqual(ev.booking_start_time.tzinfo, timezone.utc)
 
 
 if __name__ == "__main__":
