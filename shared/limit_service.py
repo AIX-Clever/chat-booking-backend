@@ -26,7 +26,7 @@ class TenantLimitService:
         Check if tenant can send more messages.
         """
         try:
-            # 1. Get Tenant to know the plan
+            # 1. Get Tenant to know the plan and quota
             tenant = self._tenant_repo.get_by_id(tenant_id)
             if not tenant:
                 self.logger.warning(
@@ -34,19 +34,14 @@ class TenantLimitService:
                 )
                 return False
 
-            # 2. Get Usage
-            usage = self._metrics_service.get_usage_for_plan_limits(tenant_id.value)
-            current_messages = usage.get("messages", 0)
-
-            # 3. Check Limit
-            can_send = tenant.check_limit("messages", current_messages)
+            # 2. Check the prepaid quota
+            can_send = tenant.whatsapp_quota > 0
 
             if not can_send:
                 self.logger.info(
-                    "Message limit exceeded",
+                    "WhatsApp pre-paid quota exhausted",
                     tenant_id=tenant_id.value,
-                    plan=tenant.plan.value,
-                    usage=current_messages,
+                    quota=tenant.whatsapp_quota,
                 )
 
             return can_send

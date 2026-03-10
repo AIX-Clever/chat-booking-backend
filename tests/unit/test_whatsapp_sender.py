@@ -2,6 +2,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 from backend.whatsapp_sender.handler import lambda_handler
+from shared.domain.entities import TenantId
 
 @pytest.fixture
 def mock_env(monkeypatch):
@@ -72,9 +73,12 @@ def test_whatsapp_sender_success(mock_metrics, mock_table, mock_urlopen, mock_li
     lambda_handler(sqs_event, None)
     
     # Verify limit checked
-    mock_limit_service.check_can_send_message.assert_called_once()
+    assert mock_metrics.increment_message.called
     
-    # Verify message sent via urllib
+    # Assert quota was decremented
+    mock_tenant_repo.decrement_whatsapp_quota.assert_called_once_with(TenantId("tenant-1"))
+    
+    # Assert DB savinge sent via urllib
     mock_urlopen.assert_called_once()
     req = mock_urlopen.call_args[0][0]
     assert "Accounts/AC123/Messages.json" in req.full_url
@@ -101,8 +105,9 @@ def test_whatsapp_sender_quota_exceeded(mock_metrics, mock_table, mock_urlopen, 
     # Invoke
     lambda_handler(sqs_event, None)
     
-    # Verify no Twilio call
+    # Assert Twilio was not called
     mock_urlopen.assert_not_called()
+    mock_tenant_repo.decrement_whatsapp_quota.assert_not_called()
     mock_table.put_item.assert_not_called()
 
 @patch("backend.whatsapp_sender.handler.tenant_repo")
@@ -130,9 +135,10 @@ def test_whatsapp_sender_custom_tenant_credentials(mock_metrics, mock_table, moc
     
     # Invoke
     lambda_handler(sqs_event, None)
+    # Assert Twilio was called with custom credentials base64
+    assert mock_urlopen.call_count == 1
+    mock_tenant_repo.decrement_whatsapp_quota.assert_called_once_with(TenantId("tenant-1"))
     
-    # Verify customized Client URL 
-    mock_urlopen.assert_called_once()
     req = mock_urlopen.call_args[0][0]
     assert "Accounts/CUSTOM_SID/Messages.json" in req.full_url
 

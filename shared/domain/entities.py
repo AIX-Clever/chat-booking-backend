@@ -143,6 +143,7 @@ class Tenant:
     is_published: bool = False
     published_at: Optional[datetime] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    whatsapp_quota: int = 0
 
     def is_active(self) -> bool:
         """Check if tenant can use the service"""

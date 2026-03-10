@@ -40,6 +40,11 @@ class ITenantRepository(ABC):
         """Persist tenant"""
         pass
 
+    @abstractmethod
+    def decrement_whatsapp_quota(self, tenant_id: TenantId) -> bool:
+        """Atomically decrement whatsapp_quota if it's > 0."""
+        pass
+
 
 class IApiKeyRepository(ABC):
     """Port for API Key operations"""

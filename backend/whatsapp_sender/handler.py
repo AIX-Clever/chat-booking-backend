@@ -157,6 +157,9 @@ def lambda_handler(event, context):
                 f"MONTH#{metrics_service._get_periods()['month']}", 
                 "whatsappMessages"
             )
+            
+            # Decrement the prepaid quota
+            tenant_repo.decrement_whatsapp_quota(tenant_id)
 
             logger.info("WhatsApp message dispatched successfully", message_sid=message_sid, tenant_id=tenant_id_str)
 

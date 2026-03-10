@@ -96,6 +96,7 @@ class DynamoDBTenantRepository(ITenantRepository):
             "ownerUserId": tenant.owner_user_id,
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings,
+            "whatsappQuota": tenant.whatsapp_quota,
             "isPublished": tenant.is_published,
             "createdAt": tenant.created_at.isoformat(),
         }
@@ -119,10 +120,29 @@ class DynamoDBTenantRepository(ITenantRepository):
             owner_user_id=item["ownerUserId"],
             billing_email=item.get("billingEmail"),
             settings=item.get("settings", {}),
+            whatsapp_quota=int(item.get("whatsappQuota", 0)),
             is_published=item.get("isPublished", False),
             published_at=published_at,
             created_at=datetime.fromisoformat(item["createdAt"]),
         )
+
+    def decrement_whatsapp_quota(self, tenant_id: TenantId) -> bool:
+        """Atomically decrement whatsappQuota if it's > 0.
+        Returns True if successful, False if quota was 0 or tenant not found."""
+        try:
+            response = self.table.update_item(
+                Key={"tenantId": str(tenant_id)},
+                UpdateExpression="SET whatsappQuota = whatsappQuota - :dec",
+                ConditionExpression="attribute_exists(tenantId) AND whatsappQuota > :min",
+                ExpressionAttributeValues={":dec": 1, ":min": 0},
+                ReturnValues="UPDATED_NEW"
+            )
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return False
+            print(f"Error decrementing whatsapp quota for tenant: {e}")
+            return False
 
 
 class DynamoDBApiKeyRepository(IApiKeyRepository):
