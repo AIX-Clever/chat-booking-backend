@@ -998,7 +998,7 @@ export class LambdaStack extends cdk.Stack {
     this.whatsappSenderFunction = new lambda.Function(this, 'WhatsappSenderFunction', {
       ...commonProps,
       description: 'Processes messages from SQS, checks quota, and sends via Twilio/ISV',
-      code: lambda.Code.fromAsset(path.join(backendPath, 'whatsapp_sender')),
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'whatsapp_sender')),
       handler: 'handler.lambda_handler',
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(30),
