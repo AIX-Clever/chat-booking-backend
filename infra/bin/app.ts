@@ -128,6 +128,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   whatsappMessagesTable: databaseStack.whatsappMessagesTable,
   whatsappNotificationTopic: whatsappStack.notificationTopic,
   whatsappSenderQueue: whatsappStack.senderQueue,
+  waitingListTable: databaseStack.waitingListTable,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(subscriptionStack);

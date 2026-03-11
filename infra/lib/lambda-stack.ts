@@ -55,6 +55,7 @@ interface LambdaStackProps extends cdk.StackProps {
   whatsappSenderQueue: cdk.aws_sqs.IQueue;
   whatsappSchedulerRoleArn?: string;
   whatsappSchedulerGroupName?: string;
+  waitingListTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -89,6 +90,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly whatsappWebhookFunction: lambda.Function;
   public readonly twilioConnectFunction: lambda.Function;
   public readonly whatsappSchedulerFunction: lambda.Function;
+  public readonly waitlistTriggerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -149,6 +151,7 @@ export class LambdaStack extends cdk.Stack {
         DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
         DYNAMODB_FAQS_TABLE: props.faqsTable.tableName,
         ROOMS_TABLE: props.roomsTable.tableName,
+        WAITING_LIST_TABLE: props.waitingListTable.tableName,
         MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
         SHARED_HASH: sharedHash,
@@ -1192,5 +1195,42 @@ export class LambdaStack extends cdk.Stack {
         treatMissingData: cdk.aws_cloudwatch.TreatMissingData.NOT_BREACHING,
       });
     });
+
+    // Waitlist Trigger Lambda (DynamoDB Stream from Bookings)
+    this.waitlistTriggerFunction = new lambda.Function(this, 'WaitlistTriggerFunction', {
+      ...commonProps,
+      description: 'Processes booking cancellations and notifies waitlist candidates',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'waitlist_trigger')),
+      handler: 'handler.handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(60),
+      memorySize: 256,
+      environment: {
+        ...commonProps.environment,
+        WHATSAPP_SENDER_QUEUE_URL: props.whatsappSenderQueue.queueUrl,
+      },
+    });
+
+    // Grant permissions
+    props.waitingListTable.grantReadWriteData(this.waitlistTriggerFunction);
+    props.tenantsTable.grantReadData(this.waitlistTriggerFunction);
+    props.providersTable.grantReadData(this.waitlistTriggerFunction);
+    props.availabilityTable.grantReadData(this.waitlistTriggerFunction);
+    props.whatsappSenderQueue.grantSendMessages(this.waitlistTriggerFunction);
+
+    // DynamoDB Stream event source from Bookings table
+    this.waitlistTriggerFunction.addEventSource(
+      new lambdaEventSources.DynamoEventSource(props.bookingsTable, {
+        startingPosition: lambda.StartingPosition.TRIM_HORIZON,
+        batchSize: 10,
+        maxBatchingWindow: cdk.Duration.seconds(5),
+        retryAttempts: 3,
+        filters: [
+          lambda.FilterCriteria.filter({
+            eventName: lambda.FilterRule.isEqual('MODIFY'),
+          }),
+        ],
+      })
+    );
   }
 }

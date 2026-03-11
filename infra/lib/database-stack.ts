@@ -35,6 +35,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly clientAuditLogsTable: dynamodb.Table;
   public readonly dteFoliosTable: dynamodb.Table;
   public readonly whatsappMessagesTable: dynamodb.Table;
+  public readonly waitingListTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -641,6 +642,43 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'WhatsappMessagesTableName', {
       value: this.whatsappMessagesTable.tableName,
       description: 'Whatsapp Messages table name',
+    });
+
+    // WaitingList Table
+    this.waitingListTable = new dynamodb.Table(this, 'WaitingListTable', {
+      tableName: 'ChatBooking-WaitingList',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'waitingListId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+      stream: dynamodb.StreamViewType.NEW_AND_OLD_IMAGES,
+      timeToLiveAttribute: 'ttl',
+    });
+
+    // GSI: serviceId-createdAt for FIFO waitlist queries per service
+    this.waitingListTable.addGlobalSecondaryIndex({
+      indexName: 'serviceId-createdAt-index',
+      partitionKey: {
+        name: 'tenantId_serviceId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'createdAt',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    new cdk.CfnOutput(this, 'WaitingListTableName', {
+      value: this.waitingListTable.tableName,
+      description: 'Waiting List table name',
     });
   }
 }
