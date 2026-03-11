@@ -1,12 +1,20 @@
 """
-Fintoc Client wrapper for managing Banking integration.
+Fintoc Client wrapper for managing Banking integration (Subscription Intents).
+Uses direct REST API calls since the installed SDK version (2.17.0) does not expose
+managers like `link_intents` or `subscription_intents`.
 """
 import os
-from fintoc import Fintoc
+import json
+import urllib.request
+import urllib.error
+
+
+FINTOC_API_BASE = "https://api.fintoc.com/v1"
+
 
 class FintocClient:
     """
-    Client for interacting with Fintoc API.
+    Client for interacting with Fintoc API via direct HTTP.
     """
     def __init__(self, api_key=None, environment='test'):
         self.api_key = api_key or os.environ.get('FINTOC_API_KEY')
@@ -14,69 +22,54 @@ class FintocClient:
         if not self.api_key:
             raise ValueError("Fintoc API Key is missing")
 
-        # Fintoc v2 SDK uses api_key primarily
-        self.client = Fintoc(self.api_key)
-
-    def create_link_intent(self, product='movements', holder_type='business', country='cl'):
-        """
-        Creates a Link Intent to initialize the Fintoc Widget.
-        """
-        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. Product: {product}, Key: {self.api_key[:10]}...")
+    def _request(self, method, path, data=None):
+        """Makes a direct HTTP request to the Fintoc REST API."""
+        url = f"{FINTOC_API_BASE}/{path}"
+        headers = {
+            "Authorization": self.api_key,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        body = json.dumps(data).encode("utf-8") if data else None
+        req = urllib.request.Request(url, data=body, headers=headers, method=method)
         try:
-            # Re-initialize client if api_key changed
-            self.client = Fintoc(self.api_key)
-            print("[INTERNAL_LOG] Fintoc SDK Client initialized.")
+            with urllib.request.urlopen(req) as resp:
+                return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode()
+            print(f"[INTERNAL_LOG] Fintoc HTTP Error {e.code}: {error_body}")
+            raise RuntimeError(f"Fintoc API returned {e.code}: {error_body}") from e
 
-            # Use SDK manager for link_intents
-            print(f"[INTERNAL_LOG] Executing self.client.link_intents.create(product='{product}', ...)")
-            link_intent = self.client.link_intents.create(
-                product=product,
-                holder_type=holder_type,
-                country=country
-            )
-            
-            print(f"[INTERNAL_LOG] Link Intent creation result type: {type(link_intent)}")
-            
-            if not link_intent:
-                print("[INTERNAL_LOG] Error: Fintoc SDK returned None")
-                raise ValueError("Fintoc API returned None (Possible timeout or network issue)")
+    def create_link_intent(self, product='subscriptions', holder_type='individual', country='cl'):
+        """
+        Creates a Subscription Intent via POST /v1/subscription_intents.
+        Returns a dict with widget_token and link_intent_id.
+        """
+        print(f"[INTERNAL_LOG] FintocClient.create_link_intent called. product={product}, key={self.api_key[:14]}...")
 
-            # Check for attributes (Python SDK objects have attributes)
-            widget_token = getattr(link_intent, 'widget_token', None)
-            link_id = getattr(link_intent, 'id', None)
-            
-            print(f"[INTERNAL_LOG] Extracted widget_token: {widget_token[:10] if widget_token else 'NONE'}...")
-            print(f"[INTERNAL_LOG] Extracted link_id: {link_id}")
+        # Fintoc Subscription Intents don't require a body per the docs.
+        result = self._request("POST", "subscription_intents")
 
-            if not widget_token or not link_id:
-                # Try dictionary access as fallback if it's a dict
-                if isinstance(link_intent, dict):
-                    widget_token = link_intent.get('widget_token')
-                    link_id = link_intent.get('id')
-                
-                if not widget_token or not link_id:
-                    print(f"[INTERNAL_LOG] Error: Missing mandatory fields in link_intent: {link_intent}")
-                    raise ValueError(f"Fintoc API result missing fields. Result: {link_intent}")
+        print(f"[INTERNAL_LOG] Fintoc raw result: {result}")
 
-            return {
-                'widget_token': widget_token,
-                'link_intent_id': link_id
-            }
-        except Exception as e:
-            print(f"[INTERNAL_LOG] FintocClient Exception: {str(e)}")
-            raise e
+        widget_token = result.get("widget_token")
+        intent_id = result.get("id")
+
+        if not widget_token or not intent_id:
+            raise RuntimeError(f"Fintoc API returned unexpected result (missing widget_token or id): {result}")
+
+        print(f"[INTERNAL_LOG] widget_token: {widget_token[:14]}...")
+        print(f"[INTERNAL_LOG] subscription_intent id: {intent_id}")
+
+        return {
+            "widget_token": widget_token,
+            "link_intent_id": intent_id,
+        }
 
     def get_movement(self, movement_id, link_token):
-        """
-        Retrieves a movement (payment) details.
-        Requires the link_token associated with the account.
-        """
-        # Note: Fintoc SDK structure might vary, this is a simplified abstraction
-        # In reality, you get movements from an account, which comes from a link.
+        """Retrieves a movement (payment) details."""
         pass
 
     def get_account_info(self, link_token, account_id):
-        """
-        Retrieves account information.
-        """
+        """Retrieves account information."""
         pass
