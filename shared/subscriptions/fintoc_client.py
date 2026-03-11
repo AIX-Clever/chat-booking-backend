@@ -44,7 +44,7 @@ class FintocClient:
                 "line_items": [
                     {
                         "name": "Suscripción",
-                        "price": price,
+                        "amount": price,
                         "quantity": 1
                     }
                 ],
