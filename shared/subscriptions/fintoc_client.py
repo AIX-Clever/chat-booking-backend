@@ -41,13 +41,7 @@ class FintocClient:
                 "success_url": success_url,
                 "cancel_url": success_url,
                 "currency": "CLP",
-                "line_items": [
-                    {
-                        "name": "Suscripción",
-                        "amount": price,
-                        "quantity": 1
-                    }
-                ],
+                "amount": price,
                 "metadata": {
                     "source": "backend_checkout"
                 }
