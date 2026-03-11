@@ -32,6 +32,36 @@ class DecimalEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
+def _normalize_notification_rules(value) -> str | None:
+    """
+    Return notification_rules as a clean JSON array string.
+    Handles cases where the value is:
+    - None
+    - A Python list (serialize directly)
+    - A JSON string '[...]' (return as-is)
+    - A doubly-encoded string '"[...]"' (parse twice, then serialize)
+    """
+    if value is None:
+        return None
+    # If it's already a list/dict, serialize cleanly
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, cls=DecimalEncoder)
+    # If it's a string, parse up to 2 levels to unwrap any double-encoding
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except Exception:
+            return value  # Not valid JSON, return as-is
+        # If parsing gave another string (double-encoded), parse again
+        if isinstance(parsed, str):
+            try:
+                parsed = json.loads(parsed)
+            except Exception:
+                return parsed  # Return inner string if can't parse further
+        return json.dumps(parsed, cls=DecimalEncoder)
+    return None
+
+
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Get tenant handler
@@ -138,11 +168,7 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "whatsappEnabled": settings.get("whatsappEnabled", False),
             "whatsappQuota": int(tenant.whatsapp_quota) if getattr(tenant, "whatsapp_quota", None) is not None else None,
             "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
-            "whatsappNotificationRules": (
-                settings["notification_rules"]
-                if isinstance(settings.get("notification_rules"), str)
-                else json.dumps(settings["notification_rules"], cls=DecimalEncoder)
-            ) if "notification_rules" in settings else None,
+            "whatsappNotificationRules": _normalize_notification_rules(settings.get("notification_rules")),
             "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
             "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
