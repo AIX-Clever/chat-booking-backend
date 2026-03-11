@@ -24,6 +24,7 @@ from .entities import (
     FAQ,
     Workflow,
     Room,
+    WaitingListEntry,
 )
 
 
@@ -334,4 +335,46 @@ class IProviderIntegrationRepository(ABC):
     @abstractmethod
     def delete_google_creds(self, tenant_id: TenantId, provider_id: str) -> None:
         """Delete Google Calendar credentials"""
+        pass
+
+
+class IWaitingListRepository(ABC):
+    """Port for Waiting List operations"""
+
+    @abstractmethod
+    def save(self, entry: WaitingListEntry) -> None:
+        """Persist a waiting list entry"""
+        pass
+
+    @abstractmethod
+    def get_by_id(
+        self, tenant_id: TenantId, waiting_list_id: str
+    ) -> Optional[WaitingListEntry]:
+        """Retrieve a waiting list entry by ID"""
+        pass
+
+    @abstractmethod
+    def list_by_service(
+        self, tenant_id: TenantId, service_id: str
+    ) -> List[WaitingListEntry]:
+        """List pending entries for a service, ordered by createdAt ASC"""
+        pass
+
+    @abstractmethod
+    def find_pending_by_client(
+        self, tenant_id: TenantId, service_id: str, client_id: str
+    ) -> Optional[WaitingListEntry]:
+        """Check if client already has a pending entry for a service"""
+        pass
+
+    @abstractmethod
+    def update_status(
+        self, tenant_id: TenantId, waiting_list_id: str, status: str
+    ) -> None:
+        """Update entry contact status"""
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, waiting_list_id: str) -> None:
+        """Remove entry from waiting list"""
         pass

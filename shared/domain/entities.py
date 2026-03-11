@@ -63,6 +63,16 @@ class TenantPlan(Enum):
     ENTERPRISE = "ENTERPRISE"
 
 
+class WaitingListStatus(Enum):
+    """Waiting list entry lifecycle states"""
+
+    PENDING = "PENDING"
+    CONTACTED = "CONTACTED"
+    BOOKED = "BOOKED"
+    EXPIRED = "EXPIRED"
+    DECLINED = "DECLINED"
+
+
 # Definición de límites por plan (Hardcoded por ahora - Source of Truth)
 PLAN_LIMITS = {
     TenantPlan.LITE: {
@@ -71,6 +81,7 @@ PLAN_LIMITS = {
         "providers": 1,
         "tokensIA": 0,  # No AI
         "ai_enabled": False,
+        "waitlist_enabled": False,
     },
     TenantPlan.PRO: {
         "messages": 2000,
@@ -78,6 +89,7 @@ PLAN_LIMITS = {
         "providers": 5,
         "tokensIA": 0,  # No AI for PRO anymore
         "ai_enabled": False,
+        "waitlist_enabled": True,
     },
     TenantPlan.BUSINESS: {
         "messages": 10000,
@@ -85,6 +97,7 @@ PLAN_LIMITS = {
         "providers": 20,
         "tokensIA": 500000,  # ~500k tokens
         "ai_enabled": True,
+        "waitlist_enabled": True,
     },
     TenantPlan.ENTERPRISE: {
         "messages": 100000,
@@ -92,6 +105,7 @@ PLAN_LIMITS = {
         "providers": 100,
         "tokensIA": 5000000,  # ~5m tokens
         "ai_enabled": True,
+        "waitlist_enabled": True,
     },
 }
 
@@ -565,3 +579,37 @@ class UserRoleEntity:
             "createdAt": self.created_at.isoformat(),
             "updatedAt": self.updated_at.isoformat(),
         }
+
+
+@dataclass
+class WaitingListEntry:
+    """Waiting list entry for a client awaiting service availability"""
+
+    tenant_id: TenantId
+    waiting_list_id: str
+    service_id: str
+    client_id: str  # Email or phone number
+    contact_status: WaitingListStatus = WaitingListStatus.PENDING
+    provider_id: Optional[str] = None  # Preferred provider (None = any)
+    preferred_days: List[str] = field(default_factory=list)
+    created_at: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+    ttl: Optional[int] = None  # Epoch timestamp for DynamoDB TTL
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = {
+            "tenantId": str(self.tenant_id),
+            "waitingListId": self.waiting_list_id,
+            "serviceId": self.service_id,
+            "clientId": self.client_id,
+            "contactStatus": self.contact_status.value,
+            "preferredDays": self.preferred_days,
+            "createdAt": self.created_at.isoformat(),
+            "tenantId_serviceId": f"{self.tenant_id}_{self.service_id}",
+        }
+        if self.provider_id:
+            result["providerId"] = self.provider_id
+        if self.ttl is not None:
+            result["ttl"] = self.ttl
+        return result
