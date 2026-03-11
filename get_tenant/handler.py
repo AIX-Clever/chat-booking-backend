@@ -138,8 +138,11 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             "whatsappEnabled": settings.get("whatsappEnabled", False),
             "whatsappQuota": int(tenant.whatsapp_quota) if getattr(tenant, "whatsapp_quota", None) is not None else None,
             "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
-            "whatsappNotificationRules": json.dumps(settings["notification_rules"], cls=DecimalEncoder)
-                if "notification_rules" in settings else None,
+            "whatsappNotificationRules": (
+                settings["notification_rules"]
+                if isinstance(settings.get("notification_rules"), str)
+                else json.dumps(settings["notification_rules"], cls=DecimalEncoder)
+            ) if "notification_rules" in settings else None,
             "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
             "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
