@@ -1195,7 +1195,7 @@ export class LambdaStack extends cdk.Stack {
           lambda.FilterCriteria.filter({
             eventName: lambda.FilterRule.isEqual('MODIFY'),
             'dynamodb.NewImage.status.S': lambda.FilterRule.isEqual('CANCELLED'),
-            'dynamodb.OldImage.status.S': lambda.FilterRule.isNotEqual('CANCELLED'),
+            'dynamodb.OldImage.status.S': lambda.FilterRule.notEquals('CANCELLED'),
           })
         ]
       })
