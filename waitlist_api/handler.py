@@ -70,9 +70,9 @@ def lambda_handler(event: dict, context) -> dict:
         operation, arguments, identity = extract_appsync_event(event)
         logger.info(f"Waitlist API operation: {operation}")
 
-        # Ensure tenantId is present in arguments or identity for specific operations
+        # Ensure tenantId is present in arguments or identity
         if operation == "getWaitingListByService":
-            # For admin, tenantId usually comes from Cognito identity or arguments
+            # For admin, tenantId usually comes from Cognito identity
             tenant_id = arguments.get("tenantId")
             if not tenant_id and "claims" in identity:
                 tenant_id = identity["claims"].get("custom:tenantId")
@@ -86,14 +86,14 @@ def lambda_handler(event: dict, context) -> dict:
 
             entries = waitlist_repo.list_by_service(tenant_id, service_id)
             # Convert to dict for AppSync
-            result = [entry.__dict__ for entry in entries]
+            result = [entry.to_dict() for entry in entries]
             return success_response(result)
 
         elif operation == "addToWaitingList":
             # Can be called by public widget (API key) or Chat Agent
             # arguments should contain input object
             input_data = arguments.get("input", {})
-            
+
             tenant_id = input_data.get("tenantId")
             service_id = input_data.get("serviceId")
             client_id = input_data.get("clientId")
@@ -101,7 +101,9 @@ def lambda_handler(event: dict, context) -> dict:
             preferred_days = input_data.get("preferredDays")
 
             if not all([tenant_id, service_id, client_id]):
-                raise ValidationError("Missing required fields (tenantId, serviceId, clientId)")
+                raise ValidationError(
+                    "Missing required fields (tenantId, serviceId, clientId)"
+                )
 
             entry = waitlist_service.add_to_waitlist(
                 tenant_id=tenant_id,
@@ -110,17 +112,17 @@ def lambda_handler(event: dict, context) -> dict:
                 client_id=client_id,
                 preferred_days=preferred_days
             )
-            return success_response(entry.__dict__)
+            return success_response(entry.to_dict())
 
         elif operation == "removeWaitingListEntry":
             # Admin feature
             tenant_id = arguments.get("tenantId")
             if not tenant_id and "claims" in identity:
                 tenant_id = identity["claims"].get("custom:tenantId")
-                
+
             if not tenant_id:
                 raise ValidationError("tenantId missing")
-                
+
             waiting_list_id = arguments.get("waitingListId")
             if not waiting_list_id:
                 raise ValidationError("waitingListId missing")
@@ -141,7 +143,11 @@ def lambda_handler(event: dict, context) -> dict:
     except EntityNotFoundError as e:
         logger.warning(f"Not found: {str(e)}")
         return error_response(str(e), 404, "NotFoundError")
-    except (TenantNotActiveError, ServiceNotAvailableError, ProviderNotAvailableError) as e:
+    except (
+        TenantNotActiveError,
+        ServiceNotAvailableError,
+        ProviderNotAvailableError
+    ) as e:
         logger.warning(f"Entity not available: {str(e)}")
         return error_response(str(e), 400, "NotAvailableError")
     except Exception as e:
