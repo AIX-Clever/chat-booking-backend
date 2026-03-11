@@ -71,12 +71,11 @@ def lambda_handler(event, _context):
                 fintoc_env = os.environ.get('FINTOC_ENV', 'live')
                 fintoc_client.environment = fintoc_env
                 
-                if plan_id_str == 'lite':
-                    print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env} for LITE promo")
-                    result = fintoc_client.create_link_intent(product='subscriptions')
-                else:
-                    print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env} for plan {plan_id_str}")
-                    result = fintoc_client.create_link_intent(product='subscriptions')
+                print(f"[INTERNAL_LOG] Calling fintoc_client.create_link_intent() in {fintoc_env} for plan {plan_id_str}")
+                result = fintoc_client.create_link_intent(product='subscriptions')
+                print(f"[INTERNAL_LOG] Fintoc Result: {result}")
+
+                if not result or not result.get('widget_token') or not result.get('link_intent_id'):
                     print(f"[INTERNAL_LOG] Error: Fintoc invalid result format: {result}")
                     raise RuntimeError(f"Fintoc returned an invalid response format: {result}")
 
@@ -88,6 +87,7 @@ def lambda_handler(event, _context):
             except Exception as e:
                 print(f"[INTERNAL_LOG] Fintoc Exception: {str(e)}")
                 raise RuntimeError(f"Fintoc Error: {str(e)}") from e
+
 
         else:
             print("[INTERNAL_LOG] Flow: MercadoPago")
