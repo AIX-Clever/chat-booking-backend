@@ -392,6 +392,7 @@ export class LambdaStack extends cdk.Stack {
     props.workflowsTable.grantReadWriteData(this.chatAgentFunction); // For self-healing (create default workflow)
     props.tenantsTable.grantReadData(this.chatAgentFunction);
     props.userPool.grant(this.chatAgentFunction, 'cognito-idp:AdminGetUser');
+    props.waitingListTable.grantReadWriteData(this.chatAgentFunction); // For waitlist feature
 
     // Grant Bedrock Access for AI Plans
     this.chatAgentFunction.addToRolePolicy(new cdk.aws_iam.PolicyStatement({

@@ -490,10 +490,16 @@ class ResponseBuilder:
     def no_availability_message() -> dict:
         """No slots available"""
         return {
-            "type": MessageType.TEXT.value,
-            "text": "Lo siento, no hay disponibilidad para este profesional en las próximas semanas. ¿Te gustaría elegir otro profesional?",
+            "type": MessageType.OPTIONS.value,
+            "text": "Lo siento, no hay disponibilidad para este profesional en las próximas semanas. ¿Qué te gustaría hacer?",
+            "options": [
+                {"label": "📋 Anotarme en Lista de Espera", "value": "add_to_waitlist"},
+                {"label": "👨‍⚕️ Elegir otro profesional", "value": "change_provider"},
+                {"label": "📅 Ver otros servicios", "value": "search_service"},
+            ],
             "quick_replies": [
-                {"label": "Elegir otro profesional", "value": "change_provider"},
+                {"label": "Lista de Espera", "value": "add_to_waitlist"},
+                {"label": "Otro Profesional", "value": "change_provider"},
                 {"label": "Volver al inicio", "value": "restart"},
             ],
         }

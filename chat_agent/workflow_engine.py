@@ -389,6 +389,22 @@ class WorkflowEngine:
             if val == "restart" or (user_input and "no" in user_input.lower()):
                 return "start"
 
+            # Check for Add to Waitlist or Search Service navigation
+            if val == "add_to_waitlist":
+                conversation.context["isWaitlistFlow"] = True
+                return "request_contact_info"
+            
+            if val == "search_service":
+                prev_step_id = next(
+                    (
+                        sid
+                        for sid, s in workflow.steps.items()
+                        if s.content.get("tool") in ["searchServices", "start_booking_flow"]
+                    ),
+                    "start",
+                )
+                return prev_step_id
+
             # Attempt to accept the slot
             # 1. Direct ISO value (standard button payload)
             if val and "T" in val and len(val) > 10:
@@ -688,11 +704,54 @@ class WorkflowEngine:
             return ResponseBuilder.contact_info_message()
 
         elif tool_name == "confirmBooking":
-            # Create the booking
+            # Create the booking or waitlist entry
             try:
                 ctx = conversation.context
 
+                # Check if it's a waitlist flow
+                if ctx.get("isWaitlistFlow"):
+                    required = ["serviceId", "providerId", "clientFirstName", "clientLastName", "clientEmail"]
+                    missing = [f for f in required if not ctx.get(f)]
+                    if missing:
+                        return ResponseBuilder.error_message(f"Faltan datos para la lista de espera: {', '.join(missing)}")
+                    
+                    import boto3
+                    import os
+                    import uuid
+                    from zoneinfo import ZoneInfo
+                    
+                    dynamodb = boto3.resource("dynamodb")
+                    table = dynamodb.Table(os.environ.get("WAITING_LIST_TABLE", "waitlist"))
+                    
+                    # Store as Chile time (fallback to UTC if needed, though mostly standard backend stores UTC. We'll use UTC for sorting)
+                    now = datetime.now(UTC).isoformat()
+                    item = {
+                        "pk": f"TENANT#{conversation.tenant_id.value}",
+                        "sk": f"SERVICE#{ctx['serviceId']}#CREATED#{now}#ENTRY#{uuid.uuid4().hex[:8]}",
+                        "tenantId": conversation.tenant_id.value,
+                        "serviceId": ctx['serviceId'],
+                        "providerId": ctx['providerId'],
+                        "clientFirstName": ctx['clientFirstName'],
+                        "clientLastName": ctx['clientLastName'],
+                        "clientEmail": ctx['clientEmail'],
+                        "clientPhone": ctx.get('clientPhone', ''),
+                        "status": "PENDING",
+                        "requestedDay": "ANY",
+                        "createdAt": now,
+                        "updatedAt": now
+                    }
+                    table.put_item(Item=item)
+                    
+                    conversation.context.pop("isWaitlistFlow", None)
+                    
+                    return {
+                        "type": "success",
+                        "text": f"¡Listo {ctx['clientFirstName']}! Te hemos anotado en la lista de espera. Te avisaremos apenas se libere un cupo.",
+                        "payload": item
+                    }
+
                 # Validate required fields
+
                 required = [
                     "serviceId",
                     "providerId",
