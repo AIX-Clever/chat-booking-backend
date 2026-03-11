@@ -45,6 +45,44 @@ enum LocationType {
   PHYSICAL
 }
 
+enum WaitingListStatus {
+  PENDING
+  CONTACTED
+  BOOKED
+  EXPIRED
+  DECLINED
+}
+
+enum WaitlistDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+type WaitingListEntry @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  tenantId: ID!
+  waitingListId: ID!
+  serviceId: ID!
+  providerId: ID
+  clientId: String!
+  preferredDays: [WaitlistDay!]
+  contactStatus: WaitingListStatus!
+  createdAt: AWSDateTime!
+  ttl: Int
+}
+
+input AddToWaitingListInput {
+  tenantId: ID!
+  serviceId: ID!
+  clientId: String!
+  providerId: ID
+  preferredDays: [WaitlistDay!]
+}
+
 # Types - Tenant
 type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
   roomId: ID!
@@ -645,6 +683,9 @@ type Query {
   listWorkflows: [Workflow!]! @aws_cognito_user_pools
   getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
 
+  # Waitlist (Admin / App)
+  getWaitingListByService(tenantId: ID, serviceId: ID!): [WaitingListEntry!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
   getPlanUsage: PlanUsage @aws_cognito_user_pools
@@ -769,6 +810,10 @@ type Mutation {
   createWorkflow(input: CreateWorkflowInput!): Workflow! @aws_cognito_user_pools
   updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
   deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
+
+  # Waitlist
+  addToWaitingList(input: AddToWaitingListInput!): WaitingListEntry! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  removeWaitingListEntry(tenantId: ID, waitingListId: ID!): Boolean! @aws_cognito_user_pools
 
   # Documents (Knowledge Base)
   getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools

@@ -91,6 +91,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly twilioConnectFunction: lambda.Function;
   public readonly whatsappSchedulerFunction: lambda.Function;
   public readonly waitlistTriggerFunction: lambda.Function;
+  public readonly waitlistApiFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -1141,6 +1142,24 @@ export class LambdaStack extends cdk.Stack {
         },
       })
     );
+
+    // 27. Waitlist API Lambda
+    this.waitlistApiFunction = new lambda.Function(this, 'WaitlistApiFunction', {
+      ...commonProps,
+      description: 'GraphQL API resolvers for the Waitlist feature',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'waitlist_api')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(30),
+    });
+
+    // Grant permissions
+    props.waitingListTable.grantReadWriteData(this.waitlistApiFunction);
+    props.tenantsTable.grantReadData(this.waitlistApiFunction);
+    props.providersTable.grantReadData(this.waitlistApiFunction);
+    props.availabilityTable.grantReadData(this.waitlistApiFunction);
+    props.servicesTable.grantReadData(this.waitlistApiFunction);
+    props.bookingsTable.grantReadData(this.waitlistApiFunction);
   }
 
   private createAlarms(): void {

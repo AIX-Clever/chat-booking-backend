@@ -39,6 +39,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   checkPaymentStatusFunction: lambda.IFunction;
   clientsFunction: lambda.IFunction;
   supportManagerFunction: lambda.IFunction;
+  waitlistApiFunction: lambda.IFunction;
   cafManagerFunction?: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
 }
@@ -252,6 +253,7 @@ export class AppSyncApiStack extends cdk.Stack {
       supportManagerDataSource,
       listInvoicesDataSource,
       getPublicProfileDataSource,
+      this.api.addLambdaDataSource('WaitlistApiDataSource', props.waitlistApiFunction),
       props.cafManagerFunction ? this.api.addLambdaDataSource('CafManagerDataSource', props.cafManagerFunction) : undefined
     );
 
@@ -371,6 +373,7 @@ export class AppSyncApiStack extends cdk.Stack {
     supportManagerDataSource: appsync.LambdaDataSource,
     listInvoicesDataSource: appsync.LambdaDataSource,
     getPublicProfileDataSource: appsync.LambdaDataSource,
+    waitlistApiDataSource: appsync.LambdaDataSource,
     cafManagerDataSource?: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
@@ -393,6 +396,26 @@ export class AppSyncApiStack extends cdk.Stack {
     userManagementDataSource.createResolver('ListTenantUsersResolver', {
       typeName: 'Query',
       fieldName: 'listTenantUsers',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Waitlist Resolvers
+    waitlistApiDataSource.createResolver('GetWaitingListByServiceResolver', {
+      typeName: 'Query',
+      fieldName: 'getWaitingListByService',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+    waitlistApiDataSource.createResolver('AddToWaitingListResolver', {
+      typeName: 'Mutation',
+      fieldName: 'addToWaitingList',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+    waitlistApiDataSource.createResolver('RemoveWaitingListEntryResolver', {
+      typeName: 'Mutation',
+      fieldName: 'removeWaitingListEntry',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });

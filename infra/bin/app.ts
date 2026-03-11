@@ -162,6 +162,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   checkPaymentStatusFunction: lambdaStack.checkPaymentStatusFunction,
   clientsFunction: lambdaStack.clientsFunction,
   supportManagerFunction: lambdaStack.supportManagerFunction,
+  waitlistApiFunction: lambdaStack.waitlistApiFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);
