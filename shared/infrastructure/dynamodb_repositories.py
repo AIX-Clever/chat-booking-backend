@@ -33,6 +33,8 @@ from ..domain.entities import (
     Workflow,
     WorkflowStep,
     Room,
+    WaitingListEntry,
+    WaitingListStatus,
 )
 from ..domain.repositories import (
     ITenantRepository,
@@ -45,6 +47,7 @@ from ..domain.repositories import (
     IProviderRepository,
     IBookingRepository,
     IAvailabilityRepository,
+    IWaitingListRepository,
 )
 from ..domain.exceptions import EntityNotFoundError, ConflictError
 
@@ -1010,3 +1013,124 @@ class DynamoDBProviderIntegrationRepository(IProviderIntegrationRepository):
             Key={"tenantId": str(tenant_id), "providerId": provider_id},
             UpdateExpression="REMOVE microsoftIntegration",
         )
+
+
+class DynamoDBWaitingListRepository(IWaitingListRepository):
+    """DynamoDB implementation of Waiting List repository"""
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource("dynamodb")
+        self.table = self.dynamodb.Table(
+            table_name
+            or os.environ.get(
+                "WAITING_LIST_TABLE", "ChatBooking-WaitingList"
+            )
+        )
+
+    def save(self, entry: WaitingListEntry) -> None:
+        self.table.put_item(Item=entry.to_dict())
+
+    def get_by_id(
+        self, tenant_id: TenantId, waiting_list_id: str
+    ) -> Optional[WaitingListEntry]:
+        try:
+            response = self.table.get_item(
+                Key={
+                    "tenantId": str(tenant_id),
+                    "waitingListId": waiting_list_id,
+                }
+            )
+            item = response.get("Item")
+            if not item:
+                return None
+            return self._item_to_entity(item)
+        except ClientError as e:
+            print(f"Error getting waiting list entry: {e}")
+            return None
+
+    def list_by_service(
+        self, tenant_id: TenantId, service_id: str
+    ) -> list:
+        try:
+            composite_key = f"{tenant_id}_{service_id}"
+            response = self.table.query(
+                IndexName="serviceId-createdAt-index",
+                KeyConditionExpression=Key(
+                    "tenantId_serviceId"
+                ).eq(composite_key),
+                FilterExpression=Attr("contactStatus").eq(
+                    WaitingListStatus.PENDING.value
+                ),
+                ScanIndexForward=True,  # ASC by createdAt (FIFO)
+            )
+            return [
+                self._item_to_entity(item)
+                for item in response.get("Items", [])
+            ]
+        except ClientError as e:
+            print(f"Error listing waiting list: {e}")
+            return []
+
+    def find_pending_by_client(
+        self, tenant_id: TenantId, service_id: str, client_id: str
+    ) -> Optional[WaitingListEntry]:
+        try:
+            composite_key = f"{tenant_id}_{service_id}"
+            response = self.table.query(
+                IndexName="serviceId-createdAt-index",
+                KeyConditionExpression=Key(
+                    "tenantId_serviceId"
+                ).eq(composite_key),
+                FilterExpression=(
+                    Attr("clientId").eq(client_id)
+                    & Attr("contactStatus").eq(
+                        WaitingListStatus.PENDING.value
+                    )
+                ),
+            )
+            items = response.get("Items", [])
+            return self._item_to_entity(items[0]) if items else None
+        except ClientError as e:
+            print(f"Error finding pending entry: {e}")
+            return None
+
+    def update_status(
+        self, tenant_id: TenantId, waiting_list_id: str, status: str
+    ) -> None:
+        self.table.update_item(
+            Key={
+                "tenantId": str(tenant_id),
+                "waitingListId": waiting_list_id,
+            },
+            UpdateExpression="SET contactStatus = :s",
+            ExpressionAttributeValues={":s": status},
+        )
+
+    def delete(
+        self, tenant_id: TenantId, waiting_list_id: str
+    ) -> None:
+        self.table.delete_item(
+            Key={
+                "tenantId": str(tenant_id),
+                "waitingListId": waiting_list_id,
+            }
+        )
+
+    @staticmethod
+    def _item_to_entity(item: dict) -> WaitingListEntry:
+        return WaitingListEntry(
+            tenant_id=TenantId(item["tenantId"]),
+            waiting_list_id=item["waitingListId"],
+            service_id=item["serviceId"],
+            client_id=item["clientId"],
+            contact_status=WaitingListStatus(
+                item.get("contactStatus", "PENDING")
+            ),
+            provider_id=item.get("providerId"),
+            preferred_days=item.get("preferredDays", []),
+            created_at=datetime.fromisoformat(
+                item.get("createdAt", datetime.now().isoformat())
+            ),
+            ttl=item.get("ttl"),
+        )
+
