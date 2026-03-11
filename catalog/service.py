@@ -464,6 +464,11 @@ class ProviderManagementService:
         if not service_ids:
             raise ValidationError("Provider must offer at least one service")
 
+        if slug is not None:
+            existing_provider = self.provider_repo.get_by_slug(slug)
+            if existing_provider:
+                raise ValidationError(f"El link personalizado '{slug}' ya está en uso. Por favor elige otro.")
+
         # 3. Create entity
         provider = Provider(
             provider_id=provider_id,
@@ -542,8 +547,12 @@ class ProviderManagementService:
         if photo_url_thumbnail is not None:
             provider.photo_url_thumbnail = photo_url_thumbnail
         if slug is not None:
+            if slug != provider.slug:
+                # Check for uniqueness across all providers
+                existing_provider = self.provider_repo.get_by_slug(slug)
+                if existing_provider and existing_provider.provider_id != provider_id:
+                    raise ValidationError(f"El link personalizado '{slug}' ya está en uso. Por favor elige otro.")
             provider.slug = slug
-        if professional_license is not None:
             provider.professional_license = professional_license
         if email is not None:
             provider.email = email

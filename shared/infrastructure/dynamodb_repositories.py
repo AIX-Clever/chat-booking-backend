@@ -366,6 +366,20 @@ class DynamoDBProviderRepository(IProviderRepository):
         providers = self.list_by_tenant(tenant_id)
         return [p for p in providers if p.can_provide_service(service_id)]
 
+    def get_by_slug(self, slug: str) -> Optional[Provider]:
+        """Find any provider (across all tenants) that uses the given slug."""
+        try:
+            response = self.table.scan(
+                FilterExpression=Attr("slug").eq(slug)
+            )
+            items = response.get("Items", [])
+            if not items:
+                return None
+            return self._item_to_entity(items[0])
+        except ClientError as e:
+            print(f"Error getting provider by slug: {e}")
+            return None
+
     def save(self, provider: Provider) -> None:
         item = {
             "tenantId": str(provider.tenant_id),
