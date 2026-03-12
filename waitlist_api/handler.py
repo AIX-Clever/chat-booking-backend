@@ -22,11 +22,11 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBWaitingListRepository,
     DynamoDBTenantRepository,
     DynamoDBProviderRepository,
-    DynamoDBAvailabilityRepository,
     DynamoDBServiceRepository,
     DynamoDBBookingRepository,
     DynamoDBProviderIntegrationRepository
 )
+from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.application.waitlist_service import WaitlistService
 from shared.application.availability_service import AvailabilityService
 
