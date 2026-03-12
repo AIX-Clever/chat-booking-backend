@@ -70,6 +70,7 @@ type WaitingListEntry @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID
   clientId: String!
   preferredDays: [WaitlistDay!]
+  requestedDates: [AWSDate!]
   contactStatus: WaitingListStatus!
   createdAt: AWSDateTime!
   ttl: Int
@@ -81,6 +82,7 @@ input AddToWaitingListInput {
   clientId: String!
   providerId: ID
   preferredDays: [WaitlistDay!]
+  requestedDates: [AWSDate!]
 }
 
 # Types - Tenant

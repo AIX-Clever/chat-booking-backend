@@ -86,6 +86,7 @@ def lambda_handler(event: dict, context) -> dict:
             client_id = input_data.get("clientId")
             provider_id = input_data.get("providerId")
             preferred_days = input_data.get("preferredDays")
+            requested_dates = input_data.get("requestedDates", [])
 
             if not all([tenant_id, service_id, client_id]):
                 raise ValidationError(
@@ -97,7 +98,8 @@ def lambda_handler(event: dict, context) -> dict:
                 service_id=service_id,
                 provider_id=provider_id,
                 client_id=client_id,
-                preferred_days=preferred_days
+                preferred_days=preferred_days,
+                requested_dates=requested_dates
             )
             return success_response(entry.to_dict())
 

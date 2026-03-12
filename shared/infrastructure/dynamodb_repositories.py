@@ -1142,6 +1142,7 @@ class DynamoDBWaitingListRepository(IWaitingListRepository):
             ),
             provider_id=item.get("providerId"),
             preferred_days=item.get("preferredDays", []),
+            requested_dates=item.get("requestedDates", []),
             created_at=datetime.fromisoformat(
                 item.get("createdAt", datetime.now().isoformat())
             ),

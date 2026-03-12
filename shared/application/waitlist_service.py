@@ -53,6 +53,7 @@ class WaitlistService:
         client_id: str,
         provider_id: Optional[str] = None,
         preferred_days: Optional[List[str]] = None,
+        requested_dates: Optional[List[str]] = None,
     ) -> WaitingListEntry:
         """Add a client to the waiting list for a service.
 
@@ -112,6 +113,7 @@ class WaitlistService:
             contact_status=WaitingListStatus.PENDING,
             provider_id=provider_id,
             preferred_days=preferred_days or [],
+            requested_dates=requested_dates or [],
             ttl=int(time.time()) + WAITING_LIST_TTL_SECONDS,
         )
 

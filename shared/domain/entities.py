@@ -592,6 +592,7 @@ class WaitingListEntry:
     contact_status: WaitingListStatus = WaitingListStatus.PENDING
     provider_id: Optional[str] = None  # Preferred provider (None = any)
     preferred_days: List[str] = field(default_factory=list)
+    requested_dates: List[str] = field(default_factory=list)  # ISO dates YYYY-MM-DD
     created_at: datetime = field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
@@ -605,6 +606,7 @@ class WaitingListEntry:
             "clientId": self.client_id,
             "contactStatus": self.contact_status.value,
             "preferredDays": self.preferred_days,
+            "requestedDates": self.requested_dates,
             "createdAt": self.created_at.isoformat(),
             "tenantId_serviceId": f"{self.tenant_id}_{self.service_id}",
         }
