@@ -96,7 +96,7 @@ export class LambdaStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
 
-    // Force backend redeploy to pick up latest layer version - 2026-02-01 v6
+    // Force backend redeploy to pick up latest layer version - 2026-03-12 v7 (v1.1.0)
     // Get backend code path (relative to infra root, assuming cdk runs from infra)
     const backendPath = path.join(process.cwd(), '../');
 
@@ -237,7 +237,7 @@ export class LambdaStack extends cdk.Stack {
         SLOT_INTERVAL_MINUTES: '15', // Default slot interval
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
-        FORCE_DEPLOY: '2026-02-03-v6', // Force update
+        FORCE_DEPLOY: '2026-03-12-v7', // Force update to v1.1.0
       },
     });
 
