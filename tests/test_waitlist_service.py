@@ -99,11 +99,13 @@ class TestAddToWaitlist:
             client_id="client@email.com",
             provider_id="provider-1",
             preferred_days=["MONDAY", "WEDNESDAY"],
+            requested_dates=["2025-01-01", "2025-01-02"]
         )
 
         assert result is not None
         assert result.service_id == "service-1"
         assert result.client_id == "client@email.com"
+        assert result.requested_dates == ["2025-01-01", "2025-01-02"]
         assert result.contact_status == WaitingListStatus.PENDING
         mock_repos["waitlist_repo"].save.assert_called_once()
 
