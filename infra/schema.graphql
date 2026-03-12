@@ -76,7 +76,7 @@ type WaitingListEntry @aws_api_key @aws_cognito_user_pools @aws_lambda {
 }
 
 input AddToWaitingListInput {
-  tenantId: ID!
+  tenantId: ID
   serviceId: ID!
   clientId: String!
   providerId: ID

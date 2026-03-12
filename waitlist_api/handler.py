@@ -67,20 +67,11 @@ def lambda_handler(event: dict, context) -> dict:
     - removeWaitingListEntry: Remove entry (Admin manual remove)
     """
     try:
-        operation, arguments, identity = extract_appsync_event(event)
-        logger.info(f"Waitlist API operation: {operation}")
+        field, tenant_id, input_data = extract_appsync_event(event)
+        logger.info(f"Waitlist API operation: {field}")
 
-        # Ensure tenantId is present in arguments or identity
-        if operation == "getWaitingListByService":
-            # For admin, tenantId usually comes from Cognito identity
-            tenant_id = arguments.get("tenantId")
-            if not tenant_id and "claims" in identity:
-                tenant_id = identity["claims"].get("custom:tenantId")
-
-            if not tenant_id:
-                raise ValidationError("tenantId missing")
-
-            service_id = arguments.get("serviceId")
+        if field == "getWaitingListByService":
+            service_id = input_data.get("serviceId")
             if not service_id:
                 raise ValidationError("serviceId missing")
 
@@ -89,12 +80,8 @@ def lambda_handler(event: dict, context) -> dict:
             result = [entry.to_dict() for entry in entries]
             return success_response(result)
 
-        elif operation == "addToWaitingList":
-            # Can be called by public widget (API key) or Chat Agent
-            # arguments should contain input object
-            input_data = arguments.get("input", {})
-
-            tenant_id = input_data.get("tenantId")
+        elif field == "addToWaitingList":
+            # For public widget (API key) or Chat Agent
             service_id = input_data.get("serviceId")
             client_id = input_data.get("clientId")
             provider_id = input_data.get("providerId")
@@ -114,16 +101,9 @@ def lambda_handler(event: dict, context) -> dict:
             )
             return success_response(entry.to_dict())
 
-        elif operation == "removeWaitingListEntry":
+        elif field == "removeWaitingListEntry":
             # Admin feature
-            tenant_id = arguments.get("tenantId")
-            if not tenant_id and "claims" in identity:
-                tenant_id = identity["claims"].get("custom:tenantId")
-
-            if not tenant_id:
-                raise ValidationError("tenantId missing")
-
-            waiting_list_id = arguments.get("waitingListId")
+            waiting_list_id = input_data.get("waitingListId")
             if not waiting_list_id:
                 raise ValidationError("waitingListId missing")
 
@@ -131,8 +111,8 @@ def lambda_handler(event: dict, context) -> dict:
             return success_response(True)
 
         else:
-            logger.error(f"Unknown operation: {operation}")
-            return error_response(f"Unknown operation: {operation}", 400)
+            logger.error(f"Unknown operation: {field}")
+            return error_response(f"Unknown operation: {field}", 400)
 
     except ValidationError as e:
         logger.warning(f"Validation error: {str(e)}")
