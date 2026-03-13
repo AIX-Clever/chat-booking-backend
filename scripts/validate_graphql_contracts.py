@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import glob
 from typing import List, Dict, Any
 
 try:
@@ -61,25 +62,22 @@ def extract_queries_from_ts(file_path: str) -> List[str]:
         content = f.read()
     
     # Simple regex to find template literals assigned to export const or similar
-    # This works for the common pattern in the repositories: export const NAME = ` query ... `
-    query_blocks = re.findall(r'export const \w+ = `([\s\S]+?)`;', content)
+    # Supports both plain template literals and tagged templates like gql`...`
+    query_blocks = re.findall(r'export const \w+\s*=\s*(?:gql)?`([\s\S]+?)`;', content)
     
     results = []
     for query in query_blocks:
         results.append(strip_directives(query.strip()))
-    
+        
+    print(f"    Found {len(results)} queries in {os.path.basename(file_path)}")
     return results
 
 def validate_queries(schema, repo_name: str):
     repo_path = os.path.join(BASE_DIR, repo_name)
     
-    # Define possible query files
-    query_files = [
-        os.path.join(repo_path, "src/graphql/queries.ts"),
-        os.path.join(repo_path, "src/graphql/mutations.ts"),
-        os.path.join(repo_path, "src/graphql/waitlist-queries.ts"),
-        os.path.join(repo_path, "src/graphql/client-queries.ts")
-    ]
+    # Define possible query files dynamically
+    graphql_dir = os.path.join(repo_path, "src", "graphql")
+    query_files = glob.glob(os.path.join(graphql_dir, "**", "*.ts"), recursive=True)
     
     found_any = False
     all_valid = True
