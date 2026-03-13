@@ -72,42 +72,50 @@ def extract_queries_from_ts(file_path: str) -> List[str]:
 
 def validate_queries(schema, repo_name: str):
     repo_path = os.path.join(BASE_DIR, repo_name)
-    queries_file = os.path.join(repo_path, "src/graphql/queries.ts")
     
-    if not os.path.exists(queries_file):
-        # Fail-safe check: some repos might use src/graphql/index.ts or similar?
-        # For now, stick to known locations from search.
-        print(f"Skipping {repo_name}: no queries.ts found.")
-        return True
-
-    print(f"Validating {repo_name}...")
-    queries = extract_queries_from_ts(queries_file)
+    # Define possible query files
+    query_files = [
+        os.path.join(repo_path, "src/graphql/queries.ts"),
+        os.path.join(repo_path, "src/graphql/mutations.ts"),
+        os.path.join(repo_path, "src/graphql/waitlist-queries.ts"),
+        os.path.join(repo_path, "src/graphql/client-queries.ts")
+    ]
     
+    found_any = False
     all_valid = True
-    for query_str in queries:
-        if not query_str: continue
-        try:
-            document = parse(query_str)
-            errors = validate(schema, document)
-            if errors:
-                all_valid = False
-                print(f"  [X] Error in {repo_name}:")
-                # Try to extract operation name for better reporting
-                op_match = re.search(r'(query|mutation|subscription)\s+(\w+)', query_str)
-                op_name = op_match.group(2) if op_match else "Unknown Operation"
-                print(f"      Operation: {op_name}")
-                for err in errors:
-                    print(f"      - {err.message}")
-            # else:
-            #    print(f"  [V] Validated operation.")
-        except GraphQLError as e:
-            all_valid = False
-            print(f"  [X] Syntax Error in {repo_name}: {e}")
-            # print(f"DEBUG Query:\n{query_str}")
-        except Exception as e:
-            all_valid = False
-            print(f"  [X] Unexpected Error in {repo_name}: {e}")
+    
+    for queries_file in query_files:
+        if not os.path.exists(queries_file):
+            continue
             
+        found_any = True
+        print(f"Validating {repo_name} ({os.path.basename(queries_file)})...")
+        queries = extract_queries_from_ts(queries_file)
+        
+        for query_str in queries:
+            if not query_str: continue
+            try:
+                document = parse(query_str)
+                errors = validate(schema, document)
+                if errors:
+                    all_valid = False
+                    print(f"  [X] Error in {repo_name} -> {os.path.basename(queries_file)}:")
+                    # Try to extract operation name for better reporting
+                    op_match = re.search(r'(query|mutation|subscription)\s+(\w+)', query_str)
+                    op_name = op_match.group(2) if op_match else "Unknown Operation"
+                    print(f"      Operation: {op_name}")
+                    for err in errors:
+                        print(f"      - {err.message}")
+            except GraphQLError as e:
+                all_valid = False
+                print(f"  [X] Syntax Error in {repo_name} -> {os.path.basename(queries_file)}: {e}")
+            except Exception as e:
+                all_valid = False
+                print(f"  [X] Unexpected Error in {repo_name}: {e}")
+                
+    if not found_any:
+        print(f"Skipping {repo_name}: no common query files found.")
+        
     return all_valid
 
 def main():
