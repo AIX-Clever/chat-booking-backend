@@ -19,17 +19,18 @@ permissions:
 jobs:
   delete-stack:
     runs-on: ubuntu-latest
+    environment: dev
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::607250385528:role/OICD_GITHUB_ACTION_DEPLOY
-          aws-region: ${{ inputs.region }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Delete CloudFormation Stack
         run: |
-          echo "Deleting stack: ${{ inputs.stack_name }} in ${{ inputs.region }}"
-          aws cloudformation delete-stack --stack-name ${{ inputs.stack_name }} --region ${{ inputs.region }}
+          echo "Deleting stack: ${{ inputs.stack_name }} in ${{ secrets.AWS_REGION }}"
+          aws cloudformation delete-stack --stack-name ${{ inputs.stack_name }} --region ${{ secrets.AWS_REGION }}
           echo "Delete command issued. Wait for deletion to complete."
-          aws cloudformation wait stack-delete-complete --stack-name ${{ inputs.stack_name }} --region ${{ inputs.region }}
+          aws cloudformation wait stack-delete-complete --stack-name ${{ inputs.stack_name }} --region ${{ secrets.AWS_REGION }}
           echo "Stack deleted successfully."
