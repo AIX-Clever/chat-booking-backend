@@ -24,9 +24,8 @@ permissions:
   contents: read
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
-    environment: dev
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -49,14 +48,53 @@ jobs:
 
       - name: Run Linters
         run: |
-          # Fails if there are syntax errors or undefined names
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
       - name: Run Unit Tests
         run: |
           pytest tests/ -v || echo "Tests failed but proceeding for now (Soft Gate)"
+
+      - name: Validate GraphQL Schema (Retrocompatibility)
+        run: |
+          npm install -g @graphql-inspector/cli graphql
+          git show HEAD~1:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
+          
+          if [ -s infra/schema_old.graphql ]; then
+            cat infra/schema.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean.graphql
+            cat infra/schema_old.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean_old.graphql
+            
+            mv schema_clean.graphql schema_clean.gql
+            mv schema_clean_old.graphql schema_clean_old.gql
+            
+            npx graphql-inspector diff schema_clean_old.gql schema_clean.gql || {
+              echo "::error::GraphQL Schema introduced BREAKING CHANGES."
+              exit 1
+            }
+            echo "GraphQL Schema is retrocompatible! ✅"
+          else
+            echo "Skipping check: Could not find previous schema version."
+          fi
+
+  deploy:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -68,63 +106,24 @@ jobs:
         run: |
           LOCAL_HASH=$(python3 scripts/validate_shared.py shared)
           echo "Local Hash: $LOCAL_HASH"
-          
           LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text || echo "")
-          
           if [ -z "$LAYER_ARN" ]; then
-            echo "::error::Could not find Layer ARN in SSM. ensure the layers stack is deployed."
+            echo "::error::Could not find Layer ARN in SSM."
             exit 1
           fi
-          
-          echo "Checking Layer Hash via SSM..."
           EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
-          
-          echo "Deploed Layer Hash: $EXPECTED_HASH"
-          echo "Local Backend Hash: $LOCAL_HASH"
-          
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
-            echo "::error::Backend 'shared' folder is out of sync with deployed Lambda Layer."
-            echo "Deployed Hash: $EXPECTED_HASH"
-            echo "Local Hash: $LOCAL_HASH"
-            echo "Please push your changes to the 'chat-booking-layers' repository first and wait for the layer to deploy."
+            echo "::error::Backend 'shared' folder is out of sync."
             exit 1
           fi
           echo "Layer is in sync! ✅"
 
       - name: Install Lambda Dependencies
         run: |
-          # Find all requirements.txt files and install dependencies to their directory
           find . -name "requirements.txt" -not -path "*/node_modules/*" -not -path "*/.venv/*" | while read req_file; do
-            echo "Installing dependencies for $req_file"
             dir=$(dirname "$req_file")
             pip install -r "$req_file" -t "$dir"
           done
-
-      - name: Validate GraphQL Schema (Retrocompatibility)
-        run: |
-          npm install -g @graphql-inspector/cli graphql
-          
-          # Get the previous commit's schema (HEAD^)
-          git show HEAD~1:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
-          
-          if [ -s infra/schema_old.graphql ]; then
-            # Strip AWS-specific directives (@aws_api_key, etc.) since they break standard GraphQL parsers
-            cat infra/schema.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean.graphql
-            cat infra/schema_old.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean_old.graphql
-            
-            echo "Checking schema for breaking changes..."
-            # Note: We comparison clean files. graphql-inspector needs a .graphql extension or similar to detect the format
-            mv schema_clean.graphql schema_clean.gql
-            mv schema_clean_old.graphql schema_clean_old.gql
-            
-            npx graphql-inspector diff schema_clean_old.gql schema_clean.gql || {
-              echo "::error::GraphQL Schema introduced BREAKING CHANGES. Please fix the schema retrocompatibility to avoid breaking the frontend clients."
-              exit 1
-            }
-            echo "GraphQL Schema is retrocompatible! ✅"
-          else
-            echo "Skipping check: Could not find previous schema version."
-          fi
 
       - name: Install CDK dependencies
         working-directory: infra
@@ -137,23 +136,15 @@ jobs:
       - name: Deploy with CDK
         working-directory: infra
         run: |
-          # Map branch to environment variables
           if [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "prod" ] || [ "${{ github.ref_name }}" == "dev" ]; then
             export ENV="prod"
-            # Omitiendo dominio propio temporalmente por migración
-            # export DOMAIN_NAME="media.holalucia.cl"
-            # export CERTIFICATE_ARN="$CERT_PROD"
           else
             export ENV="${{ github.ref_name }}"
             export DOMAIN_NAME="${ENV}.media.holalucia.cl"
-            
             ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
             var_name="CERT_${ENV_UPPER}"
             export CERTIFICATE_ARN="${!var_name}"
           fi
-          
-          echo "Deploying to environment: $ENV with domain: $DOMAIN_NAME"
-          
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
           ENV: dev
@@ -166,3 +157,4 @@ jobs:
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
           MP_ACCESS_TOKEN_PROD: ${{ secrets.MP_ACCESS_TOKEN_PROD }}
           MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
+
