@@ -85,7 +85,7 @@ export class SubscriptionStack extends cdk.Stack {
             runtime: lambda.Runtime.PYTHON_3_11,
             timeout: cdk.Duration.seconds(30),
             memorySize: 256,
-            logRetention: logs.RetentionDays.ONE_WEEK,
+            // logRetention: logs.RetentionDays.ONE_WEEK,
             layers: [sharedLayer],
             environment: {
                 SUBSCRIPTIONS_TABLE: this.subscriptionsTable.tableName,
