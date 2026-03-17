@@ -140,8 +140,9 @@ jobs:
           # Map branch to environment variables
           if [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "prod" ] || [ "${{ github.ref_name }}" == "dev" ]; then
             export ENV="prod"
-            export DOMAIN_NAME="media.holalucia.cl"
-            export CERTIFICATE_ARN="$CERT_PROD"
+            # Omitiendo dominio propio temporalmente por migración
+            # export DOMAIN_NAME="media.holalucia.cl"
+            # export CERTIFICATE_ARN="$CERT_PROD"
           else
             export ENV="${{ github.ref_name }}"
             export DOMAIN_NAME="${ENV}.media.holalucia.cl"
