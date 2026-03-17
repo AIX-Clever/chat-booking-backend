@@ -157,7 +157,6 @@ jobs:
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
         env:
           ENV: dev
-          DOMAIN_NAME: media.holalucia.cl
           CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
           CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
           CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
