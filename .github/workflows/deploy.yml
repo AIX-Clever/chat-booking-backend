@@ -79,7 +79,7 @@ jobs:
   deploy:
     needs: [validate]
     runs-on: ubuntu-latest
-    environment: dev
+    environment: ${{ github.ref_name }}
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -136,18 +136,23 @@ jobs:
       - name: Deploy with CDK
         working-directory: infra
         run: |
-          if [ "${{ github.ref_name }}" == "main" ] || [ "${{ github.ref_name }}" == "prod" ] || [ "${{ github.ref_name }}" == "dev" ]; then
+          export ENV="${{ github.ref_name }}"
+          
+          if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
             export ENV="prod"
+            # Omitiendo dominio propio temporalmente por migración
+            # export DOMAIN_NAME="media.holalucia.cl"
+            # export CERTIFICATE_ARN="$CERT_PROD"
           else
-            export ENV="${{ github.ref_name }}"
             export DOMAIN_NAME="${ENV}.media.holalucia.cl"
             ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
             var_name="CERT_${ENV_UPPER}"
             export CERTIFICATE_ARN="${!var_name}"
           fi
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=dev
+          
+          echo "Deploying to environment: $ENV"
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV
         env:
-          ENV: dev
           CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
           CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
           CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
