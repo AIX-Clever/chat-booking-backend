@@ -91,14 +91,10 @@ export class SubscriptionStack extends cdk.Stack {
                 SUBSCRIPTIONS_TABLE: this.subscriptionsTable.tableName,
                 TENANTS_TABLE: props.tenantsTable.tableName,
                 LOG_LEVEL: 'INFO',
-                MP_ACCESS_TOKEN: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecret', 'ChatBooking/MercadoPago')
-                    .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
-                MP_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretVal', 'ChatBooking/MercadoPago')
-                    .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
-                FINTOC_API_KEY: secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret', 'ChatBooking/Fintoc')
-                    .secretValueFromJson('API_KEY').unsafeUnwrap(),
-                FINTOC_WEBHOOK_SECRET: secretsmanager.Secret.fromSecretNameV2(this, 'FintocWebhookSecret', 'ChatBooking/Fintoc')
-                    .secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
+                MP_ACCESS_TOKEN: cdk.SecretValue.secretsManager('ChatBooking/MercadoPago', { jsonField: 'ACCESS_TOKEN' }).unsafeUnwrap(),
+                MP_WEBHOOK_SECRET: cdk.SecretValue.secretsManager('ChatBooking/MercadoPago', { jsonField: 'WEBHOOK_SECRET' }).unsafeUnwrap(),
+                FINTOC_API_KEY: cdk.SecretValue.secretsManager('ChatBooking/Fintoc', { jsonField: 'API_KEY' }).unsafeUnwrap(),
+                FINTOC_WEBHOOK_SECRET: cdk.SecretValue.secretsManager('ChatBooking/Fintoc', { jsonField: 'WEBHOOK_SECRET' }).unsafeUnwrap(),
                 USER_POOL_ID: props.userPool.userPoolId,
                 LAST_UPDATED: '2026-02-20T20:15:00Z', // Force pick up of new Layer version and secrets
 
