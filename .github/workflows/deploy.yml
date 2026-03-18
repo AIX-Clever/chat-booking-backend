@@ -19,6 +19,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 permissions:
   id-token: write
   contents: read
@@ -132,6 +135,8 @@ jobs:
       - name: Build CDK app
         working-directory: infra
         run: npm run build
+
+          echo "Fetching Secrets ARNs" && aws secretsmanager list-secrets --region us-east-2 --output json
 
       - name: Deploy with CDK
         working-directory: infra
