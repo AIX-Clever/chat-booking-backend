@@ -75,9 +75,10 @@ export class SubscriptionStack extends cdk.Stack {
         });
 
         // 3. Lambda Layer (Shared)
-        const layerArn = ssm.StringParameter.valueForStringParameter(
-            this, '/chatbooking/layers/python-layer-arn'
-        );
+        const layerArn = props.envName === 'qa'
+            ? 'arn:aws:lambda:us-east-2:023133287890:layer:chat-booking-shared-python:1'
+            : ssm.StringParameter.valueForStringParameter(this, '/chatbooking/layers/python-layer-arn');
+            
         const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
         // Common Lambda Props
