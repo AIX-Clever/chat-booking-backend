@@ -36,6 +36,17 @@ export class SubscriptionStack extends cdk.Stack {
 
         const backendPath = path.join(process.cwd(), '../');
 
+        // Pre-bind resources for QA to bypass EarlyValidation hook issues with cross-stack references
+        const tenantsTable = props.envName === 'qa'
+            ? dynamodb.Table.fromTableAttributes(this, 'TenantsTableQA', {
+                tableName: 'ChatBooking-Tenants',
+              })
+            : props.tenantsTable;
+
+        const userPool = props.envName === 'qa'
+            ? cognito.UserPool.fromUserPoolId(this, 'UserPoolQA', 'us-east-2_BJ7JY5CCl')
+            : props.userPool;
+
         // 1. DynamoDB: Subscriptions Table
         this.subscriptionsTable = new dynamodb.Table(this, 'SubscriptionsTable', {
             tableName: `ChatBooking-Subscriptions-${props.envName}`,
@@ -90,7 +101,7 @@ export class SubscriptionStack extends cdk.Stack {
             layers: [sharedLayer],
             environment: {
                 SUBSCRIPTIONS_TABLE: this.subscriptionsTable.tableName,
-                TENANTS_TABLE: props.tenantsTable.tableName,
+                TENANTS_TABLE: tenantsTable.tableName,
                 LOG_LEVEL: 'INFO',
                 // For QA, use the exact ARN to bypass the EarlyValidation hook introduced in Bootstrap v30+
                 MP_ACCESS_TOKEN: props.envName === 'qa' 
@@ -105,7 +116,7 @@ export class SubscriptionStack extends cdk.Stack {
                 FINTOC_WEBHOOK_SECRET: props.envName === 'qa' 
                     ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm', { jsonField: 'WEBHOOK_SECRET' }).unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret2', 'ChatBooking/Fintoc').secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
-                USER_POOL_ID: props.userPool.userPoolId,
+                USER_POOL_ID: userPool.userPoolId,
                 LAST_UPDATED: '2026-03-18T21:23:00Z', // Force pick up of new Layer version and secrets
 
             },
@@ -121,12 +132,12 @@ export class SubscriptionStack extends cdk.Stack {
             handler: 'subscribe.lambda_handler',
         });
         this.subscriptionsTable.grantReadWriteData(this.subscribeFunction);
-        props.tenantsTable.grantReadData(this.subscribeFunction);
+        tenantsTable.grantReadData(this.subscribeFunction);
 
         // Grant permission to fetch user attributes (fallback for tenantId)
         this.subscribeFunction.addToRolePolicy(new iam.PolicyStatement({
             actions: ['cognito-idp:AdminGetUser'],
-            resources: [props.userPool.userPoolArn],
+            resources: [userPool.userPoolArn],
         }));
 
         // B. Downgrade Handler
@@ -167,7 +178,7 @@ export class SubscriptionStack extends cdk.Stack {
             })]
         });
         this.subscriptionsTable.grantReadWriteData(this.webhookProcessorFunction);
-        props.tenantsTable.grantReadWriteData(this.webhookProcessorFunction);
+        tenantsTable.grantReadWriteData(this.webhookProcessorFunction);
 
         // E. Subscription Worker (Scheduler Target)
         this.subscriptionWorkerFunction = new lambda.Function(this, 'SubscriptionWorkerFunction', {
@@ -186,7 +197,7 @@ export class SubscriptionStack extends cdk.Stack {
             handler: 'list_invoices.lambda_handler',
         });
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
-        props.userPool.grant(this.listInvoicesFunction, 'cognito-idp:AdminGetUser');
+        userPool.grant(this.listInvoicesFunction, 'cognito-idp:AdminGetUser');
 
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
 
@@ -198,7 +209,7 @@ export class SubscriptionStack extends cdk.Stack {
             handler: 'fintoc_webhook.lambda_handler',
         });
         this.subscriptionsTable.grantReadWriteData(this.fintocWebhookFunction);
-        props.tenantsTable.grantReadWriteData(this.fintocWebhookFunction);
+        tenantsTable.grantReadWriteData(this.fintocWebhookFunction);
 
         const fintocWebhookUrl = this.fintocWebhookFunction.addFunctionUrl({
             authType: lambda.FunctionUrlAuthType.NONE,
