@@ -30,7 +30,11 @@ const app = new cdk.App();
 // Get environment from context
 const env = app.node.tryGetContext('env') || 'dev';
 const account = app.node.tryGetContext('account') || process.env.CDK_DEFAULT_ACCOUNT;
-const region = app.node.tryGetContext('region') || process.env.CDK_DEFAULT_REGION || process.env.AWS_REGION || 'us-east-1';
+// Default region logic: dev=us-east-1, qa=us-east-2
+let region = app.node.tryGetContext('region') || process.env.CDK_DEFAULT_REGION || process.env.AWS_REGION;
+if (!region) {
+  region = env === 'qa' ? 'us-east-2' : 'us-east-1';
+}
 
 // Common tags for all resources
 const tags = {
