@@ -105,7 +105,7 @@ export class SubscriptionStack extends cdk.Stack {
                     ? secretsmanager.Secret.fromSecretCompleteArn(this, 'FintocSecret2', 'arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm').secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret2', 'ChatBooking/Fintoc').secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 USER_POOL_ID: props.userPool.userPoolId,
-                LAST_UPDATED: '2026-03-18T21:15:00Z', // Force pick up of new Layer version and secrets
+                LAST_UPDATED: '2026-03-18T21:23:00Z', // Force pick up of new Layer version and secrets
 
             },
         };
