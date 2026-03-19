@@ -156,7 +156,7 @@ jobs:
           fi
           
           echo "Deploying to environment: $ENV"
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
         env:
           CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
           CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
