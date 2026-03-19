@@ -93,16 +93,16 @@ export class SubscriptionStack extends cdk.Stack {
                 LOG_LEVEL: 'INFO',
                 // For QA, use the exact ARN to bypass the EarlyValidation hook introduced in Bootstrap v30+
                 MP_ACCESS_TOKEN: props.envName === 'qa' 
-                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/MercadoPago-ClHGoO', { jsonField: 'ACCESS_TOKEN' })
+                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/MercadoPago-ClHGoO', { jsonField: 'ACCESS_TOKEN' }).unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'MPSecret1', 'ChatBooking/MercadoPago').secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
                 MP_WEBHOOK_SECRET: props.envName === 'qa' 
-                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/MercadoPago-ClHGoO', { jsonField: 'WEBHOOK_SECRET' })
+                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/MercadoPago-ClHGoO', { jsonField: 'WEBHOOK_SECRET' }).unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'MPSecret2', 'ChatBooking/MercadoPago').secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 FINTOC_API_KEY: props.envName === 'qa' 
-                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm', { jsonField: 'API_KEY' })
+                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm', { jsonField: 'API_KEY' }).unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret1', 'ChatBooking/Fintoc').secretValueFromJson('API_KEY').unsafeUnwrap(),
                 FINTOC_WEBHOOK_SECRET: props.envName === 'qa' 
-                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm', { jsonField: 'WEBHOOK_SECRET' })
+                    ? cdk.SecretValue.secretsManager('arn:aws:secretsmanager:us-east-2:023133287890:secret:ChatBooking/Fintoc-WTN2sm', { jsonField: 'WEBHOOK_SECRET' }).unsafeUnwrap()
                     : secretsmanager.Secret.fromSecretNameV2(this, 'FintocSecret2', 'ChatBooking/Fintoc').secretValueFromJson('WEBHOOK_SECRET').unsafeUnwrap(),
                 USER_POOL_ID: props.userPool.userPoolId,
                 LAST_UPDATED: '2026-03-18T21:23:00Z', // Force pick up of new Layer version and secrets
