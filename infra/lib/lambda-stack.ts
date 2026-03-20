@@ -841,16 +841,21 @@ export class LambdaStack extends cdk.Stack {
 
 
     // 17. Profile Baker Lambda (SEO Generator)
-    // Import Link resources from SSM
-    const linkBucketName = ssm.StringParameter.valueForStringParameter(
-      this, `/chatbooking/${props.envName}/link-bucket-name`
-    );
+    // Import Link resources from SSM with fallback for QA to avoid deployment blockage
+    let linkBucketName: string;
+    let linkDistributionId: string;
 
-    // Note: Distribution ID might be empty during first deploy if not yet created, 
-    // but usually SSM parameters resolve at deploy time.
-    const linkDistributionId = ssm.StringParameter.valueForStringParameter(
-      this, `/chatbooking/${props.envName}/link-distribution-id`
-    );
+    if (props.envName === 'qa') {
+      linkBucketName = 'chat-booking-link-qa-dummy';
+      linkDistributionId = 'EDUMMYDISTID';
+    } else {
+      linkBucketName = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-bucket-name`
+      );
+      linkDistributionId = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-distribution-id`
+      );
+    }
 
     const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
       ...commonProps,
