@@ -36,15 +36,16 @@ export class SubscriptionStack extends cdk.Stack {
 
         const backendPath = path.join(process.cwd(), '../');
 
-        // Pre-bind resources for QA to bypass EarlyValidation hook issues with cross-stack references
-        const tenantsTable = props.envName === 'qa'
-            ? dynamodb.Table.fromTableAttributes(this, 'TenantsTableQA', {
+        // Pre-bind resources for QA/PROD to bypass EarlyValidation hook issues with cross-stack references
+        const tenantsTable = (props.envName === 'qa' || props.envName === 'prod')
+            ? dynamodb.Table.fromTableAttributes(this, 'TenantsTablePreBound', {
                 tableName: 'ChatBooking-Tenants',
               })
             : props.tenantsTable;
 
-        const userPool = props.envName === 'qa'
-            ? cognito.UserPool.fromUserPoolId(this, 'UserPoolQA', 'us-east-2_BJ7JY5CCl')
+        const userPool = (props.envName === 'qa' || props.envName === 'prod')
+            ? cognito.UserPool.fromUserPoolId(this, 'UserPoolPreBound', 
+                props.envName === 'qa' ? 'us-east-2_BJ7JY5CCl' : 'us-east-2_hLsCdrLt3')
             : props.userPool;
 
         // 1. DynamoDB: Subscriptions Table
