@@ -50,7 +50,7 @@ export class SubscriptionStack extends cdk.Stack {
 
         // 1. DynamoDB: Subscriptions Table
         this.subscriptionsTable = new dynamodb.Table(this, 'SubscriptionsTable', {
-            tableName: props.envName === 'qa' 
+            tableName: (props.envName === 'qa' || props.envName === 'prod') 
                 ? `ChatBooking-Subscriptions-${props.envName}-v2` 
                 : `ChatBooking-Subscriptions-${props.envName}`,
             partitionKey: {
@@ -75,14 +75,14 @@ export class SubscriptionStack extends cdk.Stack {
 
         // 2. SQS: Webhooks Queue & DLQ
         this.webhooksDLQ = new sqs.Queue(this, 'WebhooksDLQ', {
-            queueName: props.envName === 'qa'
+            queueName: (props.envName === 'qa' || props.envName === 'prod')
                 ? `ChatBooking-WebhooksDLQ-${props.envName}-v2`
                 : `ChatBooking-WebhooksDLQ-${props.envName}`,
             retentionPeriod: cdk.Duration.days(14),
         });
 
         this.webhooksQueue = new sqs.Queue(this, 'WebhooksQueue', {
-            queueName: props.envName === 'qa'
+            queueName: (props.envName === 'qa' || props.envName === 'prod')
                 ? `ChatBooking-WebhooksQueue-${props.envName}-v2`
                 : `ChatBooking-WebhooksQueue-${props.envName}`,
             visibilityTimeout: cdk.Duration.seconds(60), // Enough for processing
