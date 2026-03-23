@@ -145,23 +145,17 @@ jobs:
           
           if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
             export ENV="prod"
-            # Omitiendo dominio propio temporalmente por migración
-            # export DOMAIN_NAME="media.holalucia.cl"
-            # export CERTIFICATE_ARN="$CERT_PROD"
+            export DOMAIN_NAME="media.holalucia.cl"
+            export CERTIFICATE_ARN="$CERTIFICATE_ARN_SECRET"
           else
             export DOMAIN_NAME="${ENV}.media.holalucia.cl"
-            ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
-            var_name="CERT_${ENV_UPPER}"
-            export CERTIFICATE_ARN="${!var_name}"
+            export CERTIFICATE_ARN="$CERTIFICATE_ARN_SECRET"
           fi
           
           echo "Deploying to environment: $ENV"
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
         env:
-          CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
-          CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
-          CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
-          CERT_PROD: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}
+          CERTIFICATE_ARN_SECRET: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
