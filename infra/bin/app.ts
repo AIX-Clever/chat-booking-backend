@@ -121,7 +121,8 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   userPool: authStack.userPool,
   envName: env,
   assetsBucketName: assetsStack.assetsBucket.bucketName,
-  subscriptionsTable: subscriptionStack.subscriptionsTable,
+  // PHASE 1 DECOUPLING: Use fromTableName instead of object reference to break CFN Export Lock
+  subscriptionsTable: cdk.aws_dynamodb.Table.fromTableName(app, 'ImportedSubscriptionsTable', (env === 'qa' || env === 'prod') ? `ChatBooking-Subscriptions-${env}-v2` : `ChatBooking-Subscriptions-${env}`),
   clientsTable: databaseStack.clientsTable,
   clientAuditLogsTable: databaseStack.clientAuditLogsTable,
   dteFoliosTable: databaseStack.dteFoliosTable,
