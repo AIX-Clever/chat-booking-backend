@@ -956,7 +956,7 @@ export class LambdaStack extends cdk.Stack {
 
     // 21. SII Scraper Function (Puppeteer Auto-Provisioning)
     this.siiScraperFunction = new lambda.Function(this, 'SiiScraperFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       code: lambda.Code.fromAsset(path.join(backendPath, 'sii_scraper')),
       handler: 'index.handler',
       timeout: cdk.Duration.minutes(5), // Scraping can be slow
