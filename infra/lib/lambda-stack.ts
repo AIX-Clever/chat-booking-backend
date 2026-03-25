@@ -846,11 +846,18 @@ export class LambdaStack extends cdk.Stack {
       this, `/chatbooking/${props.envName}/link-bucket-name`
     );
 
-    // Note: Distribution ID might be empty during first deploy if not yet created, 
-    // but usually SSM parameters resolve at deploy time.
-    const linkDistributionId = ssm.StringParameter.valueForStringParameter(
-      this, `/chatbooking/${props.envName}/link-distribution-id`
-    );
+    if (props.envName === 'qa') {
+      linkBucketName = 'chat-booking-link-qa-dummy';
+      linkDistributionId = 'EDUMMYDISTID';
+    } else {
+      const ssmSuffix = props.envName === 'dev' ? '-v2' : '';
+      linkBucketName = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-bucket-name${ssmSuffix}`
+      );
+      linkDistributionId = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-distribution-id${ssmSuffix}`
+      );
+    }
 
     const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
       ...commonProps,
