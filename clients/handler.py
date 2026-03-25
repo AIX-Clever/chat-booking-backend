@@ -11,7 +11,8 @@ from validation import validate_id
 from shared.utils import (
     extract_appsync_event,
     error_response,
-    to_iso_string
+    to_iso_string,
+    enforce_not_readonly
 )
 
 # Initialize DynamoDB
@@ -35,6 +36,10 @@ def lambda_handler(event, context):
 
     try:
         field, tenant_id, input_data = extract_appsync_event(event)
+
+        # Enforce RBAC for mutations
+        if field in ['createClient', 'updateClient']:
+            enforce_not_readonly(event)
 
         # Route based on field name
         if field == 'getClient':
