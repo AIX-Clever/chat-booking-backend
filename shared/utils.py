@@ -149,34 +149,7 @@ def extract_tenant_id(event: Dict[str, Any]) -> Optional[str]:
 
     return None
 
-
-def extract_user_id(event: Dict[str, Any]) -> Optional[str]:
-    """Extract user ID (sub or username) from Lambda event"""
-    if event.get("identity") and event["identity"].get("claims"):
-        claims = event["identity"]["claims"]
-        return claims.get("username") or claims.get("cognito:username") or claims.get("sub")
-    if event.get("identity") and event["identity"].get("sub"):
-        return event["identity"]["sub"]
     return None
-
-
-def enforce_not_readonly(event: Dict[str, Any]) -> None:
-    """Check if the user has a USER (readonly) role and block mutation"""
-    user_id = extract_user_id(event)
-    if not user_id:
-        return  # Cannot be determined, fallback to normal auth (API key maybe)
-    
-    try:
-        from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
-        repo = DynamoDBUserRoleRepository()
-        role_entity = repo.get(user_id)
-        if role_entity and role_entity.role.value == "USER":
-            raise ValueError("Unauthorized: Read-only users cannot perform this action")
-    except Exception as e:
-        if isinstance(e, ValueError):
-            raise e
-        # Log error but don't crash - allow returning None to fail functionally later
-        print(f"Error checking user role permissions: {str(e)}")
 
 
 def extract_appsync_event(event: Dict[str, Any]) -> tuple[str, str, Dict[str, Any]]:
