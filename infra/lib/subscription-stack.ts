@@ -50,7 +50,9 @@ export class SubscriptionStack extends cdk.Stack {
 
         // 1. DynamoDB: Subscriptions Table
         this.subscriptionsTable = new dynamodb.Table(this, 'SubscriptionsTable', {
-            tableName: `ChatBooking-Subscriptions-${props.envName}`,
+            tableName: (props.envName === 'qa' || props.envName === 'prod') 
+                ? `ChatBooking-Subscriptions-${props.envName}-v2` 
+                : `ChatBooking-Subscriptions-${props.envName}`,
             partitionKey: {
                 name: 'tenantId',
                 type: dynamodb.AttributeType.STRING,
