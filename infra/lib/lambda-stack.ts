@@ -842,9 +842,8 @@ export class LambdaStack extends cdk.Stack {
 
     // 17. Profile Baker Lambda (SEO Generator)
     // Import Link resources from SSM
-    const linkBucketName = ssm.StringParameter.valueForStringParameter(
-      this, `/chatbooking/${props.envName}/link-bucket-name`
-    );
+    let linkBucketName: string;
+    let linkDistributionId: string;
 
     if (props.envName === 'qa') {
       linkBucketName = 'chat-booking-link-qa-dummy';
