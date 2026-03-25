@@ -840,8 +840,7 @@ export class LambdaStack extends cdk.Stack {
     });
 
 
-    // 17. Profile Baker Lambda (SEO Generator)
-    // Import Link resources from SSM with fallback for QA to avoid deployment blockage
+    // Import Link resources from SSM
     let linkBucketName: string;
     let linkDistributionId: string;
 
@@ -849,11 +848,12 @@ export class LambdaStack extends cdk.Stack {
       linkBucketName = 'chat-booking-link-qa-dummy';
       linkDistributionId = 'EDUMMYDISTID';
     } else {
+      const ssmSuffix = props.envName === 'dev' ? '-v2' : '';
       linkBucketName = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-bucket-name`
+        this, `/chatbooking/${props.envName}/link-bucket-name${ssmSuffix}`
       );
       linkDistributionId = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-distribution-id`
+        this, `/chatbooking/${props.envName}/link-distribution-id${ssmSuffix}`
       );
     }
 
