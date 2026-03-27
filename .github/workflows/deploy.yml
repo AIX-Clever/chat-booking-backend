@@ -138,25 +138,13 @@ jobs:
         run: |
           export ENV="${{ github.ref_name }}"
           
-          if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
-            export ENV="prod"
-            export DOMAIN_NAME="api.holalucia.cl"
-            export CERTIFICATE_ARN="${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}"
-          elif [ "$ENV" == "dev" ]; then
-            export DOMAIN_NAME="api.dev.holalucia.cl"
-            export CERTIFICATE_ARN="${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}"
-          else
-            export DOMAIN_NAME=""
-            export CERTIFICATE_ARN=""
-          fi
-          
-          echo "Deploying to environment: $ENV"
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV
+      - name: Deploy with CDK
+        run: |
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
         env:
-          CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
-          CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
-          CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
-          CERT_PROD: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}
+          ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}
