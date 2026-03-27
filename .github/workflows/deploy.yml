@@ -136,14 +136,11 @@ jobs:
       - name: Deploy with CDK
         working-directory: infra
         run: |
-          export ENV="${{ github.ref_name }}"
-          
-      - name: Deploy with CDK
-        run: |
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
-          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
+          MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
           CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
