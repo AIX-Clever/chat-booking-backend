@@ -140,14 +140,14 @@ jobs:
           
           if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
             export ENV="prod"
-            # Omitiendo dominio propio temporalmente por migración
-            # export DOMAIN_NAME="media.holalucia.cl"
-            # export CERTIFICATE_ARN="$CERT_PROD"
+            export DOMAIN_NAME="api.holalucia.cl"
+            export CERTIFICATE_ARN="${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}"
+          elif [ "$ENV" == "dev" ]; then
+            export DOMAIN_NAME="api.dev.holalucia.cl"
+            export CERTIFICATE_ARN="${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}"
           else
-            export DOMAIN_NAME="${ENV}.media.holalucia.cl"
-            ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
-            var_name="CERT_${ENV_UPPER}"
-            export CERTIFICATE_ARN="${!var_name}"
+            export DOMAIN_NAME=""
+            export CERTIFICATE_ARN=""
           fi
           
           echo "Deploying to environment: $ENV"
