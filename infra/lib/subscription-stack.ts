@@ -110,7 +110,7 @@ export class SubscriptionStack extends cdk.Stack {
         // 4. Lambdas
 
         // A. Subscribe Handler
-        this.subscribeFunction = new lambda.Function(this, 'SubscribeFunctionTmp', {
+        this.subscribeFunction = new lambda.Function(this, 'SubscribeFunction', {
             ...commonProps,
             description: 'Handle new subscription creation',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -126,7 +126,7 @@ export class SubscriptionStack extends cdk.Stack {
         }));
 
         // B. Downgrade Handler
-        this.downgradeFunction = new lambda.Function(this, 'DowngradeFunctionTmp', {
+        this.downgradeFunction = new lambda.Function(this, 'DowngradeFunction', {
             ...commonProps,
             description: 'Handle subscription downgrade scheduling',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -135,7 +135,7 @@ export class SubscriptionStack extends cdk.Stack {
         this.subscriptionsTable.grantReadWriteData(this.downgradeFunction);
 
         // C. Webhook Ingestor (Public Endpoint)
-        this.webhookIngestorFunction = new lambda.Function(this, 'WebhookIngestorFunctionTmp', {
+        this.webhookIngestorFunction = new lambda.Function(this, 'WebhookIngestorFunction', {
             ...commonProps,
             description: 'Ingest Mercado Pago webhooks securely',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -153,7 +153,7 @@ export class SubscriptionStack extends cdk.Stack {
         });
 
         // D. Webhook Processor
-        this.webhookProcessorFunction = new lambda.Function(this, 'WebhookProcessorFunctionTmp', {
+        this.webhookProcessorFunction = new lambda.Function(this, 'WebhookProcessorFunction', {
             ...commonProps,
             description: 'Process webhook events from queue',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -166,7 +166,7 @@ export class SubscriptionStack extends cdk.Stack {
         props.tenantsTable.grantReadWriteData(this.webhookProcessorFunction);
 
         // E. Subscription Worker (Scheduler Target)
-        this.subscriptionWorkerFunction = new lambda.Function(this, 'SubscriptionWorkerFunctionTmp', {
+        this.subscriptionWorkerFunction = new lambda.Function(this, 'SubscriptionWorkerFunction', {
             ...commonProps,
             description: 'Execute scheduled subscription tasks',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/workers')),
@@ -175,7 +175,7 @@ export class SubscriptionStack extends cdk.Stack {
         this.subscriptionsTable.grantReadWriteData(this.subscriptionWorkerFunction);
 
         // F. List Invoices Handler
-        this.listInvoicesFunction = new lambda.Function(this, 'ListInvoicesFunctionTmp', {
+        this.listInvoicesFunction = new lambda.Function(this, 'ListInvoicesFunction', {
             ...commonProps,
             description: 'List tenant invoices',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -187,7 +187,7 @@ export class SubscriptionStack extends cdk.Stack {
         this.subscriptionsTable.grantReadData(this.listInvoicesFunction);
 
         // G. Fintoc Webhook Function
-        this.fintocWebhookFunction = new lambda.Function(this, 'FintocWebhookFunctionTmp', {
+        this.fintocWebhookFunction = new lambda.Function(this, 'FintocWebhookFunction', {
             ...commonProps,
             description: 'Handle Fintoc webhooks',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
@@ -201,7 +201,7 @@ export class SubscriptionStack extends cdk.Stack {
         });
 
         // H. SII Status Sync Worker
-        this.siiStatusSyncFunction = new lambda.Function(this, 'SiiStatusSyncFunctionTmp', {
+        this.siiStatusSyncFunction = new lambda.Function(this, 'SiiStatusSyncFunction', {
             ...commonProps,
             description: 'Synchronize DTE processing status with SII',
             code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/workers')),
