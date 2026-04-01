@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -92,7 +92,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -158,10 +158,10 @@ jobs:
           echo "Deploying to environment: $ENV"
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
         env:
-          CERT_DEV: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_DEV }}
-          CERT_QA: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_QA }}
-          CERT_STG: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_STG }}
-          CERT_PROD: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN_PROD }}
+          ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
+          MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
+          CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}

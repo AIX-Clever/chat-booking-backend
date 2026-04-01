@@ -72,7 +72,7 @@ const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
   description: 'S3 + CloudFront for Assets',
   tags,
   stage: env,
-  domainName: process.env.DOMAIN_NAME,
+  domainName: process.env.MEDIA_DOMAIN_NAME,
   certificateArn: process.env.CERTIFICATE_ARN,
 });
 
@@ -141,6 +141,8 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   env: { account, region },
   description: 'GraphQL API for Chat Booking SaaS',
   tags,
+  domainName: process.env.API_DOMAIN_NAME,
+  certificateArn: process.env.CERTIFICATE_ARN,
   authResolverFunction: lambdaStack.authResolverFunction,
   catalogFunction: lambdaStack.catalogFunction,
   availabilityFunction: lambdaStack.availabilityFunction,

@@ -42,6 +42,8 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   waitlistApiFunction: lambda.IFunction;
   cafManagerFunction?: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
+  domainName?: string;
+  certificateArn?: string;
 }
 
 export class AppSyncApiStack extends cdk.Stack {
@@ -84,6 +86,10 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
+      domainName: props.domainName ? {
+        certificate: cdk.aws_certificatemanager.Certificate.fromCertificateArn(this, 'AppSyncCertificate', props.certificateArn!),
+        domainName: props.domainName,
+      } : undefined,
     });
 
     // -------------------------------------------------------------------
