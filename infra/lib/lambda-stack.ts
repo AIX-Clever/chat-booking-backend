@@ -127,6 +127,9 @@ export class LambdaStack extends cdk.Stack {
       console.warn('Could not calculate shared directory hash:', e);
     }
 
+    // Define frontend URL dynamically
+    const frontendUrl = props.envName === 'prod' ? 'https://holalucia.cl' : `https://${props.envName}.holalucia.cl`;
+
     // Common Lambda configuration
     const commonProps = {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -134,6 +137,7 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 512,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
+        FRONTEND_URL: frontendUrl,
         TENANTS_TABLE: props.tenantsTable.tableName,
         API_KEYS_TABLE: props.apiKeysTable.tableName,
         SERVICES_TABLE: props.servicesTable.tableName,

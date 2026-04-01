@@ -273,19 +273,8 @@ class BookingService:
                 return False
         return True
     def _get_frontend_url(self) -> str:
-        """Determina la URL del frontend basándose en las variables de entorno para evitar links rotos en multi-ambiente"""
-        frontend_url = os.environ.get("FRONTEND_URL")
-        if frontend_url:
-            return frontend_url
-            
-        function_name = os.environ.get('AWS_LAMBDA_FUNCTION_NAME', '').lower()
-        if '-dev-' in function_name:
-            return "https://dev.holalucia.cl"
-        elif '-qa-' in function_name:
-            return "https://qa.holalucia.cl"
-        elif '-stg-' in function_name:
-            return "https://stg.holalucia.cl"
-        return "https://holalucia.cl"
+        """Determina la URL del frontend basándose en las variables de entorno inyectadas via CDK"""
+        return os.environ.get("FRONTEND_URL", "https://holalucia.cl")
 
     def _send_confirmation_email(self, provider, service, booking, client_name, client_email, start):
         try:
