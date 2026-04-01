@@ -306,8 +306,10 @@ class BookingService:
         <p style="font-size: 22px; color: #4A90D9; font-weight: bold; margin: 10px 0;">⏰ {local_start.strftime('%H:%M')} hrs</p>
     </div>
     
-    <p style="color: #777; font-size: 14px; margin-top: 30px;">Si necesitas reprogramar o cancelar, por favor contáctate con nosotros a la brevedad.</p>
-    <p style="font-size: 15px; color: #555; font-weight: bold;">¡Te esperamos!</p>
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+      <p>Este es un correo enviado por el servicio de reservas con inteligencia artificial de <a href="https://dev.holalucia.cl" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="https://dev.holalucia.cl/unsubscribe?email={client_email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+    </div>
   </div>
 </body>
 </html>
@@ -370,7 +372,10 @@ class BookingService:
         </table>
     </div>
     
-    <p style="color: #777; font-size: 14px; margin-top: 30px; text-align: center;">Esta es una notificación automática del sistema Hola Lucía.</p>
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+      <p>Este es una notificación automática enviada por el servicio de reservas con inteligencia artificial de <a href="https://dev.holalucia.cl" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="https://dev.holalucia.cl/unsubscribe?email={provider.email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+    </div>
   </div>
 </body>
 </html>"""
