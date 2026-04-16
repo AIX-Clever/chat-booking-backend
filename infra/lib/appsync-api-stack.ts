@@ -86,7 +86,7 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
-      domainName: props.domainName ? {
+      domainName: (props.domainName && props.certificateArn) ? {
         certificate: cdk.aws_certificatemanager.Certificate.fromCertificateArn(this, 'AppSyncCertificate', props.certificateArn!),
         domainName: props.domainName,
       } : undefined,
