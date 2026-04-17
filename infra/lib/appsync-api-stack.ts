@@ -42,6 +42,8 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   waitlistApiFunction: lambda.IFunction;
   cafManagerFunction?: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
+  domainName?: string;
+  certificateArn?: string;
 }
 
 export class AppSyncApiStack extends cdk.Stack {
