@@ -849,8 +849,10 @@ export class LambdaStack extends cdk.Stack {
     let linkBucketName: string;
     let linkDistributionId: string;
 
-    if (props.envName === 'qa') {
-      linkBucketName = 'chat-booking-link-qa-dummy';
+    if (props.envName === 'qa' || props.envName === 'prod') {
+      // Fallback: chat-booking-link hasn't deployed to this env yet.
+      // These values will be updated once link deploys and publishes the SSM params.
+      linkBucketName = `chat-booking-link-${props.envName}-dummy`;
       linkDistributionId = 'EDUMMYDISTID';
     } else {
       const ssmSuffix = props.envName === 'dev' ? '-v2' : '';
