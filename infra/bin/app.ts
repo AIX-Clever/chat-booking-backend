@@ -137,6 +137,12 @@ lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
 lambdaStack.addDependency(whatsappStack);
 
+// MIGRATION: Force Subscriptions to deploy AFTER Backend so that Backend's Fn::ImportValue
+// is removed from the live CFN template before Subscriptions tries to change its export.
+// TODO: Remove this dependency after first successful deploy.
+subscriptionStack.addDependency(lambdaStack);
+
+
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   env: { account, region },
