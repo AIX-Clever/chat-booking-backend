@@ -46,7 +46,7 @@ interface LambdaStackProps extends cdk.StackProps {
   dbEndpoint?: string; // Cluster ARN for Data API
   envName: string;
   assetsBucketName?: string;
-  subscriptionsTable: dynamodb.ITable;
+  subscriptionsTableName: string; // Decoupled: pass name to avoid CFN cross-stack Fn::ImportValue
   clientsTable: dynamodb.ITable;
   clientAuditLogsTable: dynamodb.ITable;
   dteFoliosTable: dynamodb.ITable;
@@ -928,14 +928,15 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        SUBSCRIPTIONS_TABLE: props.subscriptionsTable.tableName,
+        SUBSCRIPTIONS_TABLE: props.subscriptionsTableName,
         MP_ACCESS_TOKEN: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretCheck', 'ChatBooking/MercadoPago')
           .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
       }
     });
 
-    // Grant permissions
-    props.subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
+    // Grant permissions — table reconstructed from name to avoid cross-stack CFN export coupling
+    const subscriptionsTable = dynamodb.Table.fromTableName(this, 'SubscriptionsTable', props.subscriptionsTableName);
+    subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
     props.tenantsTable.grantReadWriteData(this.checkPaymentStatusFunction);
 
     // 20. Clients Lambda (Client File)
