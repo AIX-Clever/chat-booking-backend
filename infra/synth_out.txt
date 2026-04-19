@@ -1,0 +1,169 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                                                                                                                  !!
+!!  Node 20 is approaching end-of-life and will no longer be supported in new releases after 2026-04-30.            !!
+!!  Please upgrade to a supported node version as soon as possible.                                                 !!
+!!                                                                                                                  !!
+!!  This software is currently running on node v20.19.3.                                                            !!
+!!  As of the current release of this software, supported node releases are:                                        !!
+!!  - ^22.0.0 (Planned end-of-life: 2027-04-30)                                                                     !!
+!!  - ^20.0.0 (Planned end-of-life: 2026-04-30) [DEPRECATED]                                                        !!
+!!                                                                                                                  !!
+!!  This warning can be silenced by setting the JSII_SILENCE_WARNING_DEPRECATED_NODE_VERSION environment variable.  !!
+!!                                                                                                                  !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+There are expired AWS credentials in your environment. The CDK app will synth without current account information.
+[dotenv@17.2.3] injecting env (1) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+  Advanced Security Mode is deprecated in favor of user pool feature plans.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+  Advanced Security Mode is deprecated in favor of user pool feature plans.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+  
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cloudfront_origins.S3Origin is deprecated.
+  Use `S3BucketOrigin` or `S3StaticWebsiteOrigin` instead.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cloudfront_origins.S3Origin#bind is deprecated.
+  Use `S3BucketOrigin` or `S3StaticWebsiteOrigin` instead.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+  use Definition.schema instead
+  This API will be removed in the next major release.
+Found CfnFunction: ChatBooking-dev-Subscriptions/SubscribeFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/DowngradeFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/WebhookIngestorFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/WebhookProcessorFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/SubscriptionWorkerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/ListInvoicesFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/FintocWebhookFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Subscriptions/SiiStatusSyncFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/AuthResolverFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/CatalogFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/AvailabilityFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/BookingFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/DteWorkerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/PaymentWebhookFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/ChatAgentFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/RegisterTenantFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/UpdateTenantFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/GetTenantFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/MetricsFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WorkflowManagerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/FaqManagerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/UserManagementFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/ApiKeyManagerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/GetPublicProfileFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/SupportManagerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/PublicLinkStatusFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/GoogleIntegrationFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/CafManagerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/MicrosoftIntegrationFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/IngestionFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/PresignFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/ProfileBakerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/CheckPaymentStatusFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/ClientsFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/SiiScraperFunction/Resource with runtime: nodejs22.x
+Found CfnFunction: ChatBooking-dev-Backend/ClientSyncFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WhatsappSenderFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WhatsappWebhookFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/TwilioConnectFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WhatsappSchedulerFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WaitlistApiFunction/Resource with runtime: python3.11
+Found CfnFunction: ChatBooking-dev-Backend/WaitlistTriggerFunction/Resource with runtime: python3.11
+Successfully synthesized to /Users/marioalvarez/repos/conversacion/chat-booking-backend/infra/cdk.out
+Supply a stack id (ChatBooking-dev-Database, ChatBooking-dev-Auth, ChatBooking-dev-Assets, ChatBooking-dev-Subscriptions, ChatBooking-dev-Whatsapp, ChatBooking-dev-Backend, ChatBooking-dev-AppSyncApi) to display its template.
+
+NOTICES         (What's this? https://github.com/aws/aws-cdk/wiki/CLI-Notices)
+
+34892	CDK CLI will collect telemetry data on command usage starting at version 2.1100.0 (unless opted out)
+
+	Overview: We do not collect customer content and we anonymize the
+	          telemetry we do collect. See the attached issue for more
+	          information on what data is collected, why, and how to
+	          opt-out. Telemetry will NOT be collected for any CDK CLI
+	          version prior to version 2.1100.0 - regardless of
+	          opt-in/out. You can also preview the telemetry we will start
+	          collecting by logging it to a local file, by adding
+	          `--unstable=telemetry --telemetry-file=my/local/file` to any
+	          `cdk` command.
+
+	Affected versions: cli: >=2.0.0 <2.1100.0
+
+	More information at: https://github.com/aws/aws-cdk/issues/34892
+
+
+32775	(cli): CLI versions and CDK library versions have diverged
+
+	Overview: Starting in CDK 2.179.0, CLI versions will no longer be in
+	          lockstep with CDK library versions. CLI versions will now be
+	          released as 2.1000.0 and continue with 2.1001.0, etc.
+
+	Affected versions: cli: >=2.0.0 <=2.1005.0
+
+	More information at: https://github.com/aws/aws-cdk/issues/32775
+
+
+If you don’t want to see a notice anymore, use "cdk acknowledge <id>". For example, "cdk acknowledge 34892".
