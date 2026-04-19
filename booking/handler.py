@@ -32,6 +32,7 @@ from shared.utils import (
     error_response,
     parse_iso_datetime,
     extract_appsync_event,
+    enforce_not_readonly,
 )
 from shared.metrics import MetricsService
 from shared.infrastructure.notifications import EmailService, SnsService
@@ -103,6 +104,14 @@ def lambda_handler(event: dict, context) -> dict:
         tenant_id = TenantId(tenant_id_str)
 
         logger.info("Booking operation", field=field, tenant_id=tenant_id_str)
+
+        # Enforce RBAC for mutations
+        mutations = [
+            "createBooking", "confirmBooking", "cancelBooking", 
+            "markAsNoShow", "updateBookingStatus"
+        ]
+        if field in mutations:
+            enforce_not_readonly(event)
 
         # Route to appropriate handler
         if field == "createBooking":

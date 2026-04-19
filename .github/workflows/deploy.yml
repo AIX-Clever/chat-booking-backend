@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -92,7 +92,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -145,17 +145,24 @@ jobs:
           
           if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
             export ENV="prod"
-            export DOMAIN_NAME="media.holalucia.cl"
-            export CERTIFICATE_ARN="$CERTIFICATE_ARN_SECRET"
+            # Omitiendo dominio propio temporalmente por migración
+            # export DOMAIN_NAME="media.holalucia.cl"
+            # export CERTIFICATE_ARN="$CERT_PROD"
           else
             export DOMAIN_NAME="${ENV}.media.holalucia.cl"
-            export CERTIFICATE_ARN="$CERTIFICATE_ARN_SECRET"
+            ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
+            var_name="CERT_${ENV_UPPER}"
+            export CERTIFICATE_ARN="${!var_name}"
           fi
           
           echo "Deploying to environment: $ENV"
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
+          
+          npx cdk deploy ChatBooking-${ENV}-Backend -e --require-approval never -c env=$ENV --no-early-error-hooks
         env:
-          CERTIFICATE_ARN_SECRET: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
+          ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
+          MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
+          CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           RECAPTCHA_SECRET_KEY: ${{ secrets.RECAPTCHA_SECRET_KEY }}

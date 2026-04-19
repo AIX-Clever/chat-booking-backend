@@ -46,7 +46,6 @@ interface LambdaStackProps extends cdk.StackProps {
   dbEndpoint?: string; // Cluster ARN for Data API
   envName: string;
   assetsBucketName?: string;
-  subscriptionsTableName: string; // Decoupled: pass name to avoid CFN cross-stack Fn::ImportValue
   clientsTable: dynamodb.ITable;
   clientAuditLogsTable: dynamodb.ITable;
   dteFoliosTable: dynamodb.ITable;
@@ -127,6 +126,9 @@ export class LambdaStack extends cdk.Stack {
       console.warn('Could not calculate shared directory hash:', e);
     }
 
+    // Define frontend URL dynamically
+    const frontendUrl = props.envName === 'prod' ? 'https://holalucia.cl' : `https://${props.envName}.holalucia.cl`;
+
     // Common Lambda configuration
     const commonProps = {
       runtime: lambda.Runtime.PYTHON_3_11,
@@ -134,6 +136,7 @@ export class LambdaStack extends cdk.Stack {
       memorySize: 512,
       logRetention: logs.RetentionDays.ONE_WEEK,
       environment: {
+        FRONTEND_URL: frontendUrl,
         TENANTS_TABLE: props.tenantsTable.tableName,
         API_KEYS_TABLE: props.apiKeysTable.tableName,
         SERVICES_TABLE: props.servicesTable.tableName,
@@ -845,7 +848,6 @@ export class LambdaStack extends cdk.Stack {
     let linkDistributionId: string;
 
     if (props.envName === 'qa' || props.envName === 'prod') {
-      // chat-booking-link is deployed to qa and prod — read real SSM params
       linkBucketName = ssm.StringParameter.valueForStringParameter(
         this, `/chatbooking/${props.envName}/link-bucket-name`
       );
@@ -861,6 +863,11 @@ export class LambdaStack extends cdk.Stack {
         this, `/chatbooking/${props.envName}/link-distribution-id${ssmSuffix}`
       );
     }
+    
+    // Import Subscriptions Table Name from SSM (or hardcode to break CFN lock temporarily)
+    const subscriptionsTableNameSsm = props.envName === 'prod'
+      ? 'ChatBooking-Subscriptions-prod-v2'
+      : ssm.StringParameter.valueForStringParameter(this, `/chatbooking/${props.envName}/subscriptions-table-name`);
 
     const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
       ...commonProps,
@@ -926,14 +933,14 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        SUBSCRIPTIONS_TABLE: props.subscriptionsTableName,
+        SUBSCRIPTIONS_TABLE: subscriptionsTableNameSsm,
         MP_ACCESS_TOKEN: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretCheck', 'ChatBooking/MercadoPago')
           .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
       }
     });
 
     // Grant permissions — table reconstructed from name to avoid cross-stack CFN export coupling
-    const subscriptionsTable = dynamodb.Table.fromTableName(this, 'SubscriptionsTable', props.subscriptionsTableName);
+    const subscriptionsTable = dynamodb.Table.fromTableName(this, 'SubscriptionsTable', subscriptionsTableNameSsm);
     subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
     props.tenantsTable.grantReadWriteData(this.checkPaymentStatusFunction);
 
@@ -961,7 +968,7 @@ export class LambdaStack extends cdk.Stack {
 
     // 21. SII Scraper Function (Puppeteer Auto-Provisioning)
     this.siiScraperFunction = new lambda.Function(this, 'SiiScraperFunction', {
-      runtime: lambda.Runtime.NODEJS_20_X,
+      runtime: lambda.Runtime.NODEJS_22_X,
       code: lambda.Code.fromAsset(path.join(backendPath, 'sii_scraper')),
       handler: 'index.handler',
       timeout: cdk.Duration.minutes(5), // Scraping can be slow

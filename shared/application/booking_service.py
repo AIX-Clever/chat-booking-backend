@@ -272,6 +272,9 @@ class BookingService:
             if booking.is_active() and not (end <= booking.start_time or start >= booking.end_time):
                 return False
         return True
+    def _get_frontend_url(self) -> str:
+        """Determina la URL del frontend basándose en las variables de entorno inyectadas via CDK"""
+        return os.environ.get("FRONTEND_URL", "https://holalucia.cl")
 
     def _send_confirmation_email(self, provider, service, booking, client_name, client_email, start):
         try:
@@ -282,10 +285,45 @@ class BookingService:
             tz = timezone.utc
             
         local_start = start.astimezone(tz)
+        
+        # Mapeo manual para Español seguro en Lambda
+        days = {"Monday":"Lunes", "Tuesday":"Martes", "Wednesday":"Miércoles", "Thursday":"Jueves", "Friday":"Viernes", "Saturday":"Sábado", "Sunday":"Domingo"}
+        months = {"January":"enero", "February":"febrero", "March":"marzo", "April":"abril", "May":"mayo", "June":"junio", "July":"julio", "August":"agosto", "September":"septiembre", "October":"octubre", "November":"noviembre", "December":"diciembre"}
+        day_es = days.get(local_start.strftime('%A'), local_start.strftime('%A'))
+        month_es = months.get(local_start.strftime('%B'), local_start.strftime('%B'))
+        date_es = f"{day_es} {local_start.strftime('%d')} de {month_es}, {local_start.strftime('%Y')}"
+        
         subject = f"Reserva Confirmada: {service.name}"
         sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
-        body_html = f"<html><body><h2>¡Reserva Confirmada!</h2><p>Hola {client_name}, tu reserva para {service.name} con {provider.name} ha sido confirmada para el {local_start.strftime('%Y-%m-%d %H:%M')}.</p></body></html>"
-        self._email_service.send_email(source=sender, to_addresses=[client_email], subject=subject, body_html=body_html, body_text=f"Reserva confirmada para {local_start.strftime('%Y-%m-%d %H:%M')}")
+        body_html = f"""
+<html>
+<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px; border-top: 5px solid #4A90D9; text-align: center;">
+    <h1 style="color: #4A90D9; margin-top: 0;">¡Tu reserva está confirmada! 🎉</h1>
+    <p style="font-size: 16px;">Hola <strong>{client_name}</strong>,</p>
+    <p style="font-size: 16px;">Nos alegra confirmarte que tu reserva para <strong>{service.name}</strong> con <strong>{provider.name}</strong> ha sido agendada exitosamente.</p>
+    
+    <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; margin: 25px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;">
+        <h3 style="margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px;">📅 Detalles de tu cita</h3>
+        <p style="font-size: 18px; margin: 10px 0; color: #333; text-transform: capitalize;"><strong>{date_es}</strong></p>
+        <p style="font-size: 22px; color: #4A90D9; font-weight: bold; margin: 10px 0;">⏰ {local_start.strftime('%H:%M')} hrs</p>
+    </div>
+    
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+      <p>Este es un correo enviado por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={client_email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+    </div>
+  </div>
+</body>
+</html>
+"""
+        self._email_service.send_email(
+            source=sender, 
+            to_addresses=[client_email], 
+            subject=subject, 
+            body_html=body_html, 
+            body_text=f"¡Reserva confirmada! Hola {client_name}, te esperamos el {date_es} a las {local_start.strftime('%H:%M')} para {service.name}."
+        )
 
     def _send_provider_notification_email(self, provider, service, booking, client_name, start):
         """Send booking notification email to the provider with a friendly time label."""
@@ -300,6 +338,13 @@ class BookingService:
         today = datetime.now(tz).date()
         booking_date = local_start.date()
         days_diff = (booking_date - today).days
+        
+        # Mapeo manual para Español seguro en Lambda
+        days = {"Monday":"Lunes", "Tuesday":"Martes", "Wednesday":"Miércoles", "Thursday":"Jueves", "Friday":"Viernes", "Saturday":"Sábado", "Sunday":"Domingo"}
+        months = {"January":"enero", "February":"febrero", "March":"marzo", "April":"abril", "May":"mayo", "June":"junio", "July":"julio", "August":"agosto", "September":"septiembre", "October":"octubre", "November":"noviembre", "December":"diciembre"}
+        day_es = days.get(local_start.strftime('%A'), local_start.strftime('%A'))
+        month_es = months.get(local_start.strftime('%B'), local_start.strftime('%B'))
+        date_es = f"{day_es} {local_start.strftime('%d')} de {month_es}, {local_start.strftime('%Y')}"
 
         if days_diff == 0:
             time_label = "hoy"
@@ -314,19 +359,30 @@ class BookingService:
         subject = f"Nueva reserva: {service.name} – {time_label}"
         body_html = f"""
 <html>
-<body style="font-family: Arial, sans-serif; color: #333;">
-  <h2 style="color: #4A90D9;">📅 Nueva Reserva – <strong>{time_label}</strong></h2>
-  <p>Hola <strong>{provider.name}</strong>, tienes una nueva reserva.</p>
-  <table style="border-collapse:collapse; width:100%; max-width:500px;">
-    <tr><td style="padding:8px; font-weight:bold;">Servicio</td><td style="padding:8px;">{service.name}</td></tr>
-    <tr style="background:#f5f5f5;"><td style="padding:8px; font-weight:bold;">Cliente</td><td style="padding:8px;">{client_name}</td></tr>
-    <tr><td style="padding:8px; font-weight:bold;">Fecha y hora</td><td style="padding:8px;">{local_start.strftime('%A %d de %B, %Y a las %H:%M')}</td></tr>
-    <tr style="background:#f5f5f5;"><td style="padding:8px; font-weight:bold;">Cuándo</td><td style="padding:8px; font-weight:bold; color:#4A90D9;">{time_label.upper()}</td></tr>
-  </table>
-  <p style="margin-top:16px;">Esta es una notificación automática de Hola Lucía.</p>
+<body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background-color: #f3f8fe; padding: 30px; border-radius: 10px; border-top: 5px solid #28a745; text-align: left;">
+    <h1 style="color: #28a745; margin-top: 0; text-align: center;">¡Tienes una nueva reserva agendada! 📅</h1>
+    <p style="font-size: 16px; text-align: center;">Hola <strong>{provider.name}</strong>, el cliente <strong>{client_name}</strong> te ha agendado exitosamente.</p>
+    
+    <div style="background-color: #ffffff; padding: 25px; border-radius: 8px; margin: 25px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+        <h3 style="margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px;">Resumen del cliente</h3>
+        <table style="border-collapse:collapse; width:100%;">
+          <tr><td style="padding:10px 0; font-weight:bold; color:#777; width:40%;">Servicio:</td><td style="padding:10px 0; color:#333;">{service.name}</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Cliente:</td><td style="padding:10px 0; color:#333;">{client_name}</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Fecha asignada:</td><td style="padding:10px 0; color:#333; font-weight:bold;">{date_es}</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Hora inicio:</td><td style="padding:10px 0; color:#4A90D9; font-weight:bold; font-size:18px;">{local_start.strftime('%H:%M')} hrs</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">¿Cuándo es?</td><td style="padding:10px 0; color:#28a745; font-weight:bold; text-transform: uppercase;">{time_label}</td></tr>
+        </table>
+    </div>
+    
+    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
+      <p>Este es una notificación automática enviada por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={provider.email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+    </div>
+  </div>
 </body>
 </html>"""
-        body_text = f"Nueva reserva {time_label}: {service.name} con {client_name} el {local_start.strftime('%Y-%m-%d %H:%M')}."
+        body_text = f"Nueva reserva {time_label}: {service.name} con {client_name} el {date_es} a las {local_start.strftime('%H:%M')}."
         try:
             self._email_service.send_email(
                 source=sender,

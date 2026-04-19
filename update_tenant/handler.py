@@ -4,7 +4,7 @@ import json
 from typing import Dict, Any
 from shared.domain.entities import TenantId
 from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
-from shared.utils import Logger
+from shared.utils import Logger, enforce_not_readonly
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
@@ -15,6 +15,9 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info("Starting tenant update", event=event)
 
     try:
+        # Enforce RBAC for Settings update
+        enforce_not_readonly(event)
+        
         # 1. Auth check & Tenant extraction
         # For User Pool auth, claims are in identity
         claims = event.get("identity", {}).get("claims", {})
