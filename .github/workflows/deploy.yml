@@ -136,9 +136,7 @@ jobs:
       - name: Deploy with CDK
         working-directory: infra
         run: |
-          aws ssm put-parameter --name "/chatbooking/${ENV}/subscriptions-table-name" --value "ChatBooking-Subscriptions-${ENV}" --type String --overwrite || true
-
-          npx cdk deploy ChatBooking-${ENV}-Backend -e --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
