@@ -278,6 +278,14 @@ export class SubscriptionStack extends cdk.Stack {
 
         // Late binding of Webhook URL to Subscribe Function
         this.subscribeFunction.addEnvironment('WEBHOOK_URL', webhookUrl.url);
+
+        // Final Step: Publish the Database Name to Systems Manager (SSM)
+        // This fully decouples the Subscription Stack from the Lambda Stack
+        new ssm.StringParameter(this, 'SubscriptionsTableNameParam', {
+            parameterName: `/chatbooking/${props.envName}/subscriptions-table-name`,
+            stringValue: this.subscriptionsTable.tableName,
+            description: `Subscriptions DynamoDB Table Name for ${props.envName}`,
+        });
     }
 }
 
