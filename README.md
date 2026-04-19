@@ -71,6 +71,21 @@ pytest tests/unit
 pytest --cov=. --cov-report=html
 ```
 
+## 📦 Configuración e Infraestructura (CDK)
+
+El proyecto utiliza **AWS CDK (TypeScript)** almacenado en la carpeta `infra/`.
+
+### ⚡ Prevención de CFN Export Locks mediante SSM
+
+Para evitar los bloqueos (deadlocks) de `UPDATE_ROLLBACK_FAILED` en CloudFormation, los stacks evitan usar `Fn::ImportValue` para dependencias cruzadas.
+
+En lugar de exportar propiedades directamente entre `SubscriptionStack` y `LambdaStack`:
+1. `SubscriptionStack` publica sus recursos críticas (ej. nombre de tabla `subscriptions-table-name`) en **AWS Systems Manager Parameter Store (SSM)**.
+2. `LambdaStack` utiliza un resolve at deploy-time para importar este string (o bien, `fromStringParameterName`).
+3. El archivo `app.ts` declara dependencias topológicas (`lambdaStack.addDependency(subscriptionStack)`) asegurando un correcto orden de construcción de los parámetros SSM.
+
+Ver la documentación extendida en `chat-booking-docs` -> `TROUBLESHOOTING.md`.
+
 ## 📦 Build y Deploy
 
 Ver `/plan/deployment/README.md` para instrucciones completas.
