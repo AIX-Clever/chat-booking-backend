@@ -121,7 +121,6 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   userPool: authStack.userPool,
   envName: env,
   assetsBucketName: assetsStack.assetsBucket.bucketName,
-  subscriptionsTableName: `ChatBooking-Subscriptions-${(env === 'qa' || env === 'prod') ? env + '-v2' : env}`, // Decoupled: avoids CFN cross-stack Fn::ImportValue
   clientsTable: databaseStack.clientsTable,
   clientAuditLogsTable: databaseStack.clientAuditLogsTable,
   dteFoliosTable: databaseStack.dteFoliosTable,
@@ -131,10 +130,9 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   waitingListTable: databaseStack.waitingListTable,
 });
 lambdaStack.addDependency(databaseStack);
-// Note: subscriptionStack dependency removed — subscriptionsTableName is now a plain string,
-// breaking the CFN cross-stack export that blocked SubscriptionStack updates.
 lambdaStack.addDependency(authStack);
 lambdaStack.addDependency(whatsappStack);
+lambdaStack.addDependency(subscriptionStack);
 
 
 // 4. AppSync API Stack - GraphQL Gateway

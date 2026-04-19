@@ -46,7 +46,6 @@ interface LambdaStackProps extends cdk.StackProps {
   dbEndpoint?: string; // Cluster ARN for Data API
   envName: string;
   assetsBucketName?: string;
-  subscriptionsTableName: string; // Decoupled: pass name to avoid CFN cross-stack Fn::ImportValue
   clientsTable: dynamodb.ITable;
   clientAuditLogsTable: dynamodb.ITable;
   dteFoliosTable: dynamodb.ITable;
@@ -863,6 +862,11 @@ export class LambdaStack extends cdk.Stack {
         this, `/chatbooking/${props.envName}/link-distribution-id${ssmSuffix}`
       );
     }
+    
+    // Import Subscriptions Table Name from SSM
+    const subscriptionsTableNameSsm = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/subscriptions-table-name`
+    );
 
     const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
       ...commonProps,
@@ -928,14 +932,14 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        SUBSCRIPTIONS_TABLE: props.subscriptionsTableName,
+        SUBSCRIPTIONS_TABLE: subscriptionsTableNameSsm,
         MP_ACCESS_TOKEN: secretsmanager.Secret.fromSecretNameV2(this, 'MPSecretCheck', 'ChatBooking/MercadoPago')
           .secretValueFromJson('ACCESS_TOKEN').unsafeUnwrap(),
       }
     });
 
     // Grant permissions — table reconstructed from name to avoid cross-stack CFN export coupling
-    const subscriptionsTable = dynamodb.Table.fromTableName(this, 'SubscriptionsTable', props.subscriptionsTableName);
+    const subscriptionsTable = dynamodb.Table.fromTableName(this, 'SubscriptionsTable', subscriptionsTableNameSsm);
     subscriptionsTable.grantReadWriteData(this.checkPaymentStatusFunction);
     props.tenantsTable.grantReadWriteData(this.checkPaymentStatusFunction);
 
