@@ -845,10 +845,13 @@ export class LambdaStack extends cdk.Stack {
     let linkDistributionId: string;
 
     if (props.envName === 'qa' || props.envName === 'prod') {
-      // Fallback: chat-booking-link hasn't deployed to this env yet.
-      // These values will be updated once link deploys and publishes the SSM params.
-      linkBucketName = `chat-booking-link-${props.envName}-dummy`;
-      linkDistributionId = 'EDUMMYDISTID';
+      // chat-booking-link is deployed to qa and prod — read real SSM params
+      linkBucketName = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-bucket-name`
+      );
+      linkDistributionId = ssm.StringParameter.valueForStringParameter(
+        this, `/chatbooking/${props.envName}/link-distribution-id`
+      );
     } else {
       const ssmSuffix = props.envName === 'dev' ? '-v2' : '';
       linkBucketName = ssm.StringParameter.valueForStringParameter(
