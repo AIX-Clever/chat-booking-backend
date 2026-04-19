@@ -2,6 +2,7 @@ import io
 import re
 from typing import List
 
+
 class DocumentProcessor:
     def __init__(self, chunk_size: int = 1000, chunk_overlap: int = 200):
         self.chunk_size = chunk_size
@@ -12,12 +13,12 @@ class DocumentProcessor:
         Extract text and split into chunks.
         """
         text = ""
-        if file_type.lower() == 'pdf':
+        if file_type.lower() == "pdf":
             text = self._extract_text_from_pdf(file_content)
         else:
             # Assume text/plain
-            text = file_content.decode('utf-8', errors='ignore')
-            
+            text = file_content.decode("utf-8", errors="ignore")
+
         return self._split_text(text)
 
     def _extract_text_from_pdf(self, file_content: bytes) -> str:
@@ -26,6 +27,7 @@ class DocumentProcessor:
         """
         try:
             import pypdf
+
             pdf_file = io.BytesIO(file_content)
             reader = pypdf.PdfReader(pdf_file)
             text = []
@@ -41,33 +43,33 @@ class DocumentProcessor:
         """
         if not text:
             return []
-            
+
         # Normalize whitespace
-        text = re.sub(r'\s+', ' ', text).strip()
-        
+        text = re.sub(r"\s+", " ", text).strip()
+
         chunks = []
         start = 0
         text_len = len(text)
-        
+
         while start < text_len:
             end = start + self.chunk_size
-            
+
             # Use space to break appropriately if possible
             if end < text_len:
                 # Find last space within the chunk
-                last_space = text.rfind(' ', start, end)
+                last_space = text.rfind(" ", start, end)
                 if last_space != -1 and last_space > start:
                     end = last_space
-            
+
             chunk = text[start:end].strip()
             if chunk:
                 chunks.append(chunk)
-            
+
             # Move start forward by chunk_size - overlap
             start += self.chunk_size - self.chunk_overlap
-            
+
             # Avoid infinite loop if no progress (shouldn't happen with strict math but good safety)
             if start >= end:
                 start = end
-                
+
         return chunks

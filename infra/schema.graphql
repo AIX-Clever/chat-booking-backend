@@ -1,7 +1,13 @@
-
 # Scalars
+scalar AWSDate
+scalar AWSTime
 scalar AWSDateTime
+scalar AWSTimestamp
+scalar AWSEmail
 scalar AWSJSON
+scalar AWSURL
+scalar AWSPhone
+scalar AWSIPAddress
 
 # Enums
 enum BookingStatus {
@@ -18,6 +24,17 @@ enum PaymentStatus {
   FAILED
 }
 
+type SubscriptionResponse @aws_cognito_user_pools {
+  subscriptionId: String!
+  initPoint: String!
+  message: String
+}
+
+type DowngradeResponse @aws_cognito_user_pools {
+  message: String!
+  effectiveDate: String!
+}
+
 enum ConversationState {
   INIT
   SERVICE_PENDING
@@ -29,12 +46,74 @@ enum ConversationState {
   BOOKING_CONFIRMED
 }
 
+enum LocationType {
+  ONLINE
+  PHYSICAL
+}
+
+enum WaitingListStatus {
+  PENDING
+  CONTACTED
+  BOOKED
+  EXPIRED
+  DECLINED
+}
+
+enum WaitlistDay {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+type WaitingListEntry @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  tenantId: ID!
+  waitingListId: ID!
+  serviceId: ID!
+  providerId: ID
+  clientId: String!
+  preferredDays: [WaitlistDay!]
+  requestedDates: [AWSDate!]
+  contactStatus: WaitingListStatus!
+  createdAt: AWSDateTime!
+  ttl: Int
+}
+
+input AddToWaitingListInput {
+  tenantId: ID
+  serviceId: ID!
+  clientId: String!
+  providerId: ID
+  preferredDays: [WaitlistDay!]
+  requestedDates: [AWSDate!]
+}
 
 # Types - Tenant
+type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  roomId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  capacity: Int!
+  status: String!
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
 enum TenantStatus {
   ACTIVE
   SUSPENDED
   CANCELLED
+  TRIAL
+  PENDING_PAYMENT
 }
 
 enum TenantPlan {
@@ -44,34 +123,129 @@ enum TenantPlan {
   ENTERPRISE
 }
 
-type Tenant @aws_api_key @aws_cognito_user_pools {
+type Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda {
   tenantId: ID!
   name: String!
-  slug: String!
+  slug: String
   status: TenantStatus!
   plan: TenantPlan!
   ownerUserId: String!
   billingEmail: String!
   settings: AWSJSON
+  services: [Service]
+  isPublished: Boolean
+  publishedAt: AWSDateTime
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
+  whatsappEnabled: Boolean
+  whatsappQuota: Int
+  twilioPhoneNumber: String
+  whatsappNotificationRules: AWSJSON
 }
 
-type ApiKey {
-  apiKey: String!
+type ApiKey @aws_cognito_user_pools {
+  apiKeyId: ID!
   tenantId: ID!
+  name: String
+  keyPreview: String
   status: String!
+
   createdAt: AWSDateTime!
-  expiresAt: AWSDateTime!
+  lastUsedAt: AWSDateTime
+  apiKey: String # Only populated on creation
 }
 
-type FAQ @aws_api_key @aws_cognito_user_pools {
+# User Management Types
+type TenantUser @aws_cognito_user_pools {
+  userId: ID!
+  tenantId: ID!
+  email: String!
+  name: String
+  role: UserRole!
+  status: UserStatus!
+  createdAt: AWSDateTime!
+  lastLogin: AWSDateTime
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  USER
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_INVITATION
+}
+
+type FAQ @aws_api_key @aws_cognito_user_pools @aws_lambda {
   faqId: ID!
   tenantId: ID!
   question: String!
   answer: String!
   category: String!
   active: Boolean!
+}
+
+type Conversation @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  conversationId: ID!
+  tenantId: ID!
+  state: String!
+  context: AWSJSON
+  messages: [Message!]
+  channel: String
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Message @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  role: String!
+  content: String!
+  timestamp: String!
+  metadata: AWSJSON
+}
+
+type ChatResponse @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  conversation: Conversation!
+  response: String
+}
+
+type Booking @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  bookingId: ID!
+  tenantId: ID!
+  clientId: ID
+  serviceId: ID!
+  providerId: ID!
+  start: AWSDateTime!
+  end: AWSDateTime!
+  status: BookingStatus!
+  paymentStatus: PaymentStatus
+  clientFirstName: String
+  clientLastName: String
+  clientEmail: String
+  clientPhone: String
+  notes: String
+  roomId: ID
+  conversationId: ID
+  metadata: AWSJSON
+  dteFolio: String
+  dtePdfUrl: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Workflow @aws_cognito_user_pools {
+  workflowId: ID!
+  tenantId: ID!
+  name: String!
+  description: String
+  steps: AWSJSON!
+  metadata: AWSJSON
+  isActive: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
 }
 
 # Types - Dashboard Metrics
@@ -131,10 +305,42 @@ type PlanUsage @aws_cognito_user_pools {
   messages: Int!
   bookings: Int!
   tokensIA: Int!
+  providers: Int!
+}
+
+# Billing & Invoices
+enum InvoiceStatus {
+  PAID
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+type Invoice @aws_cognito_user_pools {
+  invoiceId: ID!
+  tenantId: ID!
+  amount: Float!
+  currency: String!
+  status: InvoiceStatus!
+  date: AWSDateTime!
+  pdfUrl: String
+  dteFolio: String
+  dtePdfUrl: String
+  dteTrackId: String
+  dteSiiStatus: String
+  dteLastSync: String
+  metadata: AWSJSON
+}
+
+type BillingDetails @aws_cognito_user_pools {
+  companyName: String
+  rut: String
+  address: String
+  city: String
 }
 
 # Types - Catalog
-type Category @aws_api_key @aws_cognito_user_pools {
+type Category @aws_api_key @aws_cognito_user_pools @aws_lambda {
   categoryId: ID!
   tenantId: ID!
   name: String!
@@ -146,7 +352,7 @@ type Category @aws_api_key @aws_cognito_user_pools {
   updatedAt: AWSDateTime!
 }
 
-type Service @aws_api_key @aws_cognito_user_pools {
+type Service @aws_api_key @aws_cognito_user_pools @aws_lambda {
   serviceId: ID!
   name: String!
   description: String
@@ -154,20 +360,29 @@ type Service @aws_api_key @aws_cognito_user_pools {
   durationMinutes: Int!
   price: Float
   available: Boolean!
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
-type Provider @aws_api_key @aws_cognito_user_pools {
+type Provider @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID!
   name: String!
   bio: String
+  email: String
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
   available: Boolean!
+  hasGoogleCalendar: Boolean
+  slug: String
+  professionalLicense: String
+  profession: String
 }
 
 # Types - Availability
-type TimeSlot @aws_api_key @aws_cognito_user_pools {
+type TimeSlot @aws_api_key @aws_cognito_user_pools @aws_lambda {
   providerId: ID!
   serviceId: ID!
   start: AWSDateTime!
@@ -185,111 +400,44 @@ type ProviderAvailability @aws_cognito_user_pools {
   dayOfWeek: String!
   timeRanges: [TimeRange!]!
   breaks: [TimeRange!]
-  exceptions: [String!]
+  exceptions: [ExceptionRule!]
 }
 
-# Types - Bookings
-type Booking @aws_api_key @aws_cognito_user_pools {
-  bookingId: ID!
-  tenantId: ID!
-  serviceId: ID!
-  providerId: ID!
-  start: AWSDateTime!
-  end: AWSDateTime!
-  status: BookingStatus!
-  clientName: String!
-  clientEmail: String!
-  clientPhone: String
-  notes: String
-  conversationId: ID
-  paymentStatus: PaymentStatus!
-  totalAmount: Float!
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
+type ExceptionRule @aws_api_key @aws_cognito_user_pools {
+  date: String!
+  timeRanges: [TimeRange!]!
 }
 
-# Types - Chat
-type Message @aws_api_key {
-  role: String!
-  content: String!
-  type: String!
-  timestamp: String!
+# Inputs - Shared
+input TimeRangeInput {
+  startTime: String!
+  endTime: String!
 }
 
-type Conversation @aws_api_key {
-  conversationId: ID!
-  tenantId: ID!
-  state: ConversationState!
-  context: AWSJSON
-  messages: [Message!]!
-  channel: String!
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-type ChatResponse @aws_api_key {
-  conversation: Conversation!
-  response: AWSJSON!
-}
-
-# Types - Workflow
-type WorkflowStep @aws_cognito_user_pools {
-  stepId: String!
-  type: String!
-  content: AWSJSON
-  next: String
-}
-
-type Workflow @aws_cognito_user_pools {
-  workflowId: ID!
-  tenantId: ID!
-  name: String!
-  description: String
-  isActive: Boolean!
-  steps: AWSJSON! # JSON object with map of steps
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-
-# Inputs - Tenant
+# Inputs - Tenant & Catalog
 input RegisterTenantInput {
-  companyName: String!
   email: String!
   password: String!
+  companyName: String!
+  plan: TenantPlan
+  recaptchaToken: String
 }
 
 input UpdateTenantInput {
   name: String
+  slug: String
   billingEmail: String
   settings: AWSJSON
+  whatsappEnabled: Boolean
+  whatsappQuota: Int
+  whatsappNotificationRules: AWSJSON
 }
 
-# Inputs - FAQs
-input CreateFAQInput {
-  question: String!
-  answer: String!
-  category: String
-  active: Boolean
-}
-
-input UpdateFAQInput {
-  faqId: ID!
-  question: String
-  answer: String
-  category: String
-  active: Boolean
-}
-
-# Inputs - Catalog
 input CreateCategoryInput {
   name: String!
   description: String
-  isActive: Boolean
-  displayOrder: Int
   metadata: AWSJSON
+  displayOrder: Int
 }
 
 input UpdateCategoryInput {
@@ -307,6 +455,9 @@ input CreateServiceInput {
   category: String!
   durationMinutes: Int!
   price: Float
+  available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input UpdateServiceInput {
@@ -317,37 +468,71 @@ input UpdateServiceInput {
   durationMinutes: Int
   price: Float
   available: Boolean
+  requiredRoomIds: [ID]
+  locationType: [LocationType]
 }
 
 input CreateProviderInput {
   name: String!
   bio: String
+  email: String
   serviceIds: [ID!]!
   timezone: String!
   metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
+  slug: String
+  professionalLicense: String
+  profession: String
 }
 
 input UpdateProviderInput {
   providerId: ID!
   name: String
   bio: String
+  email: String
   serviceIds: [ID!]
   timezone: String
   metadata: AWSJSON
+  photoUrl: String
+  photoUrlThumbnail: String
   available: Boolean
+  slug: String
+  professionalLicense: String
+  profession: String
 }
 
-# Inputs - Availability
+input CreateRoomInput {
+  name: String!
+  description: String
+  capacity: Int!
+  status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+}
+
+input UpdateRoomInput {
+  roomId: ID!
+  name: String
+  description: String
+  capacity: Int
+  status: String
+  isVirtual: Boolean
+  minDuration: Int
+  maxDuration: Int
+  operatingHours: AWSJSON
+  metadata: AWSJSON
+}
+
+# Inputs - Availability & FAQs
 input GetAvailableSlotsInput {
   serviceId: ID!
   providerId: ID!
   from: AWSDateTime!
   to: AWSDateTime!
-}
-
-input TimeRangeInput {
-  startTime: String!
-  endTime: String!
 }
 
 input SetAvailabilityInput {
@@ -357,36 +542,47 @@ input SetAvailabilityInput {
   breaks: [TimeRangeInput!]
 }
 
-input SetExceptionsInput {
-  providerId: ID!
-  exceptions: [String!]!
+input CreateFAQInput {
+  question: String!
+  answer: String!
+  category: String!
+  active: Boolean
 }
 
-type ProviderExceptions @aws_cognito_user_pools {
-  providerId: ID!
-  exceptions: [String!]!
+input UpdateFAQInput {
+  faqId: ID!
+  question: String
+  answer: String
+  category: String
+  active: Boolean
 }
 
 # Inputs - Bookings
 input CreateBookingInput {
+  clientId: ID
   serviceId: ID!
   providerId: ID!
   start: AWSDateTime!
   end: AWSDateTime!
-  clientName: String!
+  clientFirstName: String!
+  clientLastName: String!
   clientEmail: String!
   clientPhone: String
   notes: String
   conversationId: ID
+  roomId: ID
+  ignoreAvailability: Boolean
 }
 
 input ConfirmBookingInput {
   bookingId: ID!
+  tenantId: ID
 }
 
 input CancelBookingInput {
   bookingId: ID!
   reason: String
+  tenantId: ID
 }
 
 input GetBookingInput {
@@ -446,49 +642,156 @@ input UpdateWorkflowInput {
   isActive: Boolean
 }
 
+# User Management Inputs
+input InviteUserInput {
+  email: String!
+  name: String
+  role: UserRole!
+}
+
+input UpdateUserRoleInput {
+  userId: ID!
+  role: UserRole!
+}
+
+input SupportIssueInput {
+  subject: String!
+  description: String!
+  tenantId: ID!
+}
+
 # Queries
 type Query {
   # Catalog
-  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools
-  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools
-  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools
-  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools
-  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools
+  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+
+  listRooms: [Room!]! @aws_api_key @aws_cognito_user_pools
+  getRoom(roomId: ID!): Room @aws_api_key @aws_cognito_user_pools
   
   # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
-  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_cognito_user_pools
+  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_api_key @aws_cognito_user_pools
   
   # Bookings
   getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
   listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! @aws_cognito_user_pools
   listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! @aws_cognito_user_pools
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools
+  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools @aws_lambda
   
   # Chat
-  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
-  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
-  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
+  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools @aws_lambda
+  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
   
   # Workflow (Admin)
   listWorkflows: [Workflow!]! @aws_cognito_user_pools
   getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
 
+  # Waitlist (Admin / App)
+  getWaitingListByService(tenantId: ID, serviceId: ID!): [WaitingListEntry!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+
   # Dashboard Metrics (Admin)
   getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
   getPlanUsage: PlanUsage @aws_cognito_user_pools
+
+  # User Management (Admin)
+  listTenantUsers: [TenantUser!]! @aws_cognito_user_pools
+  getTenantUser(userId: ID!): TenantUser @aws_cognito_user_pools
+
+  # API Keys (Admin)
+  listApiKeys: [ApiKey!]! @aws_cognito_user_pools
+
+  # Billing (Admin)
+  # Billing (Admin)
+  listInvoices: [Invoice!]! @aws_cognito_user_pools
+  getInvoiceDownloadUrl(invoiceId: ID!): String! @aws_cognito_user_pools
+
+  # Public Profile (Microsites)
+  getTenantPublicProfile(slug: String!): PublicProfile @aws_api_key @aws_lambda
+
+  # Public Link Status (Admin)
+  getPublicLinkStatus(providerId: String): PublicLinkStatus @aws_cognito_user_pools
+
+  # Payment Reconciliation
+  checkPaymentStatus(tenantId: ID!): PaymentStatusResponse @aws_cognito_user_pools
+
+  # Client Management (Client File)
+  getClient(clientId: ID!): Client @aws_cognito_user_pools
+  listClients: [Client!]! @aws_cognito_user_pools
+  listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! @aws_cognito_user_pools
+}
+
+type PaymentStatusResponse @aws_cognito_user_pools {
+  status: String!
+  message: String
+}
+
+type PublicProfile @aws_api_key @aws_cognito_user_pools @aws_lambda {
+  tenantId: ID!
+  name: String!
+  slug: String!
+  bio: String
+  photoUrl: String
+  themeColor: String
+  primaryServiceId: String
+  services: [Service]
+  profession: String
+  specializations: [String]
+  operatingHours: String
+  fullAddress: String
+  providers: [Provider]
+  tenantPlan: String
+  isPublished: Boolean
+  preselectedProviderId: ID
+}
+
+# Public Link Status for Admin Panel
+type ChecklistItem @aws_cognito_user_pools {
+  item: String!
+  status: ChecklistStatus!
+  label: String!
+  isRequired: Boolean!
+  actionUrl: String
+}
+
+enum ChecklistStatus {
+  COMPLETE
+  MISSING
+  RECOMMENDED
+}
+
+type PublicLinkStatus @aws_cognito_user_pools {
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
+  slug: String
+  publicUrl: String
+  completenessChecklist: [ChecklistItem!]!
+  completenessPercentage: Int!
+}
+
+type PublicLinkStatusResponse @aws_cognito_user_pools {
+  success: Boolean!
+  isPublished: Boolean!
+  publishedAt: AWSDateTime
+  message: String
 }
 
 # Mutations
 type Mutation {
   # Tenant (Public/Auth)
-  registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
+  registerTenant(input: RegisterTenantInput!): Tenant @aws_api_key @aws_lambda
   updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
 
   # Catalog (Admin)
   createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools
   updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
   deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
+
+  generatePresignedUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
 
   createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
   updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
@@ -497,6 +800,10 @@ type Mutation {
   createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
   updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
   deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
+
+  createRoom(input: CreateRoomInput!): Room! @aws_cognito_user_pools
+  updateRoom(input: UpdateRoomInput!): Room! @aws_cognito_user_pools
+  deleteRoom(roomId: ID!): Room! @aws_cognito_user_pools
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
@@ -512,16 +819,189 @@ type Mutation {
   updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
   deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
 
+  # Waitlist
+  addToWaitingList(input: AddToWaitingListInput!): WaitingListEntry! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  removeWaitingListEntry(tenantId: ID, waitingListId: ID!): Boolean! @aws_cognito_user_pools
+
+  # Documents (Knowledge Base)
+  getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
+  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools @aws_lambda
   confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
   cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
   markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
+  updateBookingStatus(bookingId: ID!, status: String!): Booking! @aws_cognito_user_pools
   
+  # User Management (Admin)
+  inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
+  updateUserRole(input: UpdateUserRoleInput!): TenantUser! @aws_cognito_user_pools
+  removeUser(userId: ID!): TenantUser! @aws_cognito_user_pools
+  resetUserPassword(userId: ID!): Boolean @aws_cognito_user_pools
+  
+  # API Keys
+  createApiKey(name: String): ApiKey! @aws_cognito_user_pools
+  revokeApiKey(apiKeyId: ID!): ApiKey! @aws_cognito_user_pools
+
+  # Subscription Mutations
+  subscribe(planId: String!, email: String, backUrl: String, paymentMethod: String): SubscriptionResponse! @aws_cognito_user_pools
+  downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! @aws_cognito_user_pools
+
   # Chat
-  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
-  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
-  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
+  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  
+  # User Management
+  resendUserPasswordReset(userId: ID!): Boolean! @aws_cognito_user_pools
+  resendInvitation(userId: ID!): Boolean! @aws_cognito_user_pools
+
+  # Support
+  createSupportIssue(input: SupportIssueInput!): Boolean! @aws_cognito_user_pools
+
+  # Public Link Status (Admin)
+  setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! @aws_cognito_user_pools
+
+  # Client Management
+  createClient(input: CreateClientInput!): Client! @aws_cognito_user_pools
+  updateClient(input: UpdateClientInput!): Client! @aws_cognito_user_pools
+
+  # Folio Management (CAF)
+  uploadCaf(base64Xml: String!, tipoDte: Int!): CafUploadResponse! @aws_cognito_user_pools
+}
+
+type CafUploadResponse @aws_cognito_user_pools {
+  success: Boolean!
+  message: String!
+  folioInicial: Int
+  folioFinal: Int
+}
+
+input ExceptionRuleInput {
+  date: String!
+  timeRanges: [TimeRangeInput!]!
+}
+
+input SetExceptionsInput {
+  providerId: ID!
+  exceptions: [ExceptionRuleInput!]!
+}
+
+type ProviderExceptions @aws_cognito_user_pools {
+  providerId: ID!
+  exceptions: [ExceptionRule!]!
+}
+
+# --- Client File Types ---
+type ClientIdentifier @aws_cognito_user_pools {
+  type: String!
+  value: String!
+}
+
+type ClientName @aws_cognito_user_pools {
+  given: String!
+  family: String!
+}
+
+type ClientContact @aws_cognito_user_pools {
+  system: String!
+  value: String!
+  use: String
+}
+
+type ClientAddress @aws_cognito_user_pools {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+type ClientInsurance @aws_cognito_user_pools {
+  provider: String!
+  type: String!
+}
+
+type Client @aws_cognito_user_pools {
+  id: ID!
+  tenantId: ID!
+  identifiers: [ClientIdentifier!]!
+  names: ClientName!
+  email: String
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContact!]
+  address: ClientAddress
+  occupation: String
+  healthInsurance: ClientInsurance
+  communicationLanguage: String
+  providerIds: [ID!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ClientAuditLog @aws_cognito_user_pools {
+  tenantId: ID!
+  clientId: ID!
+  field: String!
+  oldValue: String
+  newValue: String
+  source: String!
+  sourceId: String
+  changedBy: String!
+  timestamp: AWSDateTime!
+}
+
+input ClientIdentifierInput {
+  type: String!
+  value: String!
+}
+
+input ClientNameInput {
+  given: String!
+  family: String!
+}
+
+input ClientContactInput {
+  system: String!
+  value: String!
+  use: String
+}
+
+input ClientAddressInput {
+  text: String!
+  lat: Float
+  lng: Float
+}
+
+input ClientInsuranceInput {
+  provider: String!
+  type: String!
+}
+
+input CreateClientInput {
+  identifiers: [ClientIdentifierInput!]!
+  names: ClientNameInput!
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
+  providerIds: [ID!]
+}
+
+input UpdateClientInput {
+  id: ID!
+  identifiers: [ClientIdentifierInput!]
+  names: ClientNameInput
+  birthDate: String
+  gender: String
+  contactInfo: [ClientContactInput!]
+  address: ClientAddressInput
+  occupation: String
+  healthInsurance: ClientInsuranceInput
+  communicationLanguage: String
+  providerIds: [ID!]
 }
 
 schema {

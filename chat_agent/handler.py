@@ -5,30 +5,31 @@ AWS Lambda function for conversational booking flow
 """
 
 import json
-from datetime import datetime
-
 from shared.infrastructure.dynamodb_repositories import (
     DynamoDBConversationRepository,
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
     DynamoDBBookingRepository,
     DynamoDBFAQRepository,
-    DynamoDBConversationRepository,
-    DynamoDBServiceRepository,
-    DynamoDBProviderRepository,
-    DynamoDBBookingRepository,
-    DynamoDBFAQRepository,
     DynamoDBWorkflowRepository,
-    DynamoDBTenantRepository
+    DynamoDBTenantRepository,
+    DynamoDBRoomRepository,
+    DynamoDBProviderIntegrationRepository,
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
-from shared.domain.exceptions import (
-    EntityNotFoundError,
-    ValidationError
-)
+from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger, success_response, error_response, extract_appsync_event
 from shared.metrics import MetricsService
+from shared.infrastructure.notifications import EmailService
+from shared.application.booking_service import BookingService
+from shared.application.availability_service import AvailabilityService
+import os
+
+try:
+    from shared.limit_service import TenantLimitService
+except ImportError:
+    TenantLimitService = None
 
 from service import ChatAgentService
 
@@ -41,8 +42,38 @@ booking_repo = DynamoDBBookingRepository()
 availability_repo = DynamoDBAvailabilityRepository()
 faq_repo = DynamoDBFAQRepository()
 workflow_repo = DynamoDBWorkflowRepository()
-metrics_service = MetricsService()
 tenant_repo = DynamoDBTenantRepository()
+room_repo = DynamoDBRoomRepository()
+provider_integration_repo = DynamoDBProviderIntegrationRepository()
+metrics_service = MetricsService()
+email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
+
+# Initialize Limit Service
+limit_service = None
+if TenantLimitService:
+    limit_service = TenantLimitService(tenant_repo, metrics_service)
+
+# Initialize Domain Services
+availability_service = AvailabilityService(
+    availability_repo,
+    booking_repo,
+    service_repo,
+    provider_repo,
+    provider_integration_repo
+)
+
+booking_service = BookingService(
+    booking_repo,
+    service_repo,
+    provider_repo,
+    tenant_repo,
+    room_repo=room_repo,
+    provider_integration_repo=provider_integration_repo,
+    limit_service=limit_service,
+    email_service=email_service,
+    availability_service=availability_service,
+    metrics_service=metrics_service
+)
 
 chat_agent_service = ChatAgentService(
     conversation_repo,
@@ -52,7 +83,11 @@ chat_agent_service = ChatAgentService(
     availability_repo=availability_repo,
     faq_repo=faq_repo,
     workflow_repo=workflow_repo,
-    tenant_repo=tenant_repo
+    tenant_repo=tenant_repo,
+    limit_service=limit_service,
+    metrics_service=metrics_service,
+    availability_service=availability_service,
+    booking_service=booking_service
 )
 
 logger = Logger()
@@ -61,7 +96,7 @@ logger = Logger()
 def lambda_handler(event: dict, context) -> dict:
     """
     Lambda handler for chat agent operations
-    
+
     Supports operations:
     - startConversation: Initialize new conversation
     - sendMessage: Process user message and advance FSM
@@ -73,25 +108,21 @@ def lambda_handler(event: dict, context) -> dict:
 
         tenant_id = TenantId(tenant_id_str)
 
-        logger.info(
-            "Chat agent operation",
-            field=field,
-            tenant_id=tenant_id_str
-        )
+        logger.info("Chat agent operation", field=field, tenant_id=tenant_id_str)
 
         # Route to appropriate handler
-        if field == 'startConversation':
+        if field == "startConversation":
             return handle_start_conversation(tenant_id, input_data)
-        
-        elif field == 'sendMessage':
+
+        elif field == "sendMessage":
             return handle_send_message(tenant_id, input_data)
-        
-        elif field == 'confirmBooking':
+
+        elif field == "confirmBooking":
             return handle_confirm_booking(tenant_id, input_data)
-        
-        elif field == 'getConversation':
+
+        elif field == "getConversation":
             return handle_get_conversation(tenant_id, input_data)
-        
+
         else:
             return error_response(f"Unknown operation: {field}", 400)
 
@@ -116,7 +147,7 @@ def lambda_handler(event: dict, context) -> dict:
 def handle_start_conversation(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Start a new conversation
-    
+
     Input:
     {
         "channel": "widget",
@@ -126,31 +157,31 @@ def handle_start_conversation(tenant_id: TenantId, input_data: dict) -> dict:
         }
     }
     """
-    channel = input_data.get('channel', 'widget')
-    metadata = input_data.get('metadata')
-    
+    channel = input_data.get("channel", "widget")
+    metadata = input_data.get("metadata")
+
     conversation, response = chat_agent_service.start_conversation(
-        tenant_id,
-        channel,
-        metadata
+        tenant_id, channel, metadata
     )
-    
+
     # Track AI response (welcome message counts as AI response)
     try:
         metrics_service.increment_message(tenant_id.value, is_ai_response=True)
     except Exception as e:
         logger.warning("Failed to track start conversation metrics", error=str(e))
-    
-    return success_response({
-        'conversation': conversation_to_dict(conversation),
-        'response': response
-    })
+
+    return success_response(
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
+    )
 
 
 def handle_send_message(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Process user message
-    
+
     Input:
     {
         "conversationId": "conv_123",
@@ -165,22 +196,18 @@ def handle_send_message(tenant_id: TenantId, input_data: dict) -> dict:
         }
     }
     """
-    conversation_id = input_data.get('conversationId')
-    message = input_data.get('message')
-    message_type = input_data.get('messageType', 'text')
-    user_data = input_data.get('userData')
-    
+    conversation_id = input_data.get("conversationId")
+    message = input_data.get("message")
+    message_type = input_data.get("messageType", "text")
+    user_data = input_data.get("userData")
+
     if not conversation_id or not message:
         return error_response("Missing conversationId or message", 400)
-    
+
     conversation, response = chat_agent_service.process_message(
-        tenant_id,
-        conversation_id,
-        message,
-        message_type,
-        user_data
+        tenant_id, conversation_id, message, message_type, user_data
     )
-    
+
     # Track message metrics
     try:
         # Track user message
@@ -189,75 +216,78 @@ def handle_send_message(tenant_id: TenantId, input_data: dict) -> dict:
         metrics_service.increment_message(tenant_id.value, is_ai_response=True)
     except Exception as e:
         logger.warning("Failed to track message metrics", error=str(e))
-    
-    return success_response({
-        'conversation': conversation_to_dict(conversation),
-        'response': response
-    })
+
+    return success_response(
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
+    )
 
 
 def handle_confirm_booking(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Confirm booking creation
-    
+
     Input:
     {
         "conversationId": "conv_123"
     }
     """
-    conversation_id = input_data.get('conversationId')
-    
+    conversation_id = input_data.get("conversationId")
+
     if not conversation_id:
         return error_response("Missing conversationId", 400)
-    
+
     conversation, response = chat_agent_service.confirm_booking(
-        tenant_id,
-        conversation_id
+        tenant_id, conversation_id
     )
-    
+
     # Track chat conversion (booking created from chat)
     try:
         metrics_service.increment_conversation_completed(tenant_id.value)
     except Exception as e:
         logger.warning("Failed to track chat conversion metrics", error=str(e))
-    
-    return success_response({
-        'conversation': conversation_to_dict(conversation),
-        'response': response
-    })
+
+    return success_response(
+        {
+            "conversation": conversation_to_dict(conversation),
+            "response": json.dumps(response),
+        }
+    )
 
 
 def handle_get_conversation(tenant_id: TenantId, input_data: dict) -> dict:
     """
     Get conversation state
-    
+
     Input:
     {
         "conversationId": "conv_123"
     }
     """
-    conversation_id = input_data.get('conversationId')
-    
+    conversation_id = input_data.get("conversationId")
+
     if not conversation_id:
         return error_response("Missing conversationId", 400)
-    
+
     conversation = conversation_repo.get_by_id(tenant_id, conversation_id)
     if not conversation:
         return error_response("Conversation not found", 404)
-    
+
     return success_response(conversation_to_dict(conversation))
 
 
 def conversation_to_dict(conversation) -> dict:
     """Convert Conversation entity to dictionary"""
     return {
-        'conversationId': conversation.conversation_id,
-        'tenantId': conversation.tenant_id.value,
-        'state': conversation.state.value,
-        'context': conversation.context,
-        'messages': getattr(conversation, 'messages', []),
-        'channel': getattr(conversation, 'channel', 'widget'),
-        'metadata': getattr(conversation, 'metadata', {}),
-        'createdAt': conversation.created_at.isoformat() + 'Z',
-        'updatedAt': conversation.updated_at.isoformat() + 'Z'
+        "conversationId": conversation.conversation_id,
+        "tenantId": conversation.tenant_id.value,
+        "state": conversation.state.value,
+        "context": conversation.context,
+        "messages": getattr(conversation, "messages", []),
+        "channel": getattr(conversation, "channel", "widget"),
+        "metadata": getattr(conversation, "metadata", {}),
+        "createdAt": conversation.created_at.isoformat() + "Z",
+        "updatedAt": conversation.updated_at.isoformat() + "Z",
     }

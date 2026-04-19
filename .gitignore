@@ -50,3 +50,14 @@ samconfig.toml
 infra/cdk.out/
 debug_register_tenant_local.py
 test_plan_sync.py
+infra/.env
+
+# Node
+node_modules/
+infra/node_modules/
+deployment_log.txt
+
+check_key_db.py
+.pytest_cache/
+htmlcov/
+.coverage

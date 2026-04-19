@@ -1,0 +1,103 @@
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.UserPoolProps#advancedSecurityMode is deprecated.
+  Advanced Security Mode is deprecated in favor of user pool feature plans.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode is deprecated.
+  Advanced Security Mode is deprecated in favor of user pool feature plans.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cognito.AdvancedSecurityMode#ENFORCED is deprecated.
+  
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cloudfront_origins.S3Origin is deprecated.
+  Use `S3BucketOrigin` or `S3StaticWebsiteOrigin` instead.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_cloudfront_origins.S3Origin#bind is deprecated.
+  Use `S3BucketOrigin` or `S3StaticWebsiteOrigin` instead.
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_dynamodb.TableOptions#pointInTimeRecovery is deprecated.
+  use `pointInTimeRecoverySpecification` instead
+  This API will be removed in the next major release.
+[WARNING] aws-cdk-lib.aws_appsync.GraphqlApiProps#schema is deprecated.
+  use Definition.schema instead
+  This API will be removed in the next major release.
+[37m[32mSuccessfully synthesized to [34m/Users/marioalvarez/repos/conversacion/chat-booking-backend/infra/cdk.out[39m[37m[32m[39m[37m[39m
+[37mSupply a stack id ([32mChatBooking-dev-Database[39m[37m, [32mChatBooking-dev-Auth[39m[37m, [32mChatBooking-dev-Assets[39m[37m, [32mChatBooking-dev-Subscriptions[39m[37m, [32mChatBooking-dev-Backend[39m[37m, [32mChatBooking-dev-AppSyncApi[39m[37m) to display its template.[39m
+
+[37mNOTICES         (What's this? https://github.com/aws/aws-cdk/wiki/CLI-Notices)[39m
+
+[37m34892	CDK CLI will collect telemetry data on command usage starting at version 2.1100.0 (unless opted out)[39m
+[37m[39m
+[37m	Overview: We do not collect customer content and we anonymize the[39m
+[37m	          telemetry we do collect. See the attached issue for more[39m
+[37m	          information on what data is collected, why, and how to[39m
+[37m	          opt-out. Telemetry will NOT be collected for any CDK CLI[39m
+[37m	          version prior to version 2.1100.0 - regardless of[39m
+[37m	          opt-in/out. You can also preview the telemetry we will start[39m
+[37m	          collecting by logging it to a local file, by adding[39m
+[37m	          `--unstable=telemetry --telemetry-file=my/local/file` to any[39m
+[37m	          `cdk` command.[39m
+[37m[39m
+[37m	Affected versions: cli: >=2.0.0 <2.1100.0[39m
+[37m[39m
+[37m	More information at: https://github.com/aws/aws-cdk/issues/34892[39m
+[37m[39m
+
+[37m32775	(cli): CLI versions and CDK library versions have diverged[39m
+[37m[39m
+[37m	Overview: Starting in CDK 2.179.0, CLI versions will no longer be in[39m
+[37m	          lockstep with CDK library versions. CLI versions will now be[39m
+[37m	          released as 2.1000.0 and continue with 2.1001.0, etc.[39m
+[37m[39m
+[37m	Affected versions: cli: >=2.0.0 <=2.1005.0[39m
+[37m[39m
+[37m	More information at: https://github.com/aws/aws-cdk/issues/32775[39m
+[37m[39m
+
+[37mIf you don’t want to see a notice anymore, use "cdk acknowledge <id>". For example, "cdk acknowledge 34892".[39m

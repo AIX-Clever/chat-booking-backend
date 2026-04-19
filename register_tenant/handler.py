@@ -1,4 +1,3 @@
-
 import os
 import boto3
 import uuid
@@ -8,123 +7,177 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 from shared.domain.entities import Tenant, TenantId, TenantStatus, TenantPlan, ApiKey
-from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository, DynamoDBApiKeyRepository
+from shared.infrastructure.dynamodb_repositories import (
+    DynamoDBTenantRepository,
+    DynamoDBApiKeyRepository,
+)
 from shared.utils import lambda_response, Logger, generate_api_key, hash_api_key
 
 
 # Lazy-initialized clients to avoid NoRegionError during test collection
 cognito = None
 workflows_table = None
+user_roles_table = None
+categories_table = None
 
 # Load Default Flow
 try:
-    with open(os.path.join(os.path.dirname(__file__), '../workflow_manager/base_workflow.json'), 'r') as f:
+    with open(os.path.join(os.path.dirname(__file__), "base_workflow.json"), "r") as f:
         DEFAULT_FLOW = json.load(f)
 except Exception as e:
-    print(f"Warning: Could not load default flow: {e}")
+    print(f"Warning: Could not load default flow from local file: {e}")
     DEFAULT_FLOW = {}
+
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     Register new tenant handler
-    
+
     Args:
         event: AppSync event with arguments
     """
-    global cognito, workflows_table
-    
+    global cognito, workflows_table, user_roles_table, categories_table
+
     # Lazy initialization of boto3 clients
     if cognito is None:
-        cognito = boto3.client('cognito-idp')
+        cognito = boto3.client("cognito-idp")
     if workflows_table is None:
-        workflows_table = boto3.resource('dynamodb').Table(os.environ.get('WORKFLOWS_TABLE', 'ChatBooking-Workflows'))
-    
+        workflows_table = boto3.resource("dynamodb").Table(
+            os.environ.get("WORKFLOWS_TABLE", "ChatBooking-Workflows")
+        )
+    if user_roles_table is None:
+        user_roles_table = boto3.resource("dynamodb").Table(
+            os.environ.get("USER_ROLES_TABLE", "ChatBooking-UserRoles")
+        )
+    if categories_table is None:
+        categories_table = boto3.resource("dynamodb").Table(
+            os.environ.get("CATEGORIES_TABLE", "ChatBooking-Categories")
+        )
+
     logger = Logger()
     logger.info("Starting tenant registration", event=event)
-    
+
     try:
         # 1. Parse Input
-        inputs = event.get('arguments', {}).get('input', {})
-        email = inputs.get('email')
-        password = inputs.get('password')
-        company_name = inputs.get('companyName') or email.split('@')[0]
-        
+        inputs = event.get("arguments", {}).get("input", {})
+        email = inputs.get("email")
+        password = inputs.get("password")
+        company_name = inputs.get("companyName") or email.split("@")[0]
+        plan_input = (inputs.get("plan") or "LITE").upper()
+
         if not email or not password:
             raise ValueError("Email and password are required")
 
+        # 1.5 Verify reCAPTCHA
+        recaptcha_token = inputs.get("recaptchaToken")
+        # Ensure we block even if token is missing in production?
+        # For now, if provided, we verify.
+        if recaptcha_token:
+            from shared.infrastructure.recaptcha_adapter import GoogleRecaptchaAdapter
+            recaptcha_service = GoogleRecaptchaAdapter()
+            if not recaptcha_service.verify(recaptcha_token, 'signup'):
+                raise ValueError("Security verification failed (reCAPTCHA)")
+        
         # 2. Dependency Injection
         tenant_repo = DynamoDBTenantRepository()
         api_key_repo = DynamoDBApiKeyRepository()
-        user_pool_id = os.environ.get('USER_POOL_ID')
-        
+        user_pool_id = os.environ.get("USER_POOL_ID")
+
         if not user_pool_id:
             raise ValueError("USER_POOL_ID configuration missing")
 
         # 3. Create Tenant Entity
-        # Generate a slug from company name or random
-        slug = company_name.lower().replace(' ', '-') + '-' + secrets.token_hex(2)
-        tenant_id = TenantId(str(uuid.uuid4())[:8])
+        # Generate a slug from company name
+        base_slug = company_name.lower().replace(" ", "-")
+        # Sanitize further if needed (keep it simple for now)
         
+        # Check availability
+        if tenant_repo.get_by_slug(base_slug):
+            # If taken, append suffix
+            slug = f"{base_slug}-{secrets.token_hex(2)}"
+        else:
+            # If free, use it
+            slug = base_slug
+        tenant_id = TenantId(str(uuid.uuid4())[:8])
+
         tenant = Tenant(
             tenant_id=tenant_id,
             name=company_name,
             slug=slug,
-            status=TenantStatus.ACTIVE, # Start active for frictionless flow
-            plan=TenantPlan.LITE,       # Start on Lite plan
-            owner_user_id=email,        # Temporary, will be linked to Cognito Sub if needed
+            status=TenantStatus.PENDING_PAYMENT,  # Must pay to activate
+            plan=TenantPlan[plan_input] if plan_input in TenantPlan._member_names_ else TenantPlan.LITE,
+            owner_user_id=email,  # Temporary, will be linked to Cognito Sub if needed
             billing_email=email,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
-        
+
         # 4. Create Cognito User
         logger.info(f"Creating Cognito user for {email}")
+        user_sub = email  # Default fallback
         try:
             response = cognito.admin_create_user(
                 UserPoolId=user_pool_id,
                 Username=email,
                 UserAttributes=[
-                    {'Name': 'email', 'Value': email},
-                    {'Name': 'email_verified', 'Value': 'true'}, # Auto-verify for friction-less
-                    {'Name': 'custom:tenantId', 'Value': str(tenant_id)},
-                    {'Name': 'name', 'Value': company_name}
+                    {"Name": "email", "Value": email},
+                    {
+                        "Name": "email_verified",
+                        "Value": "true",
+                    },  # Auto-verify for friction-less
+                    {"Name": "custom:tenantId", "Value": str(tenant_id)},
+                    {"Name": "name", "Value": company_name},
                 ],
-                MessageAction='SUPPRESS' # Don't send default email
+                MessageAction="SUPPRESS",  # Don't send default email
             )
-            
-            # Set permanent password
+
+            # Extract User Sub (UUID)
+            for attr in response.get("User", {}).get("Attributes", []):
+                if attr["Name"] == "sub":
+                    user_sub = attr["Value"]
+                    break
+
+            logger.info(f"Created Cognito user {email} with sub {user_sub}")
+
+            # Set permanent password using User Sub (more reliable than email/username alias)
+            # FIX: Use 'email' (the explicitly used Username during creation) to avoid any lookup ambiguity
             cognito.admin_set_user_password(
                 UserPoolId=user_pool_id,
                 Username=email,
                 Password=password,
-                Permanent=True
+                Permanent=True,
             )
-            
+
+            logger.info(f"Set permanent password for user {email}")
+
         except cognito.exceptions.UsernameExistsException:
-             # Check if user exists but has no tenant? Or just fail.
-             # Ideally we check this before.
-             raise ValueError("User with this email already exists")
+            # Check if user exists but has no tenant? Or just fail.
+            # Ideally we check this before.
+            raise ValueError("User with this email already exists")
         except Exception as e:
             logger.error("Cognito creation failed", error=e)
             raise e
 
+        # Update Tenant with real owner_user_id (Sub)
+        tenant.owner_user_id = user_sub
+
         # 5. Save Tenant
         logger.info(f"Saving tenant {tenant_id}")
         tenant_repo.save(tenant)
-        
+
         # 6. Generate and Save Initial API Key
         public_key, hashed_key = generate_api_key()
         api_key_id = f"key_{secrets.token_hex(4)}"
-        
+
         api_key = ApiKey(
             api_key_id=api_key_id,
             tenant_id=tenant_id,
-            api_key_hash=hashed_key, 
+            api_key_hash=hashed_key,
             status="ACTIVE",
-            allowed_origins=["*"], 
+            allowed_origins=["*"],
             rate_limit=1000,
-            created_at=datetime.now(timezone.utc)
+            created_at=datetime.now(timezone.utc),
         )
-        
+
         api_key_repo.save(api_key)
 
         # 7. Create Default Workflow
@@ -132,42 +185,80 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             try:
                 workflow_id = str(uuid.uuid4())
                 current_time = datetime.now(timezone.utc).isoformat()
-                
+
                 # Clone and prepare item
                 # IMPORTANT: In DynamoDB repository we store steps as a Map
                 # DEFAULT_FLOW["steps"] is already a dict, which is perfect for DynamoDB Map
-                
+
                 workflow_item = {
-                    'tenantId': str(tenant_id),
-                    'workflowId': workflow_id,
-                    'name': DEFAULT_FLOW.get('name', 'Default Flow'),
-                    'description': DEFAULT_FLOW.get('description', ''),
-                    'steps': DEFAULT_FLOW.get('steps', {}),
-                    'isActive': True,
-                    'createdAt': current_time,
-                    'updatedAt': current_time,
-                    'metadata': {}
+                    "tenantId": str(tenant_id),
+                    "workflowId": workflow_id,
+                    "name": DEFAULT_FLOW.get("name", "Default Flow"),
+                    "description": DEFAULT_FLOW.get("description", ""),
+                    "steps": DEFAULT_FLOW.get("steps", {}),
+                    "isActive": True,
+                    "createdAt": current_time,
+                    "updatedAt": current_time,
+                    "metadata": {},
                 }
-                
+
                 logger.info(f"Creating default workflow for tenant {tenant_id}")
                 workflows_table.put_item(Item=workflow_item)
             except Exception as w_error:
                 # Don't fail registration if workflow creation fails, just log it
                 logger.error(f"Failed to create default workflow: {w_error}")
-        
-        # 7. Return Result
+
+        # 8. Create User Role (For Admin Panel Visibility)
+        try:
+            current_time = datetime.now(timezone.utc).isoformat()
+            user_role_item = {
+                "userId": user_sub,  # Use Cognito Sub (UUID)
+                "tenantId": str(tenant_id),
+                "email": email,
+                "name": company_name,
+                "role": "OWNER",
+                "status": "ACTIVE",
+                "createdAt": current_time,
+                "updatedAt": current_time,
+            }
+            logger.info(f"Creating owner user role for {email} (sub: {user_sub})")
+            user_roles_table.put_item(Item=user_role_item)
+        except Exception as u_error:
+            # Don't fail registration, but log critical error
+            logger.error(f"Failed to create user role for owner: {u_error}")
+
+        # 9. Create Default Category (General)
+        try:
+            current_time = datetime.now(timezone.utc).isoformat()
+            category_item = {
+                "tenantId": str(tenant_id),
+                "categoryId": f"cat_{secrets.token_hex(4)}",
+                "name": "General",
+                "description": "Categoría predeterminada para servicios",
+                "isActive": True,
+                "displayOrder": 0,
+                "createdAt": current_time,
+                "updatedAt": current_time,
+                "metadata": {},
+            }
+            logger.info(f"Creating default General category for tenant {tenant_id}")
+            categories_table.put_item(Item=category_item)
+        except Exception as cat_error:
+            logger.error(f"Failed to create default category: {cat_error}")
+
+        # 10. Return Result
         # Map entity to GraphQL type
         return {
-            'tenantId': str(tenant.tenant_id),
-            'name': tenant.name,
-            'slug': tenant.slug,
-            'status': tenant.status.value,
-            'plan': tenant.plan.value,
-            'ownerUserId': tenant.owner_user_id,
-            'billingEmail': tenant.billing_email,
-            'settings': json.dumps(tenant.settings) if tenant.settings else None,
-            'createdAt': tenant.created_at.isoformat(),
-            'updatedAt': tenant.created_at.isoformat()
+            "tenantId": str(tenant.tenant_id),
+            "name": tenant.name,
+            "slug": tenant.slug,
+            "status": tenant.status.value,
+            "plan": tenant.plan.value,
+            "ownerUserId": user_sub,
+            "billingEmail": tenant.billing_email,
+            "settings": json.dumps(tenant.settings) if tenant.settings else None,
+            "createdAt": tenant.created_at.isoformat(),
+            "updatedAt": tenant.created_at.isoformat(),
         }
 
     except ValueError as ve:
@@ -176,4 +267,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         raise Exception(str(ve))
     except Exception as e:
         logger.error("Internal error", error=e)
-        raise Exception(f"Internal error: {str(e)}")
+        # Avoid double-wrapping if it's already an error message we want to bubble up
+        err_msg = str(e)
+        if "Internal error:" in err_msg:
+            raise Exception(err_msg)
+        raise Exception(f"Error en el servidor: {err_msg}")

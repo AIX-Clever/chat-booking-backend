@@ -11,8 +11,20 @@ from typing import List, Optional
 from datetime import datetime
 
 from .entities import (
-    Tenant, TenantId, Service, Provider, ProviderAvailability,
-    Booking, Conversation, ApiKey, TimeSlot, Category, FAQ, Workflow
+    Tenant,
+    TenantId,
+    Service,
+    Provider,
+    ProviderAvailability,
+    Booking,
+    Conversation,
+    ApiKey,
+    TimeSlot,
+    Category,
+    FAQ,
+    Workflow,
+    Room,
+    WaitingListEntry,
 )
 
 
@@ -27,6 +39,11 @@ class ITenantRepository(ABC):
     @abstractmethod
     def save(self, tenant: Tenant) -> None:
         """Persist tenant"""
+        pass
+
+    @abstractmethod
+    def decrement_whatsapp_quota(self, tenant_id: TenantId) -> bool:
+        """Atomically decrement whatsapp_quota if it's > 0."""
         pass
 
 
@@ -87,7 +104,9 @@ class ICategoryRepository(ABC):
         pass
 
     @abstractmethod
-    def list_by_tenant(self, tenant_id: TenantId, active_only: bool = False) -> List[Category]:
+    def list_by_tenant(
+        self, tenant_id: TenantId, active_only: bool = False
+    ) -> List[Category]:
         """List all categories for tenant"""
         pass
 
@@ -100,6 +119,7 @@ class ICategoryRepository(ABC):
     def delete(self, tenant_id: TenantId, category_id: str) -> None:
         """Delete category"""
         pass
+
 
 class IProviderRepository(ABC):
     """Port for Provider operations"""
@@ -135,9 +155,7 @@ class IAvailabilityRepository(ABC):
 
     @abstractmethod
     def get_provider_availability(
-        self,
-        tenant_id: TenantId,
-        provider_id: str
+        self, tenant_id: TenantId, provider_id: str
     ) -> List[ProviderAvailability]:
         """Get weekly availability for provider"""
         pass
@@ -148,13 +166,17 @@ class IAvailabilityRepository(ABC):
         pass
 
     @abstractmethod
-    def get_provider_exceptions(self, tenant_id: TenantId, provider_id: str) -> List[str]:
-        """Get provider exception dates"""
+    def get_provider_exceptions(
+        self, tenant_id: TenantId, provider_id: str
+    ) -> List[dict]:
+        """Get provider exception rules"""
         pass
 
     @abstractmethod
-    def save_provider_exceptions(self, tenant_id: TenantId, provider_id: str, exceptions: List[str]) -> None:
-        """Save provider exception dates"""
+    def save_provider_exceptions(
+        self, tenant_id: TenantId, provider_id: str, exceptions: List[dict]
+    ) -> None:
+        """Save provider exception rules"""
         pass
 
 
@@ -172,16 +194,14 @@ class IBookingRepository(ABC):
         tenant_id: TenantId,
         provider_id: str,
         from_date: datetime,
-        to_date: datetime
+        to_date: datetime,
     ) -> List[Booking]:
         """List bookings for provider in date range"""
         pass
 
     @abstractmethod
     def list_by_customer_email(
-        self,
-        tenant_id: TenantId,
-        customer_email: str
+        self, tenant_id: TenantId, customer_email: str
     ) -> List[Booking]:
         """List bookings for customer by email"""
         pass
@@ -204,7 +224,9 @@ class IConversationRepository(ABC):
     """Port for Conversation state operations"""
 
     @abstractmethod
-    def get_by_id(self, tenant_id: TenantId, conversation_id: str) -> Optional[Conversation]:
+    def get_by_id(
+        self, tenant_id: TenantId, conversation_id: str
+    ) -> Optional[Conversation]:
         """Retrieve conversation state"""
         pass
 
@@ -256,3 +278,103 @@ class IWorkflowRepository(ABC):
         """Persist workflow"""
         pass
 
+
+class IRoomRepository(ABC):
+    """Port for Room operations"""
+
+    @abstractmethod
+    def get_by_id(self, tenant_id: TenantId, room_id: str) -> Optional[Room]:
+        """Retrieve room by ID"""
+        pass
+
+    @abstractmethod
+    def list_by_tenant(self, tenant_id: TenantId) -> List[Room]:
+        """List all rooms for tenant"""
+        pass
+
+    @abstractmethod
+    def save(self, room: Room) -> None:
+        """Persist room"""
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, room_id: str) -> None:
+        pass
+
+
+class FileStorageRepository(ABC):
+    """Port for file storage operations"""
+
+    @abstractmethod
+    def generate_presigned_url(
+        self,
+        file_name: str,
+        content_type: str,
+        operation: str = "put_object",
+        expiration: int = 3600,
+    ) -> str:
+        """Generate a presigned URL for file operations"""
+        pass
+
+
+class IProviderIntegrationRepository(ABC):
+    """Port for Provider Integration operations (e.g. Google Calendar)"""
+
+    @abstractmethod
+    def save_google_creds(
+        self, tenant_id: TenantId, provider_id: str, credentials: dict
+    ) -> None:
+        """Save Google Calendar credentials"""
+        pass
+
+    @abstractmethod
+    def get_google_creds(self, tenant_id: TenantId, provider_id: str) -> Optional[dict]:
+        """Get Google Calendar credentials"""
+        pass
+
+    @abstractmethod
+    def delete_google_creds(self, tenant_id: TenantId, provider_id: str) -> None:
+        """Delete Google Calendar credentials"""
+        pass
+
+
+class IWaitingListRepository(ABC):
+    """Port for Waiting List operations"""
+
+    @abstractmethod
+    def save(self, entry: WaitingListEntry) -> None:
+        """Persist a waiting list entry"""
+        pass
+
+    @abstractmethod
+    def get_by_id(
+        self, tenant_id: TenantId, waiting_list_id: str
+    ) -> Optional[WaitingListEntry]:
+        """Retrieve a waiting list entry by ID"""
+        pass
+
+    @abstractmethod
+    def list_by_service(
+        self, tenant_id: TenantId, service_id: str
+    ) -> List[WaitingListEntry]:
+        """List pending entries for a service, ordered by createdAt ASC"""
+        pass
+
+    @abstractmethod
+    def find_pending_by_client(
+        self, tenant_id: TenantId, service_id: str, client_id: str
+    ) -> Optional[WaitingListEntry]:
+        """Check if client already has a pending entry for a service"""
+        pass
+
+    @abstractmethod
+    def update_status(
+        self, tenant_id: TenantId, waiting_list_id: str, status: str
+    ) -> None:
+        """Update entry contact status"""
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, waiting_list_id: str) -> None:
+        """Remove entry from waiting list"""
+        pass

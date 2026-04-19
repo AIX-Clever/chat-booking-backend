@@ -8,16 +8,17 @@ from shared.utils import Logger, success_response, error_response, extract_appsy
 from shared.domain.entities import TenantId
 
 logger = Logger()
-s3_client = boto3.client('s3')
-dynamodb = boto3.resource('dynamodb')
+s3_client = boto3.client("s3")
+dynamodb = boto3.resource("dynamodb")
 
-DOCUMENTS_BUCKET = os.environ.get('DOCUMENTS_BUCKET')
-DOCUMENTS_TABLE_NAME = os.environ.get('DOCUMENTS_TABLE')
+DOCUMENTS_BUCKET = os.environ.get("DOCUMENTS_BUCKET")
+DOCUMENTS_TABLE_NAME = os.environ.get("DOCUMENTS_TABLE")
 documents_table = dynamodb.Table(DOCUMENTS_TABLE_NAME) if DOCUMENTS_TABLE_NAME else None
 
 # Limits (Hardcoded for now, ideal: from Tenant Plan)
 MAX_FILES_PER_TENANT = 50
 MAX_FILE_SIZE_MB = 10
+
 
 def lambda_handler(event: dict, context) -> dict:
     """
@@ -25,26 +26,32 @@ def lambda_handler(event: dict, context) -> dict:
     Input: { "fileName": "foo.pdf", "fileType": "application/pdf" }
     Output: { "uploadUrl": "...", "key": "...", "documentId": "..." }
     """
+
     try:
         field, tenant_id_str, input_data = extract_appsync_event(event)
         tenant_id = TenantId(tenant_id_str)
-        
-        if field == 'getUploadUrl':
-             return handle_get_upload_url(tenant_id, input_data)
+
+        if field == "getUploadUrl":
+            return handle_get_upload_url(tenant_id, input_data)
+        elif field == "generatePresignedUrl":
+            return handle_generate_presigned_url(tenant_id, input_data)
+        elif field == "getInvoiceDownloadUrl":
+            return handle_get_invoice_download_url(tenant_id, input_data)
         else:
             return error_response(f"Unknown operation: {field}", 400)
-            
+
     except Exception as e:
         logger.error("Presign failed", error=str(e))
         return error_response(str(e), 500)
+
 
 def handle_get_upload_url(tenant_id: TenantId, input_data: dict) -> dict:
     if not DOCUMENTS_BUCKET or not documents_table:
         return error_response("Storage not configured", 503)
 
-    file_name = input_data.get('fileName')
-    file_type = input_data.get('contentType')
-    
+    file_name = input_data.get("fileName")
+    file_type = input_data.get("contentType")
+
     if not file_name or not file_type:
         return error_response("Missing fileName or fileType", 400)
 
@@ -52,46 +59,120 @@ def handle_get_upload_url(tenant_id: TenantId, input_data: dict) -> dict:
     # Simple limit check: Query Count
     # Optimally: Retrieve Tenant Settings or keep usage counter.
     # For now: We assume limit OK or check DB count.
-    # checking db count is expensive (Scan/Query). 
+    # checking db count is expensive (Scan/Query).
     # Let's skip heavy count for "Cheapest" MVP or do it efficiently later.
-    
+
     # 2. Generate Key
     document_id = str(uuid.uuid4())
     # Key format: tenantId/documentId.pdf
-    ext = file_name.split('.')[-1] if '.' in file_name else 'dat'
+    ext = file_name.split(".")[-1] if "." in file_name else "dat"
     key = f"{tenant_id}/{document_id}.{ext}"
 
     # 3. Generate Presigned URL
     try:
         url = s3_client.generate_presigned_url(
-            'put_object',
+            "put_object",
             Params={
-                'Bucket': DOCUMENTS_BUCKET,
-                'Key': key,
-                'ContentType': file_type
+                "Bucket": DOCUMENTS_BUCKET,
+                "Key": key,
+                "ContentType": file_type,
                 # 'ContentLength': ... # Client-side enforcement mostly
             },
-            ExpiresIn=300 # 5 minutes
+            ExpiresIn=300,  # 5 minutes
         )
     except ClientError as e:
-         return error_response(f"S3 Error: {str(e)}", 500)
+        return error_response(f"S3 Error: {str(e)}", 500)
 
     # 4. Save metadata to DynamoDB (PENDING)
     item = {
-        'tenantId': str(tenant_id),
-        'documentId': document_id,
-        'fileName': file_name,
-        's3Key': key,
-        'status': 'PENDING',
-        'fileType': file_type,
-        'createdAt': datetime.utcnow().isoformat(),
-        'updatedAt': datetime.utcnow().isoformat()
+        "tenantId": str(tenant_id),
+        "documentId": document_id,
+        "fileName": file_name,
+        "s3Key": key,
+        "status": "PENDING",
+        "fileType": file_type,
+        "createdAt": datetime.utcnow().isoformat(),
+        "updatedAt": datetime.utcnow().isoformat(),
     }
-    
+
     documents_table.put_item(Item=item)
+
+    return json.dumps({"uploadUrl": url, "key": key, "documentId": document_id})
+
+
+def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> str:
+    """
+    Generate presigned URL for generic assets (images).
+    Returns raw string URL (as defined in schema).
+    """
+    assets_bucket = os.environ.get("ASSETS_BUCKET")
+    if not assets_bucket:
+        # Fallback to documents bucket if assets not configured, though not ideal
+        assets_bucket = DOCUMENTS_BUCKET
+
+    if not assets_bucket:
+        return error_response("Asset Storage not configured", 503)
+
+    file_name = input_data.get("fileName")
+    content_type = input_data.get("contentType")
+
+    if not file_name or not content_type:
+        return error_response("Missing fileName or contentType", 400)
+
+    # Key format: raw/tenantId/uuid-filename
+    # using 'raw' prefix for unprocessed uploads
+    unique_id = str(uuid.uuid4())
+    key = f"raw/{tenant_id}/{unique_id}-{file_name}"
+
+    try:
+        url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": assets_bucket, "Key": key, "ContentType": content_type},
+            ExpiresIn=300,
+        )
+        return url  # Schema expects String!
+
+    except ClientError as e:
+        logger.error("Presign Asset failed", error=str(e))
+        raise Exception(f"S3 Error: {str(e)}")
+
+
+def handle_get_invoice_download_url(tenant_id: TenantId, input_data: dict) -> str:
+    """
+    Generate presigned GET URL for an invoice PDF.
+    Expects invoiceId in input_data.
+    """
+    invoice_id = input_data.get("invoiceId")
+    if not invoice_id:
+        return error_response("Missing invoiceId", 400)
+
+    # In a real scenario, we'd verify the invoice exists and belongs to the tenant
+    # For now, we follow the pattern dtes/{tenantId}/{invoiceId}.pdf
+    # or dtes/{tenantId}/{folio}.pdf
     
-    return json.dumps({
-        'uploadUrl': url,
-        'key': key,
-        'documentId': document_id
-    })
+    # Let's check if we have a bucket for DTEs
+    dte_bucket = os.environ.get("DTE_PDF_BUCKET")
+    if not dte_bucket:
+        dte_bucket = DOCUMENTS_BUCKET # Fallback
+        
+    if not dte_bucket:
+        return error_response("DTE Storage not configured", 503)
+
+    # Key pattern: dtes/{tenantId}/{invoiceId}.pdf
+    key = f"dtes/{tenant_id}/{invoice_id}.pdf"
+
+    try:
+        url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": dte_bucket,
+                "Key": key,
+                "ResponseContentDisposition": f"attachment; filename=factura_{invoice_id}.pdf"
+            },
+            ExpiresIn=3600, # 1 hour
+        )
+        return url
+
+    except ClientError as e:
+        logger.error("Presign Download failed", error=str(e))
+        raise Exception(f"S3 Error: {str(e)}")

@@ -23,3 +23,4 @@ catalog/
 
 - `DYNAMODB_SERVICES_TABLE`
 - `DYNAMODB_PROVIDERS_TABLE`
+# Forced redeploy Sat Jan 31 20:43:22 -03 2026

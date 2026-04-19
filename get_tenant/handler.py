@@ -1,11 +1,66 @@
-
 import os
-import boto3
 import json
+from decimal import Decimal
 from typing import Dict, Any
-from shared.domain.entities import Tenant, TenantId
-from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
-from shared.utils import lambda_response, Logger, extract_appsync_event, success_response, error_response
+import uuid
+from datetime import datetime, timezone
+from shared.domain.entities import TenantId, Workflow, WorkflowStep
+from shared.infrastructure.dynamodb_repositories import (
+    DynamoDBTenantRepository,
+    DynamoDBWorkflowRepository,
+)
+from shared.utils import (
+    Logger,
+    extract_appsync_event,
+    error_response,
+)
+
+# Load Default Flow
+try:
+    with open(os.path.join(os.path.dirname(__file__), "base_workflow.json"), "r") as f:
+        DEFAULT_FLOW = json.load(f)
+except Exception as e:
+    print(f"Warning: Could not load default flow from local file: {e}")
+    DEFAULT_FLOW = {}
+
+
+class DecimalEncoder(json.JSONEncoder):
+    """JSON encoder that converts Decimal to int or float."""
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return int(obj) if obj == int(obj) else float(obj)
+        return super().default(obj)
+
+
+def _normalize_notification_rules(value) -> str | None:
+    """
+    Return notification_rules as a clean JSON array string.
+    Handles cases where the value is:
+    - None
+    - A Python list (serialize directly)
+    - A JSON string '[...]' (return as-is)
+    - A doubly-encoded string '"[...]"' (parse twice, then serialize)
+    """
+    if value is None:
+        return None
+    # If it's already a list/dict, serialize cleanly
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, cls=DecimalEncoder)
+    # If it's a string, parse up to 2 levels to unwrap any double-encoding
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except Exception:
+            return value  # Not valid JSON, return as-is
+        # If parsing gave another string (double-encoded), parse again
+        if isinstance(parsed, str):
+            try:
+                parsed = json.loads(parsed)
+            except Exception:
+                return parsed  # Return inner string if can't parse further
+        return json.dumps(parsed, cls=DecimalEncoder)
+    return None
+
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -13,21 +68,21 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
     logger = Logger()
     logger.info("Starting get tenant", event=event)
-    
+
     try:
         # Extract context using shared utility (handles args, identity, headers, etc.)
         field, tenant_id_str, input_data = extract_appsync_event(event)
-        
+
         # Override tenant_id if explicit argument is provided (though extract_appsync_event prioritizes args)
         # Actually, extract_appsync_event already does: args > identity > stash > headers.
-        # But for getTenant, if tenantId arg is provided, it returns that. 
+        # But for getTenant, if tenantId arg is provided, it returns that.
         # If not, it returns identity tenantId.
         # Perfect.
-        
+
         logger.info("Resolved Tenant ID", tenant_id=tenant_id_str)
-        
+
         if not tenant_id_str:
-             return error_response("Tenant ID not found in context or arguments", 400)
+            return error_response("Tenant ID not found in context or arguments", 400)
 
         # Authorization Check (if specific ID requested vs inferred)
         # If the ID came from arguments, we might want to verify it matches identity?
@@ -36,36 +91,94 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # 1. Admin asks for specific tenant (if super admin) -> Args
         # 2. Admin asks for their own -> Identity
         # 3. Widget asks for public tenant -> Args (via x-tenant-id header or arg)
-        
+
         # We can implement a safety check:
         # If identity is present, and extracted ID differs...
         # But we don't easily have 'identity' here without parsing again.
         # For now, we trust the extraction priority.
-        
+
         tenant_repo = DynamoDBTenantRepository()
         tenant = tenant_repo.get_by_id(TenantId(tenant_id_str))
-        
+
         if not tenant:
             return error_response("Tenant not found", 404)
 
-        # Return Result via success_response (if it handles direct return) 
-        # or simple dict if AppSync expects direct object. 
+        # SELF-HEALING: Check if tenant has workflows, if not create default
+        try:
+            workflow_repo = DynamoDBWorkflowRepository()
+            # We use list_by_tenant which is efficient enough for this check (usually 0 or few items)
+            existing_flows = workflow_repo.list_by_tenant(tenant.tenant_id)
+
+            if not existing_flows and DEFAULT_FLOW:
+                logger.info(
+                    f"Tenant {tenant_id_str} has no workflows. Self-healing with default flow."
+                )
+
+                # Map JSON steps to Entity steps
+                steps = {}
+                for step_id, step_data in DEFAULT_FLOW.get("steps", {}).items():
+                    steps[step_id] = WorkflowStep(
+                        step_id=step_data["stepId"],
+                        type=step_data["type"],
+                        content=step_data.get("content", {}),
+                        next_step=step_data.get("next"),
+                    )
+
+                new_workflow = Workflow(
+                    workflow_id=str(uuid.uuid4()),
+                    tenant_id=tenant.tenant_id,
+                    name=DEFAULT_FLOW.get("name", "Default Booking Flow"),
+                    description=DEFAULT_FLOW.get(
+                        "description", "Auto-created by system"
+                    ),
+                    is_active=True,
+                    steps=steps,
+                    metadata={},
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                )
+
+                workflow_repo.save(new_workflow)
+                logger.info(
+                    f"Created default workflow {new_workflow.workflow_id} for tenant {tenant.tenant_id}"
+                )
+
+        except Exception as wh_error:
+            # Non-blocking error - log and continue so user can still login
+            logger.error("Workflow self-healing failed", error=str(wh_error))
+
+        # Return Result via success_response (if it handles direct return)
+        # or simple dict if AppSync expects direct object.
         # The other lambdas use success_response.
         # Schema expects Tenant! (object), success_response returns raw data?
         # shared/utils.py success_response returns data directly.
-        
-        return {
-            'tenantId': str(tenant.tenant_id),
-            'name': tenant.name,
-            'status': tenant.status.value,
-            'plan': tenant.plan.value,
-            'billingEmail': tenant.billing_email,
-            'settings': json.dumps(tenant.settings) if tenant.settings else None,
-            'createdAt': tenant.created_at.isoformat() + 'Z',
-            'updatedAt': getattr(tenant, 'updated_at', tenant.created_at).isoformat() + 'Z'
+
+        settings = tenant.settings or {}
+
+        response = {
+            "tenantId": str(tenant.tenant_id),
+            "name": tenant.name,
+            "slug": tenant.slug,
+            "status": tenant.status.value,
+            "plan": tenant.plan.value,
+            "ownerUserId": tenant.owner_user_id,
+            "billingEmail": tenant.billing_email,
+            "settings": settings if settings else None,
+            # WhatsApp fields — read from tenant entity or from settings
+            "whatsappEnabled": settings.get("whatsappEnabled", False),
+            "whatsappQuota": int(tenant.whatsapp_quota) if getattr(tenant, "whatsapp_quota", None) is not None else None,
+            "twilioPhoneNumber": settings.get("twilio_whatsapp_number"),
+            "whatsappNotificationRules": _normalize_notification_rules(settings.get("notification_rules")),
+            "createdAt": tenant.created_at.isoformat() + "Z" if "Z" not in tenant.created_at.isoformat() else tenant.created_at.isoformat(),
+            "updatedAt": (getattr(tenant, "updated_at", tenant.created_at).isoformat() + "Z") if "Z" not in getattr(tenant, "updated_at", tenant.created_at).isoformat() else getattr(tenant, "updated_at", tenant.created_at).isoformat(),
         }
+
+        try:
+            logger.info("Get tenant success", tenantId=str(tenant.tenant_id))
+        except Exception:
+            pass  # Don't let logging crash the response
+        return response
 
     except Exception as e:
         logger.error("Get tenant failed", error=str(e))
         raise e
-

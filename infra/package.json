@@ -1,6 +1,6 @@
 {
   "name": "chat-booking-infrastructure",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Infrastructure as Code for Chat Booking SaaS",
   "scripts": {
     "build": "tsc",
@@ -12,13 +12,18 @@
     "synth": "cdk synth"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "aws-cdk": "^2.100.0",
+    "@jridgewell/sourcemap-codec": "^1.5.5",
+    "@jridgewell/trace-mapping": "^0.3.31",
+    "@types/aws-lambda": "^8.10.160",
+    "@types/node": "^22.0.0",
+    "aws-cdk": "^2.1118.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.100.0",
-    "constructs": "^10.3.0"
+    "aws-cdk-lib": "^2.250.0",
+    "constructs": "^10.4.4",
+    "dotenv": "^17.2.3",
+    "source-map-support": "^0.5.21"
   }
 }

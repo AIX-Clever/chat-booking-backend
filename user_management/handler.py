@@ -1,0 +1,315 @@
+"""
+Lambda handler for user management operations.
+
+Handles GraphQL queries and mutations for tenant user management.
+"""
+
+import json
+import logging
+from typing import Any, Dict
+from shared.domain.entities import TenantId
+from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.infrastructure.user_role_repository import DynamoDBUserRoleRepository
+from shared.domain.exceptions import PlanLimitExceeded
+
+try:
+    from user_management.service import UserManagementService
+except ImportError:
+    from service import UserManagementService
+
+# Configure logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Initialize repositories
+tenant_repo = DynamoDBTenantRepository()
+user_role_repo = DynamoDBUserRoleRepository()
+
+# Initialize service
+user_service = UserManagementService(
+    tenant_repo=tenant_repo, user_role_repo=user_role_repo
+)
+
+
+def lambda_handler(event: Dict[str, Any], context: Any) -> Any:
+    """
+    Main Lambda handler for user management operations.
+
+    Routes to appropriate handler based on field name.
+    """
+    try:
+        logger.info(f"Event: {json.dumps(event)}")
+
+        # Extract tenant ID from identity claims
+        identity = event.get("identity", {})
+        claims = identity.get("claims", {})
+        tenant_id = TenantId(claims.get("custom:tenantId"))
+
+        if not tenant_id:
+            return error_response("Unauthorized: No tenant ID in claims", 401)
+
+        # Get user role from DynamoDB (not from claims anymore)
+        user_id = claims.get("sub") or claims.get("cognito:username")
+
+        # For listTenantUsers, we can proceed without role check
+        # (role check happens inside service for mutations)
+        caller_role = None
+        try:
+            caller_user_role = user_role_repo.get(user_id)
+            if caller_user_role:
+                caller_role = caller_user_role.role.value
+        except Exception as role_err:
+            logger.warning(f"Could not fetch user role: {role_err}")
+            # Continue anyway for queries
+
+        # Get field name to determine operation
+        field_name = event.get("info", {}).get("fieldName")
+        arguments = event.get("arguments", {})
+
+        logger.info(
+            f"Field: {field_name}, TenantId: {tenant_id}, CallerRole: {caller_role or 'UNKNOWN'}"
+        )
+
+        # Route to appropriate handler
+        if field_name == "listTenantUsers":
+            return handle_list_users(tenant_id)
+
+        elif field_name == "getTenantUser":
+            user_id = arguments.get("userId")
+            return handle_get_user(tenant_id, user_id)
+
+        elif field_name == "inviteUser":
+            input_data = arguments.get("input", {})
+            return handle_invite_user(tenant_id, input_data, caller_role)
+
+        elif field_name == "updateUserRole":
+            input_data = arguments.get("input", {})
+            return handle_update_role(tenant_id, input_data, caller_role)
+
+        elif field_name == "removeUser":
+            user_id = arguments.get("userId")
+            return handle_remove_user(tenant_id, user_id, caller_role, claims)
+
+        elif (
+            field_name == "resetUserPassword" or field_name == "resendUserPasswordReset"
+        ):
+            user_id = arguments.get("userId")
+            return handle_reset_password(tenant_id, user_id, caller_role)
+
+        elif field_name == "resendInvitation":
+            user_id = arguments.get("userId")
+            return handle_resend_invitation(tenant_id, user_id, caller_role)
+
+        else:
+            return error_response(f"Unknown field: {field_name}", 400)
+
+    except Exception as e:
+        logger.error(f"Error in user management handler: {str(e)}", exc_info=True)
+        raise e
+
+
+def handle_list_users(tenant_id: TenantId) -> list:
+    """
+    List all users for a tenant.
+
+    Returns raw list for AppSync.
+    """
+    try:
+        users = user_service.list_users(tenant_id)
+        logger.info(f"Listed {len(users)} users for tenant {tenant_id}")
+        return users
+
+    except Exception as e:
+        logger.error(f"Error listing users: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_get_user(tenant_id: TenantId, user_id: str) -> Dict:
+    """Get a specific user."""
+    try:
+        user = user_service.get_user(user_id)
+
+        if not user:
+            raise ValueError(f"User {user_id} not found")
+
+        # Verify user belongs to this tenant
+        if user.get("tenantId") != str(tenant_id):
+            raise ValueError("User does not belong to this tenant")
+
+        return user
+
+    except Exception as e:
+        logger.error(f"Error getting user: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_invite_user(tenant_id: TenantId, input_data: Dict, caller_role: str) -> Dict:
+    """
+    Invite a new user to the tenant.
+
+    Only OWNER role can invite users.
+    """
+    try:
+        # Check if caller has OWNER role
+        if caller_role != "OWNER":
+            raise ValueError("Only OWNER can invite users")
+
+        email = input_data.get("email")
+        name = input_data.get("name")
+        role = input_data.get("role", "USER")
+
+        if not email:
+            raise ValueError("Email is required")
+
+        user = user_service.invite_user(
+            tenant_id=tenant_id, email=email, name=name, role=role
+        )
+
+        logger.info(f"Invited user {email} with role {role} to tenant {tenant_id}")
+        return user
+
+    except PlanLimitExceeded as e:
+        logger.warning(f"Plan limit exceeded: {str(e)}")
+        raise ValueError(f"Plan limit exceeded: {str(e)}")
+
+    except Exception as e:
+        logger.error(f"Error inviting user: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_update_role(tenant_id: TenantId, input_data: Dict, caller_role: str) -> Dict:
+    """
+    Update a user's role.
+
+    Only OWNER can change roles.
+    """
+    try:
+        # Check if caller has OWNER role
+        if caller_role != "OWNER":
+            raise ValueError("Only OWNER can change user roles")
+
+        user_id = input_data.get("userId")
+        new_role = input_data.get("role")
+
+        if not user_id or not new_role:
+            raise ValueError("userId and role are required")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get("tenantId") != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+
+        updated_user = user_service.update_role(user_id, new_role)
+
+        logger.info(f"Updated user {user_id} role to {new_role}")
+        return updated_user
+
+    except Exception as e:
+        logger.error(f"Error updating role: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_remove_user(
+    tenant_id: TenantId, user_id: str, caller_role: str, claims: Dict
+) -> Dict:
+    """
+    Remove a user (disable their account).
+
+    Only OWNER can remove users.
+    """
+    try:
+        # Check if caller has OWNER role
+        if caller_role != "OWNER":
+            raise ValueError("Only OWNER can remove users")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get("tenantId") != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+
+        # Prevent removing yourself
+        caller_user_id = claims.get("sub") or claims.get("cognito:username")
+        if user_id == caller_user_id:
+            raise ValueError("Cannot remove yourself")
+
+        removed_user = user_service.remove_user(user_id)
+
+        logger.info(f"Removed user {user_id} from tenant {tenant_id}")
+        return removed_user
+
+    except Exception as e:
+        logger.error(f"Error removing user: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_reset_password(tenant_id: TenantId, user_id: str, caller_role: str) -> bool:
+    """
+    Trigger password reset for a user.
+
+    Only OWNER or ADMIN (if not resetting another owner) can reset passwords.
+    """
+    try:
+        # Check caller permissions
+        if caller_role not in ["OWNER", "ADMIN"]:
+            raise ValueError("Insufficient permissions to reset password")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get("tenantId") != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+
+        # Prevent taking over OWNER account if you are just ADMIN
+        if caller_role == "ADMIN" and user.get("role") == "OWNER":
+            raise ValueError("Admins cannot reset Owner passwords")
+
+        # Prevent resetting password for INACTIVE users
+        if user.get("status") == "INACTIVE":
+            raise ValueError("Cannot reset password for an inactive user")
+
+        # Call service to reset password
+        # Since we haven't updated user_service yet, we might need a direct boto3 call or update service too.
+        # Assuming user_service will have this method or we add it now.
+        # For minimal change, we can add it here if `reset_user_password` is not in service.
+        # But better to keep architecture clean. Let's assume we update service or allow accessing cognito.
+
+        success = user_service.reset_user_password(user_id)
+
+        logger.info(f"Triggered password reset for user {user_id}")
+        return success
+
+    except Exception as e:
+        logger.error(f"Error resetting password: {str(e)}", exc_info=True)
+        raise
+
+
+def handle_resend_invitation(
+    tenant_id: TenantId, user_id: str, caller_role: str
+) -> bool:
+    """
+    Resend invitation to a user.
+    Only OWNER or ADMIN can resend invitations.
+    """
+    try:
+        # Check caller permissions
+        if caller_role not in ["OWNER", "ADMIN"]:
+            raise ValueError("Insufficient permissions to resend invitation")
+
+        # Get user to verify they belong to this tenant
+        user = user_service.get_user(user_id)
+        if not user or user.get("tenantId") != str(tenant_id):
+            raise ValueError("User not found or does not belong to this tenant")
+
+        # Call service to resend invitation
+        success = user_service.resend_invitation(user_id)
+
+        logger.info(f"Resent invitation for user {user_id}")
+        return success
+
+    except Exception as e:
+        logger.error(f"Error resending invitation: {str(e)}", exc_info=True)
+        raise
+
+
+def error_response(message: str, status_code: int = 400) -> Dict:
+    """Create error response for AppSync."""
+    return {"errorMessage": message, "errorType": "HandlerError"}

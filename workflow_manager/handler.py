@@ -68,40 +68,48 @@ def get_workflow(tenant_id, workflow_id):
     )
     return response.get('Item')
 
+
 def create_workflow(tenant_id, input_data):
     if not tenant_id:
         raise Exception("Unauthorized: Missing tenantId")
-        
-    workflow_id = input_data.get('workflowId') or str(uuid.uuid4())
-    timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    
+
+    # 3. Create Workflow Record
+    workflow_id = str(uuid.uuid4())
+    timestamp = datetime.datetime.utcnow().isoformat()
+
     item = {
         'tenantId': tenant_id,
         'workflowId': workflow_id,
-        'name': input_data['name'],
-        'description': input_data.get('description'),
-        'steps': input_data['steps'], # JSON/Map
-        'metadata': input_data.get('metadata', {}),
-        'isActive': input_data.get('isActive', True),
+        'name': input_data.get('name', 'Untitled Workflow'),
+        'description': input_data.get('description', ''),
+        'triggerType': input_data.get('triggerType', 'MANUAL'),
+        # Store as JSON string
+        'steps': json.dumps(input_data.get('steps', [])),
+        'isActive': True,
         'createdAt': timestamp,
         'updatedAt': timestamp
     }
-    
+
     workflows_table.put_item(Item=item)
+
     return item
+
+
+    return item
+
 
 def update_workflow(tenant_id, input_data):
     if not tenant_id:
         raise Exception("Unauthorized: Missing tenantId")
-        
+
     workflow_id = input_data['workflowId']
     timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    
+
     # Build update expression
     update_parts = []
     expression_values = {}
     expression_names = {}
-    
+
     # Correct fields based on AppSync schema
     fields = ['name', 'description', 'steps', 'metadata', 'isActive']
     for field in fields:
@@ -128,6 +136,7 @@ def update_workflow(tenant_id, input_data):
     )
     
     return response.get('Attributes')
+
 
 def delete_workflow(tenant_id, workflow_id):
     if not tenant_id:

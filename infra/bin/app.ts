@@ -1,11 +1,14 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
+import * as dotenv from 'dotenv';
+dotenv.config(); // Load .env file
 import * as cdk from 'aws-cdk-lib';
 import { DatabaseStack } from '../lib/database-stack';
 import { LambdaStack } from '../lib/lambda-stack';
 import { AppSyncApiStack } from '../lib/appsync-api-stack';
 import { AuthStack } from '../lib/auth-stack';
-import { VectorDatabaseStack } from '../lib/vector-database-stack';
+// import { VectorDatabaseStack } from '../lib/vector-database-stack';
+import { AssetsStack } from '../lib/assets-stack';
 
 /**
  * CDK App Entry Point
@@ -27,7 +30,8 @@ const app = new cdk.App();
 // Get environment from context
 const env = app.node.tryGetContext('env') || 'dev';
 const account = app.node.tryGetContext('account') || process.env.CDK_DEFAULT_ACCOUNT;
-const region = app.node.tryGetContext('region') || process.env.CDK_DEFAULT_REGION || 'us-east-1';
+// Default region: us-east-2 (all environments)
+const region = app.node.tryGetContext('region') || process.env.CDK_DEFAULT_REGION || process.env.AWS_REGION || 'us-east-2';
 
 // Common tags for all resources
 const tags = {
@@ -55,10 +59,40 @@ const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
   tags,
 });
 
-// 2.5 Knowledge Base Stack - Aurora Serverless v2 + VPC (Private Network)
-const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase`, {
+// 2.5 Knowledge Base Stack - REMOVED for Cost Optimization (RDS + VPC)
+// const vectorDbStack = new VectorDatabaseStack(app, `${stackPrefix}-KnowledgeBase`, {
+//   env: { account, region },
+//   description: 'Aurora Serverless v2 with pgvector for AI Knowledge Base',
+//   tags,
+// });
+
+// 2.6 Assets Stack - S3 for User Uploads
+const assetsStack = new AssetsStack(app, `${stackPrefix}-Assets`, {
   env: { account, region },
-  description: 'Aurora Serverless v2 with pgvector for AI Knowledge Base',
+  description: 'S3 + CloudFront for Assets',
+  tags,
+  stage: env,
+  domainName: process.env.MEDIA_DOMAIN_NAME,
+  certificateArn: process.env.CERTIFICATE_ARN,
+});
+
+// 2.7 Subscription Stack - Billing & Payments (Secure)
+import { SubscriptionStack } from '../lib/subscription-stack';
+const subscriptionStack = new SubscriptionStack(app, `${stackPrefix}-Subscriptions`, {
+  env: { account, region },
+  description: 'SaaS Subscriptions Core (DynamoDB + SQS + Lambdas)',
+  tags,
+  tenantsTable: databaseStack.tenantsTable,
+  userPool: authStack.userPool,
+  envName: env,
+});
+subscriptionStack.addDependency(databaseStack);
+
+// 2.8 WhatsApp Stack - Messaging Infrastructure
+import { WhatsappStack } from '../lib/whatsapp-stack';
+const whatsappStack = new WhatsappStack(app, `${stackPrefix}-Whatsapp`, {
+  env: { account, region },
+  description: 'Messaging Infrastructure (SNS + SQS) for WhatsApp',
   tags,
 });
 
@@ -67,10 +101,10 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   env: { account, region },
   description: 'Lambda functions for Chat Booking Backend',
   tags,
-  vpc: vectorDbStack.vpc,
-  dbSecurityGroup: vectorDbStack.dbSecurityGroup,
-  dbSecret: vectorDbStack.dbSecret,
-  dbEndpoint: vectorDbStack.cluster.clusterArn, // For Data API, we pass the ARN
+  // vpc: vectorDbStack.vpc, // Removed
+  // dbSecurityGroup: vectorDbStack.dbSecurityGroup, // Removed
+  // dbSecret: vectorDbStack.dbSecret, // Removed
+  // dbEndpoint: vectorDbStack.cluster.clusterArn, // Removed
   tenantsTable: databaseStack.tenantsTable,
   apiKeysTable: databaseStack.apiKeysTable,
   servicesTable: databaseStack.servicesTable,
@@ -83,17 +117,33 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   workflowsTable: databaseStack.workflowsTable,
   faqsTable: databaseStack.faqsTable,
   documentsTable: databaseStack.documentsTable,
+  roomsTable: databaseStack.roomsTable,
+  userRolesTable: databaseStack.userRolesTable,
   userPool: authStack.userPool,
+  envName: env,
+  assetsBucketName: assetsStack.assetsBucket.bucketName,
+  clientsTable: databaseStack.clientsTable,
+  clientAuditLogsTable: databaseStack.clientAuditLogsTable,
+  dteFoliosTable: databaseStack.dteFoliosTable,
+  whatsappMessagesTable: databaseStack.whatsappMessagesTable,
+  whatsappNotificationTopic: whatsappStack.notificationTopic,
+  whatsappSenderQueue: whatsappStack.senderQueue,
+  waitingListTable: databaseStack.waitingListTable,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);
-lambdaStack.addDependency(vectorDbStack);
+lambdaStack.addDependency(whatsappStack);
+lambdaStack.addDependency(subscriptionStack);
+
+
 
 // 4. AppSync API Stack - GraphQL Gateway
 const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   env: { account, region },
   description: 'GraphQL API for Chat Booking SaaS',
   tags,
+  domainName: process.env.API_DOMAIN_NAME,
+  certificateArn: process.env.CERTIFICATE_ARN,
   authResolverFunction: lambdaStack.authResolverFunction,
   catalogFunction: lambdaStack.catalogFunction,
   availabilityFunction: lambdaStack.availabilityFunction,
@@ -102,10 +152,21 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   registerTenantFunction: lambdaStack.registerTenantFunction,
   updateTenantFunction: lambdaStack.updateTenantFunction,
   getTenantFunction: lambdaStack.getTenantFunction,
+  getPublicProfileFunction: lambdaStack.getPublicProfileFunction,
+  publicLinkStatusFunction: lambdaStack.publicLinkStatusFunction,
   metricsFunction: lambdaStack.metricsFunction,
   workflowManagerFunction: lambdaStack.workflowManagerFunction,
   faqManagerFunction: lambdaStack.faqManagerFunction,
+  userManagementFunction: lambdaStack.userManagementFunction,
   presignFunction: lambdaStack.presignFunction,
+  apiKeyManagerFunction: lambdaStack.apiKeyManagerFunction,
+  subscribeFunction: subscriptionStack.subscribeFunction,
+  downgradeFunction: subscriptionStack.downgradeFunction,
+  listInvoicesFunction: subscriptionStack.listInvoicesFunction,
+  checkPaymentStatusFunction: lambdaStack.checkPaymentStatusFunction,
+  clientsFunction: lambdaStack.clientsFunction,
+  supportManagerFunction: lambdaStack.supportManagerFunction,
+  waitlistApiFunction: lambdaStack.waitlistApiFunction,
   userPool: authStack.userPool,
 });
 appSyncApiStack.addDependency(lambdaStack);

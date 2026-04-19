@@ -1,0 +1,2 @@
+"""Booking module compatibility package."""
+

@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as appsync from 'aws-cdk-lib/aws-appsync';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -27,8 +28,22 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   metricsFunction: lambda.IFunction;
   workflowManagerFunction: lambda.IFunction;
   faqManagerFunction: lambda.IFunction;
+  userManagementFunction: lambda.IFunction;
   presignFunction: lambda.IFunction;
+  apiKeyManagerFunction: lambda.IFunction;
+  subscribeFunction: lambda.IFunction;
+  downgradeFunction: lambda.IFunction;
+  listInvoicesFunction: lambda.IFunction;
+  getPublicProfileFunction: lambda.IFunction;
+  publicLinkStatusFunction: lambda.IFunction;
+  checkPaymentStatusFunction: lambda.IFunction;
+  clientsFunction: lambda.IFunction;
+  supportManagerFunction: lambda.IFunction;
+  waitlistApiFunction: lambda.IFunction;
+  cafManagerFunction?: lambda.IFunction;
   userPool: cdk.aws_cognito.IUserPool;
+  domainName?: string;
+  certificateArn?: string;
 }
 
 export class AppSyncApiStack extends cdk.Stack {
@@ -38,13 +53,10 @@ export class AppSyncApiStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: AppSyncApiStackProps) {
     super(scope, id, props);
 
-    // GraphQL Schema
-    const schema = this.buildSchema();
-
     // Create AppSync API
     this.api = new appsync.GraphqlApi(this, 'ChatBookingApi', {
       name: 'ChatBookingGraphQLApi',
-      schema: appsync.SchemaFile.fromAsset(this.createSchemaFile(schema)),
+      schema: appsync.SchemaFile.fromAsset(path.join(process.cwd(), 'schema.graphql')),
       authorizationConfig: {
         defaultAuthorization: {
           authorizationType: appsync.AuthorizationType.LAMBDA,
@@ -74,9 +86,69 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
+      domainName: (props.domainName && props.certificateArn) ? {
+        certificate: cdk.aws_certificatemanager.Certificate.fromCertificateArn(this, 'AppSyncCertificate', props.certificateArn!),
+        domainName: props.domainName,
+      } : undefined,
     });
 
-    // Create Lambda data sources
+    // -------------------------------------------------------------------
+    // AWS WAF — Rate Limiting by IP (Capa 1 de protección)
+    // Blocks IPs that exceed 500 requests per 5-minute window.
+    // Cost: ~$6/month (WebACL $5 + 1 rule $1). First 10M requests free.
+    // -------------------------------------------------------------------
+    const webAcl = new wafv2.CfnWebACL(this, 'AppSyncWAF', {
+      scope: 'REGIONAL',
+      defaultAction: { allow: {} },
+      visibilityConfig: {
+        cloudWatchMetricsEnabled: true,
+        metricName: 'AppSyncWAFMetric',
+        sampledRequestsEnabled: true,
+      },
+      rules: [
+        {
+          name: 'RateLimitByIP',
+          priority: 1,
+          action: { block: {} },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'RateLimitByIPMetric',
+            sampledRequestsEnabled: true,
+          },
+          statement: {
+            rateBasedStatement: {
+              // Limit: 500 requests per 5-minute window per IP
+              limit: 500,
+              aggregateKeyType: 'IP',
+            },
+          },
+        },
+        {
+          // Block known bad bots and scanners for free (AWS Managed Rule)
+          name: 'AWSManagedRulesBotControlRuleSet',
+          priority: 2,
+          overrideAction: { none: {} },
+          visibilityConfig: {
+            cloudWatchMetricsEnabled: true,
+            metricName: 'BotControlMetric',
+            sampledRequestsEnabled: false,
+          },
+          statement: {
+            managedRuleGroupStatement: {
+              vendorName: 'AWS',
+              name: 'AWSManagedRulesAmazonIpReputationList',
+            },
+          },
+        },
+      ],
+    });
+
+    // Associate WAF with the AppSync API
+    new wafv2.CfnWebACLAssociation(this, 'AppSyncWAFAssociation', {
+      resourceArn: this.api.arn,
+      webAclArn: webAcl.attrArn,
+    });
+
     const catalogDataSource = this.api.addLambdaDataSource(
       'CatalogDataSource',
       props.catalogFunction
@@ -127,12 +199,47 @@ export class AppSyncApiStack extends cdk.Stack {
       props.faqManagerFunction
     );
 
+    const userManagementDataSource = this.api.addLambdaDataSource(
+      'UserManagementDataSource',
+      props.userManagementFunction
+    );
+
     const presignDataSource = this.api.addLambdaDataSource(
       'PresignDataSource',
       props.presignFunction
     );
 
+    const apiKeyManagerDataSource = this.api.addLambdaDataSource(
+      'ApiKeyManagerDataSource',
+      props.apiKeyManagerFunction
+    );
+
+    const subscribeDataSource = this.api.addLambdaDataSource(
+      'SubscribeDataSource',
+      props.subscribeFunction
+    );
+
+    const downgradeDataSource = this.api.addLambdaDataSource(
+      'DowngradeDataSource',
+      props.downgradeFunction
+    );
+
+    const supportManagerDataSource = this.api.addLambdaDataSource(
+      'SupportManagerDataSource',
+      props.supportManagerFunction
+    );
+
     // Create resolvers
+    const listInvoicesDataSource = this.api.addLambdaDataSource(
+      'ListInvoicesDataSource',
+      props.listInvoicesFunction
+    );
+
+    const getPublicProfileDataSource = this.api.addLambdaDataSource(
+      'GetPublicProfileDataSource',
+      props.getPublicProfileFunction
+    );
+
     this.createResolvers(
       catalogDataSource,
       availabilityDataSource,
@@ -144,8 +251,95 @@ export class AppSyncApiStack extends cdk.Stack {
       metricsDataSource,
       workflowManagerDataSource,
       faqManagerDataSource,
-      presignDataSource
+      presignDataSource,
+      userManagementDataSource,
+      apiKeyManagerDataSource,
+      subscribeDataSource,
+      downgradeDataSource,
+      supportManagerDataSource,
+      listInvoicesDataSource,
+      getPublicProfileDataSource,
+      this.api.addLambdaDataSource('WaitlistApiDataSource', props.waitlistApiFunction),
+      props.cafManagerFunction ? this.api.addLambdaDataSource('CafManagerDataSource', props.cafManagerFunction) : undefined
     );
+
+    // Public Link Status Data Source and Resolvers
+
+    // Public Link Status Data Source and Resolvers
+    const publicLinkStatusDataSource = this.api.addLambdaDataSource(
+      'PublicLinkStatusDataSource',
+      props.publicLinkStatusFunction
+    );
+
+    publicLinkStatusDataSource.createResolver('GetPublicLinkStatusResolver', {
+      typeName: 'Query',
+      fieldName: 'getPublicLinkStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    publicLinkStatusDataSource.createResolver('SetPublicLinkStatusResolver', {
+      typeName: 'Mutation',
+      fieldName: 'setPublicLinkStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Check Payment Status Data Source
+    const checkPaymentStatusDataSource = this.api.addLambdaDataSource(
+      'CheckPaymentStatusDataSource',
+      props.checkPaymentStatusFunction
+    );
+
+    checkPaymentStatusDataSource.createResolver('CheckPaymentStatusResolver', {
+      typeName: 'Query',
+      fieldName: 'checkPaymentStatus',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    // Clients Data Source (Client File)
+    const clientsDataSource = this.api.addLambdaDataSource(
+      'ClientsDataSource',
+      props.clientsFunction
+    );
+
+    clientsDataSource.createResolver('GetClientResolver', {
+      typeName: 'Query',
+      fieldName: 'getClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('ListClientsResolver', {
+      typeName: 'Query',
+      fieldName: 'listClients',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('ListClientAuditLogsResolver', {
+      typeName: 'Query',
+      fieldName: 'listClientAuditLogs',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('CreateClientResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    clientsDataSource.createResolver('UpdateClientResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateClient',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+
 
     // Outputs
     new cdk.CfnOutput(this, 'GraphQLApiUrl', {
@@ -164,548 +358,7 @@ export class AppSyncApiStack extends cdk.Stack {
     });
   }
 
-  private buildSchema(): string {
-    return `
-# Scalars
-scalar AWSDateTime
-scalar AWSJSON
 
-# Enums
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  NO_SHOW
-}
-
-enum PaymentStatus {
-  NONE
-  PENDING
-  PAID
-  FAILED
-}
-
-enum ConversationState {
-  INIT
-  SERVICE_PENDING
-  SERVICE_SELECTED
-  PROVIDER_PENDING
-  PROVIDER_SELECTED
-  SLOT_PENDING
-  CONFIRM_PENDING
-  BOOKING_CONFIRMED
-}
-
-
-# Types - Tenant
-enum TenantStatus {
-  ACTIVE
-  SUSPENDED
-  CANCELLED
-}
-
-enum TenantPlan {
-  LITE
-  PRO
-  BUSINESS
-  ENTERPRISE
-}
-
-type Tenant @aws_api_key @aws_cognito_user_pools {
-  tenantId: ID!
-  name: String!
-  slug: String!
-  status: TenantStatus!
-  plan: TenantPlan!
-  ownerUserId: String!
-  billingEmail: String!
-  settings: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-type ApiKey {
-  apiKey: String!
-  tenantId: ID!
-  status: String!
-  createdAt: AWSDateTime!
-  expiresAt: AWSDateTime!
-}
-
-type FAQ @aws_api_key @aws_cognito_user_pools {
-  faqId: ID!
-  tenantId: ID!
-  question: String!
-  answer: String!
-  category: String!
-  active: Boolean!
-}
-
-# Types - Dashboard Metrics
-type DashboardSummary @aws_cognito_user_pools {
-  revenue: Float!
-  bookings: Int!
-  messages: Int!
-  tokensIA: Int!
-  conversionsChat: Int!
-  aiResponses: Int!
-  conversionRate: Float!
-  autoAttendanceRate: Float!
-}
-
-type DailyMetric @aws_cognito_user_pools {
-  date: String!
-  bookings: Int!
-  messages: Int!
-}
-
-type TopService @aws_cognito_user_pools {
-  serviceId: ID!
-  name: String!
-  bookings: Int!
-}
-
-type TopProvider @aws_cognito_user_pools {
-  providerId: ID!
-  name: String!
-  bookings: Int!
-}
-
-type BookingStatusCounts @aws_cognito_user_pools {
-  CONFIRMED: Int!
-  PENDING: Int!
-  CANCELLED: Int!
-  NO_SHOW: Int!
-}
-
-type MetricError @aws_cognito_user_pools {
-  type: String!
-  count: Int!
-  lastOccurred: String
-}
-
-type DashboardMetrics @aws_cognito_user_pools {
-  period: String!
-  summary: DashboardSummary!
-  daily: [DailyMetric!]!
-  topServices: [TopService!]!
-  topProviders: [TopProvider!]!
-  bookingStatus: BookingStatusCounts!
-  errors: [MetricError!]!
-}
-
-type PlanUsage @aws_cognito_user_pools {
-  messages: Int!
-  bookings: Int!
-  tokensIA: Int!
-}
-
-# Types - Catalog
-type Category @aws_api_key @aws_cognito_user_pools {
-  categoryId: ID!
-  tenantId: ID!
-  name: String!
-  description: String
-  isActive: Boolean!
-  displayOrder: Int
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-type Service @aws_api_key @aws_cognito_user_pools {
-  serviceId: ID!
-  name: String!
-  description: String
-  category: String!
-  durationMinutes: Int!
-  price: Float
-  available: Boolean!
-}
-
-type Provider @aws_api_key @aws_cognito_user_pools {
-  providerId: ID!
-  name: String!
-  bio: String
-  serviceIds: [ID!]!
-  timezone: String!
-  metadata: AWSJSON
-  available: Boolean!
-}
-
-# Types - Availability
-type TimeSlot @aws_api_key @aws_cognito_user_pools {
-  providerId: ID!
-  serviceId: ID!
-  start: AWSDateTime!
-  end: AWSDateTime!
-  isAvailable: Boolean!
-}
-
-type TimeRange @aws_api_key @aws_cognito_user_pools {
-  startTime: String!
-  endTime: String!
-}
-
-type ProviderAvailability @aws_cognito_user_pools {
-  providerId: ID!
-  dayOfWeek: String!
-  timeRanges: [TimeRange!]!
-  breaks: [TimeRange!]
-  exceptions: [String!]
-}
-
-# Types - Bookings
-type Booking @aws_api_key @aws_cognito_user_pools {
-  bookingId: ID!
-  tenantId: ID!
-  serviceId: ID!
-  providerId: ID!
-  start: AWSDateTime!
-  end: AWSDateTime!
-  status: BookingStatus!
-  clientName: String!
-  clientEmail: String!
-  clientPhone: String
-  notes: String
-  conversationId: ID
-  paymentStatus: PaymentStatus!
-  totalAmount: Float!
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-# Types - Chat
-type Message @aws_api_key {
-  role: String!
-  content: String!
-  type: String!
-  timestamp: String!
-}
-
-type Conversation @aws_api_key {
-  conversationId: ID!
-  tenantId: ID!
-  state: ConversationState!
-  context: AWSJSON
-  messages: [Message!]!
-  channel: String!
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-type ChatResponse @aws_api_key {
-  conversation: Conversation!
-  response: AWSJSON!
-}
-
-# Types - Workflow
-type WorkflowStep @aws_cognito_user_pools {
-  stepId: String!
-  type: String!
-  content: AWSJSON
-  next: String
-}
-
-type Workflow @aws_cognito_user_pools {
-  workflowId: ID!
-  tenantId: ID!
-  name: String!
-  description: String
-  isActive: Boolean!
-  steps: AWSJSON! # JSON object with map of steps
-  metadata: AWSJSON
-  createdAt: AWSDateTime!
-  updatedAt: AWSDateTime!
-}
-
-
-# Inputs - Tenant
-input RegisterTenantInput {
-  companyName: String!
-  email: String!
-  password: String!
-}
-
-input UpdateTenantInput {
-  name: String
-  billingEmail: String
-  settings: AWSJSON
-}
-
-# Inputs - FAQs
-input CreateFAQInput {
-  question: String!
-  answer: String!
-  category: String
-  active: Boolean
-}
-
-input UpdateFAQInput {
-  faqId: ID!
-  question: String
-  answer: String
-  category: String
-  active: Boolean
-}
-
-# Inputs - Catalog
-input CreateCategoryInput {
-  name: String!
-  description: String
-  isActive: Boolean
-  displayOrder: Int
-  metadata: AWSJSON
-}
-
-input UpdateCategoryInput {
-  categoryId: ID!
-  name: String
-  description: String
-  isActive: Boolean
-  displayOrder: Int
-  metadata: AWSJSON
-}
-
-input CreateServiceInput {
-  name: String!
-  description: String
-  category: String!
-  durationMinutes: Int!
-  price: Float
-}
-
-input UpdateServiceInput {
-  serviceId: ID!
-  name: String
-  description: String
-  category: String
-  durationMinutes: Int
-  price: Float
-  available: Boolean
-}
-
-input CreateProviderInput {
-  name: String!
-  bio: String
-  serviceIds: [ID!]!
-  timezone: String!
-  metadata: AWSJSON
-}
-
-input UpdateProviderInput {
-  providerId: ID!
-  name: String
-  bio: String
-  serviceIds: [ID!]
-  timezone: String
-  metadata: AWSJSON
-  available: Boolean
-}
-
-# Inputs - Availability
-input GetAvailableSlotsInput {
-  serviceId: ID!
-  providerId: ID!
-  from: AWSDateTime!
-  to: AWSDateTime!
-}
-
-input TimeRangeInput {
-  startTime: String!
-  endTime: String!
-}
-
-input SetAvailabilityInput {
-  providerId: ID!
-  dayOfWeek: String!
-  timeRanges: [TimeRangeInput!]!
-  breaks: [TimeRangeInput!]
-}
-
-input SetExceptionsInput {
-  providerId: ID!
-  exceptions: [String!]!
-}
-
-type ProviderExceptions @aws_cognito_user_pools {
-  providerId: ID!
-  exceptions: [String!]!
-}
-
-# Inputs - Bookings
-input CreateBookingInput {
-  serviceId: ID!
-  providerId: ID!
-  start: AWSDateTime!
-  end: AWSDateTime!
-  clientName: String!
-  clientEmail: String!
-  clientPhone: String
-  notes: String
-  conversationId: ID
-}
-
-input ConfirmBookingInput {
-  bookingId: ID!
-}
-
-input CancelBookingInput {
-  bookingId: ID!
-  reason: String
-}
-
-input GetBookingInput {
-  bookingId: ID!
-}
-
-input ListBookingsByProviderInput {
-  providerId: ID!
-  startDate: AWSDateTime!
-  endDate: AWSDateTime!
-}
-
-input ListBookingsByClientInput {
-  clientEmail: String!
-}
-
-input GetBookingByConversationInput {
-  conversationId: ID!
-}
-
-# Inputs - Chat
-input StartConversationInput {
-  channel: String
-  metadata: AWSJSON
-}
-
-input SendMessageInput {
-  conversationId: ID!
-  message: String!
-  messageType: String
-  userData: AWSJSON
-}
-
-input ConfirmBookingFromConversationInput {
-  conversationId: ID!
-}
-
-input GetConversationInput {
-  conversationId: ID!
-}
-
-# Inputs - Workflow
-input CreateWorkflowInput {
-  name: String!
-  description: String
-  steps: AWSJSON!
-  metadata: AWSJSON
-  isActive: Boolean
-}
-
-input UpdateWorkflowInput {
-  workflowId: ID!
-  name: String
-  description: String
-  steps: AWSJSON
-  metadata: AWSJSON
-  isActive: Boolean
-}
-
-# Queries
-type Query {
-  # Catalog
-  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools
-  searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools
-  getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools
-  listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools
-  listProvidersByService(serviceId: ID!): [Provider!]! @aws_api_key @aws_cognito_user_pools
-  
-  # Availability
-  getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools
-  getProviderAvailability(providerId: ID!): [ProviderAvailability!]! @aws_cognito_user_pools
-  
-  # Bookings
-  getBooking(input: GetBookingInput!): Booking @aws_api_key @aws_cognito_user_pools
-  listBookingsByProvider(input: ListBookingsByProviderInput!): [Booking!]! @aws_cognito_user_pools
-  listBookingsByClient(input: ListBookingsByClientInput!): [Booking!]! @aws_cognito_user_pools
-  getBookingByConversation(input: GetBookingByConversationInput!): Booking @aws_api_key @aws_cognito_user_pools
-  
-  # Chat
-  getConversation(input: GetConversationInput!): Conversation @aws_api_key @aws_cognito_user_pools
-  getTenant(tenantId: ID): Tenant @aws_api_key @aws_cognito_user_pools
-  listFAQs: [FAQ!]! @aws_api_key @aws_cognito_user_pools
-  
-  # Workflow (Admin)
-  listWorkflows: [Workflow!]! @aws_cognito_user_pools
-  getWorkflow(workflowId: ID!): Workflow @aws_cognito_user_pools
-
-  # Dashboard Metrics (Admin)
-  getDashboardMetrics: DashboardMetrics @aws_cognito_user_pools
-  getPlanUsage: PlanUsage @aws_cognito_user_pools
-}
-
-# Mutations
-type Mutation {
-  # Tenant (Public/Auth)
-  registerTenant(input: RegisterTenantInput!): Tenant! @aws_api_key
-  updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
-
-  # Catalog (Admin)
-  createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools
-  updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
-  deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
-
-  createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
-  updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
-  deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
-  
-  createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
-  updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
-  deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
-  
-  # Availability (Admin)
-  setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools
-  setProviderExceptions(input: SetExceptionsInput!): ProviderExceptions! @aws_cognito_user_pools
-  
-  # FAQs (Admin)
-  createFAQ(input: CreateFAQInput!): FAQ! @aws_cognito_user_pools
-  updateFAQ(input: UpdateFAQInput!): FAQ! @aws_cognito_user_pools
-  deleteFAQ(faqId: ID!): FAQ! @aws_cognito_user_pools
-
-  # Workflows (Admin)
-  createWorkflow(input: CreateWorkflowInput!): Workflow! @aws_cognito_user_pools
-  updateWorkflow(input: UpdateWorkflowInput!): Workflow! @aws_cognito_user_pools
-  deleteWorkflow(workflowId: ID!): Workflow! @aws_cognito_user_pools
-
-  # Documents (Knowledge Base)
-  getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
-
-  # Bookings
-  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools
-  confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
-  cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
-  markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
-  
-  # Chat
-  startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key
-  sendMessage(input: SendMessageInput!): ChatResponse! @aws_api_key
-  confirmBookingFromConversation(input: ConfirmBookingFromConversationInput!): ChatResponse! @aws_api_key
-}
-
-schema {
-  query: Query
-  mutation: Mutation
-}
-`;
-  }
-
-  private createSchemaFile(schema: string): string {
-    const schemaPath = path.join(__dirname, '../schema.graphql');
-    fs.writeFileSync(schemaPath, schema);
-    return schemaPath;
-  }
 
   private createResolvers(
     catalogDataSource: appsync.LambdaDataSource,
@@ -718,7 +371,16 @@ schema {
     metricsDataSource: appsync.LambdaDataSource,
     workflowManagerDataSource: appsync.LambdaDataSource,
     faqManagerDataSource: appsync.LambdaDataSource,
-    presignDataSource: appsync.LambdaDataSource
+    presignDataSource: appsync.LambdaDataSource,
+    userManagementDataSource: appsync.LambdaDataSource,
+    apiKeyManagerDataSource: appsync.LambdaDataSource,
+    subscribeDataSource: appsync.LambdaDataSource,
+    downgradeDataSource: appsync.LambdaDataSource,
+    supportManagerDataSource: appsync.LambdaDataSource,
+    listInvoicesDataSource: appsync.LambdaDataSource,
+    getPublicProfileDataSource: appsync.LambdaDataSource,
+    waitlistApiDataSource: appsync.LambdaDataSource,
+    cafManagerDataSource?: appsync.LambdaDataSource
   ): void {
     const requestTemplate = appsync.MappingTemplate.fromString(`{
       "version": "2018-05-29",
@@ -736,6 +398,93 @@ schema {
 
     const responseTemplate = appsync.MappingTemplate.lambdaResult();
 
+    // User Management Resolvers
+    userManagementDataSource.createResolver('ListTenantUsersResolver', {
+      typeName: 'Query',
+      fieldName: 'listTenantUsers',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Waitlist Resolvers
+    waitlistApiDataSource.createResolver('GetWaitingListByServiceResolver', {
+      typeName: 'Query',
+      fieldName: 'getWaitingListByService',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+    waitlistApiDataSource.createResolver('AddToWaitingListResolver', {
+      typeName: 'Mutation',
+      fieldName: 'addToWaitingList',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+    waitlistApiDataSource.createResolver('RemoveWaitingListEntryResolver', {
+      typeName: 'Mutation',
+      fieldName: 'removeWaitingListEntry',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Billing / Invoices Resolvers
+    listInvoicesDataSource.createResolver('ListInvoicesResolver', {
+      typeName: 'Query',
+      fieldName: 'listInvoices',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    if (cafManagerDataSource) {
+      cafManagerDataSource.createResolver('UploadCafResolver', {
+        typeName: 'Mutation',
+        fieldName: 'uploadCaf',
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    }
+
+    getPublicProfileDataSource.createResolver('GetTenantPublicProfileResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenantPublicProfile',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('GetTenantUserResolver', {
+      typeName: 'Query',
+      fieldName: 'getTenantUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('InviteUserResolver', {
+      typeName: 'Mutation',
+      fieldName: 'inviteUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('UpdateUserRoleResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateUserRole',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('RemoveUserResolver', {
+      typeName: 'Mutation',
+      fieldName: 'removeUser',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    userManagementDataSource.createResolver('ResetUserPasswordResolver', {
+      typeName: 'Mutation',
+      fieldName: 'resetUserPassword',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
     // Register Tenant Resolver
     registerTenantDataSource.createResolver('RegisterTenantResolver', {
       typeName: 'Mutation',
@@ -748,6 +497,28 @@ schema {
     updateTenantDataSource.createResolver('UpdateTenantResolver', {
       typeName: 'Mutation',
       fieldName: 'updateTenant',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // API Key Resolvers
+    apiKeyManagerDataSource.createResolver('ListApiKeysResolver', {
+      typeName: 'Query',
+      fieldName: 'listApiKeys',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    apiKeyManagerDataSource.createResolver('CreateApiKeyResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createApiKey',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    apiKeyManagerDataSource.createResolver('RevokeApiKeyResolver', {
+      typeName: 'Mutation',
+      fieldName: 'revokeApiKey',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });
@@ -796,6 +567,27 @@ schema {
       responseMappingTemplate: responseTemplate,
     });
 
+    // Room Resolvers (Catalog)
+    const roomQueryFields = ['listRooms', 'getRoom'];
+    roomQueryFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomQuery${field}Resolver`, {
+        typeName: 'Query',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
+    const roomMutationFields = ['createRoom', 'updateRoom', 'deleteRoom'];
+    roomMutationFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomMutation${field}Resolver`, {
+        typeName: 'Mutation',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
     catalogDataSource.createResolver('UpdateServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'updateService',
@@ -838,6 +630,20 @@ schema {
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
+
+    presignDataSource.createResolver('GeneratePresignedUrlResolver', {
+      typeName: 'Mutation',
+      fieldName: 'generatePresignedUrl',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
+    presignDataSource.createResolver('GetInvoiceDownloadUrlResolver', {
+      typeName: 'Query',
+      fieldName: 'getInvoiceDownloadUrl',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
     catalogDataSource.createResolver('DeleteCategoryResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteCategory',
@@ -862,45 +668,46 @@ schema {
     catalogDataSource.createResolver('DeleteProviderResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteProvider',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
+
 
     // Availability resolvers
     availabilityDataSource.createResolver('GetAvailableSlotsResolver', {
       typeName: 'Query',
       fieldName: 'getAvailableSlots',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('SetProviderAvailabilityResolver', {
       typeName: 'Mutation',
       fieldName: 'setProviderAvailability',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('GetProviderAvailabilityResolver', {
       typeName: 'Query',
       fieldName: 'getProviderAvailability',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     availabilityDataSource.createResolver('SetProviderExceptionsResolver', {
       typeName: 'Mutation',
       fieldName: 'setProviderExceptions',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Booking resolvers
     bookingDataSource.createResolver('GetBookingResolver', {
       typeName: 'Query',
       fieldName: 'getBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('ListBookingsByProviderResolver', {
@@ -913,22 +720,22 @@ schema {
     bookingDataSource.createResolver('ListBookingsByClientResolver', {
       typeName: 'Query',
       fieldName: 'listBookingsByClient',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('GetBookingByConversationResolver', {
       typeName: 'Query',
       fieldName: 'getBookingByConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('CreateBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'createBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
 
@@ -936,130 +743,160 @@ schema {
     workflowManagerDataSource.createResolver('ListWorkflowsResolver', {
       typeName: 'Query',
       fieldName: 'listWorkflows',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('GetWorkflowResolver', {
       typeName: 'Query',
       fieldName: 'getWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('CreateWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'createWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('UpdateWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'updateWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     workflowManagerDataSource.createResolver('DeleteWorkflowResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteWorkflow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // FAQ Resolvers
     faqManagerDataSource.createResolver('ListFAQsResolver', {
       typeName: 'Query',
       fieldName: 'listFAQs',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('CreateFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'createFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('UpdateFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'updateFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     faqManagerDataSource.createResolver('DeleteFAQResolver', {
       typeName: 'Mutation',
       fieldName: 'deleteFAQ',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('ConfirmBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'confirmBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('CancelBookingResolver', {
       typeName: 'Mutation',
       fieldName: 'cancelBooking',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     bookingDataSource.createResolver('MarkAsNoShowResolver', {
       typeName: 'Mutation',
       fieldName: 'markAsNoShow',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    bookingDataSource.createResolver('UpdateBookingStatusResolver', {
+      typeName: 'Mutation',
+      fieldName: 'updateBookingStatus',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Chat Agent resolvers
     chatAgentDataSource.createResolver('StartConversationResolver', {
       typeName: 'Mutation',
       fieldName: 'startConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('SendMessageResolver', {
       typeName: 'Mutation',
       fieldName: 'sendMessage',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('ConfirmBookingFromConversationResolver', {
       typeName: 'Mutation',
       fieldName: 'confirmBookingFromConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     chatAgentDataSource.createResolver('GetConversationResolver', {
       typeName: 'Query',
       fieldName: 'getConversation',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
     // Metrics resolvers
-    metricsDataSource.createResolver('GetDashboardMetricsResolver', {
+    chatAgentDataSource.createResolver('GetDashboardMetricsResolver', {
       typeName: 'Query',
       fieldName: 'getDashboardMetrics',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
 
-    metricsDataSource.createResolver('GetPlanUsageResolver', {
+    chatAgentDataSource.createResolver('GetPlanUsageResolver', {
       typeName: 'Query',
       fieldName: 'getPlanUsage',
-      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Subscription Resolvers
+    subscribeDataSource.createResolver('SubscribeResolver', {
+      typeName: 'Mutation',
+      fieldName: 'subscribe',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    downgradeDataSource.createResolver('DowngradeResolver', {
+      typeName: 'Mutation',
+      fieldName: 'downgrade',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    // Support Resolver
+    supportManagerDataSource.createResolver('CreateSupportIssueResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createSupportIssue',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
     });
   }
 }
