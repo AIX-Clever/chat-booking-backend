@@ -864,10 +864,10 @@ export class LambdaStack extends cdk.Stack {
       );
     }
     
-    // Import Subscriptions Table Name from SSM
-    const subscriptionsTableNameSsm = ssm.StringParameter.valueForStringParameter(
-      this, `/chatbooking/${props.envName}/subscriptions-table-name`
-    );
+    // Import Subscriptions Table Name from SSM (or hardcode to break CFN lock temporarily)
+    const subscriptionsTableNameSsm = props.envName === 'prod'
+      ? 'ChatBooking-Subscriptions-prod-v2'
+      : ssm.StringParameter.valueForStringParameter(this, `/chatbooking/${props.envName}/subscriptions-table-name`);
 
     const profileBakerFunction = new lambda.Function(this, 'ProfileBakerFunction', {
       ...commonProps,
