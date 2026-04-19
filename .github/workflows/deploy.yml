@@ -156,7 +156,7 @@ jobs:
           fi
           
           echo "Deploying to environment: $ENV"
-          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
+          npx cdk deploy ChatBooking-${ENV}-Backend --app "node dist/bin/app.js" --require-approval never -c env=$ENV --no-early-error-hooks
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
