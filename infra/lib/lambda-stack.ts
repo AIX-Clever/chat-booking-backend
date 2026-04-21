@@ -772,6 +772,8 @@ export class LambdaStack extends cdk.Stack {
         DOCUMENTS_BUCKET: this.documentsBucket.bucketName,
         DOCUMENTS_TABLE: props.documentsTable.tableName,
         ASSETS_BUCKET: props.assetsBucketName || '',
+        // For debugging purposes in CloudWatch
+        ASSETS_BUCKET_NAME: props.assetsBucketName || 'NOT_CONFIGURED',
       }
     });
 
