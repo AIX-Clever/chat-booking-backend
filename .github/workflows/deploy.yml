@@ -113,8 +113,14 @@ jobs:
             exit 1
           fi
           EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
-          echo "Expected Hash (SSM): $EXPECTED_HASH"
-          echo "Local Hash: $LOCAL_HASH"
+          
+          # Trim whitespace and hidden characters
+          EXPECTED_HASH=$(echo $EXPECTED_HASH | tr -d '[:space:]')
+          LOCAL_HASH=$(echo $LOCAL_HASH | tr -d '[:space:]')
+          
+          echo "Expected Hash (SSM): '$EXPECTED_HASH'"
+          echo "Local Hash: '$LOCAL_HASH'"
+          
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
             echo "::error::Backend 'shared' folder is out of sync."
             exit 1
