@@ -86,33 +86,11 @@ export class AppSyncApiStack extends cdk.Stack {
         fieldLogLevel: appsync.FieldLogLevel.ERROR,
         excludeVerboseContent: false,
       },
-      // domainName is managed separately via CfnDomainName below
-      // to allow creation independently of the GraphqlApi lifecycle
+      domainName: (props.domainName && props.certificateArn) ? {
+        certificate: cdk.aws_certificatemanager.Certificate.fromCertificateArn(this, 'AppSyncCertificate', props.certificateArn!),
+        domainName: props.domainName,
+      } : undefined,
     });
-
-    // -------------------------------------------------------------------
-    // Custom Domain Name for AppSync API
-    // Managed as separate resources so CDK can CREATE them even if the
-    // GraphqlApi already existed without a domain (avoids silent CF rollback)
-    // -------------------------------------------------------------------
-    if (props.domainName && props.certificateArn) {
-      const cfnDomain = new appsync.CfnDomainName(this, 'AppSyncCustomDomain', {
-        domainName: props.domainName,
-        certificateArn: props.certificateArn,
-        description: `AppSync custom domain for ${props.domainName}`,
-      });
-
-      const domainAssoc = new appsync.CfnDomainNameApiAssociation(this, 'AppSyncDomainApiAssociation', {
-        domainName: props.domainName,
-        apiId: this.api.apiId,
-      });
-      domainAssoc.addDependency(cfnDomain);
-
-      new cdk.CfnOutput(this, 'AppSyncDomainTarget', {
-        value: cfnDomain.attrAppSyncDomainName,
-        description: 'AppSync-assigned domain — create a Route53 Alias A record pointing to this value',
-      });
-    }
 
     // -------------------------------------------------------------------
     // AWS WAF — Rate Limiting by IP (Capa 1 de protección)
