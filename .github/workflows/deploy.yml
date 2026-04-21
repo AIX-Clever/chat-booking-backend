@@ -158,7 +158,7 @@ jobs:
           MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
 
       - name: Reconcile CloudFront media domain (drift fix)
-        if: vars.MEDIA_DOMAIN_NAME != '' && secrets.CLOUDFRONT_CERTIFICATE_ARN != ''
+        if: vars.MEDIA_DOMAIN_NAME != ''
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
