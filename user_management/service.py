@@ -6,6 +6,7 @@ Handles user invitation, role management, and removal using:
 - DynamoDB for role storage (flexible & auditable)
 """
 
+import os
 import boto3
 import secrets
 import string
