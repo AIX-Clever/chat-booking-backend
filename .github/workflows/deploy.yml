@@ -107,16 +107,25 @@ jobs:
 
       - name: Validate Layer Sync
         run: |
-          LOCAL_HASH=$(python3 scripts/validate_shared.py shared)
-          echo "Local Hash: $LOCAL_HASH"
-          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text || echo "")
-          if [ -z "$LAYER_ARN" ]; then
-            echo "::error::Could not find Layer ARN in SSM."
+          LOCAL_HASH=$(python3 scripts/validate_shared.py shared | tr -d '[:space:]')
+          
+          # Retrieve values from SSM (shared from layers repository)
+          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>/dev/null) || true
+          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>/dev/null) || true
+          EXPECTED_HASH=$(echo $EXPECTED_HASH | tr -d '[:space:]')
+          
+          if [ -z "$LAYER_ARN" ] || [ -z "$EXPECTED_HASH" ]; then
+            echo "::error::Could not retrieve Layer configuration from SSM. Ensure the layers stack is deployed in ${{ secrets.AWS_REGION }}."
             exit 1
           fi
-          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
+          
+          echo "Layer ARN: $LAYER_ARN"
+          echo "Expected Hash (deployed): '$EXPECTED_HASH'"
+          echo "Local Hash (backend):    '$LOCAL_HASH'"
+          
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
-            echo "::error::Backend 'shared' folder is out of sync."
+            echo "::error::Backend 'shared' folder is out of sync with the deployed Layer."
+            echo "Sync action required: Deploy the 'chat-booking-layers' repository with the latest 'shared' content before deploying the backend."
             exit 1
           fi
           echo "Layer is in sync! ✅"
