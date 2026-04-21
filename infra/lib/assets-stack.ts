@@ -26,7 +26,7 @@ export class AssetsStack extends cdk.Stack {
             autoDeleteObjects: props.stage !== 'prod',
             cors: [{
                 allowedMethods: [s3.HttpMethods.PUT, s3.HttpMethods.POST, s3.HttpMethods.GET, s3.HttpMethods.HEAD],
-                allowedOrigins: ['https://control.dev.holalucia.cl', 'https://control.qa.holalucia.cl', 'https://control.stg.holalucia.cl', 'https://admin.holalucia.cl', 'http://localhost:3000'],
+                allowedOrigins: ['https://*.holalucia.cl', 'http://localhost:3000'],
                 allowedHeaders: ['*'],
                 exposedHeaders: ['ETag', 'x-amz-server-side-encryption', 'x-amz-request-id', 'x-amz-id-2'],
                 maxAge: 3000,

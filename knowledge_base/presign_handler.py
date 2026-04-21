@@ -119,14 +119,10 @@ def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> str:
     if not file_name or not content_type:
         return error_response("Missing fileName or contentType", 400)
 
-    import re
-    # Sanitize file_name to avoid presigned URL signature issues with spaces/special chars
-    safe_file_name = re.sub(r'[^a-zA-Z0-9.-]', '_', file_name)
-
     # Key format: raw/tenantId/uuid-filename
     # using 'raw' prefix for unprocessed uploads
     unique_id = str(uuid.uuid4())
-    key = f"raw/{tenant_id}/{unique_id}-{safe_file_name}"
+    key = f"raw/{tenant_id}/{unique_id}-{file_name}"
 
     try:
         url = s3_client.generate_presigned_url(
