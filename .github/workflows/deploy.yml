@@ -107,23 +107,28 @@ jobs:
           echo "Checking AWS Identity..."
           aws sts get-caller-identity
           
-          echo "Listing all parameters under /chatbooking/ (Diagnostics)..."
-          aws ssm describe-parameters --parameter-filters "Key=Name,Values=/chatbooking/,Option=BeginsWith" --query 'Parameters[*].Name' --region ${{ secrets.AWS_REGION }}
-          
           LOCAL_HASH=$(python3 scripts/validate_shared.py shared)
           echo "Local Hash: $LOCAL_HASH"
           
           echo "Retrieving Layer ARN..."
-          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }})
-          echo "Layer ARN: $LAYER_ARN"
+          # Capture both stdout and stderr
+          LAYER_ARN_OUT=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>&1) || LAYER_ARN_ERR=$?
           
-          if [ -z "$LAYER_ARN" ]; then
-            echo "::error::Could not find Layer ARN in SSM."
+          if [ ! -z "$LAYER_ARN_ERR" ]; then
+            echo "::error::Failed to retrieve Layer ARN from SSM. Error: $LAYER_ARN_OUT"
             exit 1
           fi
+          LAYER_ARN=$LAYER_ARN_OUT
+          echo "Layer ARN: $LAYER_ARN"
           
           echo "Retrieving Expected Hash..."
-          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }})
+          EXPECTED_HASH_OUT=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>&1) || EXPECTED_HASH_ERR=$?
+          
+          if [ ! -z "$EXPECTED_HASH_ERR" ]; then
+            echo "::error::Failed to retrieve Expected Hash from SSM. Error: $EXPECTED_HASH_OUT"
+            exit 1
+          fi
+          EXPECTED_HASH=$EXPECTED_HASH_OUT
           
           # Trim whitespace and hidden characters
           EXPECTED_HASH=$(echo $EXPECTED_HASH | tr -d '[:space:]')
@@ -133,7 +138,9 @@ jobs:
           echo "Local Hash: '$LOCAL_HASH'"
           
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
-            echo "::error::Backend 'shared' folder is out of sync."
+            echo "::error::Backend 'shared' folder is out of sync with deployed Layer."
+            echo "Expected: $EXPECTED_HASH"
+            echo "Local:    $LOCAL_HASH"
             exit 1
           fi
           echo "Layer is in sync! ✅"
