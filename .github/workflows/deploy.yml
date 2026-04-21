@@ -106,12 +106,12 @@ jobs:
         run: |
           LOCAL_HASH=$(python3 scripts/validate_shared.py shared)
           echo "Local Hash: $LOCAL_HASH"
-          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text)
+          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text || echo "")
           if [ -z "$LAYER_ARN" ]; then
             echo "::error::Could not find Layer ARN in SSM."
             exit 1
           fi
-          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text)
+          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
             echo "::error::Backend 'shared' folder is out of sync."
             exit 1
