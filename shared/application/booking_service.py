@@ -274,7 +274,7 @@ class BookingService:
         return True
     def _get_frontend_url(self) -> str:
         """Determina la URL del frontend basándose en las variables de entorno inyectadas via CDK"""
-        return os.environ.get("FRONTEND_URL", "https://holalucia.cl")
+        return os.environ.get("FRONTEND_URL")
 
     def _send_confirmation_email(self, provider, service, booking, client_name, client_email, start):
         try:
@@ -294,7 +294,7 @@ class BookingService:
         date_es = f"{day_es} {local_start.strftime('%d')} de {month_es}, {local_start.strftime('%Y')}"
         
         subject = f"Reserva Confirmada: {service.name}"
-        sender = os.environ.get("SES_SENDER_EMAIL", "no-reply@mail.holalucia.cl")
+        sender = os.environ.get("SES_SENDER_EMAIL")
         body_html = f"""
 <html>
 <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -355,7 +355,7 @@ class BookingService:
         else:
             time_label = local_start.strftime('%Y-%m-%d')
 
-        sender = os.environ.get("SES_SENDER_EMAIL", "no-reply@mail.holalucia.cl")
+        sender = os.environ.get("SES_SENDER_EMAIL")
         subject = f"Nueva reserva: {service.name} – {time_label}"
         body_html = f"""
 <html>

@@ -121,7 +121,7 @@ class UserManagementService:
         """Send welcome email with temporary credentials"""
         try:
             # Login URL from environment
-            login_url = os.environ.get("DASHBOARD_BASE_URL", "https://admin.holalucia.cl")
+            login_url = os.environ.get("DASHBOARD_BASE_URL")
 
             subject = "Bienvenido a Lucia - Tu Asistente de Reservas"
 
@@ -158,7 +158,7 @@ class UserManagementService:
             # Send from verified domain
             import os
 
-            sender = os.environ.get("FROM_EMAIL", "no-reply@holalucia.cl")
+            sender = os.environ.get("FROM_EMAIL")
 
             self.email_service.send_email(
                 source=sender,

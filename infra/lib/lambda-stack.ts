@@ -162,6 +162,7 @@ export class LambdaStack extends cdk.Stack {
         USER_POOL_ID: props.userPool.userPoolId,
         DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
         FRONTEND_URL: props.envName === 'prod' ? 'https://holalucia.cl' : `https://${props.envName}.holalucia.cl`,
+        ASSETS_DOMAIN: props.envName === 'prod' ? 'media.holalucia.cl' : `media.${props.envName}.holalucia.cl`,
       },
     };
 
@@ -172,10 +173,12 @@ export class LambdaStack extends cdk.Stack {
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
-    // Import Assets Distribution Domain from SSM
+    /* 
+    // Commented out to use the dynamic environment-aware logic in commonProps
     const assetsDomain = ssm.StringParameter.valueForStringParameter(
       this, `/chatbooking/${props.envName}/assets-distribution-domain`
     );
+    */
 
 
     // 1. Auth Resolver Lambda
@@ -213,7 +216,6 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         ASSETS_BUCKET: props.assetsBucketName || '',
-        ASSETS_DOMAIN: assetsDomain,
       }
     });
 
@@ -581,7 +583,6 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        ASSETS_DOMAIN: assetsDomain,
       },
     });
 

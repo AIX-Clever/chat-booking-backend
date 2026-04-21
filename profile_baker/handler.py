@@ -449,7 +449,7 @@ def bake_profile(slug, profile_data, context=None):
     description = bio[:160] if bio else f"Agenda tu cita con {name}{' — ' + profession if profession else ''} de forma fácil y rápida."
     
     slug = profile_data['slug']
-    base_url = PUBLIC_LINK_BASE_URL or "https://agendar.holalucia.cl"
+    base_url = PUBLIC_LINK_BASE_URL
     canonical_url = f"{base_url}/{slug}"
     
     meta_tags = f"""
