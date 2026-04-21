@@ -157,3 +157,67 @@ jobs:
           MP_ACCESS_TOKEN_PROD: ${{ secrets.MP_ACCESS_TOKEN_PROD }}
           MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
 
+      - name: Reconcile CloudFront media domain (drift fix)
+        if: vars.MEDIA_DOMAIN_NAME != '' && secrets.CLOUDFRONT_CERTIFICATE_ARN != ''
+        env:
+          ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
+          CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          STACK_NAME="ChatBooking-${ENV}-Assets"
+          echo "Checking CloudFront distribution for stack: $STACK_NAME"
+
+          DIST_DOMAIN=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query 'Stacks[0].Outputs[?OutputKey==`AssetsDistributionDomain`].OutputValue' \
+            --output text 2>/dev/null)
+
+          if [ -z "$DIST_DOMAIN" ]; then
+            echo "Could not find AssetsDistributionDomain output. Skipping."
+            exit 0
+          fi
+          echo "Distribution domain: $DIST_DOMAIN"
+
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?DomainName=='${DIST_DOMAIN}'].Id" \
+            --output text 2>/dev/null)
+
+          if [ -z "$DIST_ID" ]; then
+            echo "Could not find CloudFront distribution. Skipping."
+            exit 0
+          fi
+          echo "Distribution ID: $DIST_ID"
+
+          RESPONSE=$(aws cloudfront get-distribution-config --id "$DIST_ID")
+          ETAG=$(echo "$RESPONSE" | jq -r '.ETag')
+          CURRENT_ALIASES=$(echo "$RESPONSE" | jq -r '.DistributionConfig.Aliases.Items[]?' 2>/dev/null || echo "")
+
+          if echo "$CURRENT_ALIASES" | grep -qF "$MEDIA_DOMAIN_NAME"; then
+            echo "$MEDIA_DOMAIN_NAME already configured in CloudFront. ✅"
+            exit 0
+          fi
+
+          echo "Adding $MEDIA_DOMAIN_NAME to distribution $DIST_ID..."
+
+          UPDATED_CONFIG=$(echo "$RESPONSE" | jq --arg domain "$MEDIA_DOMAIN_NAME" --arg cert "$CERTIFICATE_ARN" '
+            .DistributionConfig |
+            .Aliases.Quantity += 1 |
+            .Aliases.Items += [$domain] |
+            .ViewerCertificate = {
+              "ACMCertificateArn": $cert,
+              "SSLSupportMethod": "sni-only",
+              "MinimumProtocolVersion": "TLSv1.2_2021",
+              "Certificate": $cert,
+              "CertificateSource": "acm"
+            }
+          ')
+
+          aws cloudfront update-distribution \
+            --id "$DIST_ID" \
+            --distribution-config "$UPDATED_CONFIG" \
+            --if-match "$ETAG" \
+            --output json | jq -r '.Distribution.Status'
+
+          echo "CloudFront domain $MEDIA_DOMAIN_NAME associated successfully. ✅"
