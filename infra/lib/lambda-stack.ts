@@ -161,7 +161,6 @@ export class LambdaStack extends cdk.Stack {
         SHARED_HASH: sharedHash,
         USER_POOL_ID: props.userPool.userPoolId,
         DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
-        FRONTEND_URL: props.envName === 'prod' ? 'https://holalucia.cl' : `https://${props.envName}.holalucia.cl`,
         ASSETS_DOMAIN: props.envName === 'prod' ? 'media.holalucia.cl' : `media.${props.envName}.holalucia.cl`,
       },
     };
