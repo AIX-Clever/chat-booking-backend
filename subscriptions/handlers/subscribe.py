@@ -43,7 +43,7 @@ def lambda_handler(event, _context):
         plan_id_str = args.get('planId', 'lite')
         payer_email = args.get('email')
         payment_method = args.get("paymentMethod", "mercadopago")
-        back_url = args.get('backUrl', 'https://control.holalucia.cl')
+        back_url = args.get('backUrl', os.environ.get('DASHBOARD_BASE_URL', 'https://admin.holalucia.cl'))
         
         print(f"[INTERNAL_LOG] Params: tenant={tenant_id}, method={payment_method}, plan={plan_id_str}, email={payer_email}")
 

@@ -294,7 +294,7 @@ class BookingService:
         date_es = f"{day_es} {local_start.strftime('%d')} de {month_es}, {local_start.strftime('%Y')}"
         
         subject = f"Reserva Confirmada: {service.name}"
-        sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
+        sender = os.environ.get("SES_SENDER_EMAIL", "no-reply@mail.holalucia.cl")
         body_html = f"""
 <html>
 <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -310,7 +310,7 @@ class BookingService:
     </div>
     
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-      <p>Este es un correo enviado por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Este es un correo enviado por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{self._get_frontend_url().replace("https://", "").replace("http://", "").split("/")[0]}</a>.</p>
       <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={client_email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
     </div>
   </div>
@@ -355,7 +355,7 @@ class BookingService:
         else:
             time_label = local_start.strftime('%Y-%m-%d')
 
-        sender = os.environ.get("SES_SENDER_EMAIL", "noreply@antigravity.com")
+        sender = os.environ.get("SES_SENDER_EMAIL", "no-reply@mail.holalucia.cl")
         subject = f"Nueva reserva: {service.name} – {time_label}"
         body_html = f"""
 <html>
@@ -376,7 +376,7 @@ class BookingService:
     </div>
     
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-      <p>Este es una notificación automática enviada por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">holalucia.cl</a>.</p>
+      <p>Este es una notificación automática enviada por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{self._get_frontend_url().replace("https://", "").replace("http://", "").split("/")[0]}</a>.</p>
       <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={provider.email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
     </div>
   </div>

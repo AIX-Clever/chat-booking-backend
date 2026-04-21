@@ -28,8 +28,9 @@ logger = Logger()
 
 # --- Configuration ---
 SECRETS_NAME = os.environ.get("TWILIO_MASTER_SECRET_NAME", "prod/twilio/master")
-DASHBOARD_URL = os.environ.get("DASHBOARD_URL", "https://admin.holalucia.cl/settings?tab=whatsapp&connected=true")
-DASHBOARD_ERROR_URL = os.environ.get("DASHBOARD_URL", "https://admin.holalucia.cl/settings?tab=whatsapp&error=true")
+_BASE_URL = os.environ.get("DASHBOARD_BASE_URL", "https://admin.holalucia.cl")
+DASHBOARD_URL = f"{_BASE_URL}/settings?tab=whatsapp&connected=true"
+DASHBOARD_ERROR_URL = f"{_BASE_URL}/settings?tab=whatsapp&error=true"
 
 _secrets_cache: dict | None = None
 

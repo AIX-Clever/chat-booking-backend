@@ -160,6 +160,8 @@ export class LambdaStack extends cdk.Stack {
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
         SHARED_HASH: sharedHash,
         USER_POOL_ID: props.userPool.userPoolId,
+        DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
+        FRONTEND_URL: props.envName === 'prod' ? 'https://holalucia.cl' : `https://${props.envName}.holalucia.cl`,
       },
     };
 
@@ -616,7 +618,7 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        PUBLIC_LINK_BASE_URL: 'https://agendar.holalucia.cl',
+        PUBLIC_LINK_BASE_URL: props.envName === 'prod' ? 'https://agendar.holalucia.cl' : `https://agendar.${props.envName}.holalucia.cl`,
       },
     });
 
@@ -879,6 +881,7 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         LINK_BUCKET: linkBucketName,
         DISTRIBUTION_ID: linkDistributionId,
+        PUBLIC_LINK_BASE_URL: props.envName === 'prod' ? 'https://agendar.holalucia.cl' : `https://agendar.${props.envName}.holalucia.cl`,
       }
     });
 
@@ -1091,7 +1094,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         TWILIO_MASTER_SECRET_NAME: 'prod/twilio/master',
-        DASHBOARD_URL: `https://admin.holalucia.cl/settings?tab=whatsapp&connected=true`,
+        DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
         TWILIO_CONNECTED_APP_SID: process.env.TWILIO_CONNECTED_APP_SID || '',
         TWILIO_CONNECTED_APP_SECRET: process.env.TWILIO_CONNECTED_APP_SECRET || '',
       }

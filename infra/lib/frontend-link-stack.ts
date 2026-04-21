@@ -22,7 +22,7 @@ export class FrontendLinkStack extends cdk.Stack {
     constructor(scope: Construct, id: string, props: FrontendLinkStackProps) {
         super(scope, id, props);
 
-        const domainName = 'agendar.holalucia.cl';
+        const domainName = props.envName === 'prod' ? 'agendar.holalucia.cl' : `agendar.${props.envName}.holalucia.cl`;
         // Hosted Zone ID for holalucia.cl (should be imported or passed, but hardcoding for now if known, or looking up)
         // Assuming the zone exists in the same account
         const zone = route53.HostedZone.fromLookup(this, 'HostedZone', {
@@ -73,7 +73,7 @@ export class FrontendLinkStack extends cdk.Stack {
 
         // 4. Route53 Alias Record
         new route53.ARecord(this, 'LinkSiteAliasRecord', {
-            recordName: 'agendar', // agendar.holalucia.cl
+            recordName: props.envName === 'prod' ? 'agendar' : `agendar.${props.envName}`,
             target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(this.distribution)),
             zone: zone,
         });

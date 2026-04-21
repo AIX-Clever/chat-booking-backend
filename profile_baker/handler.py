@@ -19,6 +19,7 @@ DISTRIBUTION_ID = os.environ.get('DISTRIBUTION_ID')
 TENANTS_TABLE = os.environ.get('TENANTS_TABLE')
 SERVICES_TABLE_NAME = os.environ.get('SERVICES_TABLE') # Passed via standard env vars in commonProps?
 PROVIDERS_TABLE_NAME = os.environ.get('PROVIDERS_TABLE')
+PUBLIC_LINK_BASE_URL = os.environ.get('PUBLIC_LINK_BASE_URL')
 
 # We need the table names. lambda-stack.ts commonProps passes them as SERVICES_TABLE, PROVIDERS_TABLE.
 # Let's verify if they are available in os.environ. Only TENANTS_TABLE was explicit in `profileBakerFunction` env, 
@@ -448,7 +449,8 @@ def bake_profile(slug, profile_data, context=None):
     description = bio[:160] if bio else f"Agenda tu cita con {name}{' — ' + profession if profession else ''} de forma fácil y rápida."
     
     slug = profile_data['slug']
-    canonical_url = f"https://agendar.holalucia.cl/{slug}"
+    base_url = PUBLIC_LINK_BASE_URL or "https://agendar.holalucia.cl"
+    canonical_url = f"{base_url}/{slug}"
     
     meta_tags = f"""
     <!-- SEO Injected by Baker -->
