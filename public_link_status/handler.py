@@ -23,7 +23,7 @@ from shared.utils import (
 )
 
 # Base URL for public profile
-PUBLIC_LINK_BASE_URL = os.environ.get("PUBLIC_LINK_BASE_URL", "https://agendar.holalucia.cl")
+PUBLIC_LINK_BASE_URL = os.environ.get("PUBLIC_LINK_BASE_URL")
 
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:

@@ -160,6 +160,8 @@ export class LambdaStack extends cdk.Stack {
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
         SHARED_HASH: sharedHash,
         USER_POOL_ID: props.userPool.userPoolId,
+        DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
+        ASSETS_DOMAIN: props.envName === 'prod' ? 'media.holalucia.cl' : `media.${props.envName}.holalucia.cl`,
       },
     };
 
@@ -170,10 +172,12 @@ export class LambdaStack extends cdk.Stack {
     );
     const sharedLayer = lambda.LayerVersion.fromLayerVersionArn(this, 'SharedLayer', layerArn);
 
-    // Import Assets Distribution Domain from SSM
+    /* 
+    // Commented out to use the dynamic environment-aware logic in commonProps
     const assetsDomain = ssm.StringParameter.valueForStringParameter(
       this, `/chatbooking/${props.envName}/assets-distribution-domain`
     );
+    */
 
 
     // 1. Auth Resolver Lambda
@@ -211,7 +215,6 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         ASSETS_BUCKET: props.assetsBucketName || '',
-        ASSETS_DOMAIN: assetsDomain,
       }
     });
 
@@ -579,7 +582,6 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        ASSETS_DOMAIN: assetsDomain,
       },
     });
 
@@ -616,7 +618,7 @@ export class LambdaStack extends cdk.Stack {
       layers: [sharedLayer],
       environment: {
         ...commonProps.environment,
-        PUBLIC_LINK_BASE_URL: 'https://agendar.holalucia.cl',
+        PUBLIC_LINK_BASE_URL: props.envName === 'prod' ? 'https://agendar.holalucia.cl' : `https://agendar.${props.envName}.holalucia.cl`,
       },
     });
 
@@ -770,6 +772,8 @@ export class LambdaStack extends cdk.Stack {
         DOCUMENTS_BUCKET: this.documentsBucket.bucketName,
         DOCUMENTS_TABLE: props.documentsTable.tableName,
         ASSETS_BUCKET: props.assetsBucketName || '',
+        // For debugging purposes in CloudWatch
+        ASSETS_BUCKET_NAME: props.assetsBucketName || 'NOT_CONFIGURED',
       }
     });
 
@@ -880,6 +884,7 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         LINK_BUCKET: linkBucketName,
         DISTRIBUTION_ID: linkDistributionId,
+        PUBLIC_LINK_BASE_URL: props.envName === 'prod' ? 'https://agendar.holalucia.cl' : `https://agendar.${props.envName}.holalucia.cl`,
       }
     });
 
@@ -1092,7 +1097,7 @@ export class LambdaStack extends cdk.Stack {
       environment: {
         ...commonProps.environment,
         TWILIO_MASTER_SECRET_NAME: 'prod/twilio/master',
-        DASHBOARD_URL: `https://admin.holalucia.cl/settings?tab=whatsapp&connected=true`,
+        DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
         TWILIO_CONNECTED_APP_SID: process.env.TWILIO_CONNECTED_APP_SID || '',
         TWILIO_CONNECTED_APP_SECRET: process.env.TWILIO_CONNECTED_APP_SECRET || '',
       }

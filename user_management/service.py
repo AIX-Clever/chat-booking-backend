@@ -6,6 +6,7 @@ Handles user invitation, role management, and removal using:
 - DynamoDB for role storage (flexible & auditable)
 """
 
+import os
 import boto3
 import secrets
 import string
@@ -119,8 +120,8 @@ class UserManagementService:
     def _send_invitation_email(self, email: str, temp_password: str, name: str):
         """Send welcome email with temporary credentials"""
         try:
-            # Login URL (could be from env)
-            login_url = "https://control.holalucia.cl"
+            # Login URL from environment
+            login_url = os.environ.get("DASHBOARD_BASE_URL")
 
             subject = "Bienvenido a Lucia - Tu Asistente de Reservas"
 
@@ -157,7 +158,7 @@ class UserManagementService:
             # Send from verified domain
             import os
 
-            sender = os.environ.get("FROM_EMAIL", "no-reply@holalucia.cl")
+            sender = os.environ.get("FROM_EMAIL")
 
             self.email_service.send_email(
                 source=sender,

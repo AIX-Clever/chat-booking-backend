@@ -19,9 +19,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 permissions:
   id-token: write
   contents: read
@@ -107,16 +104,25 @@ jobs:
 
       - name: Validate Layer Sync
         run: |
-          LOCAL_HASH=$(python3 scripts/validate_shared.py shared)
-          echo "Local Hash: $LOCAL_HASH"
-          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text || echo "")
-          if [ -z "$LAYER_ARN" ]; then
-            echo "::error::Could not find Layer ARN in SSM."
+          LOCAL_HASH=$(python3 scripts/validate_shared.py shared | tr -d '[:space:]')
+          
+          # Retrieve values from SSM (shared from layers repository)
+          LAYER_ARN=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-arn --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>/dev/null) || true
+          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text --region ${{ secrets.AWS_REGION }} 2>/dev/null) || true
+          EXPECTED_HASH=$(echo $EXPECTED_HASH | tr -d '[:space:]')
+          
+          if [ -z "$LAYER_ARN" ] || [ -z "$EXPECTED_HASH" ]; then
+            echo "::error::Could not retrieve Layer configuration from SSM. Ensure the layers stack is deployed in ${{ secrets.AWS_REGION }}."
             exit 1
           fi
-          EXPECTED_HASH=$(aws ssm get-parameter --name /chatbooking/layers/python-layer-hash --query 'Parameter.Value' --output text || echo "")
+          
+          echo "Layer ARN: $LAYER_ARN"
+          echo "Expected Hash (deployed): '$EXPECTED_HASH'"
+          echo "Local Hash (backend):    '$LOCAL_HASH'"
+          
           if [[ "$EXPECTED_HASH" != "$LOCAL_HASH" ]]; then
-            echo "::error::Backend 'shared' folder is out of sync."
+            echo "::error::Backend 'shared' folder is out of sync with the deployed Layer."
+            echo "Sync action required: Deploy the 'chat-booking-layers' repository with the latest 'shared' content before deploying the backend."
             exit 1
           fi
           echo "Layer is in sync! ✅"
@@ -136,28 +142,10 @@ jobs:
         working-directory: infra
         run: npm run build
 
-          echo "Fetching Secrets ARNs" && aws secretsmanager list-secrets --region us-east-2 --output json
-
       - name: Deploy with CDK
         working-directory: infra
         run: |
-          export ENV="${{ github.ref_name }}"
-          
-          if [ "$ENV" == "main" ] || [ "$ENV" == "prod" ]; then
-            export ENV="prod"
-            # Omitiendo dominio propio temporalmente por migración
-            # export DOMAIN_NAME="media.holalucia.cl"
-            # export CERTIFICATE_ARN="$CERT_PROD"
-          else
-            export DOMAIN_NAME="${ENV}.media.holalucia.cl"
-            ENV_UPPER=$(echo "$ENV" | tr '[:lower:]' '[:upper:]')
-            var_name="CERT_${ENV_UPPER}"
-            export CERTIFICATE_ARN="${!var_name}"
-          fi
-          
-          echo "Deploying to environment: $ENV"
-          
-          npx cdk deploy --all --require-approval never -c env=$ENV --no-early-error-hooks
+          npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
@@ -169,3 +157,67 @@ jobs:
           MP_ACCESS_TOKEN_PROD: ${{ secrets.MP_ACCESS_TOKEN_PROD }}
           MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
 
+      - name: Reconcile CloudFront media domain (drift fix)
+        if: vars.MEDIA_DOMAIN_NAME != ''
+        env:
+          ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
+          MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
+          CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          STACK_NAME="ChatBooking-${ENV}-Assets"
+          echo "Checking CloudFront distribution for stack: $STACK_NAME"
+
+          DIST_DOMAIN=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$AWS_REGION" \
+            --query 'Stacks[0].Outputs[?OutputKey==`AssetsDistributionDomain`].OutputValue' \
+            --output text 2>/dev/null)
+
+          if [ -z "$DIST_DOMAIN" ]; then
+            echo "Could not find AssetsDistributionDomain output. Skipping."
+            exit 0
+          fi
+          echo "Distribution domain: $DIST_DOMAIN"
+
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?DomainName=='${DIST_DOMAIN}'].Id" \
+            --output text 2>/dev/null)
+
+          if [ -z "$DIST_ID" ]; then
+            echo "Could not find CloudFront distribution. Skipping."
+            exit 0
+          fi
+          echo "Distribution ID: $DIST_ID"
+
+          RESPONSE=$(aws cloudfront get-distribution-config --id "$DIST_ID")
+          ETAG=$(echo "$RESPONSE" | jq -r '.ETag')
+          CURRENT_ALIASES=$(echo "$RESPONSE" | jq -r '.DistributionConfig.Aliases.Items[]?' 2>/dev/null || echo "")
+
+          if echo "$CURRENT_ALIASES" | grep -qF "$MEDIA_DOMAIN_NAME"; then
+            echo "$MEDIA_DOMAIN_NAME already configured in CloudFront. ✅"
+            exit 0
+          fi
+
+          echo "Adding $MEDIA_DOMAIN_NAME to distribution $DIST_ID..."
+
+          UPDATED_CONFIG=$(echo "$RESPONSE" | jq --arg domain "$MEDIA_DOMAIN_NAME" --arg cert "$CERTIFICATE_ARN" '
+            .DistributionConfig |
+            .Aliases.Quantity += 1 |
+            .Aliases.Items += [$domain] |
+            .ViewerCertificate = {
+              "ACMCertificateArn": $cert,
+              "SSLSupportMethod": "sni-only",
+              "MinimumProtocolVersion": "TLSv1.2_2021",
+              "Certificate": $cert,
+              "CertificateSource": "acm"
+            }
+          ')
+
+          aws cloudfront update-distribution \
+            --id "$DIST_ID" \
+            --distribution-config "$UPDATED_CONFIG" \
+            --if-match "$ETAG" \
+            --output json | jq -r '.Distribution.Status'
+
+          echo "CloudFront domain $MEDIA_DOMAIN_NAME associated successfully. ✅"
