@@ -1,5 +1,6 @@
 import boto3
 import logging
+import os
 from typing import List, Optional
 from botocore.exceptions import ClientError
 
@@ -11,8 +12,9 @@ class EmailService:
     Generic Infrastructure Adapter for sending emails via Amazon SES.
     """
 
-    def __init__(self, region_name: str = "us-east-1"):
-        self.client = boto3.client("ses", region_name=region_name)
+    def __init__(self, region_name: Optional[str] = None):
+        region = region_name or os.environ.get("SES_REGION") or os.environ.get("AWS_REGION") or "us-east-2"
+        self.client = boto3.client("ses", region_name=region)
 
     def send_email(
         self,
@@ -66,8 +68,9 @@ class SnsService:
     Generic Infrastructure Adapter for publishing messages via Amazon SNS.
     """
 
-    def __init__(self, region_name: str = "us-east-1"):
-        self.client = boto3.client("sns", region_name=region_name)
+    def __init__(self, region_name: Optional[str] = None):
+        region = region_name or os.environ.get("AWS_REGION") or "us-east-2"
+        self.client = boto3.client("sns", region_name=region)
 
     def publish_message(self, topic_arn: str, message: str, message_attributes: Optional[dict] = None) -> bool:
         """
