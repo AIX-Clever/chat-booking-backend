@@ -12,7 +12,7 @@ class EmailService:
     """
 
     def __init__(self, region_name: Optional[str] = None):
-        region = region_name or os.environ.get("SES_REGION") or os.environ.get("AWS_REGION") or "us-east-1"
+        region = region_name or os.environ.get("SES_REGION") or os.environ.get("AWS_REGION") or "us-east-2"
         self.client = boto3.client("ses", region_name=region)
 
     def send_email(
@@ -68,7 +68,7 @@ class SnsService:
     """
 
     def __init__(self, region_name: Optional[str] = None):
-        region = region_name or os.environ.get("AWS_REGION") or "us-east-1"
+        region = region_name or os.environ.get("AWS_REGION") or "us-east-2"
         self.client = boto3.client("sns", region_name=region)
 
     def publish_message(self, topic_arn: str, message: str, message_attributes: Optional[dict] = None) -> bool:
