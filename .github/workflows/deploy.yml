@@ -159,11 +159,14 @@ jobs:
 
       - name: Reconcile CloudFront media domain (drift fix)
         if: vars.MEDIA_DOMAIN_NAME != ''
+        continue-on-error: true
         env:
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
           CERTIFICATE_ARN: ${{ secrets.CLOUDFRONT_CERTIFICATE_ARN }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          # CloudFront is a global service — its API always targets us-east-1
+          CLOUDFRONT_REGION: us-east-1
         run: |
           STACK_NAME="ChatBooking-${ENV}-Assets"
           echo "Checking CloudFront distribution for stack: $STACK_NAME"
@@ -181,6 +184,7 @@ jobs:
           echo "Distribution domain: $DIST_DOMAIN"
 
           DIST_ID=$(aws cloudfront list-distributions \
+            --region "$CLOUDFRONT_REGION" \
             --query "DistributionList.Items[?DomainName=='${DIST_DOMAIN}'].Id" \
             --output text 2>/dev/null)
 
@@ -190,7 +194,9 @@ jobs:
           fi
           echo "Distribution ID: $DIST_ID"
 
-          RESPONSE=$(aws cloudfront get-distribution-config --id "$DIST_ID")
+          RESPONSE=$(aws cloudfront get-distribution-config \
+            --region "$CLOUDFRONT_REGION" \
+            --id "$DIST_ID")
           ETAG=$(echo "$RESPONSE" | jq -r '.ETag')
           CURRENT_ALIASES=$(echo "$RESPONSE" | jq -r '.DistributionConfig.Aliases.Items[]?' 2>/dev/null || echo "")
 
@@ -215,6 +221,7 @@ jobs:
           ')
 
           aws cloudfront update-distribution \
+            --region "$CLOUDFRONT_REGION" \
             --id "$DIST_ID" \
             --distribution-config "$UPDATED_CONFIG" \
             --if-match "$ETAG" \
