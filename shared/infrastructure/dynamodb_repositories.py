@@ -50,6 +50,7 @@ from ..domain.repositories import (
     IWaitingListRepository,
 )
 
+from ..domain.exceptions import EntityNotFoundError, ConflictError
 
 class DynamoDBTenantRepository(ITenantRepository):
     """DynamoDB implementation of Tenant repository"""
