@@ -162,6 +162,8 @@ export class LambdaStack extends cdk.Stack {
         USER_POOL_ID: props.userPool.userPoolId,
         DASHBOARD_BASE_URL: props.envName === 'prod' ? 'https://admin.holalucia.cl' : `https://control.${props.envName}.holalucia.cl`,
         ASSETS_DOMAIN: props.envName === 'prod' ? 'media.holalucia.cl' : `media.${props.envName}.holalucia.cl`,
+        // SES Configuration Set para tracking de bounces/complaints (requerido para producción)
+        SES_CONFIGURATION_SET: `ChatBooking-${props.envName}`,
       },
     };
 

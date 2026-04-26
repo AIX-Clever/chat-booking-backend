@@ -15,6 +15,8 @@ class EmailService:
     def __init__(self, region_name: Optional[str] = None):
         region = region_name or os.environ.get("SES_REGION") or os.environ.get("AWS_REGION") or "us-east-2"
         self.client = boto3.client("ses", region_name=region)
+        # Inyectado automáticamente en cada envío para rastrear bounces/complaints
+        self.configuration_set = os.environ.get("SES_CONFIGURATION_SET")
 
     def send_email(
         self,
@@ -38,17 +40,22 @@ class EmailService:
             bool: True if the email was sent successfully, False otherwise.
         """
         try:
-            response = self.client.send_email(
-                Source=source,
-                Destination={"ToAddresses": to_addresses},
-                Message={
+            kwargs = {
+                "Source": source,
+                "Destination": {"ToAddresses": to_addresses},
+                "Message": {
                     "Subject": {"Data": subject, "Charset": "UTF-8"},
                     "Body": {
                         "Html": {"Data": body_html, "Charset": "UTF-8"},
                         "Text": {"Data": body_text, "Charset": "UTF-8"},
                     },
                 },
-            )
+            }
+            # Adjuntar ConfigurationSet si está configurado (requerido para tracking de bounces/complaints)
+            if self.configuration_set:
+                kwargs["ConfigurationSetName"] = self.configuration_set
+
+            response = self.client.send_email(**kwargs)
             logger.info(
                 f"Email sent successfully to {to_addresses}. MessageId: {response.get('MessageId')}"
             )
