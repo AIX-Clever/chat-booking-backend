@@ -24,12 +24,14 @@ from shared.domain.entities import (
     Provider,
 )
 from shared.domain.repositories import (
+    ITenantRepository,
     IAvailabilityRepository,
     IBookingRepository,
     IServiceRepository,
     IProviderRepository,
     IProviderIntegrationRepository,
 )
+from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.infrastructure.google_auth_service import GoogleAuthService
 from shared.infrastructure.microsoft_auth_service import MicrosoftAuthService
 import os

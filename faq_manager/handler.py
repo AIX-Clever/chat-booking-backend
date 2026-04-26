@@ -14,6 +14,7 @@ dynamodb = boto3.resource('dynamodb')
 faqs_table = dynamodb.Table(os.environ['FAQS_TABLE'])
 
 from shared.domain.entities import TenantId
+from shared.utils import extract_appsync_event, error_response, success_response
 
 def lambda_handler(event, context):
     """

@@ -15,6 +15,7 @@ workflows_table = dynamodb.Table(os.environ['WORKFLOWS_TABLE'])
 tenants_table = dynamodb.Table(os.environ['TENANTS_TABLE'])
 
 from shared.domain.entities import TenantId
+from shared.utils import extract_appsync_event, error_response
 
 def lambda_handler(event, context):
     """

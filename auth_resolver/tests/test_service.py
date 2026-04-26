@@ -6,6 +6,7 @@ import pytest
 from datetime import datetime, timezone
 from unittest.mock import Mock, MagicMock
 from shared.domain.entities import TenantId, Tenant, TenantStatus, TenantPlan, ApiKey
+from shared.domain.exceptions import (
     InvalidApiKeyError,
     OriginNotAllowedError,
     TenantNotActiveError,
