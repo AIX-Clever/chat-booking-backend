@@ -9,11 +9,11 @@ os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
 os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
 os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 
-from unittest.mock import Mock
-from datetime import datetime, UTC, timedelta
-from shared.domain.entities import TenantId, Conversation, ConversationState, Workflow, WorkflowStep
-from shared.domain.exceptions import SlotNotAvailableError, ValidationError
-from chat_agent.workflow_engine import WorkflowEngine
+from unittest.mock import Mock  # noqa: E402
+from datetime import datetime, UTC, timedelta  # noqa: E402
+from shared.domain.entities import TenantId, Conversation, ConversationState, Workflow, WorkflowStep  # noqa: E402
+from shared.domain.exceptions import SlotNotAvailableError, ValidationError  # noqa: E402
+from chat_agent.workflow_engine import WorkflowEngine  # noqa: E402
 
 
 def _make_workflow():

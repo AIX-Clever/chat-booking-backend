@@ -9,7 +9,6 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 
 from shared.domain.entities import Conversation, ConversationState, TenantId
-from shared.domain.exceptions import ValidationError
 
 
 class StateTransition:

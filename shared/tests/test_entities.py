@@ -20,7 +20,6 @@ from shared.domain.entities import (
     ApiKey,
     CustomerInfo,
 )
-from shared.domain.exceptions import ValidationError
 
 
 class TestTenantId:

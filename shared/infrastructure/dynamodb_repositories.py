@@ -49,7 +49,6 @@ from ..domain.repositories import (
     IAvailabilityRepository,
     IWaitingListRepository,
 )
-from ..domain.exceptions import EntityNotFoundError, ConflictError
 
 
 class DynamoDBTenantRepository(ITenantRepository):

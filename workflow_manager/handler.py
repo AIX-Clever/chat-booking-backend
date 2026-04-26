@@ -4,7 +4,6 @@ import boto3 # type: ignore
 import logging
 import uuid
 import datetime
-from botocore.exceptions import ClientError # type: ignore
 
 # Initialize logger
 logger = logging.getLogger()
@@ -15,7 +14,6 @@ dynamodb = boto3.resource('dynamodb')
 workflows_table = dynamodb.Table(os.environ['WORKFLOWS_TABLE'])
 tenants_table = dynamodb.Table(os.environ['TENANTS_TABLE'])
 
-from shared.utils import extract_appsync_event, error_response
 from shared.domain.entities import TenantId
 
 def lambda_handler(event, context):

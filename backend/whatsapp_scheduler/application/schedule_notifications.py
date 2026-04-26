@@ -5,7 +5,6 @@ Orchestrates domain logic with injected ports.
 No direct boto3 / AWS SDK calls here.
 """
 from datetime import datetime, timezone
-from typing import List, Optional
 
 from shared.domain.repositories import ITenantRepository
 from shared.utils import Logger
@@ -15,10 +14,30 @@ from ..domain.message_builder import build_message
 
 logger = Logger()
 
+from typing import List
+
 DEFAULT_RULES: List[dict] = [
-    {"id": "on_booking",  "name": "Confirmación al reservar", "trigger": TriggerType.ON_BOOKING,   "active": True,  "hours_before": None},
-    {"id": "remind_24h",  "name": "Recordatorio 24h antes",   "trigger": TriggerType.HOURS_BEFORE, "active": True,  "hours_before": 24},
-    {"id": "remind_2h",   "name": "Recordatorio 2h antes",    "trigger": TriggerType.HOURS_BEFORE, "active": False, "hours_before": 2},
+    {
+        "id": "on_booking",
+        "name": "Confirmación al reservar",
+        "trigger": TriggerType.ON_BOOKING,
+        "active": True,
+        "hours_before": None
+    },
+    {
+        "id": "remind_24h",
+        "name": "Recordatorio 24h antes",
+        "trigger": TriggerType.HOURS_BEFORE,
+        "active": True,
+        "hours_before": 24
+    },
+    {
+        "id": "remind_2h",
+        "name": "Recordatorio 2h antes",
+        "trigger": TriggerType.HOURS_BEFORE,
+        "active": False,
+        "hours_before": 2
+    },
 ]
 
 
