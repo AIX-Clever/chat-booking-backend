@@ -147,6 +147,7 @@ jobs:
         run: |
           npx cdk deploy --all --app "node dist/bin/app.js" --require-approval never -c env=${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
         env:
+          ALLOWED_IPS: ${{ vars.ALLOWED_IPS }}
           ENV: ${{ github.ref_name == 'main' && 'prod' || github.ref_name }}
           API_DOMAIN_NAME: ${{ vars.API_DOMAIN_NAME }}
           MEDIA_DOMAIN_NAME: ${{ vars.MEDIA_DOMAIN_NAME }}
