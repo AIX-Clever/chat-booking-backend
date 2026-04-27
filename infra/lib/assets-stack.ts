@@ -59,9 +59,7 @@ export class AssetsStack extends cdk.Stack {
         // ==========================================
         // CONFIGURACION DE IPs DEL EQUIPO
         // ==========================================
-        let teamAllowedIPs = [
-            "127.0.0.1", // IP inaccesible por defecto (bloquea todo si no hay variable)
-        ];
+        let teamAllowedIPs: string[] = []; // Vacío = acceso libre
         
         if (process.env.ALLOWED_IPS) {
             teamAllowedIPs = process.env.ALLOWED_IPS.split(',').map(ip => ip.trim()).filter(Boolean);
