@@ -48,6 +48,7 @@ const databaseStack = new DatabaseStack(app, `${stackPrefix}-Database`, {
   env: { account, region },
   description: 'DynamoDB tables for Chat Booking SaaS',
   tags,
+  envName: env,
 });
 
 
@@ -57,6 +58,7 @@ const authStack = new AuthStack(app, `${stackPrefix}-Auth`, {
   env: { account, region },
   description: 'Cognito User Pool for Chat Booking Admin',
   tags,
+  envName: env,
 });
 
 // 2.5 Knowledge Base Stack - REMOVED for Cost Optimization (RDS + VPC)

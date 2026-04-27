@@ -127,6 +127,29 @@ jobs:
           fi
           echo "Layer is in sync! ✅"
 
+      - name: Validate Link SSM Params
+        run: |
+          ENV="${{ github.ref_name == 'main' && 'prod' || github.ref_name }}"
+          REGION="${{ secrets.AWS_REGION }}"
+
+          BUCKET=$(aws ssm get-parameter \
+            --name "/chatbooking/${ENV}/link-bucket-name" \
+            --query 'Parameter.Value' --output text --region "$REGION" 2>/dev/null) || true
+
+          DIST_ID=$(aws ssm get-parameter \
+            --name "/chatbooking/${ENV}/link-distribution-id" \
+            --query 'Parameter.Value' --output text --region "$REGION" 2>/dev/null) || true
+
+          if [ -z "$BUCKET" ] || [ -z "$DIST_ID" ]; then
+            echo "::error::SSM params for chat-booking-link not found in env=${ENV}."
+            echo "Deploy chat-booking-link before deploying the backend."
+            exit 1
+          fi
+
+          echo "Link bucket:          $BUCKET"
+          echo "Link distribution ID: $DIST_ID"
+          echo "Link SSM params OK ✅"
+
       - name: Install Lambda Dependencies
         run: |
           find . -name "requirements.txt" -not -path "*/node_modules/*" -not -path "*/.venv/*" | while read req_file; do
