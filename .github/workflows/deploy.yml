@@ -132,13 +132,12 @@ jobs:
           ENV="${{ github.ref_name == 'main' && 'prod' || github.ref_name }}"
           REGION="${{ secrets.AWS_REGION }}"
 
-          BUCKET=$(aws ssm get-parameter \
-            --name "/chatbooking/${ENV}/link-bucket-name" \
-            --query 'Parameter.Value' --output text --region "$REGION" 2>/dev/null) || true
+          PARAMS=$(aws ssm get-parameters \
+            --names "/chatbooking/${ENV}/link-bucket-name" "/chatbooking/${ENV}/link-distribution-id" \
+            --query 'Parameters' --output json --region "$REGION" 2>/dev/null)
 
-          DIST_ID=$(aws ssm get-parameter \
-            --name "/chatbooking/${ENV}/link-distribution-id" \
-            --query 'Parameter.Value' --output text --region "$REGION" 2>/dev/null) || true
+          BUCKET=$(echo "$PARAMS" | jq -r '.[] | select(.Name | endswith("link-bucket-name")) | .Value')
+          DIST_ID=$(echo "$PARAMS" | jq -r '.[] | select(.Name | endswith("link-distribution-id")) | .Value')
 
           if [ -z "$BUCKET" ] || [ -z "$DIST_ID" ]; then
             echo "::error::SSM params for chat-booking-link not found in env=${ENV}."

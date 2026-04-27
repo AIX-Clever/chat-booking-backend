@@ -4,7 +4,7 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 export interface AuthStackProps extends cdk.StackProps {
-  envName?: string;
+  envName: string;
 }
 
 /**
@@ -25,7 +25,7 @@ export class AuthStack extends cdk.Stack {
   public readonly adminGroup: cognito.CfnUserPoolGroup;
   public readonly staffGroup: cognito.CfnUserPoolGroup;
 
-  constructor(scope: Construct, id: string, props?: AuthStackProps) {
+  constructor(scope: Construct, id: string, props: AuthStackProps) {
     super(scope, id, props);
 
     // Create User Pool
@@ -155,11 +155,9 @@ export class AuthStack extends cdk.Stack {
       description: 'Cognito Hosted UI Login URL (localhost)',
     });
 
-    if (props?.envName) {
-      new ssm.StringParameter(this, 'UserPoolIdParam', {
-        parameterName: `/chatbooking/${props.envName}/cognito-user-pool-id`,
-        stringValue: this.userPool.userPoolId,
-      });
-    }
+    new ssm.StringParameter(this, 'UserPoolIdParam', {
+      parameterName: `/chatbooking/${props.envName}/cognito-user-pool-id`,
+      stringValue: this.userPool.userPoolId,
+    });
   }
 }

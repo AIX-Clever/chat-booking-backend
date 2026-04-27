@@ -44,11 +44,9 @@ export class SubscriptionStack extends cdk.Stack {
               })
             : props.tenantsTable;
 
-        const userPoolId = ssm.StringParameter.valueForStringParameter(
-            this, `/chatbooking/${props.envName}/cognito-user-pool-id`
-        );
         const userPool = (props.envName === 'qa' || props.envName === 'prod')
-            ? cognito.UserPool.fromUserPoolId(this, 'UserPoolPreBound', userPoolId)
+            ? cognito.UserPool.fromUserPoolId(this, 'UserPoolPreBound',
+                ssm.StringParameter.valueForStringParameter(this, `/chatbooking/${props.envName}/cognito-user-pool-id`))
             : props.userPool;
 
         // 1. DynamoDB: Subscriptions Table

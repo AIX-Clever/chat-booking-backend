@@ -4,7 +4,7 @@ import * as ssm from 'aws-cdk-lib/aws-ssm';
 import { Construct } from 'constructs';
 
 export interface DatabaseStackProps extends cdk.StackProps {
-  envName?: string;
+  envName: string;
 }
 
 /**
@@ -42,7 +42,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly whatsappMessagesTable: dynamodb.Table;
   public readonly waitingListTable: dynamodb.Table;
 
-  constructor(scope: Construct, id: string, props?: DatabaseStackProps) {
+  constructor(scope: Construct, id: string, props: DatabaseStackProps) {
     super(scope, id, props);
 
     // 1. Tenants Table
@@ -686,16 +686,14 @@ export class DatabaseStack extends cdk.Stack {
       description: 'Waiting List table name',
     });
 
-    if (props?.envName) {
-      new ssm.StringParameter(this, 'TenantsTableNameParam', {
-        parameterName: `/chatbooking/${props.envName}/tenants-table-name`,
-        stringValue: this.tenantsTable.tableName,
-      });
+    new ssm.StringParameter(this, 'TenantsTableNameParam', {
+      parameterName: `/chatbooking/${props.envName}/tenants-table-name`,
+      stringValue: this.tenantsTable.tableName,
+    });
 
-      new ssm.StringParameter(this, 'DteFoliosTableNameParam', {
-        parameterName: `/chatbooking/${props.envName}/dte-folios-table-name`,
-        stringValue: this.dteFoliosTable.tableName,
-      });
-    }
+    new ssm.StringParameter(this, 'DteFoliosTableNameParam', {
+      parameterName: `/chatbooking/${props.envName}/dte-folios-table-name`,
+      stringValue: this.dteFoliosTable.tableName,
+    });
   }
 }
