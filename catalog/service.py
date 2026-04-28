@@ -559,6 +559,7 @@ class ProviderManagementService:
                         "Por favor elige otro."
                     )
             provider.slug = slug
+        if professional_license is not None:
             provider.professional_license = professional_license
         if email is not None:
             provider.email = email
