@@ -6,10 +6,13 @@ import os
 from shared.subscriptions.mercadopago_client import MercadoPagoClient
 from shared.subscriptions.config import SubscriptionConfig
 from shared.subscriptions.entities import Subscription, SubscriptionStatus, PaymentAudit
+from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.domain.entities import TenantId
 
 dynamodb = boto3.resource('dynamodb')
 mp_client = MercadoPagoClient()
 SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
+tenant_repo = DynamoDBTenantRepository()
 
 def lambda_handler(event, context):
     """
@@ -61,14 +64,21 @@ def lambda_handler(event, context):
 def process_payment(payment_id, raw_data):
     # 1. Fetch from source of truth
     payment_info = mp_client.get_payment(payment_id)
-    
-    tenant_id = payment_info.get('external_reference')
+
+    external_reference = payment_info.get('external_reference', '')
     status = payment_info.get('status')
     amount = float(payment_info.get('transaction_amount', 0))
-    
-    if not tenant_id:
-        print(f"Skipping payment {payment_id}: No external_reference (tenant_id)")
+
+    if not external_reference:
+        print(f"Skipping payment {payment_id}: No external_reference")
         return
+
+    # Route topup payments — keep existing subscription flow untouched
+    if external_reference.startswith('topup:'):
+        process_topup_payment(payment_id, external_reference, status, amount, raw_data)
+        return
+
+    tenant_id = external_reference
 
     # 2. Idempotency Check & Auditoria
     audit = PaymentAudit(
@@ -387,3 +397,63 @@ def _issue_subscription_dte(tenant: Any, payment_id: str, amount: float):
         
     except Exception as e:
         print(f"Error enqueuing subscription DTE: {str(e)}")
+
+
+def process_topup_payment(payment_id: str, external_reference: str, status: str, amount: float, raw_data: Any):
+    """
+    Handles one-time WhatsApp quota topup payments.
+    external_reference format: 'topup:{tenantId}:{packageId}'
+    Existing subscription flow is untouched.
+    """
+    parts = external_reference.split(':')
+    if len(parts) != 3:
+        print(f"[topup] Invalid external_reference format: {external_reference}")
+        return
+
+    _, tenant_id, package_id = parts
+    package = SubscriptionConfig.WHATSAPP_PACKAGES.get(package_id)
+    if not package:
+        print(f"[topup] Unknown packageId '{package_id}' for payment {payment_id}")
+        return
+
+    expected_price = package["price"]
+    messages = package["messages"]
+
+    print(f"[topup] payment={payment_id} tenant={tenant_id} package={package_id} status={status} amount={amount}")
+
+    if status not in ('approved',):
+        print(f"[topup] Payment {payment_id} status={status} — not crediting quota yet")
+        return
+
+    # Amount validation — reject if paid less than expected (100 CLP tolerance for rounding)
+    if amount < (expected_price - 100):
+        print(
+            f"[topup] SECURITY: Amount mismatch for {tenant_id}. "
+            f"Paid {amount}, expected {expected_price} for package '{package_id}'. Rejecting."
+        )
+        return
+
+    # Idempotency — log in subscriptions table reusing PaymentAudit
+    audit = PaymentAudit(
+        tenant_id=tenant_id,
+        payment_id=str(payment_id),
+        amount=amount,
+        status=status,
+        processed_at=datetime.utcnow().isoformat() + 'Z',
+        raw_data=str(raw_data),
+    )
+    try:
+        SUBSCRIPTIONS_TABLE.put_item(
+            Item=audit.to_item(),
+            ConditionExpression='attribute_not_exists(paymentId)',
+        )
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        print(f"[topup] Payment {payment_id} already processed. Skipping.")
+        return
+
+    # Credit quota atomically
+    success = tenant_repo.increment_whatsapp_quota(TenantId(tenant_id), messages)
+    if success:
+        print(f"[topup] Credited {messages} messages to tenant {tenant_id} (payment {payment_id})")
+    else:
+        print(f"[topup] ERROR: Failed to increment quota for tenant {tenant_id} — tenant not found?")

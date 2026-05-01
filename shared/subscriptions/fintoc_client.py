@@ -66,6 +66,23 @@ class FintocClient:
             "link_intent_id": intent_id,
         }
 
+    def create_payment_intent(self, amount: int, currency: str, external_reference: str) -> dict:
+        """
+        Creates a one-time payment intent via POST /v1/payment_intents.
+        Returns widget_token and payment_intent_id.
+        """
+        data = {
+            "amount": amount,
+            "currency": currency,
+            "external_reference": external_reference,
+        }
+        result = self._request("POST", "payment_intents", data)
+        widget_token = result.get("widget_token")
+        intent_id = result.get("id")
+        if not widget_token or not intent_id:
+            raise RuntimeError(f"Fintoc payment_intent unexpected response: {result}")
+        return {"widget_token": widget_token, "payment_intent_id": intent_id}
+
     def get_movement(self, movement_id, link_token):
         """Retrieves a movement (payment) details."""
         pass

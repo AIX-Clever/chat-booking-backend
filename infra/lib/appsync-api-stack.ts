@@ -33,6 +33,7 @@ interface AppSyncApiStackProps extends cdk.StackProps {
   apiKeyManagerFunction: lambda.IFunction;
   subscribeFunction: lambda.IFunction;
   downgradeFunction: lambda.IFunction;
+  topupFunction: lambda.IFunction;
   listInvoicesFunction: lambda.IFunction;
   getPublicProfileFunction: lambda.IFunction;
   publicLinkStatusFunction: lambda.IFunction;
@@ -224,6 +225,11 @@ export class AppSyncApiStack extends cdk.Stack {
       props.downgradeFunction
     );
 
+    const topupDataSource = this.api.addLambdaDataSource(
+      'TopupWhatsappQuotaDataSource',
+      props.topupFunction
+    );
+
     const supportManagerDataSource = this.api.addLambdaDataSource(
       'SupportManagerDataSource',
       props.supportManagerFunction
@@ -256,6 +262,7 @@ export class AppSyncApiStack extends cdk.Stack {
       apiKeyManagerDataSource,
       subscribeDataSource,
       downgradeDataSource,
+      topupDataSource,
       supportManagerDataSource,
       listInvoicesDataSource,
       getPublicProfileDataSource,
@@ -379,6 +386,7 @@ export class AppSyncApiStack extends cdk.Stack {
     supportManagerDataSource: appsync.LambdaDataSource,
     listInvoicesDataSource: appsync.LambdaDataSource,
     getPublicProfileDataSource: appsync.LambdaDataSource,
+    topupDataSource: appsync.LambdaDataSource,
     waitlistApiDataSource: appsync.LambdaDataSource,
     cafManagerDataSource?: appsync.LambdaDataSource
   ): void {
@@ -887,6 +895,13 @@ export class AppSyncApiStack extends cdk.Stack {
     downgradeDataSource.createResolver('DowngradeResolver', {
       typeName: 'Mutation',
       fieldName: 'downgrade',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    topupDataSource.createResolver('TopupWhatsappQuotaResolver', {
+      typeName: 'Mutation',
+      fieldName: 'topupWhatsappQuota',
       requestMappingTemplate: requestTemplate,
       responseMappingTemplate: responseTemplate,
     });

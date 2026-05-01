@@ -29,6 +29,7 @@ export class SubscriptionStack extends cdk.Stack {
     public readonly listInvoicesFunction: lambda.Function;
     public readonly fintocWebhookFunction: lambda.Function;
     public readonly siiStatusSyncFunction: lambda.Function;
+    public readonly topupFunction: lambda.Function;
 
     constructor(scope: Construct, id: string, props: SubscriptionStackProps) {
 
@@ -273,6 +274,22 @@ export class SubscriptionStack extends cdk.Stack {
         this.subscribeFunction.addToRolePolicy(passRolePolicy);
         this.downgradeFunction.addToRolePolicy(createSchedulePolicy);
         this.downgradeFunction.addToRolePolicy(passRolePolicy);
+
+        // I. WhatsApp Quota Topup Handler
+        this.topupFunction = new lambda.Function(this, 'TopupWhatsappQuotaFunction', {
+            ...commonProps,
+            description: 'Handle one-time WhatsApp quota topup payments',
+            code: lambda.Code.fromAsset(path.join(backendPath, 'subscriptions/handlers')),
+            handler: 'topup.lambda_handler',
+        });
+        this.subscriptionsTable.grantReadWriteData(this.topupFunction);
+        tenantsTable.grantReadData(this.topupFunction);
+        this.topupFunction.addToRolePolicy(new iam.PolicyStatement({
+            actions: ['cognito-idp:AdminGetUser'],
+            resources: [userPool.userPoolArn],
+        }));
+        // Webhook URL late-bound so topup can send MP notification_url
+        this.topupFunction.addEnvironment('WEBHOOK_URL', webhookUrl.url);
 
         // Outputs
         new cdk.CfnOutput(this, 'SubscriptionsTableName', { value: this.subscriptionsTable.tableName });

@@ -13,10 +13,33 @@ class MercadoPagoClient(IPaymentGateway):
             print("WARNING: MP_ACCESS_TOKEN is not set")
         self.sdk = mercadopago.SDK(self.access_token)
 
+    def create_preference(
+        self,
+        title: str,
+        amount: float,
+        external_reference: str,
+        back_url: str,
+        notification_url: str = "",
+    ) -> Dict[str, Any]:
+        """Creates a one-time payment preference (Checkout Pro)."""
+        preference_data: Dict[str, Any] = {
+            "items": [{"title": title, "quantity": 1, "unit_price": amount, "currency_id": "CLP"}],
+            "external_reference": external_reference,
+            "back_urls": {"success": back_url, "failure": back_url, "pending": back_url},
+            "auto_return": "approved",
+        }
+        if notification_url:
+            preference_data["notification_url"] = notification_url
+
+        result = self.sdk.preference().create(preference_data)
+        if result["status"] in (200, 201):
+            return result["response"]
+        error_msg = result.get("response", {}).get("message", "Unknown error")
+        raise RuntimeError(f"Failed to create MP preference: {error_msg}")
+
     def create_payment_intent(
         self, amount: float, currency: str, metadata: Dict[str, Any]
     ) -> Dict[str, Any]:
-        # Implementation for single payments (not used in subscription flow yet)
         return {}
 
     def verify_webhook_signature(

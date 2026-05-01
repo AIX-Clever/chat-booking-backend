@@ -35,6 +35,12 @@ type DowngradeResponse @aws_cognito_user_pools {
   effectiveDate: String!
 }
 
+type TopupResponse @aws_cognito_user_pools {
+  topupId: String!
+  initPoint: String!
+  message: String
+}
+
 enum ConversationState {
   INIT
   SERVICE_PENDING
@@ -846,6 +852,9 @@ type Mutation {
   # Subscription Mutations
   subscribe(planId: String!, email: String, backUrl: String, paymentMethod: String): SubscriptionResponse! @aws_cognito_user_pools
   downgrade(targetPlan: String!, subscriptionId: String!): DowngradeResponse! @aws_cognito_user_pools
+
+  # WhatsApp Quota Topup
+  topupWhatsappQuota(packageId: String!, paymentMethod: String!, backUrl: String!): TopupResponse! @aws_cognito_user_pools
 
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda

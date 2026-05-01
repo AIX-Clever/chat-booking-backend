@@ -129,6 +129,20 @@ class DynamoDBTenantRepository(ITenantRepository):
             created_at=datetime.fromisoformat(item["createdAt"]),
         )
 
+    def increment_whatsapp_quota(self, tenant_id: TenantId, amount: int) -> bool:
+        """Atomically add `amount` credits to whatsappQuota. Returns True on success."""
+        try:
+            self.table.update_item(
+                Key={"tenantId": str(tenant_id)},
+                UpdateExpression="ADD whatsappQuota :inc",
+                ConditionExpression="attribute_exists(tenantId)",
+                ExpressionAttributeValues={":inc": amount},
+            )
+            return True
+        except ClientError as e:
+            print(f"Error incrementing whatsapp quota for tenant {tenant_id}: {e}")
+            return False
+
     def decrement_whatsapp_quota(self, tenant_id: TenantId) -> bool:
         """Atomically decrement whatsappQuota if it's > 0.
         Returns True if successful, False if quota was 0 or tenant not found."""

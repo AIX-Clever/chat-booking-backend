@@ -164,6 +164,7 @@ const appSyncApiStack = new AppSyncApiStack(app, `${stackPrefix}-AppSyncApi`, {
   apiKeyManagerFunction: lambdaStack.apiKeyManagerFunction,
   subscribeFunction: subscriptionStack.subscribeFunction,
   downgradeFunction: subscriptionStack.downgradeFunction,
+  topupFunction: subscriptionStack.topupFunction,
   listInvoicesFunction: subscriptionStack.listInvoicesFunction,
   checkPaymentStatusFunction: lambdaStack.checkPaymentStatusFunction,
   clientsFunction: lambdaStack.clientsFunction,
