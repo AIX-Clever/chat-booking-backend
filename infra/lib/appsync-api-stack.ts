@@ -262,10 +262,10 @@ export class AppSyncApiStack extends cdk.Stack {
       apiKeyManagerDataSource,
       subscribeDataSource,
       downgradeDataSource,
-      topupDataSource,
       supportManagerDataSource,
       listInvoicesDataSource,
       getPublicProfileDataSource,
+      topupDataSource,
       this.api.addLambdaDataSource('WaitlistApiDataSource', props.waitlistApiFunction),
       props.cafManagerFunction ? this.api.addLambdaDataSource('CafManagerDataSource', props.cafManagerFunction) : undefined
     );
