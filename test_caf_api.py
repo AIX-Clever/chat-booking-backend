@@ -1,6 +1,9 @@
 import base64
 import json
 import boto3
+import pytest
+
+pytestmark = pytest.mark.skip(reason="Manual integration test — requires live AWS credentials and deployed Lambda")
 
 def get_caf_manager_function_name(env_name="dev"):
     """Find the CAF Manager Lambda function name."""
