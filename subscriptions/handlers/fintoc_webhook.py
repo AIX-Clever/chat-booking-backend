@@ -7,7 +7,9 @@ import boto3
 from boto3.dynamodb.conditions import Key
 
 from shared.subscriptions.config import SubscriptionConfig
-from shared.subscriptions.entities import SubscriptionStatus
+from shared.subscriptions.entities import SubscriptionStatus, PaymentAudit
+from shared.infrastructure.dynamodb_repositories import DynamoDBTenantRepository
+from shared.domain.entities import TenantId
 
 dynamodb = boto3.resource("dynamodb")
 SUBSCRIPTIONS_TABLE = dynamodb.Table(SubscriptionConfig.SUBSCRIPTIONS_TABLE)
@@ -242,6 +244,63 @@ def lambda_handler(event, context):
                 )
                 _activate_subscription(tenant_id, sub_id)
                 _sync_tenant_plan_and_status(tenant_id, plan_id)
+
+        elif event_type == "payment_intent.succeeded":
+            external_reference = data.get("external_reference") or data.get("reference", "")
+            payment_id = str(data.get("id", ""))
+            amount = float(data.get("amount", 0))
+
+            print(f"[topup/fintoc] payment_intent.succeeded ref={external_reference} payment={payment_id} amount={amount}")
+
+            if not external_reference.startswith("topup:"):
+                print(f"[topup/fintoc] Ignoring payment_intent — not a topup (ref={external_reference})")
+                return {"statusCode": 200, "body": "OK"}
+
+            parts = external_reference.split(":")
+            if len(parts) != 3:
+                print(f"[topup/fintoc] Invalid topup ref format: {external_reference}")
+                return {"statusCode": 200, "body": "OK"}
+
+            _, tenant_id, package_id = parts
+            package = SubscriptionConfig.WHATSAPP_PACKAGES.get(package_id)
+            if not package:
+                print(f"[topup/fintoc] Unknown package '{package_id}' for payment {payment_id}")
+                return {"statusCode": 200, "body": "OK"}
+
+            expected_price = package["price"]
+            messages = package["messages"]
+
+            if amount < (expected_price - 100):
+                print(
+                    f"[topup/fintoc] SECURITY: amount mismatch tenant={tenant_id} "
+                    f"paid={amount} expected={expected_price} package={package_id}. Rejecting."
+                )
+                return {"statusCode": 200, "body": "OK"}
+
+            # Idempotency — reuse PaymentAudit keyed by payment_id
+            audit_item = PaymentAudit(
+                tenant_id=tenant_id,
+                payment_id=payment_id,
+                amount=amount,
+                status="approved",
+                processed_at=_iso_now(),
+                raw_data=json.dumps(data),
+            )
+            try:
+                SUBSCRIPTIONS_TABLE.put_item(
+                    Item=audit_item.to_item(),
+                    ConditionExpression="attribute_not_exists(paymentId)",
+                )
+            except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+                print(f"[topup/fintoc] Payment {payment_id} already processed. Skipping.")
+                return {"statusCode": 200, "body": "OK"}
+
+            tenant_repo = DynamoDBTenantRepository()
+            success = tenant_repo.increment_whatsapp_quota(TenantId(tenant_id), messages)
+            if success:
+                print(f"[topup/fintoc] Credited {messages} messages to tenant {tenant_id} (payment {payment_id})")
+            else:
+                print(f"[topup/fintoc] ERROR: Failed to increment quota for tenant {tenant_id}")
 
         elif event_type in ["subscription_intent.succeeded", "checkout_session.succeeded"]:
             intent_id = data.get("id")
