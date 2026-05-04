@@ -12,6 +12,7 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBServiceRepository,
     DynamoDBProviderRepository,
     DynamoDBRoomRepository,
+    DynamoDBRoomAssignmentRepository,
     DynamoDBTenantRepository,
 )
 from shared.metrics import MetricsService
@@ -36,6 +37,7 @@ from service import (
     ProviderManagementService,
     CategoryManagementService,
     RoomManagementService,
+    RoomAssignmentManagementService,
     AssetService,
 )
 
@@ -71,6 +73,8 @@ except Exception as e:
     )
     asset_service = None
 
+room_assignment_repo = DynamoDBRoomAssignmentRepository()
+
 catalog_service = CatalogService(service_repo, provider_repo, category_repo, room_repo)
 service_mgmt_service = ServiceManagementService(service_repo, category_repo)
 provider_mgmt_service = ProviderManagementService(
@@ -78,6 +82,9 @@ provider_mgmt_service = ProviderManagementService(
 )
 category_mgmt_service = CategoryManagementService(category_repo)
 room_mgmt_service = RoomManagementService(room_repo)
+room_assignment_mgmt_service = RoomAssignmentManagementService(
+    room_assignment_repo, room_repo, provider_repo
+)
 
 logger = Logger()
 
@@ -172,6 +179,15 @@ def lambda_handler(event: dict, context) -> dict:
 
         elif field == "deleteRoom":
             return handle_delete_room(tenant_id, input_data)
+
+        elif field == "listRoomAssignments":
+            return handle_list_room_assignments(tenant_id, input_data)
+
+        elif field == "setRoomAssignment":
+            return handle_set_room_assignment(tenant_id, input_data)
+
+        elif field == "deleteRoomAssignment":
+            return handle_delete_room_assignment(tenant_id, input_data)
 
         elif field == "generatePresignedUrl":
             return handle_generate_presigned_url(tenant_id, input_data)
@@ -515,9 +531,22 @@ def room_to_dict(room) -> dict:
         "minDuration": room.min_duration,
         "maxDuration": room.max_duration,
         "operatingHours": room.operating_hours,
+        "periodSplit": room.period_split,
         "metadata": room.metadata,
         "createdAt": room.created_at.isoformat(),
         "updatedAt": room.updated_at.isoformat(),
+    }
+
+
+def room_assignment_to_dict(assignment) -> dict:
+    return {
+        "roomId": assignment.room_id,
+        "tenantId": str(assignment.tenant_id),
+        "providerId": assignment.provider_id,
+        "days": assignment.days,
+        "period": assignment.period,
+        "createdAt": assignment.created_at.isoformat(),
+        "updatedAt": assignment.updated_at.isoformat(),
     }
 
 
@@ -559,6 +588,7 @@ def handle_create_room(tenant_id: TenantId, input_data: dict) -> dict:
         min_duration=input_data.get("minDuration"),
         max_duration=input_data.get("maxDuration"),
         operating_hours=op_hours,
+        period_split=input_data.get("periodSplit"),
         metadata=meta,
     )
     return success_response(room_to_dict(room))
@@ -586,6 +616,7 @@ def handle_update_room(tenant_id: TenantId, input_data: dict) -> dict:
         min_duration=input_data.get("minDuration"),
         max_duration=input_data.get("maxDuration"),
         operating_hours=op_hours,
+        period_split=input_data.get("periodSplit"),
         metadata=meta,
     )
     return success_response(room_to_dict(room))
@@ -602,6 +633,46 @@ def handle_delete_room(tenant_id: TenantId, input_data: dict) -> dict:
 
     room_mgmt_service.delete_room(tenant_id, room_id)
     return success_response(room_to_dict(room))
+
+
+def handle_list_room_assignments(tenant_id: TenantId, input_data: dict) -> dict:
+    """List all assignments for a room"""
+    room_id = input_data.get("roomId")
+    if not room_id:
+        return error_response("Missing roomId", 400)
+    assignments = room_assignment_mgmt_service.list_by_room(tenant_id, room_id)
+    return success_response([room_assignment_to_dict(a) for a in assignments])
+
+
+def handle_set_room_assignment(tenant_id: TenantId, input_data: dict) -> dict:
+    """Create or update a room assignment"""
+    room_id = input_data.get("roomId")
+    provider_id = input_data.get("providerId")
+    days = input_data.get("days")
+    period = input_data.get("period")
+
+    if not all([room_id, provider_id, days, period]):
+        return error_response("Missing required fields: roomId, providerId, days, period", 400)
+
+    assignment = room_assignment_mgmt_service.set_assignment(
+        tenant_id=tenant_id,
+        room_id=room_id,
+        provider_id=provider_id,
+        days=days,
+        period=period,
+    )
+    return success_response(room_assignment_to_dict(assignment))
+
+
+def handle_delete_room_assignment(tenant_id: TenantId, input_data: dict) -> dict:
+    """Delete a room assignment"""
+    room_id = input_data.get("roomId")
+    provider_id = input_data.get("providerId")
+    if not room_id or not provider_id:
+        return error_response("Missing roomId or providerId", 400)
+
+    room_assignment_mgmt_service.delete_assignment(tenant_id, room_id, provider_id)
+    return success_response({"roomId": room_id, "providerId": provider_id})
 
 
 def handle_generate_presigned_url(tenant_id: TenantId, input_data: dict) -> dict:

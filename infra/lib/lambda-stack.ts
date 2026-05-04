@@ -38,6 +38,7 @@ interface LambdaStackProps extends cdk.StackProps {
   faqsTable: dynamodb.ITable;
   documentsTable: dynamodb.ITable;
   roomsTable: dynamodb.ITable;
+  roomAssignmentsTable: dynamodb.ITable;
   userRolesTable: dynamodb.ITable;
   userPool: cdk.aws_cognito.IUserPool;
   vpc?: cdk.aws_ec2.IVpc;
@@ -155,6 +156,7 @@ export class LambdaStack extends cdk.Stack {
         DYNAMODB_WORKFLOWS_TABLE: props.workflowsTable.tableName,
         DYNAMODB_FAQS_TABLE: props.faqsTable.tableName,
         ROOMS_TABLE: props.roomsTable.tableName,
+        ROOM_ASSIGNMENTS_TABLE: props.roomAssignmentsTable.tableName,
         WAITING_LIST_TABLE: props.waitingListTable.tableName,
         MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
@@ -229,6 +231,7 @@ export class LambdaStack extends cdk.Stack {
     props.providersTable.grantReadWriteData(this.catalogFunction);
     props.categoriesTable.grantReadWriteData(this.catalogFunction);
     props.roomsTable.grantReadWriteData(this.catalogFunction);
+    props.roomAssignmentsTable.grantReadWriteData(this.catalogFunction);
     props.tenantsTable.grantReadData(this.catalogFunction); // Fix: Allow LimitService to read tenant plan
     props.tenantUsageTable.grantReadWriteData(this.catalogFunction); // Fix: Allow MetricsService to increment provider count
     props.userPool.grant(this.catalogFunction, 'cognito-idp:AdminGetUser');
@@ -365,7 +368,8 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadData(this.bookingFunction);
     props.conversationsTable.grantReadData(this.bookingFunction);
     props.availabilityTable.grantReadData(this.bookingFunction); // Added permissions for Availability table
-    props.roomsTable.grantReadData(this.bookingFunction); // Added permission for Rooms table
+    props.roomsTable.grantReadData(this.bookingFunction);
+    props.roomAssignmentsTable.grantReadData(this.bookingFunction);
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
     props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');

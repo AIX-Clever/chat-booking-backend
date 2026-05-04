@@ -33,6 +33,7 @@ from ..domain.entities import (
     Workflow,
     WorkflowStep,
     Room,
+    RoomAssignment,
     WaitingListEntry,
     WaitingListStatus,
 )
@@ -43,6 +44,7 @@ from ..domain.repositories import (
     IConversationRepository,
     IFAQRepository,
     IRoomRepository,
+    IRoomAssignmentRepository,
     IProviderIntegrationRepository,
     IProviderRepository,
     IBookingRepository,
@@ -948,6 +950,7 @@ class DynamoDBRoomRepository(IRoomRepository):
             "minDuration": room.min_duration,
             "maxDuration": room.max_duration,
             "operatingHours": room.operating_hours,
+            "periodSplit": room.period_split,
             "metadata": room.metadata,
             "createdAt": room.created_at.isoformat(),
             "updatedAt": room.updated_at.isoformat(),
@@ -969,7 +972,92 @@ class DynamoDBRoomRepository(IRoomRepository):
             min_duration=int(item["minDuration"]) if item.get("minDuration") else 15,
             max_duration=int(item["maxDuration"]) if item.get("maxDuration") else 60,
             operating_hours=item.get("operatingHours", []),
+            period_split=item.get("periodSplit"),
             metadata=item.get("metadata", {}),
+            created_at=datetime.fromisoformat(item["createdAt"]),
+            updated_at=datetime.fromisoformat(item["updatedAt"]),
+        )
+
+
+class DynamoDBRoomAssignmentRepository(IRoomAssignmentRepository):
+    """DynamoDB implementation of RoomAssignment repository.
+
+    Schema:
+      PK: tenantId#roomId
+      SK: providerId
+      GSI byProvider: PK=tenantId#providerId, SK=roomId
+    """
+
+    def __init__(self, table_name: Optional[str] = None):
+        self.dynamodb = boto3.resource("dynamodb")
+        self.table = self.dynamodb.Table(
+            table_name or os.environ.get("ROOM_ASSIGNMENTS_TABLE", "ChatBooking-RoomAssignments")
+        )
+
+    def _pk(self, tenant_id: TenantId, room_id: str) -> str:
+        return f"{tenant_id}#{room_id}"
+
+    def _provider_pk(self, tenant_id: TenantId, provider_id: str) -> str:
+        return f"{tenant_id}#{provider_id}"
+
+    def get(self, tenant_id: TenantId, room_id: str, provider_id: str) -> Optional[RoomAssignment]:
+        try:
+            response = self.table.get_item(
+                Key={"pk": self._pk(tenant_id, room_id), "sk": provider_id}
+            )
+            item = response.get("Item")
+            return self._item_to_entity(item) if item else None
+        except ClientError as e:
+            print(f"Error getting room assignment: {e}")
+            return None
+
+    def list_by_room(self, tenant_id: TenantId, room_id: str) -> List[RoomAssignment]:
+        try:
+            response = self.table.query(
+                KeyConditionExpression=Key("pk").eq(self._pk(tenant_id, room_id))
+            )
+            return [self._item_to_entity(i) for i in response.get("Items", [])]
+        except ClientError as e:
+            print(f"Error listing room assignments by room: {e}")
+            return []
+
+    def list_by_provider(self, tenant_id: TenantId, provider_id: str) -> List[RoomAssignment]:
+        try:
+            response = self.table.query(
+                IndexName="byProvider",
+                KeyConditionExpression=Key("providerPk").eq(self._provider_pk(tenant_id, provider_id)),
+            )
+            return [self._item_to_entity(i) for i in response.get("Items", [])]
+        except ClientError as e:
+            print(f"Error listing room assignments by provider: {e}")
+            return []
+
+    def save(self, assignment: RoomAssignment) -> None:
+        self.table.put_item(Item={
+            "pk": self._pk(assignment.tenant_id, assignment.room_id),
+            "sk": assignment.provider_id,
+            "providerPk": self._provider_pk(assignment.tenant_id, assignment.provider_id),
+            "roomId": assignment.room_id,
+            "tenantId": str(assignment.tenant_id),
+            "providerId": assignment.provider_id,
+            "days": assignment.days,
+            "period": assignment.period,
+            "createdAt": assignment.created_at.isoformat(),
+            "updatedAt": assignment.updated_at.isoformat(),
+        })
+
+    def delete(self, tenant_id: TenantId, room_id: str, provider_id: str) -> None:
+        self.table.delete_item(
+            Key={"pk": self._pk(tenant_id, room_id), "sk": provider_id}
+        )
+
+    def _item_to_entity(self, item: dict) -> RoomAssignment:
+        return RoomAssignment(
+            tenant_id=TenantId(item["tenantId"]),
+            room_id=item["roomId"],
+            provider_id=item["providerId"],
+            days=item["days"],
+            period=item["period"],
             created_at=datetime.fromisoformat(item["createdAt"]),
             updated_at=datetime.fromisoformat(item["updatedAt"]),
         )
