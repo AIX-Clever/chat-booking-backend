@@ -229,10 +229,12 @@ class ChatAgentService:
 
             # 2. Get Response from AI
             try:
+                tenant_profile = tenant.settings.get("profile", {}) if isinstance(tenant.settings, dict) else {}
                 ai_response_text = self.ai_handler.generate_response(
                     tenant_id,
                     conversation.get_history(),  # Assuming get_history() exists or property
                     message,
+                    tenant_context=tenant_profile,
                 )
 
                 # Check for specific error from AI Handler

@@ -1,7 +1,7 @@
 import json
 import boto3
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from shared.infrastructure.vector_repository import VectorRepository
 
 logger = logging.getLogger()
@@ -33,7 +33,8 @@ class AIHandler:
             raise e
 
     def generate_response(
-        self, tenant_id: str, history: List[Dict], user_message: str
+        self, tenant_id: str, history: List[Dict], user_message: str,
+        tenant_context: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Main RAG Flow:
@@ -51,13 +52,32 @@ class AIHandler:
         context_str = "\n\n".join([c["content"] for c in relevant_chunks])
 
         # 3. Construct Prompt
-        system_prompt = f"""You are a helpful AI assistant for a business.
-        Use the following retrieved context to answer the user's question. 
-        If the answer is not in the context, say you don't know, or try to be helpful based on general knowledge if appropriate but prioritize the context.
-        
-        Context:
-        {context_str}
-        """
+        business_identity = ""
+        if tenant_context:
+            profession = tenant_context.get("profession", "")
+            specializations = tenant_context.get("specializations", [])
+            if isinstance(specializations, list):
+                specializations_str = ", ".join(specializations)
+            else:
+                specializations_str = str(specializations)
+
+            if profession or specializations_str:
+                parts = []
+                if profession:
+                    parts.append(f"Rubro: {profession}")
+                if specializations_str:
+                    parts.append(f"Especialidades: {specializations_str}")
+                business_identity = "\n".join(parts)
+
+        identity_section = f"\n\nContexto del negocio:\n{business_identity}" if business_identity else ""
+
+        system_prompt = f"""Eres un asistente de IA para un negocio.{identity_section}
+Usa el siguiente contexto recuperado para responder la pregunta del usuario.
+Si la respuesta no está en el contexto, di que no sabes o intenta ser útil basándote en conocimiento general, pero prioriza siempre el contexto.
+
+Contexto:
+{context_str}
+"""
 
         # Format messages for Claude 3 (Messages API)
         # Convert history format if needed. Assuming history is list of {role, content}
