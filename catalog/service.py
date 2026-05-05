@@ -830,27 +830,26 @@ class RoomAssignmentManagementService:
         tenant_id: TenantId,
         room_id: str,
         provider_id: str,
-        days: List[str],
-        period: str,
+        day_periods: Dict[str, str],
     ) -> None:
         existing = self.assignment_repo.list_by_room(tenant_id, room_id)
         for assignment in existing:
             if assignment.provider_id == provider_id:
                 continue
-            overlap_days = set(days) & set(assignment.days)
-            if overlap_days and self._periods_overlap(period, assignment.period):
-                raise ValidationError(
-                    f"Conflict: room already assigned to provider {assignment.provider_id} "
-                    f"on {sorted(overlap_days)} ({assignment.period})"
-                )
+            for day, period in day_periods.items():
+                other_period = assignment.day_periods.get(day)
+                if other_period and self._periods_overlap(period, other_period):
+                    raise ValidationError(
+                        f"Conflict: room already assigned to provider {assignment.provider_id} "
+                        f"on {day} ({other_period})"
+                    )
 
     def set_assignment(
         self,
         tenant_id: TenantId,
         room_id: str,
         provider_id: str,
-        days: List[str],
-        period: str,
+        day_periods: Dict[str, str],
     ) -> RoomAssignment:
         self.logger.info(
             "Setting room assignment",
@@ -859,20 +858,21 @@ class RoomAssignmentManagementService:
             provider_id=provider_id,
         )
 
-        invalid_days = set(days) - self.VALID_DAYS
+        if not day_periods:
+            raise ValidationError("day_periods cannot be empty")
+        invalid_days = set(day_periods.keys()) - self.VALID_DAYS
         if invalid_days:
             raise ValidationError(f"Invalid days: {invalid_days}")
-        if period not in self.VALID_PERIODS:
-            raise ValidationError(f"Invalid period: {period}. Must be FULL, MORNING or AFTERNOON")
-        if not days:
-            raise ValidationError("days cannot be empty")
+        invalid_periods = set(day_periods.values()) - self.VALID_PERIODS
+        if invalid_periods:
+            raise ValidationError(f"Invalid periods: {invalid_periods}. Must be FULL, MORNING or AFTERNOON")
 
         if not self.room_repo.get_by_id(tenant_id, room_id):
             raise EntityNotFoundError("Room", room_id)
         if not self.provider_repo.get_by_id(tenant_id, provider_id):
             raise EntityNotFoundError("Provider", provider_id)
 
-        self._validate_conflict(tenant_id, room_id, provider_id, days, period)
+        self._validate_conflict(tenant_id, room_id, provider_id, day_periods)
 
         from datetime import datetime, timezone
 
@@ -882,8 +882,7 @@ class RoomAssignmentManagementService:
             tenant_id=tenant_id,
             room_id=room_id,
             provider_id=provider_id,
-            days=sorted(days),
-            period=period,
+            day_periods=dict(sorted(day_periods.items())),
             created_at=existing.created_at if existing else now,
             updated_at=now,
         )

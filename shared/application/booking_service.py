@@ -290,13 +290,14 @@ class BookingService:
         # 1. Exclusive assignment — provider owns a room on this day/period
         if provider_id and self._room_assignment_repo and self._room_repo:
             for assignment in self._room_assignment_repo.list_by_provider(tenant_id, provider_id):
-                if day not in assignment.days:
+                period_for_day = assignment.day_periods.get(day)
+                if not period_for_day:
                     continue
                 room = self._room_repo.get_by_id(tenant_id, assignment.room_id)
                 if not room:
                     continue
                 booking_period = _booking_period(start, end, room.period_split)
-                if _periods_overlap(booking_period, assignment.period):
+                if _periods_overlap(booking_period, period_for_day):
                     return assignment.room_id
 
         # 2. Fallback — first available room from service.required_room_ids
@@ -319,7 +320,8 @@ class BookingService:
         for assignment in self._room_assignment_repo.list_by_room(tenant_id, room_id):
             if assignment.provider_id == provider_id:
                 continue
-            if day in assignment.days and _periods_overlap(booking_period, assignment.period):
+            period_for_day = assignment.day_periods.get(day)
+            if period_for_day and _periods_overlap(booking_period, period_for_day):
                 return True
         return False
 

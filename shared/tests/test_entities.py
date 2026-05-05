@@ -388,13 +388,12 @@ class TestRoomAssignment:
             tenant_id=TenantId("test123"),
             room_id="rm-1",
             provider_id="pv-1",
-            days=["MON", "WED"],
-            period="FULL",
+            day_periods={"MON": "FULL", "WED": "AFTERNOON"},
         )
         assert assignment.room_id == "rm-1"
         assert assignment.provider_id == "pv-1"
-        assert "MON" in assignment.days
-        assert assignment.period == "FULL"
+        assert assignment.day_periods["MON"] == "FULL"
+        assert assignment.day_periods["WED"] == "AFTERNOON"
 
 
 class TestRoomAssignmentHelpers:
