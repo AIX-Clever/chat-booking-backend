@@ -543,8 +543,7 @@ def room_assignment_to_dict(assignment) -> dict:
         "roomId": assignment.room_id,
         "tenantId": str(assignment.tenant_id),
         "providerId": assignment.provider_id,
-        "days": assignment.days,
-        "period": assignment.period,
+        "dayPeriods": [{"day": day, "period": period} for day, period in assignment.day_periods.items()],
         "createdAt": assignment.created_at.isoformat(),
         "updatedAt": assignment.updated_at.isoformat(),
     }
@@ -648,18 +647,18 @@ def handle_set_room_assignment(tenant_id: TenantId, input_data: dict) -> dict:
     """Create or update a room assignment"""
     room_id = input_data.get("roomId")
     provider_id = input_data.get("providerId")
-    days = input_data.get("days")
-    period = input_data.get("period")
+    day_periods_list = input_data.get("dayPeriods")
 
-    if not all([room_id, provider_id, days, period]):
-        return error_response("Missing required fields: roomId, providerId, days, period", 400)
+    if not all([room_id, provider_id, day_periods_list]):
+        return error_response("Missing required fields: roomId, providerId, dayPeriods", 400)
+
+    day_periods = {entry["day"]: entry["period"] for entry in day_periods_list}
 
     assignment = room_assignment_mgmt_service.set_assignment(
         tenant_id=tenant_id,
         room_id=room_id,
         provider_id=provider_id,
-        days=days,
-        period=period,
+        day_periods=day_periods,
     )
     return success_response(room_assignment_to_dict(assignment))
 

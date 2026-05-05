@@ -86,7 +86,7 @@ PLAN_LIMITS = {
     TenantPlan.PRO: {
         "messages": 2000,
         "bookings": 200,
-        "providers": 5,
+        "providers": 10,
         "tokensIA": 0,  # No AI for PRO anymore
         "ai_enabled": False,
         "waitlist_enabled": True,
@@ -541,13 +541,12 @@ class Room:
 
 @dataclass
 class RoomAssignment:
-    """Exclusive assignment of a room to a provider for specific days and period"""
+    """Exclusive assignment of a room to a provider with per-day period configuration"""
 
     tenant_id: TenantId
     room_id: str
     provider_id: str
-    days: List[str]  # ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
-    period: str  # "FULL" | "MORNING" | "AFTERNOON"
+    day_periods: Dict[str, str]  # {"MON": "FULL", "TUE": "AFTERNOON"}
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 

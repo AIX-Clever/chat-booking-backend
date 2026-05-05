@@ -1020,8 +1020,7 @@ class DynamoDBRoomAssignmentRepository(IRoomAssignmentRepository):
             "roomId": assignment.room_id,
             "tenantId": str(assignment.tenant_id),
             "providerId": assignment.provider_id,
-            "days": assignment.days,
-            "period": assignment.period,
+            "dayPeriods": assignment.day_periods,
             "createdAt": assignment.created_at.isoformat(),
             "updatedAt": assignment.updated_at.isoformat(),
         })
@@ -1032,12 +1031,16 @@ class DynamoDBRoomAssignmentRepository(IRoomAssignmentRepository):
         )
 
     def _item_to_entity(self, item: dict) -> RoomAssignment:
+        if "dayPeriods" in item:
+            day_periods = dict(item["dayPeriods"])
+        else:
+            # backward compat: old items stored days[] + period scalar
+            day_periods = {day: item["period"] for day in item.get("days", [])}
         return RoomAssignment(
             tenant_id=TenantId(item["tenantId"]),
             room_id=item["roomId"],
             provider_id=item["providerId"],
-            days=item["days"],
-            period=item["period"],
+            day_periods=day_periods,
             created_at=datetime.fromisoformat(item["createdAt"]),
             updated_at=datetime.fromisoformat(item["updatedAt"]),
         )
