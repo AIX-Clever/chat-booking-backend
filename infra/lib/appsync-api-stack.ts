@@ -604,13 +604,17 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: responseTemplate,
     });
 
+    const errorForwardingTemplate = appsync.MappingTemplate.fromString(
+      '#if($ctx.error)\n  $util.appendError($ctx.error.message, $ctx.error.type)\n#end\n$util.toJson($ctx.result)'
+    );
+
     const roomAssignmentMutationFields = ['setRoomAssignment', 'deleteRoomAssignment'];
     roomAssignmentMutationFields.forEach(field => {
       catalogDataSource.createResolver(`RoomAssignmentMutation${field}Resolver`, {
         typeName: 'Mutation',
         fieldName: field,
         requestMappingTemplate: requestTemplate,
-        responseMappingTemplate: responseTemplate,
+        responseMappingTemplate: errorForwardingTemplate,
       });
     });
 
