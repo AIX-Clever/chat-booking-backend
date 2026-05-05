@@ -596,23 +596,6 @@ class DynamoDBBookingRepository(IBookingRepository):
         pk = f"{booking.tenant_id}#{booking.provider_id}"
         sk = booking.start_time.isoformat()
 
-        self.table.update_item(
-            Key={"PK": pk, "SK": sk},
-            ExpressionAttributeValues={
-                ":status": booking.status.value,
-                ":payment_status": booking.payment_status.value,
-                ":payment_id": booking.payment_intent_id,
-                ":total_amount": (
-                    str(booking.total_amount)
-                    if booking.total_amount is not None
-                    else None
-                ),
-            },
-        )
-        # Note: Above update expression is incomplete for new fields.
-        # Ideally we should use a more dynamic update builder.
-        # For now, let's just create a fuller update expression.
-
         update_expr = "SET #status = :status, paymentStatus = :payment_status"
         expr_values = {
             ":status": booking.status.value,
