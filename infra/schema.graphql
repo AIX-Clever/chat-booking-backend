@@ -125,6 +125,8 @@ type RoomAssignment @aws_cognito_user_pools {
   tenantId: ID!
   providerId: ID!
   dayPeriods: [DayPeriodEntry!]!
+  days: [String!]!
+  period: String!
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -558,8 +560,11 @@ input DayPeriodInput {
 input SetRoomAssignmentInput {
   roomId: ID!
   providerId: ID!
-  dayPeriods: [DayPeriodInput!]!
+  dayPeriods: [DayPeriodInput!]
+  days: [String!]
+  period: String
 }
+
 
 # Inputs - Availability & FAQs
 input GetAvailableSlotsInput {
