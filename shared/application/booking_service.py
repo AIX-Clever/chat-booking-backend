@@ -27,6 +27,7 @@ from shared.domain.repositories import (
     IProviderRepository,
     ITenantRepository,
     IRoomRepository,
+    IRoomAssignmentRepository,
     IProviderIntegrationRepository,
     IConversationRepository,
 )
@@ -65,6 +66,32 @@ except ImportError:
     MetricsService = None
 
 
+_WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+
+
+def _day_of_week(dt: datetime) -> str:
+    return _WEEKDAYS[dt.weekday()]
+
+
+def _booking_period(start: datetime, end: datetime, period_split: Optional[str]) -> str:
+    """Derive MORNING / AFTERNOON / FULL from a time slot vs the room's split time."""
+    if not period_split:
+        return "FULL"
+    from datetime import time
+    split = time.fromisoformat(period_split)
+    if end.time() <= split:
+        return "MORNING"
+    if start.time() >= split:
+        return "AFTERNOON"
+    return "FULL"
+
+
+def _periods_overlap(p1: str, p2: str) -> bool:
+    if p1 == "FULL" or p2 == "FULL":
+        return True
+    return p1 == p2
+
+
 class BookingService:
     def __init__(
         self,
@@ -73,6 +100,7 @@ class BookingService:
         provider_repo: IProviderRepository,
         tenant_repo: ITenantRepository,
         room_repo: Optional[IRoomRepository] = None,
+        room_assignment_repo: Optional[IRoomAssignmentRepository] = None,
         provider_integration_repo: Optional[IProviderIntegrationRepository] = None,
         limit_service: Optional[TenantLimitService] = None,
         email_service: Optional[EmailService] = None,
@@ -85,6 +113,7 @@ class BookingService:
         self._provider_repo = provider_repo
         self._tenant_repo = tenant_repo
         self._room_repo = room_repo
+        self._room_assignment_repo = room_assignment_repo
         self._provider_integration_repo = provider_integration_repo
         self._limit_service = limit_service
         self._email_service = email_service
@@ -169,9 +198,7 @@ class BookingService:
             )
 
         # Check Room
-        assigned_room_id = None
-        if service.required_room_ids and self._room_repo:
-            assigned_room_id = self._check_and_assign_room(tenant_id, service, start, end)
+        assigned_room_id = self._check_and_assign_room(tenant_id, service, start, end, provider_id)
 
         # [CRITICAL FIX] Check slot availability (prevent overbooking and respect schedule)
         if not ignore_availability:
@@ -257,13 +284,44 @@ class BookingService:
 
         return booking
 
-    def _check_and_assign_room(self, tenant_id, service, start, end):
+    def _check_and_assign_room(self, tenant_id, service, start, end, provider_id=None):
+        day = _day_of_week(start)
+
+        # 1. Exclusive assignment — provider owns a room on this day/period
+        if provider_id and self._room_assignment_repo and self._room_repo:
+            for assignment in self._room_assignment_repo.list_by_provider(tenant_id, provider_id):
+                if day not in assignment.days:
+                    continue
+                room = self._room_repo.get_by_id(tenant_id, assignment.room_id)
+                if not room:
+                    continue
+                booking_period = _booking_period(start, end, room.period_split)
+                if _periods_overlap(booking_period, assignment.period):
+                    return assignment.room_id
+
+        # 2. Fallback — first available room from service.required_room_ids
+        #    skipping rooms exclusively assigned to a different provider this day/period
         if not service.required_room_ids or not self._room_repo:
             return None
         for room_id in service.required_room_ids:
             room = self._room_repo.get_by_id(tenant_id, room_id)
-            if room: return room_id
+            if not room:
+                continue
+            if self._room_assignment_repo and provider_id:
+                booking_period = _booking_period(start, end, room.period_split)
+                if self._is_room_blocked(tenant_id, room_id, provider_id, day, booking_period):
+                    continue
+            return room_id
         return None
+
+    def _is_room_blocked(self, tenant_id, room_id, provider_id, day, booking_period):
+        """True if room is exclusively assigned to a *different* provider on this day/period."""
+        for assignment in self._room_assignment_repo.list_by_room(tenant_id, room_id):
+            if assignment.provider_id == provider_id:
+                continue
+            if day in assignment.days and _periods_overlap(booking_period, assignment.period):
+                return True
+        return False
 
     def _is_slot_available(self, tenant_id, provider_id, start, end, exclude_booking_id=None):
         bookings = self._booking_repo.list_by_provider(tenant_id, provider_id, start, end)

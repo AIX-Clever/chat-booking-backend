@@ -262,10 +262,10 @@ export class AppSyncApiStack extends cdk.Stack {
       apiKeyManagerDataSource,
       subscribeDataSource,
       downgradeDataSource,
-      topupDataSource,
       supportManagerDataSource,
       listInvoicesDataSource,
       getPublicProfileDataSource,
+      topupDataSource,
       this.api.addLambdaDataSource('WaitlistApiDataSource', props.waitlistApiFunction),
       props.cafManagerFunction ? this.api.addLambdaDataSource('CafManagerDataSource', props.cafManagerFunction) : undefined
     );
@@ -589,6 +589,24 @@ export class AppSyncApiStack extends cdk.Stack {
     const roomMutationFields = ['createRoom', 'updateRoom', 'deleteRoom'];
     roomMutationFields.forEach(field => {
       catalogDataSource.createResolver(`RoomMutation${field}Resolver`, {
+        typeName: 'Mutation',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
+    // Room Assignment Resolvers (Catalog)
+    catalogDataSource.createResolver('RoomAssignmentListResolver', {
+      typeName: 'Query',
+      fieldName: 'listRoomAssignments',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    const roomAssignmentMutationFields = ['setRoomAssignment', 'deleteRoomAssignment'];
+    roomAssignmentMutationFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomAssignmentMutation${field}Resolver`, {
         typeName: 'Mutation',
         fieldName: field,
         requestMappingTemplate: requestTemplate,

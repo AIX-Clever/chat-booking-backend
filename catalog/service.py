@@ -6,12 +6,13 @@ Following Clean Architecture / Hexagonal Architecture
 """
 
 from typing import List, Optional, Dict, Any
-from shared.domain.entities import TenantId, Service, Provider, Category, Room
+from shared.domain.entities import TenantId, Service, Provider, Category, Room, RoomAssignment
 from shared.domain.repositories import (
     IServiceRepository,
     IProviderRepository,
     ICategoryRepository,
     IRoomRepository,
+    IRoomAssignmentRepository,
 )  # , FileStorageRepository  # Temporarily removed
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
 from shared.utils import Logger
@@ -559,6 +560,7 @@ class ProviderManagementService:
                         "Por favor elige otro."
                     )
             provider.slug = slug
+        if professional_license is not None:
             provider.professional_license = professional_license
         if email is not None:
             provider.email = email
@@ -716,6 +718,7 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
+        period_split: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Create new room"""
@@ -732,6 +735,7 @@ class RoomManagementService:
             min_duration=min_duration,
             max_duration=max_duration,
             operating_hours=operating_hours,
+            period_split=period_split,
             metadata=metadata or {},
         )
         self.room_repo.save(room)
@@ -749,6 +753,7 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
+        period_split: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Update existing room"""
@@ -774,6 +779,8 @@ class RoomManagementService:
             room.max_duration = max_duration
         if operating_hours is not None:
             room.operating_hours = operating_hours
+        if period_split is not None:
+            room.period_split = period_split
         if metadata is not None:
             room.metadata = metadata
 
@@ -794,6 +801,113 @@ class RoomManagementService:
             raise EntityNotFoundError("Room", room_id)
 
         self.room_repo.delete(tenant_id, room_id)
+
+
+class RoomAssignmentManagementService:
+    """Service for managing exclusive room assignments per provider."""
+
+    VALID_DAYS = {"MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"}
+    VALID_PERIODS = {"FULL", "MORNING", "AFTERNOON"}
+
+    def __init__(
+        self,
+        room_assignment_repo: IRoomAssignmentRepository,
+        room_repo: IRoomRepository,
+        provider_repo: IProviderRepository,
+    ):
+        self.assignment_repo = room_assignment_repo
+        self.room_repo = room_repo
+        self.provider_repo = provider_repo
+        self.logger = Logger()
+
+    def _periods_overlap(self, p1: str, p2: str) -> bool:
+        if p1 == "FULL" or p2 == "FULL":
+            return True
+        return p1 == p2
+
+    def _validate_conflict(
+        self,
+        tenant_id: TenantId,
+        room_id: str,
+        provider_id: str,
+        days: List[str],
+        period: str,
+    ) -> None:
+        existing = self.assignment_repo.list_by_room(tenant_id, room_id)
+        for assignment in existing:
+            if assignment.provider_id == provider_id:
+                continue
+            overlap_days = set(days) & set(assignment.days)
+            if overlap_days and self._periods_overlap(period, assignment.period):
+                raise ValidationError(
+                    f"Conflict: room already assigned to provider {assignment.provider_id} "
+                    f"on {sorted(overlap_days)} ({assignment.period})"
+                )
+
+    def set_assignment(
+        self,
+        tenant_id: TenantId,
+        room_id: str,
+        provider_id: str,
+        days: List[str],
+        period: str,
+    ) -> RoomAssignment:
+        self.logger.info(
+            "Setting room assignment",
+            tenant_id=str(tenant_id),
+            room_id=room_id,
+            provider_id=provider_id,
+        )
+
+        invalid_days = set(days) - self.VALID_DAYS
+        if invalid_days:
+            raise ValidationError(f"Invalid days: {invalid_days}")
+        if period not in self.VALID_PERIODS:
+            raise ValidationError(f"Invalid period: {period}. Must be FULL, MORNING or AFTERNOON")
+        if not days:
+            raise ValidationError("days cannot be empty")
+
+        if not self.room_repo.get_by_id(tenant_id, room_id):
+            raise EntityNotFoundError("Room", room_id)
+        if not self.provider_repo.get_by_id(tenant_id, provider_id):
+            raise EntityNotFoundError("Provider", provider_id)
+
+        self._validate_conflict(tenant_id, room_id, provider_id, days, period)
+
+        from datetime import datetime, timezone
+
+        existing = self.assignment_repo.get(tenant_id, room_id, provider_id)
+        now = datetime.now(timezone.utc)
+        assignment = RoomAssignment(
+            tenant_id=tenant_id,
+            room_id=room_id,
+            provider_id=provider_id,
+            days=sorted(days),
+            period=period,
+            created_at=existing.created_at if existing else now,
+            updated_at=now,
+        )
+        self.assignment_repo.save(assignment)
+        return assignment
+
+    def delete_assignment(
+        self, tenant_id: TenantId, room_id: str, provider_id: str
+    ) -> None:
+        self.logger.info(
+            "Deleting room assignment",
+            tenant_id=str(tenant_id),
+            room_id=room_id,
+            provider_id=provider_id,
+        )
+        if not self.assignment_repo.get(tenant_id, room_id, provider_id):
+            raise EntityNotFoundError("RoomAssignment", f"{room_id}#{provider_id}")
+        self.assignment_repo.delete(tenant_id, room_id, provider_id)
+
+    def list_by_room(self, tenant_id: TenantId, room_id: str) -> List[RoomAssignment]:
+        return self.assignment_repo.list_by_room(tenant_id, room_id)
+
+    def list_by_provider(self, tenant_id: TenantId, provider_id: str) -> List[RoomAssignment]:
+        return self.assignment_repo.list_by_provider(tenant_id, provider_id)
 
 
 class AssetService:

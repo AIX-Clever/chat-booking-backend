@@ -24,6 +24,7 @@ class TestChatAgentAILimits:
             plan=TenantPlan.LITE,
             owner_user_id="owner",
             billing_email="test@example.com",
+            whatsapp_quota=100,
         )
         # Setup mocks
         self.conversation_repo = MagicMock()

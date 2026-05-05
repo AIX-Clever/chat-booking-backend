@@ -19,7 +19,10 @@ from shared.domain.entities import (
     ConversationState,
     ApiKey,
     CustomerInfo,
+    Room,
+    RoomAssignment,
 )
+from shared.application.booking_service import _booking_period, _periods_overlap, _day_of_week
 
 
 class TestTenantId:
@@ -352,3 +355,89 @@ class TestApiKey:
         )
 
         assert not api_key.is_valid()
+
+
+class TestRoom:
+    """Test Room entity"""
+
+    def test_room_defaults(self):
+        room = Room(
+            room_id="rm-1",
+            tenant_id=TenantId("test123"),
+            name="Sala Alma",
+        )
+        assert room.status == "ACTIVE"
+        assert room.is_virtual is False
+        assert room.period_split is None
+
+    def test_room_with_period_split(self):
+        room = Room(
+            room_id="rm-1",
+            tenant_id=TenantId("test123"),
+            name="Sala Alma",
+            period_split="13:00",
+        )
+        assert room.period_split == "13:00"
+
+
+class TestRoomAssignment:
+    """Test RoomAssignment entity"""
+
+    def test_assignment_creation(self):
+        assignment = RoomAssignment(
+            tenant_id=TenantId("test123"),
+            room_id="rm-1",
+            provider_id="pv-1",
+            days=["MON", "WED"],
+            period="FULL",
+        )
+        assert assignment.room_id == "rm-1"
+        assert assignment.provider_id == "pv-1"
+        assert "MON" in assignment.days
+        assert assignment.period == "FULL"
+
+
+class TestRoomAssignmentHelpers:
+    """Test booking_service helper functions for room assignment logic"""
+
+    def test_day_of_week_monday(self):
+        # 2026-05-04 is a Monday
+        dt = datetime(2026, 5, 4, 10, 0)
+        assert _day_of_week(dt) == "MON"
+
+    def test_day_of_week_saturday(self):
+        # 2026-05-09 is a Saturday
+        dt = datetime(2026, 5, 9, 10, 0)
+        assert _day_of_week(dt) == "SAT"
+
+    def test_booking_period_no_split(self):
+        start = datetime(2026, 5, 4, 9, 0)
+        end = datetime(2026, 5, 4, 10, 0)
+        assert _booking_period(start, end, None) == "FULL"
+
+    def test_booking_period_morning(self):
+        start = datetime(2026, 5, 4, 9, 0)
+        end = datetime(2026, 5, 4, 12, 0)
+        assert _booking_period(start, end, "13:00") == "MORNING"
+
+    def test_booking_period_afternoon(self):
+        start = datetime(2026, 5, 4, 14, 0)
+        end = datetime(2026, 5, 4, 16, 0)
+        assert _booking_period(start, end, "13:00") == "AFTERNOON"
+
+    def test_booking_period_spans_split(self):
+        start = datetime(2026, 5, 4, 11, 0)
+        end = datetime(2026, 5, 4, 15, 0)
+        assert _booking_period(start, end, "13:00") == "FULL"
+
+    def test_periods_overlap_full_vs_morning(self):
+        assert _periods_overlap("FULL", "MORNING") is True
+
+    def test_periods_overlap_full_vs_afternoon(self):
+        assert _periods_overlap("AFTERNOON", "FULL") is True
+
+    def test_periods_overlap_morning_vs_morning(self):
+        assert _periods_overlap("MORNING", "MORNING") is True
+
+    def test_periods_no_overlap_morning_vs_afternoon(self):
+        assert _periods_overlap("MORNING", "AFTERNOON") is False
