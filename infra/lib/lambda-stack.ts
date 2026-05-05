@@ -854,25 +854,12 @@ export class LambdaStack extends cdk.Stack {
 
 
     // Import Link resources from SSM
-    let linkBucketName: string;
-    let linkDistributionId: string;
-
-    if (props.envName === 'qa' || props.envName === 'prod') {
-      linkBucketName = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-bucket-name`
-      );
-      linkDistributionId = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-distribution-id`
-      );
-    } else {
-      const ssmSuffix = props.envName === 'dev' ? '-v2' : '';
-      linkBucketName = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-bucket-name${ssmSuffix}`
-      );
-      linkDistributionId = ssm.StringParameter.valueForStringParameter(
-        this, `/chatbooking/${props.envName}/link-distribution-id${ssmSuffix}`
-      );
-    }
+    const linkBucketName = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/link-bucket-name`
+    );
+    const linkDistributionId = ssm.StringParameter.valueForStringParameter(
+      this, `/chatbooking/${props.envName}/link-distribution-id`
+    );
     
     // Import Subscriptions Table Name from SSM
     const subscriptionsTableNameSsm = ssm.StringParameter.valueForStringParameter(

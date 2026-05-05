@@ -155,9 +155,6 @@ class UserManagementService:
             Inicia sesión aquí: {login_url}
             """
 
-            # Send from verified domain
-            import os
-
             sender = os.environ.get("FROM_EMAIL")
 
             self.email_service.send_email(
