@@ -596,6 +596,24 @@ export class AppSyncApiStack extends cdk.Stack {
       });
     });
 
+    // Room Assignment Resolvers (Catalog)
+    catalogDataSource.createResolver('RoomAssignmentListResolver', {
+      typeName: 'Query',
+      fieldName: 'listRoomAssignments',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
+    const roomAssignmentMutationFields = ['setRoomAssignment', 'deleteRoomAssignment'];
+    roomAssignmentMutationFields.forEach(field => {
+      catalogDataSource.createResolver(`RoomAssignmentMutation${field}Resolver`, {
+        typeName: 'Mutation',
+        fieldName: field,
+        requestMappingTemplate: requestTemplate,
+        responseMappingTemplate: responseTemplate,
+      });
+    });
+
     catalogDataSource.createResolver('UpdateServiceResolver', {
       typeName: 'Mutation',
       fieldName: 'updateService',
