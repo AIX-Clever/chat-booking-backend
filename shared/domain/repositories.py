@@ -24,6 +24,7 @@ from .entities import (
     FAQ,
     Workflow,
     Room,
+    RoomAssignment,
     WaitingListEntry,
 )
 
@@ -299,6 +300,30 @@ class IRoomRepository(ABC):
 
     @abstractmethod
     def delete(self, tenant_id: TenantId, room_id: str) -> None:
+        pass
+
+
+class IRoomAssignmentRepository(ABC):
+    """Port for RoomAssignment operations"""
+
+    @abstractmethod
+    def get(self, tenant_id: TenantId, room_id: str, provider_id: str) -> Optional[RoomAssignment]:
+        pass
+
+    @abstractmethod
+    def list_by_room(self, tenant_id: TenantId, room_id: str) -> List[RoomAssignment]:
+        pass
+
+    @abstractmethod
+    def list_by_provider(self, tenant_id: TenantId, provider_id: str) -> List[RoomAssignment]:
+        pass
+
+    @abstractmethod
+    def save(self, assignment: RoomAssignment) -> None:
+        pass
+
+    @abstractmethod
+    def delete(self, tenant_id: TenantId, room_id: str, provider_id: str) -> None:
         pass
 
 

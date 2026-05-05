@@ -109,7 +109,18 @@ type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
+  periodSplit: String
   metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type RoomAssignment @aws_cognito_user_pools {
+  roomId: ID!
+  tenantId: ID!
+  providerId: ID!
+  days: [String!]!
+  period: String!
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -517,6 +528,7 @@ input CreateRoomInput {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
+  periodSplit: String
   metadata: AWSJSON
 }
 
@@ -530,7 +542,15 @@ input UpdateRoomInput {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
+  periodSplit: String
   metadata: AWSJSON
+}
+
+input SetRoomAssignmentInput {
+  roomId: ID!
+  providerId: ID!
+  days: [String!]!
+  period: String!
 }
 
 # Inputs - Availability & FAQs
@@ -677,6 +697,7 @@ type Query {
 
   listRooms: [Room!]! @aws_api_key @aws_cognito_user_pools
   getRoom(roomId: ID!): Room @aws_api_key @aws_cognito_user_pools
+  listRoomAssignments(roomId: ID!): [RoomAssignment!]! @aws_cognito_user_pools
   
   # Availability
   getAvailableSlots(input: GetAvailableSlotsInput!): [TimeSlot!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
@@ -810,6 +831,8 @@ type Mutation {
   createRoom(input: CreateRoomInput!): Room! @aws_cognito_user_pools
   updateRoom(input: UpdateRoomInput!): Room! @aws_cognito_user_pools
   deleteRoom(roomId: ID!): Room! @aws_cognito_user_pools
+  setRoomAssignment(input: SetRoomAssignmentInput!): RoomAssignment! @aws_cognito_user_pools
+  deleteRoomAssignment(roomId: ID!, providerId: ID!): RoomAssignment! @aws_cognito_user_pools
   
   # Availability (Admin)
   setProviderAvailability(input: SetAvailabilityInput!): ProviderAvailability! @aws_cognito_user_pools

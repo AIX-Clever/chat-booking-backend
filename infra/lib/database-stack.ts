@@ -35,6 +35,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly faqsTable: dynamodb.Table;
   public readonly documentsTable: dynamodb.Table;
   public readonly roomsTable: dynamodb.Table;
+  public readonly roomAssignmentsTable: dynamodb.Table;
   public readonly userRolesTable: dynamodb.Table;
   public readonly clientsTable: dynamodb.Table;
   public readonly clientAuditLogsTable: dynamodb.Table;
@@ -456,6 +457,37 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'RoomsTableName', {
       value: this.roomsTable.tableName,
       description: 'Rooms table name',
+    });
+
+    // 13b. RoomAssignments Table — exclusive provider-room-day assignments
+    this.roomAssignmentsTable = new dynamodb.Table(this, 'RoomAssignmentsTable', {
+      tableName: 'ChatBooking-RoomAssignments',
+      partitionKey: {
+        name: 'pk',  // tenantId#roomId
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'sk',  // providerId
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecovery: true,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
+    // GSI: byProvider — query all room assignments for a given provider
+    this.roomAssignmentsTable.addGlobalSecondaryIndex({
+      indexName: 'byProvider',
+      partitionKey: {
+        name: 'providerPk',  // tenantId#providerId
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    new cdk.CfnOutput(this, 'RoomAssignmentsTableName', {
+      value: this.roomAssignmentsTable.tableName,
+      description: 'Room Assignments table name',
     });
 
     // 14. User Roles Table

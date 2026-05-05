@@ -533,7 +533,21 @@ class Room:
     min_duration: Optional[int] = None
     max_duration: Optional[int] = None
     operating_hours: Optional[List[Dict[str, Any]]] = None
+    period_split: Optional[str] = None  # "13:00" — divides MORNING / AFTERNOON
     metadata: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+@dataclass
+class RoomAssignment:
+    """Exclusive assignment of a room to a provider for specific days and period"""
+
+    tenant_id: TenantId
+    room_id: str
+    provider_id: str
+    days: List[str]  # ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
+    period: str  # "FULL" | "MORNING" | "AFTERNOON"
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 

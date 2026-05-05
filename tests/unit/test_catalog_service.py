@@ -233,6 +233,7 @@ class TestServiceManagementService(unittest.TestCase):
 class TestProviderManagementService(unittest.TestCase):
     def setUp(self):
         self.mock_repo = Mock()
+        self.mock_repo.get_by_slug.return_value = None
         self.service = ProviderManagementService(self.mock_repo)
         self.tenant_id = TenantId("tenant-1")
 

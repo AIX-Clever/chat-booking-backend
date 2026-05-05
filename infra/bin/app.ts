@@ -120,6 +120,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   faqsTable: databaseStack.faqsTable,
   documentsTable: databaseStack.documentsTable,
   roomsTable: databaseStack.roomsTable,
+  roomAssignmentsTable: databaseStack.roomAssignmentsTable,
   userRolesTable: databaseStack.userRolesTable,
   userPool: authStack.userPool,
   envName: env,

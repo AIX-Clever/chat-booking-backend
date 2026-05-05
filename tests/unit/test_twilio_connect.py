@@ -57,9 +57,8 @@ class TestTwilioConnectHandler:
     @patch("backend.twilio_connect.handler.boto3.client")
     def test_successful_connection(self, mock_boto_client, mock_urlopen, mock_repo_cls):
         """Full happy path: code exchange, sub-account fetch, phone fetch, DynamoDB save."""
-        import importlib
         import backend.twilio_connect.handler as h
-        importlib.reload(h)  # reset module-level cache
+        h._secrets_cache = None  # reset module-level cache without undoing patches
 
         # Secrets Manager
         mock_sm = MagicMock()
@@ -118,9 +117,8 @@ class TestTwilioConnectHandler:
     @patch("backend.twilio_connect.handler.boto3.client")
     def test_tenant_not_found_redirects_to_error(self, mock_boto_client, mock_urlopen, mock_repo_cls):
         """If tenant doesn't exist in DB, redirect to error URL."""
-        import importlib
         import backend.twilio_connect.handler as h
-        importlib.reload(h)
+        h._secrets_cache = None
 
         mock_sm = MagicMock()
         mock_sm.get_secret_value.return_value = {"SecretString": json.dumps(SAMPLE_SECRET)}
@@ -145,9 +143,8 @@ class TestTwilioConnectHandler:
     @patch("backend.twilio_connect.handler.boto3.client")
     def test_phone_number_already_formatted(self, mock_boto_client, mock_urlopen, mock_repo_cls):
         """If the phone already has 'whatsapp:' prefix it should not be doubled."""
-        import importlib
         import backend.twilio_connect.handler as h
-        importlib.reload(h)
+        h._secrets_cache = None
 
         mock_sm = MagicMock()
         mock_sm.get_secret_value.return_value = {"SecretString": json.dumps(SAMPLE_SECRET)}
