@@ -593,9 +593,6 @@ class DynamoDBBookingRepository(IBookingRepository):
 
     def update(self, booking: Booking) -> None:
         """Update existing booking (no conditional check)"""
-        pk = f"{booking.tenant_id}#{booking.provider_id}"
-        sk = booking.start_time.isoformat()
-
         update_expr = "SET #status = :status, paymentStatus = :payment_status"
         expr_values = {
             ":status": booking.status.value,
@@ -615,7 +612,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             expr_values[":dte_pdf_url"] = booking.dte_pdf_url
 
         self.table.update_item(
-            Key={"PK": pk, "SK": sk},
+            Key={"tenantId": str(booking.tenant_id), "bookingId": booking.booking_id},
             UpdateExpression=update_expr,
             ExpressionAttributeNames={"#status": "status"},
             ExpressionAttributeValues=expr_values,
