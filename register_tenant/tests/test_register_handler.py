@@ -81,7 +81,11 @@ def test_register_tenant_success(
 
     # Check DB saves
     tenant_repo.save.assert_called_once()
-    api_key_repo.save.assert_called_once()
+    assert api_key_repo.save.call_count == 2, "Se deben crear dos keys: 'Sitio Web' y 'Widget Embed'"
+
+    saved_names = [call.args[0].name for call in api_key_repo.save.call_args_list]
+    assert "Sitio Web" in saved_names
+    assert "Widget Embed" in saved_names
 
 
 def test_register_tenant_missing_input(
