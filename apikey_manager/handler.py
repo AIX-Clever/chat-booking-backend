@@ -49,11 +49,22 @@ def handle_list_api_keys(repo: DynamoDBApiKeyRepository, tenant_id: TenantId) ->
         for k in keys
     ]
 
+RESERVED_KEY_NAMES = {"Sitio Web"}
+MAX_ACTIVE_KEYS = 2
+
 def handle_create_api_key(repo: DynamoDBApiKeyRepository, tenant_id: TenantId, input_data: Dict[str, Any]) -> Any:
+    name = input_data.get('name', 'New API Key')
+
+    if name in RESERVED_KEY_NAMES:
+        raise ValueError(f"El nombre '{name}' está reservado para uso interno de HolaLucia")
+
+    existing = repo.list_by_tenant(tenant_id)
+    active_count = sum(1 for k in existing if k.status == 'ACTIVE')
+    if active_count >= MAX_ACTIVE_KEYS:
+        raise ValueError(f"Límite de {MAX_ACTIVE_KEYS} API keys activas alcanzado")
+
     # Generate key
     public_key, hashed_key = generate_api_key()
-    
-    name = input_data.get('name', 'New API Key')
     preview = f"{public_key[:8]}...{public_key[-4:]}"
     
     new_key = ApiKey(
