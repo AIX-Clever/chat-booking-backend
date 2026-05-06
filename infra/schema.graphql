@@ -115,10 +115,16 @@ type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
   updatedAt: AWSDateTime!
 }
 
+type DayPeriodEntry @aws_cognito_user_pools {
+  day: String!
+  period: String!
+}
+
 type RoomAssignment @aws_cognito_user_pools {
   roomId: ID!
   tenantId: ID!
   providerId: ID!
+  dayPeriods: [DayPeriodEntry!]!
   days: [String!]!
   period: String!
   createdAt: AWSDateTime!
@@ -546,12 +552,19 @@ input UpdateRoomInput {
   metadata: AWSJSON
 }
 
+input DayPeriodInput {
+  day: String!
+  period: String!
+}
+
 input SetRoomAssignmentInput {
   roomId: ID!
   providerId: ID!
-  days: [String!]!
-  period: String!
+  dayPeriods: [DayPeriodInput!]
+  days: [String!]
+  period: String
 }
+
 
 # Inputs - Availability & FAQs
 input GetAvailableSlotsInput {

@@ -539,12 +539,16 @@ def room_to_dict(room) -> dict:
 
 
 def room_assignment_to_dict(assignment) -> dict:
+    day_periods_list = [{"day": day, "period": period} for day, period in assignment.day_periods.items()]
+    unique_periods = set(assignment.day_periods.values())
+    compat_period = unique_periods.pop() if len(unique_periods) == 1 else "FULL"
     return {
         "roomId": assignment.room_id,
         "tenantId": str(assignment.tenant_id),
         "providerId": assignment.provider_id,
-        "days": assignment.days,
-        "period": assignment.period,
+        "dayPeriods": day_periods_list,
+        "days": list(assignment.day_periods.keys()),
+        "period": compat_period,
         "createdAt": assignment.created_at.isoformat(),
         "updatedAt": assignment.updated_at.isoformat(),
     }
@@ -648,18 +652,25 @@ def handle_set_room_assignment(tenant_id: TenantId, input_data: dict) -> dict:
     """Create or update a room assignment"""
     room_id = input_data.get("roomId")
     provider_id = input_data.get("providerId")
-    days = input_data.get("days")
-    period = input_data.get("period")
 
-    if not all([room_id, provider_id, days, period]):
-        return error_response("Missing required fields: roomId, providerId, days, period", 400)
+    if not all([room_id, provider_id]):
+        return error_response("Missing required fields: roomId, providerId", 400)
+
+    day_periods_list = input_data.get("dayPeriods")
+    if day_periods_list:
+        day_periods = {entry["day"]: entry["period"] for entry in day_periods_list}
+    else:
+        days = input_data.get("days")
+        period = input_data.get("period")
+        if not days or not period:
+            return error_response("Missing required fields: dayPeriods (or legacy days + period)", 400)
+        day_periods = {day: period for day in days}
 
     assignment = room_assignment_mgmt_service.set_assignment(
         tenant_id=tenant_id,
         room_id=room_id,
         provider_id=provider_id,
-        days=days,
-        period=period,
+        day_periods=day_periods,
     )
     return success_response(room_assignment_to_dict(assignment))
 
