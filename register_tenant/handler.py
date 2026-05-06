@@ -167,12 +167,15 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         # 6. Generate and Save Initial API Key
         public_key, hashed_key = generate_api_key()
         api_key_id = f"key_{secrets.token_hex(4)}"
+        key_preview = f"{public_key[:8]}...{public_key[-4:]}"
 
         api_key = ApiKey(
             api_key_id=api_key_id,
             tenant_id=tenant_id,
             api_key_hash=hashed_key,
             status="ACTIVE",
+            name="Sitio Web",
+            key_preview=key_preview,
             allowed_origins=["*"],
             rate_limit=1000,
             created_at=datetime.now(timezone.utc),
