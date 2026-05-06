@@ -181,6 +181,23 @@ jobs:
           MP_ACCESS_TOKEN_PROD: ${{ secrets.MP_ACCESS_TOKEN_PROD }}
           MP_WEBHOOK_SECRET: ${{ secrets.MP_WEBHOOK_SECRET }}
 
+      - name: Post-deploy — Widget Embed Keys migration check
+        continue-on-error: true
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          echo "Verificando tenants sin key 'Widget Embed'..."
+          OUTPUT=$(python3 scripts/backfill_widget_embed_keys.py --dry-run 2>&1)
+          echo "$OUTPUT"
+
+          PENDING=$(echo "$OUTPUT" | grep -oP 'Simulados:\s+\K[0-9]+' || echo "0")
+
+          if [ "$PENDING" -gt "0" ]; then
+            echo "::warning::$PENDING tenant(s) sin key 'Widget Embed'. Ejecutar: python3 scripts/backfill_widget_embed_keys.py"
+          else
+            echo "Todos los tenants tienen su key 'Widget Embed'. ✅"
+          fi
+
       - name: Reconcile CloudFront media domain (drift fix)
         if: vars.MEDIA_DOMAIN_NAME != ''
         continue-on-error: true
