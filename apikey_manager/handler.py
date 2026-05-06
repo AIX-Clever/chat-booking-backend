@@ -1,12 +1,8 @@
-
-import os
-import boto3
-import json
 from datetime import datetime, timezone
 from typing import Dict, Any
 from shared.domain.entities import TenantId, ApiKey
 from shared.infrastructure.dynamodb_repositories import DynamoDBApiKeyRepository
-from shared.utils import lambda_response, Logger, extract_appsync_event, generate_api_key, hash_api_key, generate_id, success_response, error_response
+from shared.utils import Logger, extract_appsync_event, generate_api_key, generate_id, error_response
 
 def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     """
@@ -43,8 +39,8 @@ def handle_list_api_keys(repo: DynamoDBApiKeyRepository, tenant_id: TenantId) ->
             'name': k.name,
             'keyPreview': k.key_preview,
             'status': k.status,
-            'createdAt': k.created_at.isoformat() + 'Z',
-            'lastUsedAt': k.last_used_at.isoformat() + 'Z' if k.last_used_at else None
+            'createdAt': k.created_at.isoformat().replace('+00:00', 'Z'),
+            'lastUsedAt': k.last_used_at.isoformat().replace('+00:00', 'Z') if k.last_used_at else None
         }
         for k in keys
     ]
@@ -111,7 +107,7 @@ def handle_create_api_key(repo: DynamoDBApiKeyRepository, tenant_id: TenantId, i
         'name': new_key.name,
         'keyPreview': new_key.key_preview,
         'status': new_key.status,
-        'createdAt': new_key.created_at.isoformat() + 'Z',
+        'createdAt': new_key.created_at.isoformat().replace('+00:00', 'Z'),
         'lastUsedAt': None,
         'apiKey': public_key 
     }
@@ -149,6 +145,6 @@ def handle_revoke_api_key(repo: DynamoDBApiKeyRepository, tenant_id: TenantId, i
         'name': target_key.name,
         'keyPreview': target_key.key_preview,
         'status': target_key.status,
-        'createdAt': target_key.created_at.isoformat() + 'Z',
-        'lastUsedAt': target_key.last_used_at.isoformat() + 'Z' if target_key.last_used_at else None
+        'createdAt': target_key.created_at.isoformat().replace('+00:00', 'Z'),
+        'lastUsedAt': target_key.last_used_at.isoformat().replace('+00:00', 'Z') if target_key.last_used_at else None
     }
