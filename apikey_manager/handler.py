@@ -59,6 +59,9 @@ def handle_create_api_key(repo: DynamoDBApiKeyRepository, tenant_id: TenantId, i
     if active_count >= MAX_ACTIVE_KEYS:
         raise ValueError(f"Límite de {MAX_ACTIVE_KEYS} API keys activas alcanzado")
 
+    if any(k.name == name and k.status == 'ACTIVE' for k in existing):
+        raise ValueError(f"Ya tienes una key activa con el nombre '{name}'")
+
     # Generate key
     public_key, hashed_key = generate_api_key()
     preview = f"{public_key[:8]}...{public_key[-4:]}"

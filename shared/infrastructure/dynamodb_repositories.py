@@ -212,6 +212,7 @@ class DynamoDBApiKeyRepository(IApiKeyRepository):
     def list_by_tenant(self, tenant_id: TenantId) -> List[ApiKey]:
         try:
             response = self.table.query(
+                IndexName="tenantId-index",
                 KeyConditionExpression=Key("tenantId").eq(str(tenant_id))
             )
 

@@ -47,11 +47,13 @@ def scan_all_tenants(table):
 def get_keys_for_tenant(api_keys_table, tenant_id):
     items = []
     response = api_keys_table.query(
+        IndexName='tenantId-index',
         KeyConditionExpression=Key('tenantId').eq(tenant_id)
     )
     items.extend(response.get('Items', []))
     while 'LastEvaluatedKey' in response:
         response = api_keys_table.query(
+            IndexName='tenantId-index',
             KeyConditionExpression=Key('tenantId').eq(tenant_id),
             ExclusiveStartKey=response['LastEvaluatedKey'],
         )
