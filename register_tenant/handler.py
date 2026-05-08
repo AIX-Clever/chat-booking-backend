@@ -164,21 +164,34 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         logger.info(f"Saving tenant {tenant_id}")
         tenant_repo.save(tenant)
 
-        # 6. Generate and Save Initial API Key
-        public_key, hashed_key = generate_api_key()
-        api_key_id = f"key_{secrets.token_hex(4)}"
+        # 6. Generate and Save Initial API Keys (Sitio Web + Widget Embed)
+        now = datetime.now(timezone.utc)
 
-        api_key = ApiKey(
-            api_key_id=api_key_id,
+        sitio_web_key, sitio_web_hash = generate_api_key()
+        api_key_repo.save(ApiKey(
+            api_key_id=f"key_{secrets.token_hex(4)}",
             tenant_id=tenant_id,
-            api_key_hash=hashed_key,
+            api_key_hash=sitio_web_hash,
             status="ACTIVE",
+            name="Sitio Web",
+            key_preview=f"{sitio_web_key[:8]}...{sitio_web_key[-4:]}",
             allowed_origins=["*"],
             rate_limit=1000,
-            created_at=datetime.now(timezone.utc),
-        )
+            created_at=now,
+        ))
 
-        api_key_repo.save(api_key)
+        widget_key, widget_hash = generate_api_key()
+        api_key_repo.save(ApiKey(
+            api_key_id=f"key_{secrets.token_hex(4)}",
+            tenant_id=tenant_id,
+            api_key_hash=widget_hash,
+            status="ACTIVE",
+            name="Widget Embed",
+            key_preview=f"{widget_key[:8]}...{widget_key[-4:]}",
+            allowed_origins=["*"],
+            rate_limit=1000,
+            created_at=now,
+        ))
 
         # 7. Create Default Workflow
         if DEFAULT_FLOW:

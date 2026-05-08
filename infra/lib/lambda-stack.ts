@@ -278,6 +278,7 @@ export class LambdaStack extends cdk.Stack {
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
         WHATSAPP_NOTIFICATION_TOPIC: props.whatsappNotificationTopic.topicArn,
+        RECAPTCHA_SECRET_KEY: props.envName !== 'dev' ? (process.env.RECAPTCHA_SECRET_KEY || '') : '',
       }
     });
 
