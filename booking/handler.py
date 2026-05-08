@@ -195,6 +195,16 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
         "conversationId": "conv_789"
     }
     """
+    # Verify reCAPTCHA token if secret key is configured
+    recaptcha_token = input_data.get("recaptchaToken")
+    import os
+    if os.environ.get("RECAPTCHA_SECRET_KEY"):
+        if not recaptcha_token:
+            return error_response("Verificación de seguridad requerida", 400)
+        from shared.infrastructure.recaptcha_adapter import GoogleRecaptchaAdapter
+        if not GoogleRecaptchaAdapter().verify(recaptcha_token, "booking"):
+            return error_response("Verificación de seguridad fallida. Inténtalo de nuevo.", 400)
+
     # Validate required fields
     required = ["serviceId", "providerId", "start", "end", "clientFirstName", "clientLastName", "clientEmail"]
     missing = [f for f in required if not input_data.get(f)]

@@ -611,6 +611,7 @@ input CreateBookingInput {
   conversationId: ID
   roomId: ID
   ignoreAvailability: Boolean
+  recaptchaToken: String
 }
 
 input ConfirmBookingInput {
