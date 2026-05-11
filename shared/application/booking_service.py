@@ -307,7 +307,9 @@ class BookingService:
         # Publish BOOKING_CONFIRMED event for reminder schedulers (email + SMS hours_before rules)
         if self._sns_service:
             try:
-                self._publish_booking_confirmed(booking, full_name, client_email, client_phone, service, provider, start)
+                self._publish_booking_confirmed(
+                    booking, full_name, client_email, client_phone, service, provider, start
+                )
             except Exception as e:
                 import logging
                 logging.getLogger().warning(f"Failed to publish BOOKING_CONFIRMED event: {str(e)}")
