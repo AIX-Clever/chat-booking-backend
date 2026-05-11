@@ -181,3 +181,92 @@ class TestWebhookTopupRouting:
             except Exception:
                 pass  # might fail on subscription logic mocks — that's ok
             mock_inc.assert_not_called()
+
+
+SMS_EVENT = {
+    "arguments": {
+        "packageId": "starter",
+        "paymentMethod": "transfer",
+        "backUrl": "https://admin.holalucia.cl/settings",
+    },
+    "info": {"fieldName": "topupSmsQuota"},
+    "identity": {
+        "claims": {"custom:tenantId": "tenant-abc", "sub": "cognito-sub-123"}
+    },
+}
+
+
+class TestSmsTopupHandler:
+    def test_sms_transfer_starter(self):
+        result = _invoke(SMS_EVENT)
+        assert result["topupId"].startswith("transfer:tenant-abc:starter")
+        assert "SMS" in result["message"]
+        assert "Starter" in result["message"]
+
+    def test_sms_external_reference_prefix(self):
+        result = _invoke(SMS_EVENT)
+        # topupId for transfer = f"transfer:{tenant_id}:{package_id}"
+        # The external_reference used internally is sms-topup:... but topupId for
+        # transfer is built differently — check the message contains SMS label
+        assert "SMS" in result["message"]
+
+    def test_sms_invalid_package_raises(self):
+        event = {**SMS_EVENT, "arguments": {**SMS_EVENT["arguments"], "packageId": "unknown"}}
+        with pytest.raises(ValueError, match="Invalid packageId"):
+            _invoke(event)
+
+    def test_whatsapp_event_still_uses_whatsapp_packages(self):
+        result = _invoke(VALID_EVENT)
+        assert "WhatsApp" in result["message"]
+
+
+class TestSmsWebhookRouting:
+    def _make_payment_info(self, external_reference, status="approved", amount=9990.0):
+        return {
+            "external_reference": external_reference,
+            "status": status,
+            "transaction_amount": amount,
+        }
+
+    @patch("subscriptions.handlers.webhook_processor.tenant_repo")
+    @patch("subscriptions.handlers.webhook_processor.SUBSCRIPTIONS_TABLE")
+    @patch("subscriptions.handlers.webhook_processor.mp_client")
+    def test_sms_topup_routes_to_sms_handler(self, mock_mp, mock_table, mock_repo):
+        from subscriptions.handlers.webhook_processor import process_payment
+
+        mock_mp.get_payment.return_value = self._make_payment_info(
+            "sms-topup:tenant-abc:starter", status="approved", amount=9990.0
+        )
+        mock_table.put_item.return_value = {}
+        mock_repo.increment_sms_quota.return_value = True
+
+        process_payment("pay-sms-001", "{}")
+        mock_repo.increment_sms_quota.assert_called_once()
+        call_args = mock_repo.increment_sms_quota.call_args
+        assert call_args[0][1] == 50  # SMS starter = 50 messages
+
+    @patch("subscriptions.handlers.webhook_processor.tenant_repo")
+    @patch("subscriptions.handlers.webhook_processor.SUBSCRIPTIONS_TABLE")
+    @patch("subscriptions.handlers.webhook_processor.mp_client")
+    def test_sms_topup_amount_mismatch_rejected(self, mock_mp, mock_table, mock_repo):
+        from subscriptions.handlers.webhook_processor import process_payment
+
+        mock_mp.get_payment.return_value = self._make_payment_info(
+            "sms-topup:tenant-abc:pro", status="approved", amount=100.0  # should be 39990
+        )
+        mock_table.put_item.return_value = {}
+
+        process_payment("pay-sms-002", "{}")
+        mock_repo.increment_sms_quota.assert_not_called()
+
+    @patch("subscriptions.handlers.webhook_processor.SUBSCRIPTIONS_TABLE")
+    @patch("subscriptions.handlers.webhook_processor.mp_client")
+    def test_sms_topup_non_approved_skipped(self, mock_mp, mock_table):
+        from subscriptions.handlers.webhook_processor import process_payment, tenant_repo
+
+        mock_mp.get_payment.return_value = self._make_payment_info(
+            "sms-topup:tenant-abc:starter", status="pending", amount=9990.0
+        )
+        with patch.object(tenant_repo, "increment_sms_quota") as mock_inc:
+            process_payment("pay-sms-003", "{}")
+            mock_inc.assert_not_called()

@@ -50,10 +50,11 @@ except ImportError:
     TenantLimitService = None
 
 try:
-    from shared.infrastructure.notifications import EmailService, SnsService
+    from shared.infrastructure.notifications import EmailService, SnsService, SmsService
 except ImportError:
     EmailService = None
     SnsService = None
+    SmsService = None
 
 try:
     from shared.infrastructure.payment_factory import PaymentGatewayFactory
@@ -92,6 +93,14 @@ def _periods_overlap(p1: str, p2: str) -> bool:
     return p1 == p2
 
 
+def _rule_active(rules: list, trigger: str, default: bool = True) -> bool:
+    """Return whether the on_booking rule is active for the given channel rules list."""
+    for r in rules:
+        if r.get("trigger") == trigger:
+            return bool(r.get("active", default))
+    return default
+
+
 class BookingService:
     def __init__(
         self,
@@ -105,6 +114,7 @@ class BookingService:
         limit_service: Optional[TenantLimitService] = None,
         email_service: Optional[EmailService] = None,
         sns_service: Optional[SnsService] = None,
+        sms_service: Optional[SmsService] = None,
         metrics_service: Optional[MetricsService] = None,
         availability_service=None,
     ):
@@ -118,6 +128,7 @@ class BookingService:
         self._limit_service = limit_service
         self._email_service = email_service
         self._sns_service = sns_service
+        self._sms_service = sms_service
         self._availability_service = availability_service
         self._metrics_service = metrics_service or (
             MetricsService() if MetricsService else None
@@ -260,19 +271,48 @@ class BookingService:
         if self.microsoft_auth_service and self._provider_integration_repo:
             self._sync_to_microsoft_calendar(tenant_id, provider_id, booking, full_name, client_email, service.name)
 
-        # Notifications
-        if self._email_service and client_email:
-            self._send_confirmation_email(provider, service, booking, full_name, client_email, start)
-        if self._email_service and getattr(provider, "email", None):
-            self._send_provider_notification_email(provider, service, booking, full_name, start)
-            
+        # Load tenant notification settings (custom templates + channel config)
+        tenant_settings = self._parse_tenant_settings(tenant)
+        email_cfg = tenant_settings.get("email_notifications", {})
+        whatsapp_templates = tenant_settings.get("whatsapp_notifications", {}).get("templates")
+        sms_cfg = tenant_settings.get("sms_notifications", {})
+
+        # Email notifications
+        email_enabled = email_cfg.get("enabled", True)
+        email_on_booking_active = _rule_active(email_cfg.get("rules", []), "on_booking", default=True)
+        if self._email_service and client_email and email_enabled and email_on_booking_active:
+            email_templates = email_cfg.get("templates", {})
+            self._send_confirmation_email(provider, service, booking, full_name, client_email, start, email_templates)
+        if self._email_service and getattr(provider, "email", None) and email_enabled and email_on_booking_active:
+            email_templates = email_cfg.get("templates", {})
+            self._send_provider_notification_email(provider, service, booking, full_name, start, email_templates)
+
+        # WhatsApp notifications
         if self._sns_service and client_phone:
-            # We are sending to Whatsapp only if they provided a phone
             try:
-                self._send_whatsapp_notification(provider, service, booking, full_name, client_phone, start)
+                self._send_whatsapp_notification(provider, service, booking, full_name, client_phone, start, whatsapp_templates)
             except Exception as e:
                 import logging
                 logging.getLogger().warning(f"Failed to enqueue WhatsApp notification: {str(e)}")
+
+        # SMS notifications
+        sms_on_booking_active = _rule_active(sms_cfg.get("rules", []), "on_booking", default=True)
+        if self._sms_service and client_phone and sms_cfg.get("enabled", False) and sms_on_booking_active:
+            try:
+                self._send_sms_notification(service, booking, full_name, client_phone, start, provider, sms_cfg)
+            except Exception as e:
+                import logging
+                logging.getLogger().warning(f"Failed to send SMS notification: {str(e)}")
+
+        # Publish BOOKING_CONFIRMED event for reminder schedulers (email + SMS hours_before rules)
+        if self._sns_service:
+            try:
+                self._publish_booking_confirmed(
+                    booking, full_name, client_email, client_phone, service, provider, start
+                )
+            except Exception as e:
+                import logging
+                logging.getLogger().warning(f"Failed to publish BOOKING_CONFIRMED event: {str(e)}")
 
         # Metrics
         if self._metrics_service:
@@ -333,27 +373,52 @@ class BookingService:
                 return False
         return True
     def _get_frontend_url(self) -> str:
-        """Determina la URL del frontend basándose en las variables de entorno inyectadas via CDK"""
-        return os.environ.get("FRONTEND_URL")
+        url = os.environ.get("FRONTEND_URL")
+        if not url:
+            raise RuntimeError("FRONTEND_URL env var is required but not set")
+        return url
 
-    def _send_confirmation_email(self, provider, service, booking, client_name, client_email, start):
+    def _parse_tenant_settings(self, tenant) -> dict:
+        """Safely parse tenant.settings JSON into a dict."""
+        raw = getattr(tenant, "settings", None)
+        if not raw:
+            return {}
+        if isinstance(raw, dict):
+            return raw
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, str):
+                parsed = json.loads(parsed)
+            return parsed if isinstance(parsed, dict) else {}
+        except Exception:
+            return {}
+
+    def _send_confirmation_email(self, provider, service, booking, client_name, client_email, start, custom_templates: dict = None):
         try:
             from zoneinfo import ZoneInfo
             tz = ZoneInfo(provider.timezone or "UTC")
         except Exception:
             from datetime import timezone
             tz = timezone.utc
-            
+
         local_start = start.astimezone(tz)
-        
+        hora = local_start.strftime('%H:%M')
+
         # Mapeo manual para Español seguro en Lambda
         days = {"Monday":"Lunes", "Tuesday":"Martes", "Wednesday":"Miércoles", "Thursday":"Jueves", "Friday":"Viernes", "Saturday":"Sábado", "Sunday":"Domingo"}
         months = {"January":"enero", "February":"febrero", "March":"marzo", "April":"abril", "May":"mayo", "June":"junio", "July":"julio", "August":"agosto", "September":"septiembre", "October":"octubre", "November":"noviembre", "December":"diciembre"}
         day_es = days.get(local_start.strftime('%A'), local_start.strftime('%A'))
         month_es = months.get(local_start.strftime('%B'), local_start.strftime('%B'))
         date_es = f"{day_es} {local_start.strftime('%d')} de {month_es}, {local_start.strftime('%Y')}"
-        
-        subject = f"Reserva Confirmada: {service.name}"
+
+        tmpl = (custom_templates or {}).get("client_confirmation", {})
+        vars_map = dict(nombre=client_name, servicio=service.name, fecha=date_es, hora=hora, profesional=provider.name)
+
+        subject = tmpl.get("subject", "Reserva Confirmada: {servicio}").format(**vars_map)
+        body_text = tmpl.get("body", "¡Reserva confirmada! Hola {nombre}, te esperamos el {fecha} a las {hora} para {servicio}.").format(**vars_map)
+
+        frontend_url = self._get_frontend_url()
+        frontend_domain = frontend_url.replace("https://", "").replace("http://", "").split("/")[0]
         sender = os.environ.get("SES_SENDER_EMAIL")
         body_html = f"""
 <html>
@@ -362,30 +427,30 @@ class BookingService:
     <h1 style="color: #4A90D9; margin-top: 0;">¡Tu reserva está confirmada! 🎉</h1>
     <p style="font-size: 16px;">Hola <strong>{client_name}</strong>,</p>
     <p style="font-size: 16px;">Nos alegra confirmarte que tu reserva para <strong>{service.name}</strong> con <strong>{provider.name}</strong> ha sido agendada exitosamente.</p>
-    
+
     <div style="background-color: #ffffff; padding: 20px; border-radius: 8px; margin: 25px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05); text-align: center;">
         <h3 style="margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px;">📅 Detalles de tu cita</h3>
         <p style="font-size: 18px; margin: 10px 0; color: #333; text-transform: capitalize;"><strong>{date_es}</strong></p>
-        <p style="font-size: 22px; color: #4A90D9; font-weight: bold; margin: 10px 0;">⏰ {local_start.strftime('%H:%M')} hrs</p>
+        <p style="font-size: 22px; color: #4A90D9; font-weight: bold; margin: 10px 0;">⏰ {hora} hrs</p>
     </div>
-    
+
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-      <p>Este es un correo enviado por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{self._get_frontend_url().replace("https://", "").replace("http://", "").split("/")[0]}</a>.</p>
-      <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={client_email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+      <p>Ref: {booking.booking_id} · Servicio de reservas de <a href="{frontend_url}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{frontend_domain}</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="{frontend_url}/unsubscribe?email={client_email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
     </div>
   </div>
 </body>
 </html>
 """
         self._email_service.send_email(
-            source=sender, 
-            to_addresses=[client_email], 
-            subject=subject, 
-            body_html=body_html, 
-            body_text=f"¡Reserva confirmada! Hola {client_name}, te esperamos el {date_es} a las {local_start.strftime('%H:%M')} para {service.name}."
+            source=sender,
+            to_addresses=[client_email],
+            subject=subject,
+            body_html=body_html,
+            body_text=body_text,
         )
 
-    def _send_provider_notification_email(self, provider, service, booking, client_name, start):
+    def _send_provider_notification_email(self, provider, service, booking, client_name, start, custom_templates: dict = None):
         """Send booking notification email to the provider with a friendly time label."""
         try:
             from zoneinfo import ZoneInfo
@@ -395,10 +460,11 @@ class BookingService:
             tz = timezone.utc
 
         local_start = start.astimezone(tz)
+        hora = local_start.strftime('%H:%M')
         today = datetime.now(tz).date()
         booking_date = local_start.date()
         days_diff = (booking_date - today).days
-        
+
         # Mapeo manual para Español seguro en Lambda
         days = {"Monday":"Lunes", "Tuesday":"Martes", "Wednesday":"Miércoles", "Thursday":"Jueves", "Friday":"Viernes", "Saturday":"Sábado", "Sunday":"Domingo"}
         months = {"January":"enero", "February":"febrero", "March":"marzo", "April":"abril", "May":"mayo", "June":"junio", "July":"julio", "August":"agosto", "September":"septiembre", "October":"octubre", "November":"noviembre", "December":"diciembre"}
@@ -415,34 +481,41 @@ class BookingService:
         else:
             time_label = local_start.strftime('%Y-%m-%d')
 
+        tmpl = (custom_templates or {}).get("provider_notification", {})
+        vars_map = dict(nombre=client_name, servicio=service.name, fecha=date_es, hora=hora, profesional=provider.name, cuando=time_label)
+
+        subject = tmpl.get("subject", "Nueva reserva: {servicio} – {cuando}").format(**vars_map)
+        body_text = tmpl.get("body", "Nueva reserva {cuando}: {servicio} con {nombre} el {fecha} a las {hora}.").format(**vars_map)
+
+        frontend_url = self._get_frontend_url()
+        frontend_domain = frontend_url.replace("https://", "").replace("http://", "").split("/")[0]
         sender = os.environ.get("SES_SENDER_EMAIL")
-        subject = f"Nueva reserva: {service.name} – {time_label}"
         body_html = f"""
 <html>
 <body style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background-color: #f3f8fe; padding: 30px; border-radius: 10px; border-top: 5px solid #28a745; text-align: left;">
     <h1 style="color: #28a745; margin-top: 0; text-align: center;">¡Tienes una nueva reserva agendada! 📅</h1>
     <p style="font-size: 16px; text-align: center;">Hola <strong>{provider.name}</strong>, el cliente <strong>{client_name}</strong> te ha agendado exitosamente.</p>
-    
+
     <div style="background-color: #ffffff; padding: 25px; border-radius: 8px; margin: 25px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
         <h3 style="margin-top: 0; color: #555; border-bottom: 1px solid #eee; padding-bottom: 10px;">Resumen del cliente</h3>
         <table style="border-collapse:collapse; width:100%;">
           <tr><td style="padding:10px 0; font-weight:bold; color:#777; width:40%;">Servicio:</td><td style="padding:10px 0; color:#333;">{service.name}</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Cliente:</td><td style="padding:10px 0; color:#333;">{client_name}</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Ref:</td><td style="padding:10px 0; color:#333;">{booking.booking_id}</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Fecha asignada:</td><td style="padding:10px 0; color:#333; font-weight:bold;">{date_es}</td></tr>
-          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Hora inicio:</td><td style="padding:10px 0; color:#4A90D9; font-weight:bold; font-size:18px;">{local_start.strftime('%H:%M')} hrs</td></tr>
+          <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">Hora inicio:</td><td style="padding:10px 0; color:#4A90D9; font-weight:bold; font-size:18px;">{hora} hrs</td></tr>
           <tr style="border-top:1px solid #eee;"><td style="padding:10px 0; font-weight:bold; color:#777;">¿Cuándo es?</td><td style="padding:10px 0; color:#28a745; font-weight:bold; text-transform: uppercase;">{time_label}</td></tr>
         </table>
     </div>
-    
+
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center; font-size: 12px; color: #999;">
-      <p>Este es una notificación automática enviada por el servicio de reservas con inteligencia artificial de <a href="{self._get_frontend_url()}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{self._get_frontend_url().replace("https://", "").replace("http://", "").split("/")[0]}</a>.</p>
-      <p>Si no deseas recibir más notificaciones, puedes <a href="{self._get_frontend_url()}/unsubscribe?email={provider.email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
+      <p>Notificación automática de <a href="{frontend_url}" style="color: #4A90D9; text-decoration: none; font-weight: bold;">{frontend_domain}</a>.</p>
+      <p>Si no deseas recibir más notificaciones, puedes <a href="{frontend_url}/unsubscribe?email={provider.email}" style="color: #999; text-decoration: underline;">desuscribirte aquí</a>.</p>
     </div>
   </div>
 </body>
 </html>"""
-        body_text = f"Nueva reserva {time_label}: {service.name} con {client_name} el {date_es} a las {local_start.strftime('%H:%M')}."
         try:
             self._email_service.send_email(
                 source=sender,
@@ -454,12 +527,38 @@ class BookingService:
         except Exception as e:
             print(f"[BookingService] Error sending provider notification: {e}")
 
-    def _send_whatsapp_notification(self, provider, service, booking, client_name, client_phone, start):
+    def _publish_booking_confirmed(self, booking, client_name, client_email, client_phone, service, provider, start):
+        """Publish BOOKING_CONFIRMED event to SNS so schedulers can program reminders."""
+        topic_arn = os.environ.get("BOOKING_CONFIRMED_TOPIC_ARN") or os.environ.get("WHATSAPP_NOTIFICATION_TOPIC")
+        if not topic_arn:
+            return
+
+        payload = {
+            "event_type": "BOOKING_CONFIRMED",
+            "tenant_id": booking.tenant_id.value,
+            "booking_id": booking.booking_id,
+            "booking_start_time": start.isoformat(),
+            "customer_name": client_name,
+            "customer_email": client_email or "",
+            "customer_phone": client_phone or "",
+            "service_name": service.name,
+            "provider_name": getattr(provider, "name", ""),
+            "provider_timezone": getattr(provider, "timezone", "UTC") or "UTC",
+        }
+        self._sns_service.publish_message(
+            topic_arn=topic_arn,
+            message=json.dumps(payload),
+            message_attributes={
+                "event_type": {"DataType": "String", "StringValue": "BOOKING_CONFIRMED"},
+            },
+        )
+
+    def _send_whatsapp_notification(self, provider, service, booking, client_name, client_phone, start, whatsapp_templates: dict = None):
         """Send a WhatsApp notification via SNS to the configured Sender Lambda."""
         topic_arn = os.environ.get("WHATSAPP_NOTIFICATION_TOPIC")
         if not topic_arn:
-            return  # WhatsApp not configured for this environment
-            
+            return
+
         try:
             from zoneinfo import ZoneInfo
             tz = ZoneInfo(provider.timezone or "UTC")
@@ -470,27 +569,57 @@ class BookingService:
         local_start = start.astimezone(tz)
         formatted_date = local_start.strftime('%d/%m/%Y a las %H:%M')
 
-        # Using a reliable template that matches a likely Twilio approved template, 
-        # or just sending the body (the sender lambda handles Twilio integration).
-        # We pass the necessary variables so the sender lambda can format the final message.
         payload = {
             "tenantId": booking.tenant_id.value,
             "bookingId": booking.booking_id,
             "destinationPhone": client_phone,
-            "templateName": "booking_confirmation", # Assuming we have templates later
+            "templateName": "booking_confirmation",
             "parameters": {
                 "clientName": client_name,
                 "serviceName": service.name,
                 "providerName": provider.name,
-                "dateTime": formatted_date
-            }
+                "dateTime": formatted_date,
+            },
         }
-        
-        # Publish the event to SNS
+        if whatsapp_templates:
+            payload["whatsapp_templates"] = whatsapp_templates
+
         self._sns_service.publish_message(
             topic_arn=topic_arn,
-            message=json.dumps(payload)
+            message=json.dumps(payload),
         )
+
+    def _send_sms_notification(self, service, booking, client_name, client_phone, start, provider, sms_cfg: dict):
+        """Send SMS confirmation via AWS SNS direct publish."""
+        tenant = self._tenant_repo.get_by_id(booking.tenant_id)
+        if not tenant or tenant.sms_quota <= 0:
+            import logging
+            logging.getLogger().warning(
+                f"SMS quota exhausted or tenant not found for {booking.tenant_id}. Skipping SMS."
+            )
+            return
+
+        try:
+            from zoneinfo import ZoneInfo
+            tz = ZoneInfo(provider.timezone or "UTC")
+        except Exception:
+            from datetime import timezone
+            tz = timezone.utc
+
+        local_start = start.astimezone(tz)
+        hora = local_start.strftime('%H:%M')
+        date_str = local_start.strftime('%d/%m/%Y')
+
+        tmpl_text = (sms_cfg.get("templates") or {}).get(
+            "on_booking",
+            "Hola {nombre}, tu reserva de {servicio} está confirmada: {fecha} a las {hora}.",
+        )
+        vars_map = dict(nombre=client_name, servicio=service.name, fecha=date_str, hora=hora)
+        message = tmpl_text.format(**vars_map)
+
+        sent = self._sms_service.send_sms(phone_number=client_phone, message=message)
+        if sent:
+            self._tenant_repo.decrement_sms_quota(booking.tenant_id)
 
     def _sync_to_google_calendar(self, tenant_id, provider_id, booking, client_name, client_email, service_name):
         try:

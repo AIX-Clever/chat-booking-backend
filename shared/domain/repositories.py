@@ -47,6 +47,16 @@ class ITenantRepository(ABC):
         """Atomically decrement whatsapp_quota if it's > 0."""
         pass
 
+    @abstractmethod
+    def increment_sms_quota(self, tenant_id: TenantId, amount: int) -> bool:
+        """Atomically add amount credits to sms_quota."""
+        pass
+
+    @abstractmethod
+    def decrement_sms_quota(self, tenant_id: TenantId) -> bool:
+        """Atomically decrement sms_quota if it's > 0."""
+        pass
+
 
 class IApiKeyRepository(ABC):
     """Port for API Key operations"""
