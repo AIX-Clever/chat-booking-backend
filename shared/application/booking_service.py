@@ -274,7 +274,6 @@ class BookingService:
         # Load tenant notification settings (custom templates + channel config)
         tenant_settings = self._parse_tenant_settings(tenant)
         email_cfg = tenant_settings.get("email_notifications", {})
-        whatsapp_templates = tenant_settings.get("whatsapp_notifications", {}).get("templates")
         sms_cfg = tenant_settings.get("sms_notifications", {})
 
         # Email notifications
@@ -286,14 +285,6 @@ class BookingService:
         if self._email_service and getattr(provider, "email", None) and email_enabled and email_on_booking_active:
             email_templates = email_cfg.get("templates", {})
             self._send_provider_notification_email(provider, service, booking, full_name, start, email_templates)
-
-        # WhatsApp notifications
-        if self._sns_service and client_phone:
-            try:
-                self._send_whatsapp_notification(provider, service, booking, full_name, client_phone, start, whatsapp_templates)
-            except Exception as e:
-                import logging
-                logging.getLogger().warning(f"Failed to enqueue WhatsApp notification: {str(e)}")
 
         # SMS notifications
         sms_on_booking_active = _rule_active(sms_cfg.get("rules", []), "on_booking", default=True)
@@ -551,42 +542,6 @@ class BookingService:
             message_attributes={
                 "event_type": {"DataType": "String", "StringValue": "BOOKING_CONFIRMED"},
             },
-        )
-
-    def _send_whatsapp_notification(self, provider, service, booking, client_name, client_phone, start, whatsapp_templates: dict = None):
-        """Send a WhatsApp notification via SNS to the configured Sender Lambda."""
-        topic_arn = os.environ.get("WHATSAPP_NOTIFICATION_TOPIC")
-        if not topic_arn:
-            return
-
-        try:
-            from zoneinfo import ZoneInfo
-            tz = ZoneInfo(provider.timezone or "UTC")
-        except Exception:
-            from datetime import timezone
-            tz = timezone.utc
-
-        local_start = start.astimezone(tz)
-        formatted_date = local_start.strftime('%d/%m/%Y a las %H:%M')
-
-        payload = {
-            "tenantId": booking.tenant_id.value,
-            "bookingId": booking.booking_id,
-            "destinationPhone": client_phone,
-            "templateName": "booking_confirmation",
-            "parameters": {
-                "clientName": client_name,
-                "serviceName": service.name,
-                "providerName": provider.name,
-                "dateTime": formatted_date,
-            },
-        }
-        if whatsapp_templates:
-            payload["whatsapp_templates"] = whatsapp_templates
-
-        self._sns_service.publish_message(
-            topic_arn=topic_arn,
-            message=json.dumps(payload),
         )
 
     def _send_sms_notification(self, service, booking, client_name, client_phone, start, provider, sms_cfg: dict):
