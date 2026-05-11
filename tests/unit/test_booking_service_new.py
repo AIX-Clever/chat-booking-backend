@@ -269,7 +269,6 @@ class TestOnBookingRuleActive(unittest.TestCase):
         # Patch internal send methods to avoid full setup
         svc._send_confirmation_email = Mock()
         svc._send_provider_notification_email = Mock()
-        svc._send_whatsapp_notification = Mock()
         svc._send_sms_notification = Mock()
 
         email_cfg = tenant.settings.get("email_notifications", {})

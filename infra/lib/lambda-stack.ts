@@ -466,6 +466,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadWriteData(this.updateTenantFunction);
     props.userPool.grant(this.updateTenantFunction, 'cognito-idp:AdminGetUser');
+    props.userRolesTable.grantReadData(this.updateTenantFunction);
 
     // 8. Get Tenant Lambda
     this.getTenantFunction = new lambda.Function(this, 'GetTenantFunction', {
