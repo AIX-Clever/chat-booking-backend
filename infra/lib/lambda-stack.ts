@@ -1182,7 +1182,7 @@ export class LambdaStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60),
       environment: {
         ...commonProps.environment,
-        NOTIFICATION_SCHEDULER_LAMBDA_ARN: '', // set after function is created
+        // ARN is read at runtime via context.invoked_function_arn (avoids circular dep)
         NOTIFICATION_SCHEDULER_ROLE_ARN: notifSchedulerRole.roleArn,
         NOTIFICATION_SCHEDULER_GROUP: 'ChatBooking-NotificationSchedules',
       },
@@ -1193,12 +1193,6 @@ export class LambdaStack extends cdk.Stack {
       actions: ['lambda:InvokeFunction'],
       resources: [this.notificationSchedulerFunction.functionArn],
     }));
-
-    // Set the Lambda ARN env var now that the function exists
-    this.notificationSchedulerFunction.addEnvironment(
-      'NOTIFICATION_SCHEDULER_LAMBDA_ARN',
-      this.notificationSchedulerFunction.functionArn,
-    );
 
     // DynamoDB read for tenant settings
     props.tenantsTable.grantReadData(this.notificationSchedulerFunction);

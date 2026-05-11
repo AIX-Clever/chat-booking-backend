@@ -58,7 +58,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
             if booking_event is None:
                 continue
 
-            _use_case.execute(booking_event)
+            lambda_arn = getattr(context, "invoked_function_arn", "")
+            _use_case.execute(booking_event, lambda_arn=lambda_arn)
             processed += 1
         except Exception as exc:
             logger.error("Error scheduling reminders", error=str(exc))

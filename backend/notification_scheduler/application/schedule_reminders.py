@@ -46,7 +46,7 @@ class ScheduleRemindersUseCase:
         self._tenant_repo = tenant_repository
         self._scheduler = scheduler
 
-    def execute(self, event: BookingEvent) -> None:
+    def execute(self, event: BookingEvent, lambda_arn: str = "") -> None:
         tenant = self._tenant_repo.get_by_id(event.tenant_id)
         if not tenant:
             raise ValueError(f"Tenant not found: {event.tenant_id}")
@@ -58,7 +58,9 @@ class ScheduleRemindersUseCase:
         email_enabled = email_cfg.get("enabled", True)
         sms_enabled = sms_cfg.get("enabled", False)
 
-        lambda_arn = os.environ.get("NOTIFICATION_SCHEDULER_LAMBDA_ARN", "")
+        # lambda_arn comes from context.invoked_function_arn at runtime (avoids circular dep in CDK)
+        if not lambda_arn:
+            lambda_arn = os.environ.get("NOTIFICATION_SCHEDULER_LAMBDA_ARN", "")
         role_arn = os.environ.get("NOTIFICATION_SCHEDULER_ROLE_ARN", "")
         group_name = os.environ.get("NOTIFICATION_SCHEDULER_GROUP", "ChatBooking-NotificationSchedules")
         sender_email = os.environ.get("SES_SENDER_EMAIL", "")
