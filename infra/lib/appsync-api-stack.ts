@@ -928,6 +928,13 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: responseTemplate,
     });
 
+    topupDataSource.createResolver('TopupSmsQuotaResolver', {
+      typeName: 'Mutation',
+      fieldName: 'topupSmsQuota',
+      requestMappingTemplate: requestTemplate,
+      responseMappingTemplate: responseTemplate,
+    });
+
     // Support Resolver
     supportManagerDataSource.createResolver('CreateSupportIssueResolver', {
       typeName: 'Mutation',

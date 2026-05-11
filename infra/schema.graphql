@@ -162,6 +162,7 @@ type Tenant @aws_api_key @aws_cognito_user_pools @aws_lambda {
   updatedAt: AWSDateTime!
   whatsappEnabled: Boolean
   whatsappQuota: Int
+  smsQuota: Int
   twilioPhoneNumber: String
   whatsappNotificationRules: AWSJSON
 }
@@ -453,6 +454,7 @@ input UpdateTenantInput {
   settings: AWSJSON
   whatsappEnabled: Boolean
   whatsappQuota: Int
+  smsQuota: Int
   whatsappNotificationRules: AWSJSON
 }
 
@@ -892,6 +894,9 @@ type Mutation {
 
   # WhatsApp Quota Topup
   topupWhatsappQuota(packageId: String!, paymentMethod: String!, backUrl: String!): TopupResponse! @aws_cognito_user_pools
+
+  # SMS Quota Topup
+  topupSmsQuota(packageId: String!, paymentMethod: String!, backUrl: String!): TopupResponse! @aws_cognito_user_pools
 
   # Chat
   startConversation(input: StartConversationInput!): ChatResponse! @aws_api_key @aws_cognito_user_pools @aws_lambda

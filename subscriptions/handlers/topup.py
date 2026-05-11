@@ -20,15 +20,21 @@ def lambda_handler(event, _context):
     payment_method = args.get("paymentMethod", "mercadopago").lower()
     back_url = args.get("backUrl") or os.environ.get("DASHBOARD_BASE_URL", "")
 
-    package = SubscriptionConfig.WHATSAPP_PACKAGES.get(package_id)
+    field_name = event.get("info", {}).get("fieldName", "topupWhatsappQuota")
+    is_sms = field_name == "topupSmsQuota"
+    packages = SubscriptionConfig.SMS_PACKAGES if is_sms else SubscriptionConfig.WHATSAPP_PACKAGES
+    channel_label = "SMS" if is_sms else "WhatsApp"
+    ref_prefix = "sms-topup" if is_sms else "topup"
+
+    package = packages.get(package_id)
     if not package:
-        raise ValueError(f"Invalid packageId: {package_id}. Valid options: {list(SubscriptionConfig.WHATSAPP_PACKAGES)}")
+        raise ValueError(f"Invalid packageId: {package_id}. Valid options: {list(packages)}")
 
     price = package["price"]
     messages = package["messages"]
-    title = f"Bolsa WhatsApp {package_id.capitalize()} — {messages} mensajes"
+    title = f"Bolsa {channel_label} {package_id.capitalize()} — {messages} mensajes"
     # external_reference encodes type + tenantId + packageId for webhook routing
-    external_reference = f"topup:{tenant_id}:{package_id}"
+    external_reference = f"{ref_prefix}:{tenant_id}:{package_id}"
 
     print(f"[topup] tenant={tenant_id} package={package_id} price={price} method={payment_method}")
 

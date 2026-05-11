@@ -304,9 +304,13 @@ class TestOnBookingRuleActive(unittest.TestCase):
 class TestSmsNotification(unittest.TestCase):
     def setUp(self):
         self.mock_sms = Mock()
+        self.mock_tenant_repo = Mock()
+        self.mock_tenant = Mock(sms_quota=10)
+        self.mock_tenant_repo.get_by_id.return_value = self.mock_tenant
+        self.mock_tenant_repo.decrement_sms_quota.return_value = True
         self.svc = BookingService(
             booking_repo=Mock(), service_repo=Mock(),
-            provider_repo=Mock(), tenant_repo=Mock(),
+            provider_repo=Mock(), tenant_repo=self.mock_tenant_repo,
             sms_service=self.mock_sms,
         )
         self.provider = Mock(timezone="UTC", name="Dr. García")
@@ -315,6 +319,7 @@ class TestSmsNotification(unittest.TestCase):
         self.start = datetime.now(UTC) + timedelta(days=1)
 
     def test_default_sms_template_used(self):
+        self.mock_sms.send_sms.return_value = True
         self.svc._send_sms_notification(
             self.service, self.booking, "Ana", "+56912345678",
             self.start, self.provider, sms_cfg={}
@@ -325,6 +330,7 @@ class TestSmsNotification(unittest.TestCase):
         self.assertIn("Masaje", args["message"])
 
     def test_custom_sms_template_used(self):
+        self.mock_sms.send_sms.return_value = True
         cfg = {"templates": {"on_booking": "Cita de {servicio} para {nombre} el {fecha}."}}
         self.svc._send_sms_notification(
             self.service, self.booking, "Ana", "+56912345678",
@@ -333,6 +339,30 @@ class TestSmsNotification(unittest.TestCase):
         args = self.mock_sms.send_sms.call_args[1]
         self.assertIn("Masaje", args["message"])
         self.assertIn("Ana", args["message"])
+
+    def test_sms_skipped_when_quota_exhausted(self):
+        self.mock_tenant.sms_quota = 0
+        self.svc._send_sms_notification(
+            self.service, self.booking, "Ana", "+56912345678",
+            self.start, self.provider, sms_cfg={}
+        )
+        self.mock_sms.send_sms.assert_not_called()
+
+    def test_quota_decremented_after_successful_send(self):
+        self.mock_sms.send_sms.return_value = True
+        self.svc._send_sms_notification(
+            self.service, self.booking, "Ana", "+56912345678",
+            self.start, self.provider, sms_cfg={}
+        )
+        self.mock_tenant_repo.decrement_sms_quota.assert_called_once_with(self.booking.tenant_id)
+
+    def test_quota_not_decremented_when_send_fails(self):
+        self.mock_sms.send_sms.return_value = False
+        self.svc._send_sms_notification(
+            self.service, self.booking, "Ana", "+56912345678",
+            self.start, self.provider, sms_cfg={}
+        )
+        self.mock_tenant_repo.decrement_sms_quota.assert_not_called()
 
 
 if __name__ == "__main__":

@@ -74,6 +74,9 @@ def process_payment(payment_id, raw_data):
         return
 
     # Route topup payments — keep existing subscription flow untouched
+    if external_reference.startswith('sms-topup:'):
+        process_sms_topup_payment(payment_id, external_reference, status, amount, raw_data)
+        return
     if external_reference.startswith('topup:'):
         process_topup_payment(payment_id, external_reference, status, amount, raw_data)
         return
@@ -457,3 +460,59 @@ def process_topup_payment(payment_id: str, external_reference: str, status: str,
         print(f"[topup] Credited {messages} messages to tenant {tenant_id} (payment {payment_id})")
     else:
         print(f"[topup] ERROR: Failed to increment quota for tenant {tenant_id} — tenant not found?")
+
+
+def process_sms_topup_payment(payment_id: str, external_reference: str, status: str, amount: float, raw_data: Any):
+    """
+    Handles one-time SMS quota topup payments.
+    external_reference format: 'sms-topup:{tenantId}:{packageId}'
+    """
+    parts = external_reference.split(':')
+    if len(parts) != 3:
+        print(f"[sms-topup] Invalid external_reference format: {external_reference}")
+        return
+
+    _, tenant_id, package_id = parts
+    package = SubscriptionConfig.SMS_PACKAGES.get(package_id)
+    if not package:
+        print(f"[sms-topup] Unknown packageId '{package_id}' for payment {payment_id}")
+        return
+
+    expected_price = package["price"]
+    messages = package["messages"]
+
+    print(f"[sms-topup] payment={payment_id} tenant={tenant_id} package={package_id} status={status} amount={amount}")
+
+    if status not in ('approved',):
+        print(f"[sms-topup] Payment {payment_id} status={status} — not crediting quota yet")
+        return
+
+    if amount < (expected_price - 100):
+        print(
+            f"[sms-topup] SECURITY: Amount mismatch for {tenant_id}. "
+            f"Paid {amount}, expected {expected_price} for package '{package_id}'. Rejecting."
+        )
+        return
+
+    audit = PaymentAudit(
+        tenant_id=tenant_id,
+        payment_id=str(payment_id),
+        amount=amount,
+        status=status,
+        processed_at=datetime.utcnow().isoformat() + 'Z',
+        raw_data=str(raw_data),
+    )
+    try:
+        SUBSCRIPTIONS_TABLE.put_item(
+            Item=audit.to_item(),
+            ConditionExpression='attribute_not_exists(paymentId)',
+        )
+    except dynamodb.meta.client.exceptions.ConditionalCheckFailedException:
+        print(f"[sms-topup] Payment {payment_id} already processed. Skipping.")
+        return
+
+    success = tenant_repo.increment_sms_quota(TenantId(tenant_id), messages)
+    if success:
+        print(f"[sms-topup] Credited {messages} SMS to tenant {tenant_id} (payment {payment_id})")
+    else:
+        print(f"[sms-topup] ERROR: Failed to increment SMS quota for tenant {tenant_id}")

@@ -397,5 +397,60 @@ class TestHandlerParsing(unittest.TestCase):
         self.assertIsNone(_to_booking_event(payload))
 
 
+# ===========================================================================
+# HANDLER — SMS quota check in _handle_fire
+# ===========================================================================
+
+class TestHandlerSmsQuota(unittest.TestCase):
+    def _reminder(self, **kwargs):
+        defaults = dict(
+            channel="sms",
+            tenant_id="tenant-1",
+            booking_id="b1",
+            rule_id="remind_24h",
+            phone_number="+56912345678",
+            message="Tu cita es mañana.",
+        )
+        defaults.update(kwargs)
+        return ReminderPayload(**defaults)
+
+    @patch("backend.notification_scheduler.handler._tenant_repo")
+    @patch("backend.notification_scheduler.handler.boto3")
+    def test_sms_sent_and_quota_decremented(self, mock_boto3, mock_repo):
+        mock_tenant = MagicMock(sms_quota=5)
+        mock_repo.get_by_id.return_value = mock_tenant
+        mock_repo.decrement_sms_quota.return_value = True
+        mock_sns = MagicMock()
+        mock_boto3.client.return_value = mock_sns
+
+        from backend.notification_scheduler.handler import _send_sms
+        _send_sms(self._reminder())
+
+        mock_sns.publish.assert_called_once()
+        mock_repo.decrement_sms_quota.assert_called_once()
+
+    @patch("backend.notification_scheduler.handler._tenant_repo")
+    @patch("backend.notification_scheduler.handler.boto3")
+    def test_sms_skipped_when_quota_zero(self, mock_boto3, mock_repo):
+        mock_tenant = MagicMock(sms_quota=0)
+        mock_repo.get_by_id.return_value = mock_tenant
+
+        from backend.notification_scheduler.handler import _send_sms
+        _send_sms(self._reminder())
+
+        mock_boto3.client.assert_not_called()
+        mock_repo.decrement_sms_quota.assert_not_called()
+
+    @patch("backend.notification_scheduler.handler._tenant_repo")
+    @patch("backend.notification_scheduler.handler.boto3")
+    def test_sms_skipped_when_tenant_not_found(self, mock_boto3, mock_repo):
+        mock_repo.get_by_id.return_value = None
+
+        from backend.notification_scheduler.handler import _send_sms
+        _send_sms(self._reminder())
+
+        mock_boto3.client.assert_not_called()
+
+
 if __name__ == "__main__":
     unittest.main()

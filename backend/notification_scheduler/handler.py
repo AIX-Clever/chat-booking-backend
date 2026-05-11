@@ -110,14 +110,29 @@ def _send_sms(reminder: ReminderPayload) -> None:
     if not reminder.phone_number or not reminder.message:
         logger.warning("Cannot send SMS reminder: missing phone or message")
         return
+
+    from shared.domain.entities import TenantId
+    tenant = _tenant_repo.get_by_id(TenantId(reminder.tenant_id))
+    if not tenant or tenant.sms_quota <= 0:
+        logger.warning(
+            "SMS quota exhausted or tenant not found — skipping reminder",
+            tenant_id=reminder.tenant_id,
+            rule_id=reminder.rule_id,
+        )
+        return
+
     region = os.environ.get("AWS_REGION", "us-east-2")
     sns = boto3.client("sns", region_name=region)
-    sns.publish(
-        PhoneNumber=reminder.phone_number,
-        Message=reminder.message[:160],
-        MessageAttributes={"AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}},
-    )
-    logger.info("SMS reminder sent", phone=reminder.phone_number, rule_id=reminder.rule_id)
+    try:
+        sns.publish(
+            PhoneNumber=reminder.phone_number,
+            Message=reminder.message[:160],
+            MessageAttributes={"AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}},
+        )
+        _tenant_repo.decrement_sms_quota(TenantId(reminder.tenant_id))
+        logger.info("SMS reminder sent", phone=reminder.phone_number, rule_id=reminder.rule_id)
+    except Exception as exc:
+        logger.error("Failed to send SMS reminder", error=str(exc), rule_id=reminder.rule_id)
 
 
 def _parse_record(record: dict) -> Optional[dict]:

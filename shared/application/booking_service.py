@@ -591,6 +591,14 @@ class BookingService:
 
     def _send_sms_notification(self, service, booking, client_name, client_phone, start, provider, sms_cfg: dict):
         """Send SMS confirmation via AWS SNS direct publish."""
+        tenant = self._tenant_repo.get_by_id(booking.tenant_id)
+        if not tenant or tenant.sms_quota <= 0:
+            import logging
+            logging.getLogger().warning(
+                f"SMS quota exhausted or tenant not found for {booking.tenant_id}. Skipping SMS."
+            )
+            return
+
         try:
             from zoneinfo import ZoneInfo
             tz = ZoneInfo(provider.timezone or "UTC")
@@ -609,7 +617,9 @@ class BookingService:
         vars_map = dict(nombre=client_name, servicio=service.name, fecha=date_str, hora=hora)
         message = tmpl_text.format(**vars_map)
 
-        self._sms_service.send_sms(phone_number=client_phone, message=message)
+        sent = self._sms_service.send_sms(phone_number=client_phone, message=message)
+        if sent:
+            self._tenant_repo.decrement_sms_quota(booking.tenant_id)
 
     def _sync_to_google_calendar(self, tenant_id, provider_id, booking, client_name, client_email, service_name):
         try:
