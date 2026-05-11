@@ -93,6 +93,14 @@ def _periods_overlap(p1: str, p2: str) -> bool:
     return p1 == p2
 
 
+def _rule_active(rules: list, trigger: str, default: bool = True) -> bool:
+    """Return whether the on_booking rule is active for the given channel rules list."""
+    for r in rules:
+        if r.get("trigger") == trigger:
+            return bool(r.get("active", default))
+    return default
+
+
 class BookingService:
     def __init__(
         self,
@@ -270,11 +278,12 @@ class BookingService:
         sms_cfg = tenant_settings.get("sms_notifications", {})
 
         # Email notifications
-        email_enabled = email_cfg.get("enabled", True)  # enabled by default
-        if self._email_service and client_email and email_enabled:
+        email_enabled = email_cfg.get("enabled", True)
+        email_on_booking_active = _rule_active(email_cfg.get("rules", []), "on_booking", default=True)
+        if self._email_service and client_email and email_enabled and email_on_booking_active:
             email_templates = email_cfg.get("templates", {})
             self._send_confirmation_email(provider, service, booking, full_name, client_email, start, email_templates)
-        if self._email_service and getattr(provider, "email", None) and email_enabled:
+        if self._email_service and getattr(provider, "email", None) and email_enabled and email_on_booking_active:
             email_templates = email_cfg.get("templates", {})
             self._send_provider_notification_email(provider, service, booking, full_name, start, email_templates)
 
@@ -287,7 +296,8 @@ class BookingService:
                 logging.getLogger().warning(f"Failed to enqueue WhatsApp notification: {str(e)}")
 
         # SMS notifications
-        if self._sms_service and client_phone and sms_cfg.get("enabled", False):
+        sms_on_booking_active = _rule_active(sms_cfg.get("rules", []), "on_booking", default=True)
+        if self._sms_service and client_phone and sms_cfg.get("enabled", False) and sms_on_booking_active:
             try:
                 self._send_sms_notification(service, booking, full_name, client_phone, start, provider, sms_cfg)
             except Exception as e:

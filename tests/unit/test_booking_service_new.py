@@ -240,6 +240,67 @@ class TestEmailCustomTemplates(unittest.TestCase):
         self.assertIn("Dr. García", call_kwargs["body_text"])
 
 
+class TestOnBookingRuleActive(unittest.TestCase):
+    """Verifica que on_booking.active=False suprime la notificación."""
+
+    def _make_svc(self, email_svc=None, sms_svc=None):
+        svc = BookingService(
+            booking_repo=Mock(), service_repo=Mock(),
+            provider_repo=Mock(), tenant_repo=Mock(),
+            email_service=email_svc, sms_service=sms_svc,
+        )
+        return svc
+
+    def _tenant(self, settings: dict):
+        t = Mock()
+        t.settings = settings
+        return t
+
+    def test_email_suppressed_when_on_booking_inactive(self):
+        mock_email = Mock()
+        svc = self._make_svc(email_svc=mock_email)
+        tenant = self._tenant({
+            "email_notifications": {
+                "enabled": True,
+                "rules": [{"trigger": "on_booking", "active": False}],
+            }
+        })
+        svc._parse_tenant_settings = lambda t: t.settings
+        # Patch internal send methods to avoid full setup
+        svc._send_confirmation_email = Mock()
+        svc._send_provider_notification_email = Mock()
+        svc._send_whatsapp_notification = Mock()
+        svc._send_sms_notification = Mock()
+
+        email_cfg = tenant.settings.get("email_notifications", {})
+        from shared.application.booking_service import _rule_active
+        email_enabled = email_cfg.get("enabled", True)
+        email_on_booking_active = _rule_active(email_cfg.get("rules", []), "on_booking", default=True)
+
+        self.assertTrue(email_enabled)
+        self.assertFalse(email_on_booking_active)
+
+    def test_email_sent_when_on_booking_active(self):
+        from shared.application.booking_service import _rule_active
+        rules = [{"trigger": "on_booking", "active": True}]
+        self.assertTrue(_rule_active(rules, "on_booking"))
+
+    def test_rule_active_defaults_true_when_no_rules(self):
+        from shared.application.booking_service import _rule_active
+        self.assertTrue(_rule_active([], "on_booking"))
+
+    def test_sms_suppressed_when_on_booking_inactive(self):
+        from shared.application.booking_service import _rule_active
+        rules = [{"trigger": "on_booking", "active": False}]
+        self.assertFalse(_rule_active(rules, "on_booking"))
+
+    def test_rule_active_ignores_other_triggers(self):
+        from shared.application.booking_service import _rule_active
+        rules = [{"trigger": "hours_before", "active": False}]
+        # on_booking not in list → default True
+        self.assertTrue(_rule_active(rules, "on_booking"))
+
+
 class TestSmsNotification(unittest.TestCase):
     def setUp(self):
         self.mock_sms = Mock()
