@@ -7,14 +7,28 @@ No dependencies on infrastructure or frameworks.
 from datetime import datetime
 from typing import Optional
 
-from .models import NotificationRule, BookingEvent, TriggerType
+from .models import NotificationRule, BookingEvent
 
 
-def build_message(rule: NotificationRule, event: BookingEvent) -> str:
+def build_message(rule: NotificationRule, event: BookingEvent, custom_templates: Optional[dict] = None) -> str:
     """
     Returns the WhatsApp message body for a given rule and booking event.
     This is pure domain logic — no I/O.
+
+    custom_templates keys match rule.id (e.g. "on_booking", "remind_24h", "remind_2h").
+    Supported variables: {nombre}, {servicio}, {fecha}, {hora}.
     """
+    if custom_templates:
+        tmpl = custom_templates.get(rule.id)
+        if tmpl and isinstance(tmpl, str):
+            dt = event.booking_start_time
+            return tmpl.format(
+                nombre=event.customer_name or "",
+                servicio=event.service_name or "",
+                fecha=_format_datetime(dt),
+                hora=dt.strftime("%H:%M") if dt else "",
+            )
+
     name_part = f"Hola {event.customer_name}" if event.customer_name else "Hola,"
     time_part = _format_datetime(event.booking_start_time)
 

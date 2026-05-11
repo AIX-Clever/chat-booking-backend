@@ -177,5 +177,102 @@ class TestBookingService(unittest.TestCase):
         self.mock_booking_repo.save.assert_called_once()
 
 
+class TestFrontendUrlEnvVar(unittest.TestCase):
+    def test_raises_runtime_error_when_not_set(self):
+        svc = BookingService(
+            booking_repo=Mock(),
+            service_repo=Mock(),
+            provider_repo=Mock(),
+            tenant_repo=Mock(),
+        )
+        with patch.dict('os.environ', {}, clear=True):
+            os.environ.pop("FRONTEND_URL", None)
+            with self.assertRaises(RuntimeError) as ctx:
+                svc._get_frontend_url()
+        self.assertIn("FRONTEND_URL", str(ctx.exception))
+
+    def test_returns_url_when_set(self):
+        svc = BookingService(
+            booking_repo=Mock(), service_repo=Mock(),
+            provider_repo=Mock(), tenant_repo=Mock(),
+        )
+        with patch.dict('os.environ', {"FRONTEND_URL": "https://example.com"}):
+            url = svc._get_frontend_url()
+        self.assertEqual(url, "https://example.com")
+
+
+class TestEmailCustomTemplates(unittest.TestCase):
+    def setUp(self):
+        self.mock_email_service = Mock()
+        self.svc = BookingService(
+            booking_repo=Mock(), service_repo=Mock(),
+            provider_repo=Mock(), tenant_repo=Mock(),
+            email_service=self.mock_email_service,
+        )
+        self.provider = Mock(timezone="UTC", name="Dr. García", email="dr@example.com")
+        self.service = Mock(name="Masaje", duration_minutes=60, price=0)
+        self.booking = Mock(booking_id="bkg-1", tenant_id=Mock(value="t1"))
+        self.start = datetime.now(UTC) + timedelta(days=1)
+
+    def test_default_subject_used_when_no_template(self):
+        with patch.dict('os.environ', {"FRONTEND_URL": "https://example.com", "SES_SENDER_EMAIL": "no-reply@test.cl"}):
+            self.svc._send_confirmation_email(
+                self.provider, self.service, self.booking, "Ana", "ana@test.cl", self.start
+            )
+        call_kwargs = self.mock_email_service.send_email.call_args[1]
+        self.assertIn("Masaje", call_kwargs["subject"])
+
+    def test_custom_subject_and_body_used(self):
+        custom = {
+            "client_confirmation": {
+                "subject": "Tu cita de {servicio} está lista, {nombre}!",
+                "body": "Nos vemos el {fecha} a las {hora}. — {profesional}",
+            }
+        }
+        with patch.dict('os.environ', {"FRONTEND_URL": "https://example.com", "SES_SENDER_EMAIL": "no-reply@test.cl"}):
+            self.svc._send_confirmation_email(
+                self.provider, self.service, self.booking, "Ana", "ana@test.cl",
+                self.start, custom_templates=custom
+            )
+        call_kwargs = self.mock_email_service.send_email.call_args[1]
+        self.assertIn("Ana", call_kwargs["subject"])
+        self.assertIn("Masaje", call_kwargs["subject"])
+        self.assertIn("Dr. García", call_kwargs["body_text"])
+
+
+class TestSmsNotification(unittest.TestCase):
+    def setUp(self):
+        self.mock_sms = Mock()
+        self.svc = BookingService(
+            booking_repo=Mock(), service_repo=Mock(),
+            provider_repo=Mock(), tenant_repo=Mock(),
+            sms_service=self.mock_sms,
+        )
+        self.provider = Mock(timezone="UTC", name="Dr. García")
+        self.service = Mock(name="Masaje")
+        self.booking = Mock(booking_id="bkg-1", tenant_id=Mock(value="t1"))
+        self.start = datetime.now(UTC) + timedelta(days=1)
+
+    def test_default_sms_template_used(self):
+        self.svc._send_sms_notification(
+            self.service, self.booking, "Ana", "+56912345678",
+            self.start, self.provider, sms_cfg={}
+        )
+        self.mock_sms.send_sms.assert_called_once()
+        args = self.mock_sms.send_sms.call_args[1]
+        self.assertEqual(args["phone_number"], "+56912345678")
+        self.assertIn("Masaje", args["message"])
+
+    def test_custom_sms_template_used(self):
+        cfg = {"templates": {"on_booking": "Cita de {servicio} para {nombre} el {fecha}."}}
+        self.svc._send_sms_notification(
+            self.service, self.booking, "Ana", "+56912345678",
+            self.start, self.provider, sms_cfg=cfg
+        )
+        args = self.mock_sms.send_sms.call_args[1]
+        self.assertIn("Masaje", args["message"])
+        self.assertIn("Ana", args["message"])
+
+
 if __name__ == "__main__":
     unittest.main()

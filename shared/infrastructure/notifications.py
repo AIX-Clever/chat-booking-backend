@@ -70,6 +70,45 @@ class EmailService:
             return False
 
 
+class SmsService:
+    """
+    Infrastructure Adapter for sending SMS via Amazon SNS direct publish.
+    Uses SNS transactional SMS (not a topic), suitable for one-off notifications.
+    """
+
+    SMS_MAX_CHARS = 160
+
+    def __init__(self, region_name: Optional[str] = None):
+        region = region_name or os.environ.get("AWS_REGION") or "us-east-2"
+        self.client = boto3.client("sns", region_name=region)
+
+    def send_sms(self, phone_number: str, message: str) -> bool:
+        if len(message) > self.SMS_MAX_CHARS:
+            logger.warning(
+                f"SMS message exceeds {self.SMS_MAX_CHARS} chars ({len(message)}), truncating."
+            )
+            message = message[: self.SMS_MAX_CHARS]
+        try:
+            response = self.client.publish(
+                PhoneNumber=phone_number,
+                Message=message,
+                MessageAttributes={
+                    "AWS.SNS.SMS.SMSType": {
+                        "DataType": "String",
+                        "StringValue": "Transactional",
+                    }
+                },
+            )
+            logger.info(f"SMS sent to {phone_number}. MessageId: {response.get('MessageId')}")
+            return True
+        except ClientError as e:
+            logger.error(f"Failed to send SMS to {phone_number}. Error: {e.response['Error']['Message']}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error sending SMS to {phone_number}: {str(e)}")
+            return False
+
+
 class SnsService:
     """
     Generic Infrastructure Adapter for publishing messages via Amazon SNS.
