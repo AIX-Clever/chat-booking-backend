@@ -304,6 +304,14 @@ class BookingService:
                 import logging
                 logging.getLogger().warning(f"Failed to send SMS notification: {str(e)}")
 
+        # Publish BOOKING_CONFIRMED event for reminder schedulers (email + SMS hours_before rules)
+        if self._sns_service:
+            try:
+                self._publish_booking_confirmed(booking, full_name, client_email, client_phone, service, provider, start)
+            except Exception as e:
+                import logging
+                logging.getLogger().warning(f"Failed to publish BOOKING_CONFIRMED event: {str(e)}")
+
         # Metrics
         if self._metrics_service:
             try:
@@ -516,6 +524,32 @@ class BookingService:
             )
         except Exception as e:
             print(f"[BookingService] Error sending provider notification: {e}")
+
+    def _publish_booking_confirmed(self, booking, client_name, client_email, client_phone, service, provider, start):
+        """Publish BOOKING_CONFIRMED event to SNS so schedulers can program reminders."""
+        topic_arn = os.environ.get("BOOKING_CONFIRMED_TOPIC_ARN") or os.environ.get("WHATSAPP_NOTIFICATION_TOPIC")
+        if not topic_arn:
+            return
+
+        payload = {
+            "event_type": "BOOKING_CONFIRMED",
+            "tenant_id": booking.tenant_id.value,
+            "booking_id": booking.booking_id,
+            "booking_start_time": start.isoformat(),
+            "customer_name": client_name,
+            "customer_email": client_email or "",
+            "customer_phone": client_phone or "",
+            "service_name": service.name,
+            "provider_name": getattr(provider, "name", ""),
+            "provider_timezone": getattr(provider, "timezone", "UTC") or "UTC",
+        }
+        self._sns_service.publish_message(
+            topic_arn=topic_arn,
+            message=json.dumps(payload),
+            message_attributes={
+                "event_type": {"DataType": "String", "StringValue": "BOOKING_CONFIRMED"},
+            },
+        )
 
     def _send_whatsapp_notification(self, provider, service, booking, client_name, client_phone, start, whatsapp_templates: dict = None):
         """Send a WhatsApp notification via SNS to the configured Sender Lambda."""

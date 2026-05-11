@@ -92,6 +92,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly whatsappSchedulerFunction: lambda.Function;
   public readonly waitlistTriggerFunction: lambda.Function;
   public readonly waitlistApiFunction: lambda.Function;
+  public readonly notificationSchedulerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -1161,7 +1162,81 @@ export class LambdaStack extends cdk.Stack {
       })
     );
 
-    // 27. Waitlist API Lambda
+    // 27. Notification Scheduler Lambda (email + SMS hours_before reminders)
+    // IAM role for EventBridge Scheduler to invoke this Lambda
+    const notifSchedulerRole = new iam.Role(this, 'NotifSchedulerInvokeRole', {
+      roleName: 'ChatBooking-NotifSchedulerInvokeRole',
+      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
+      description: 'Allows EventBridge Scheduler to invoke notification_scheduler Lambda',
+    });
+    const notifSchedulerGroup = new (require('aws-cdk-lib/aws-scheduler').CfnScheduleGroup)(
+      this, 'NotifSchedulerGroup', { name: 'ChatBooking-NotificationSchedules' }
+    );
+
+    this.notificationSchedulerFunction = new lambda.Function(this, 'NotificationSchedulerFunction', {
+      ...commonProps,
+      description: 'Schedules and fires email/SMS reminders for booking notifications',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'notification_scheduler')),
+      handler: 'handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(60),
+      environment: {
+        ...commonProps.environment,
+        NOTIFICATION_SCHEDULER_LAMBDA_ARN: '', // set after function is created
+        NOTIFICATION_SCHEDULER_ROLE_ARN: notifSchedulerRole.roleArn,
+        NOTIFICATION_SCHEDULER_GROUP: 'ChatBooking-NotificationSchedules',
+      },
+    });
+
+    // Allow EventBridge Scheduler to invoke this Lambda
+    notifSchedulerRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [this.notificationSchedulerFunction.functionArn],
+    }));
+
+    // Set the Lambda ARN env var now that the function exists
+    this.notificationSchedulerFunction.addEnvironment(
+      'NOTIFICATION_SCHEDULER_LAMBDA_ARN',
+      this.notificationSchedulerFunction.functionArn,
+    );
+
+    // DynamoDB read for tenant settings
+    props.tenantsTable.grantReadData(this.notificationSchedulerFunction);
+
+    // SES send permission
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'],
+    }));
+
+    // SNS publish for SMS (direct publish, not topic)
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['sns:Publish'],
+      resources: ['*'],
+    }));
+
+    // EventBridge Scheduler permissions (create/delete reminder schedules)
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['scheduler:CreateSchedule', 'scheduler:DeleteSchedule', 'scheduler:GetSchedule'],
+      resources: [`arn:aws:scheduler:${this.region}:${this.account}:schedule/ChatBooking-NotificationSchedules/*`],
+    }));
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['iam:PassRole'],
+      resources: [notifSchedulerRole.roleArn],
+    }));
+
+    // Subscribe to BOOKING_CONFIRMED events on the WhatsApp SNS topic
+    props.whatsappNotificationTopic.addSubscription(
+      new (require('aws-cdk-lib/aws-sns-subscriptions').LambdaSubscription)(this.notificationSchedulerFunction, {
+        filterPolicy: {
+          event_type: cdk.aws_sns.SubscriptionFilter.stringFilter({
+            allowlist: ['BOOKING_CONFIRMED'],
+          }),
+        },
+      })
+    );
+
+    // 28. Waitlist API Lambda
     this.waitlistApiFunction = new lambda.Function(this, 'WaitlistApiFunction', {
       ...commonProps,
       description: 'GraphQL API resolvers for the Waitlist feature',
