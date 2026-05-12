@@ -175,8 +175,8 @@ export class LambdaStack extends cdk.Stack {
       name: `ChatBooking-${props.envName}`,
     });
 
-    // SES Email Identity — prod usa dominio verificado, dev/qa usan email de prueba
-    const sesIdentity = props.envName === 'prod' ? 'holalucia.cl' : 'holalucia.ai@gmail.com';
+    // SES Email Identity — prod usa subdominio de envío, dev/qa usan email de prueba
+    const sesIdentity = props.envName === 'prod' ? 'mail.holalucia.cl' : 'holalucia.ai@gmail.com';
     new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
       emailIdentity: sesIdentity,
     });
