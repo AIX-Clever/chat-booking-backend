@@ -4,7 +4,12 @@ import os
 from typing import List, Optional
 from botocore.exceptions import ClientError
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
+if not logger.handlers:
+    _h = logging.StreamHandler()
+    _h.setLevel(logging.INFO)
+    logger.addHandler(_h)
+logger.setLevel(logging.INFO)
 
 
 class EmailService:
