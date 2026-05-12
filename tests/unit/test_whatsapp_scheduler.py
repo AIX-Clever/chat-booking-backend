@@ -7,11 +7,16 @@ Tests are organized by layer:
   - Handler: record parsing, BookingEvent construction
 """
 import json
+import os
 import unittest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 
 from backend.whatsapp_scheduler.domain.models import (
     NotificationRule, BookingEvent, TriggerType,
@@ -229,6 +234,12 @@ class TestParseRecord(unittest.TestCase):
     def test_raw_body(self):
         payload = {"event_type": "BOOKING_CONFIRMED"}
         record = {"body": json.dumps(payload)}
+        result = _parse_record(record)
+        self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
+
+    def test_sns_direct_invocation(self):
+        payload = {"event_type": "BOOKING_CONFIRMED", "tenant_id": "t1"}
+        record = {"Sns": {"Message": json.dumps(payload)}, "EventSource": "aws:sns"}
         result = _parse_record(record)
         self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
 

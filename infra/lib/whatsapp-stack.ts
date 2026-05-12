@@ -40,8 +40,12 @@ export class WhatsappStack extends cdk.Stack {
         });
 
         // 4. Subscribe the SQS queue to the SNS topic (for whatsapp_sender)
+        // Filter to only WHATSAPP_SEND events — BOOKING_CONFIRMED goes to scheduler Lambdas only
         this.notificationTopic.addSubscription(new subscriptions.SqsSubscription(this.senderQueue, {
             rawMessageDelivery: true,
+            filterPolicy: {
+                event_type: sns.SubscriptionFilter.stringFilter({ allowlist: ['WHATSAPP_SEND'] }),
+            },
         }));
 
         // 5. EventBridge Scheduler group — holds all per-booking one-time schedules
