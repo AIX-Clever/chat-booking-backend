@@ -175,6 +175,15 @@ export class LambdaStack extends cdk.Stack {
       name: `ChatBooking-${props.envName}`,
     });
 
+    // SES Domain Identity — verifica holalucia.cl en esta cuenta para poder enviar desde no-reply@mail.holalucia.cl
+    // Después del deploy, correr: aws ses get-identity-dkim-attributes --identities holalucia.cl
+    // y agregar los 3 CNAMEs resultantes en Route53 (prod).
+    if (props.envName !== 'prod') {
+      new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
+        emailIdentity: 'holalucia.cl',
+      });
+    }
+
     // Lambda Layer for shared code
     // Imported from SSM Parameter (updated by chat-booking-layers stack)
     const layerArn = ssm.StringParameter.valueForStringParameter(
