@@ -170,6 +170,11 @@ export class LambdaStack extends cdk.Stack {
       },
     };
 
+    // SES Configuration Set (required for email tracking — bounce/complaint events)
+    new cdk.aws_ses.CfnConfigurationSet(this, 'SesConfigurationSet', {
+      name: `ChatBooking-${props.envName}`,
+    });
+
     // Lambda Layer for shared code
     // Imported from SSM Parameter (updated by chat-booking-layers stack)
     const layerArn = ssm.StringParameter.valueForStringParameter(
@@ -374,6 +379,7 @@ export class LambdaStack extends cdk.Stack {
     props.roomAssignmentsTable.grantReadData(this.bookingFunction);
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
     props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
+    props.userRolesTable.grantReadData(this.bookingFunction); // For enforce_not_readonly()
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');
 
     // 5. Chat Agent Lambda
@@ -1047,6 +1053,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions to Sender
     props.tenantsTable.grantReadWriteData(this.whatsappSenderFunction); // To read plan and update used quota
     props.whatsappMessagesTable.grantReadWriteData(this.whatsappSenderFunction);
+    props.tenantUsageTable.grantWriteData(this.whatsappSenderFunction); // For quota exhaustion metrics
 
     // Explicitly grant KMS decrypt if SQS is encrypted with AWS managed key
     props.whatsappSenderQueue.grantConsumeMessages(this.whatsappSenderFunction);
@@ -1186,6 +1193,7 @@ export class LambdaStack extends cdk.Stack {
         // ARN is read at runtime via context.invoked_function_arn (avoids circular dep)
         NOTIFICATION_SCHEDULER_ROLE_ARN: notifSchedulerRole.roleArn,
         NOTIFICATION_SCHEDULER_GROUP: 'ChatBooking-NotificationSchedules',
+        SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl',
       },
     });
 
