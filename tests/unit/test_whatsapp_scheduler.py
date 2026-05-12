@@ -7,11 +7,16 @@ Tests are organized by layer:
   - Handler: record parsing, BookingEvent construction
 """
 import json
+import os
 import unittest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock
 
 import pytest
+
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 
 from backend.whatsapp_scheduler.domain.models import (
     NotificationRule, BookingEvent, TriggerType,

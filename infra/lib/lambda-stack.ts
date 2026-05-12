@@ -1119,8 +1119,8 @@ export class LambdaStack extends cdk.Stack {
     this.whatsappSchedulerFunction = new lambda.Function(this, 'WhatsappSchedulerFunction', {
       ...commonProps,
       description: 'Reads tenant notification rules and schedules timed WhatsApp reminders via EventBridge Scheduler',
-      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'whatsapp_scheduler')),
-      handler: 'handler.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend')),
+      handler: 'whatsapp_scheduler.handler.lambda_handler',
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(60),
       environment: {
@@ -1177,8 +1177,8 @@ export class LambdaStack extends cdk.Stack {
     this.notificationSchedulerFunction = new lambda.Function(this, 'NotificationSchedulerFunction', {
       ...commonProps,
       description: 'Schedules and fires email/SMS reminders for booking notifications',
-      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'notification_scheduler')),
-      handler: 'handler.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend')),
+      handler: 'notification_scheduler.handler.lambda_handler',
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(60),
       environment: {
