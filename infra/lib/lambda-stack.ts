@@ -175,14 +175,11 @@ export class LambdaStack extends cdk.Stack {
       name: `ChatBooking-${props.envName}`,
     });
 
-    // SES Domain Identity — verifica holalucia.cl en esta cuenta para poder enviar desde no-reply@mail.holalucia.cl
-    // Después del deploy, correr: aws ses get-identity-dkim-attributes --identities holalucia.cl
-    // y agregar los 3 CNAMEs resultantes en Route53 (prod).
-    if (props.envName !== 'prod') {
-      new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
-        emailIdentity: 'holalucia.cl',
-      });
-    }
+    // SES Email Identity — prod usa dominio verificado, dev/qa usan email de prueba
+    const sesIdentity = props.envName === 'prod' ? 'holalucia.cl' : 'holalucia.ai@gmail.com';
+    new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
+      emailIdentity: sesIdentity,
+    });
 
     // Lambda Layer for shared code
     // Imported from SSM Parameter (updated by chat-booking-layers stack)
@@ -288,7 +285,7 @@ export class LambdaStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60), // More time for booking validation
       environment: {
         ...commonProps.environment,
-        SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl', // Verified SES identity
+        SES_SENDER_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -557,7 +554,7 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         USER_POOL_ID: props.userPool.userPoolId,
         USER_ROLES_TABLE: props.userRolesTable.tableName,
-        FROM_EMAIL: 'no-reply@mail.holalucia.cl', // Subdomain for transactional emails
+        FROM_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
       },
     });
 
@@ -1202,7 +1199,7 @@ export class LambdaStack extends cdk.Stack {
         // ARN is read at runtime via context.invoked_function_arn (avoids circular dep)
         NOTIFICATION_SCHEDULER_ROLE_ARN: notifSchedulerRole.roleArn,
         NOTIFICATION_SCHEDULER_GROUP: 'ChatBooking-NotificationSchedules',
-        SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl',
+        SES_SENDER_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
       },
     });
 
