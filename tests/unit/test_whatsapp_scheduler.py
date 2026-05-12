@@ -237,6 +237,12 @@ class TestParseRecord(unittest.TestCase):
         result = _parse_record(record)
         self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
 
+    def test_sns_direct_invocation(self):
+        payload = {"event_type": "BOOKING_CONFIRMED", "tenant_id": "t1"}
+        record = {"Sns": {"Message": json.dumps(payload)}, "EventSource": "aws:sns"}
+        result = _parse_record(record)
+        self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
+
     def test_invalid_json_returns_none(self):
         self.assertIsNone(_parse_record({"body": "NOT_JSON"}))
 

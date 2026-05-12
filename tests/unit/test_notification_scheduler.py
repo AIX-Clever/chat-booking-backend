@@ -365,6 +365,12 @@ class TestHandlerParsing(unittest.TestCase):
         result = _parse_record(record)
         self.assertEqual(result["tenant_id"], "t1")
 
+    def test_parse_sns_direct_invocation(self):
+        inner = {"event_type": "BOOKING_CONFIRMED", "tenant_id": "t1"}
+        record = {"Sns": {"Message": json.dumps(inner)}, "EventSource": "aws:sns"}
+        result = _parse_record(record)
+        self.assertEqual(result["tenant_id"], "t1")
+
     def test_parse_invalid_returns_none(self):
         result = _parse_record({"body": "not-json"})
         self.assertIsNone(result)

@@ -137,6 +137,10 @@ def _send_sms(reminder: ReminderPayload) -> None:
 
 def _parse_record(record: dict) -> Optional[dict]:
     try:
+        # SNS → Lambda direct invocation: record["Sns"]["Message"]
+        if "Sns" in record:
+            return json.loads(record["Sns"]["Message"])
+        # SQS format (may contain SNS envelope with "Message" key)
         body = json.loads(record.get("body", "{}"))
         if "Message" in body:
             return json.loads(body["Message"])
