@@ -92,6 +92,7 @@ export class LambdaStack extends cdk.Stack {
   public readonly whatsappSchedulerFunction: lambda.Function;
   public readonly waitlistTriggerFunction: lambda.Function;
   public readonly waitlistApiFunction: lambda.Function;
+  public readonly notificationSchedulerFunction: lambda.Function;
 
   constructor(scope: Construct, id: string, props: LambdaStackProps) {
     super(scope, id, props);
@@ -168,6 +169,17 @@ export class LambdaStack extends cdk.Stack {
         SES_CONFIGURATION_SET: `ChatBooking-${props.envName}`,
       },
     };
+
+    // SES Configuration Set (required for email tracking — bounce/complaint events)
+    new cdk.aws_ses.CfnConfigurationSet(this, 'SesConfigurationSet', {
+      name: `ChatBooking-${props.envName}`,
+    });
+
+    // SES Email Identity — prod usa subdominio de envío, dev/qa usan email de prueba
+    const sesIdentity = props.envName === 'prod' ? 'mail.holalucia.cl' : 'holalucia.ai@gmail.com';
+    new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
+      emailIdentity: sesIdentity,
+    });
 
     // Lambda Layer for shared code
     // Imported from SSM Parameter (updated by chat-booking-layers stack)
@@ -273,7 +285,7 @@ export class LambdaStack extends cdk.Stack {
       timeout: cdk.Duration.seconds(60), // More time for booking validation
       environment: {
         ...commonProps.environment,
-        SES_SENDER_EMAIL: 'no-reply@mail.holalucia.cl', // Verified SES identity
+        SES_SENDER_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
         STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY || '', // Passed from GitHub Secrets/Env
         GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
         GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
@@ -373,6 +385,7 @@ export class LambdaStack extends cdk.Stack {
     props.roomAssignmentsTable.grantReadData(this.bookingFunction);
     props.tenantUsageTable.grantWriteData(this.bookingFunction); // For metrics tracking
     props.providersTable.grantReadWriteData(this.bookingFunction); // For Google Integration (read/write tokens)
+    props.userRolesTable.grantReadData(this.bookingFunction); // For enforce_not_readonly()
     props.userPool.grant(this.bookingFunction, 'cognito-idp:AdminGetUser');
 
     // 5. Chat Agent Lambda
@@ -465,6 +478,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions
     props.tenantsTable.grantReadWriteData(this.updateTenantFunction);
     props.userPool.grant(this.updateTenantFunction, 'cognito-idp:AdminGetUser');
+    props.userRolesTable.grantReadData(this.updateTenantFunction);
 
     // 8. Get Tenant Lambda
     this.getTenantFunction = new lambda.Function(this, 'GetTenantFunction', {
@@ -540,7 +554,7 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         USER_POOL_ID: props.userPool.userPoolId,
         USER_ROLES_TABLE: props.userRolesTable.tableName,
-        FROM_EMAIL: 'no-reply@mail.holalucia.cl', // Subdomain for transactional emails
+        FROM_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
       },
     });
 
@@ -1045,6 +1059,7 @@ export class LambdaStack extends cdk.Stack {
     // Grant permissions to Sender
     props.tenantsTable.grantReadWriteData(this.whatsappSenderFunction); // To read plan and update used quota
     props.whatsappMessagesTable.grantReadWriteData(this.whatsappSenderFunction);
+    props.tenantUsageTable.grantWriteData(this.whatsappSenderFunction); // For quota exhaustion metrics
 
     // Explicitly grant KMS decrypt if SQS is encrypted with AWS managed key
     props.whatsappSenderQueue.grantConsumeMessages(this.whatsappSenderFunction);
@@ -1117,8 +1132,8 @@ export class LambdaStack extends cdk.Stack {
     this.whatsappSchedulerFunction = new lambda.Function(this, 'WhatsappSchedulerFunction', {
       ...commonProps,
       description: 'Reads tenant notification rules and schedules timed WhatsApp reminders via EventBridge Scheduler',
-      code: lambda.Code.fromAsset(path.join(backendPath, 'backend', 'whatsapp_scheduler')),
-      handler: 'handler.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend')),
+      handler: 'whatsapp_scheduler.handler.lambda_handler',
       layers: [sharedLayer],
       timeout: cdk.Duration.seconds(60),
       environment: {
@@ -1161,7 +1176,76 @@ export class LambdaStack extends cdk.Stack {
       })
     );
 
-    // 27. Waitlist API Lambda
+    // 27. Notification Scheduler Lambda (email + SMS hours_before reminders)
+    // IAM role for EventBridge Scheduler to invoke this Lambda
+    const notifSchedulerRole = new iam.Role(this, 'NotifSchedulerInvokeRole', {
+      roleName: 'ChatBooking-NotifSchedulerInvokeRole',
+      assumedBy: new iam.ServicePrincipal('scheduler.amazonaws.com'),
+      description: 'Allows EventBridge Scheduler to invoke notification_scheduler Lambda',
+    });
+    const notifSchedulerGroup = new (require('aws-cdk-lib/aws-scheduler').CfnScheduleGroup)(
+      this, 'NotifSchedulerGroup', { name: 'ChatBooking-NotificationSchedules' }
+    );
+
+    this.notificationSchedulerFunction = new lambda.Function(this, 'NotificationSchedulerFunction', {
+      ...commonProps,
+      description: 'Schedules and fires email/SMS reminders for booking notifications',
+      code: lambda.Code.fromAsset(path.join(backendPath, 'backend')),
+      handler: 'notification_scheduler.handler.lambda_handler',
+      layers: [sharedLayer],
+      timeout: cdk.Duration.seconds(60),
+      environment: {
+        ...commonProps.environment,
+        // ARN is read at runtime via context.invoked_function_arn (avoids circular dep)
+        NOTIFICATION_SCHEDULER_ROLE_ARN: notifSchedulerRole.roleArn,
+        NOTIFICATION_SCHEDULER_GROUP: 'ChatBooking-NotificationSchedules',
+        SES_SENDER_EMAIL: props.envName === 'prod' ? 'no-reply@mail.holalucia.cl' : 'holalucia.ai@gmail.com',
+      },
+    });
+
+    // Allow EventBridge Scheduler to invoke this Lambda
+    notifSchedulerRole.addToPolicy(new iam.PolicyStatement({
+      actions: ['lambda:InvokeFunction'],
+      resources: [this.notificationSchedulerFunction.functionArn],
+    }));
+
+    // DynamoDB read for tenant settings
+    props.tenantsTable.grantReadData(this.notificationSchedulerFunction);
+
+    // SES send permission
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['ses:SendEmail', 'ses:SendRawEmail'],
+      resources: ['*'],
+    }));
+
+    // SNS publish for SMS (direct publish, not topic)
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['sns:Publish'],
+      resources: ['*'],
+    }));
+
+    // EventBridge Scheduler permissions (create/delete reminder schedules)
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['scheduler:CreateSchedule', 'scheduler:DeleteSchedule', 'scheduler:GetSchedule'],
+      resources: [`arn:aws:scheduler:${this.region}:${this.account}:schedule/ChatBooking-NotificationSchedules/*`],
+    }));
+    this.notificationSchedulerFunction.addToRolePolicy(new iam.PolicyStatement({
+      actions: ['iam:PassRole'],
+      resources: [notifSchedulerRole.roleArn],
+    }));
+
+    // Subscribe to BOOKING_CONFIRMED events on the WhatsApp SNS topic
+    props.whatsappNotificationTopic.addSubscription(
+      new (require('aws-cdk-lib/aws-sns-subscriptions').LambdaSubscription)(this.notificationSchedulerFunction, {
+        filterPolicy: {
+          event_type: cdk.aws_sns.SubscriptionFilter.stringFilter({
+            allowlist: ['BOOKING_CONFIRMED'],
+          }),
+        },
+      })
+    );
+
+    // 28. Waitlist API Lambda
     this.waitlistApiFunction = new lambda.Function(this, 'WaitlistApiFunction', {
       ...commonProps,
       description: 'GraphQL API resolvers for the Waitlist feature',

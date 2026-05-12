@@ -40,8 +40,8 @@ class EventBridgeNotificationScheduler(INotificationScheduler):
             "event_type": "WHATSAPP_SEND",
             "tenant_id": tenant_id,
             "booking_id": booking_id,
-            "customer_phone": customer_phone,
-            "message_body": message_body,
+            "to": customer_phone,
+            "message": message_body,
             "rule_id": rule_id,
         }
         # Format: yyyy-MM-ddTHH:mm:ss (EventBridge interprets as UTC)

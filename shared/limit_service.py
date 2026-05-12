@@ -51,6 +51,31 @@ class TenantLimitService:
             # Fail open (allow) to avoid blocking valid traffic on system error
             return True
 
+    def check_can_send_sms(self, tenant_id: TenantId) -> bool:
+        """Check if tenant has SMS quota available."""
+        try:
+            tenant = self._tenant_repo.get_by_id(tenant_id)
+            if not tenant:
+                self.logger.warning(
+                    "Tenant not found during SMS limit check", tenant_id=tenant_id.value
+                )
+                return False
+
+            can_send = tenant.sms_quota > 0
+
+            if not can_send:
+                self.logger.info(
+                    "SMS pre-paid quota exhausted",
+                    tenant_id=tenant_id.value,
+                    quota=tenant.sms_quota,
+                )
+
+            return can_send
+
+        except Exception as e:
+            self.logger.error("Error checking SMS limit", error=e)
+            return True  # Fail open to avoid blocking valid traffic
+
     def check_can_create_booking(self, tenant_id: TenantId) -> bool:
         """
         Check if tenant can create more bookings.

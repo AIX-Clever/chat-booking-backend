@@ -102,6 +102,7 @@ class DynamoDBTenantRepository(ITenantRepository):
             "billingEmail": tenant.billing_email,
             "settings": tenant.settings,
             "whatsappQuota": tenant.whatsapp_quota,
+            "smsQuota": tenant.sms_quota,
             "isPublished": tenant.is_published,
             "createdAt": tenant.created_at.isoformat(),
         }
@@ -126,6 +127,7 @@ class DynamoDBTenantRepository(ITenantRepository):
             billing_email=item.get("billingEmail"),
             settings=item.get("settings", {}),
             whatsapp_quota=int(item.get("whatsappQuota", 0)),
+            sms_quota=int(item.get("smsQuota", 0)),
             is_published=item.get("isPublished", False),
             published_at=published_at,
             created_at=datetime.fromisoformat(item["createdAt"]),
@@ -149,18 +151,48 @@ class DynamoDBTenantRepository(ITenantRepository):
         """Atomically decrement whatsappQuota if it's > 0.
         Returns True if successful, False if quota was 0 or tenant not found."""
         try:
-            response = self.table.update_item(
+            self.table.update_item(
                 Key={"tenantId": str(tenant_id)},
                 UpdateExpression="SET whatsappQuota = whatsappQuota - :dec",
                 ConditionExpression="attribute_exists(tenantId) AND whatsappQuota > :min",
                 ExpressionAttributeValues={":dec": 1, ":min": 0},
-                ReturnValues="UPDATED_NEW"
             )
             return True
         except ClientError as e:
             if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
                 return False
             print(f"Error decrementing whatsapp quota for tenant: {e}")
+            return False
+
+    def increment_sms_quota(self, tenant_id: TenantId, amount: int) -> bool:
+        """Atomically add `amount` credits to smsQuota. Returns True on success."""
+        try:
+            self.table.update_item(
+                Key={"tenantId": str(tenant_id)},
+                UpdateExpression="ADD smsQuota :inc",
+                ConditionExpression="attribute_exists(tenantId)",
+                ExpressionAttributeValues={":inc": amount},
+            )
+            return True
+        except ClientError as e:
+            print(f"Error incrementing sms quota for tenant {tenant_id}: {e}")
+            return False
+
+    def decrement_sms_quota(self, tenant_id: TenantId) -> bool:
+        """Atomically decrement smsQuota if it's > 0.
+        Returns True if successful, False if quota was 0 or tenant not found."""
+        try:
+            self.table.update_item(
+                Key={"tenantId": str(tenant_id)},
+                UpdateExpression="SET smsQuota = smsQuota - :dec",
+                ConditionExpression="attribute_exists(tenantId) AND smsQuota > :min",
+                ExpressionAttributeValues={":dec": 1, ":min": 0},
+            )
+            return True
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return False
+            print(f"Error decrementing sms quota for tenant: {e}")
             return False
 
 

@@ -115,7 +115,8 @@ def lambda_handler(event: dict, context) -> dict:
 
         # Route to appropriate handler
         if field == "createBooking":
-            return handle_create_booking(tenant_id, input_data)
+            is_cognito = bool(event.get("identity", {}).get("claims", {}).get("custom:tenantId"))
+            return handle_create_booking(tenant_id, input_data, skip_recaptcha=is_cognito)
 
         elif field == "confirmBooking":
             return handle_confirm_booking(tenant_id, input_data)
@@ -177,7 +178,7 @@ def lambda_handler(event: dict, context) -> dict:
         return error_response(f"Internal server error: {str(e)}", 500)
 
 
-def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
+def handle_create_booking(tenant_id: TenantId, input_data: dict, skip_recaptcha: bool = False) -> dict:
     """
     Create a new booking
 
@@ -198,7 +199,7 @@ def handle_create_booking(tenant_id: TenantId, input_data: dict) -> dict:
     # Verify reCAPTCHA token if secret key is configured
     recaptcha_token = input_data.get("recaptchaToken")
     import os
-    if os.environ.get("RECAPTCHA_SECRET_KEY"):
+    if not skip_recaptcha and os.environ.get("RECAPTCHA_SECRET_KEY"):
         if not recaptcha_token:
             return error_response("Verificación de seguridad requerida", 400)
         from shared.infrastructure.recaptcha_adapter import GoogleRecaptchaAdapter

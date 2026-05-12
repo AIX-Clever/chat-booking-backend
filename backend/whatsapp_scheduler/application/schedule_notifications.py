@@ -75,16 +75,17 @@ class ScheduleNotificationsUseCase:
         settings: dict = tenant.settings or {}
         raw_rules = settings.get("notification_rules", DEFAULT_RULES)
         rules = [NotificationRule.from_dict(r) for r in raw_rules]
+        custom_templates = settings.get("whatsapp_notifications", {}).get("templates")
 
         for rule in rules:
             if not rule.active:
                 continue
-            self._dispatch(rule, event)
+            self._dispatch(rule, event, custom_templates)
 
     # ------------------------------------------------------------------
 
-    def _dispatch(self, rule: NotificationRule, event: BookingEvent) -> None:
-        message_body = build_message(rule, event)
+    def _dispatch(self, rule: NotificationRule, event: BookingEvent, custom_templates: dict = None) -> None:
+        message_body = build_message(rule, event, custom_templates)
         schedule_name = f"wa-{event.booking_id}-{rule.id}"[:64]
 
         if rule.is_on_booking():

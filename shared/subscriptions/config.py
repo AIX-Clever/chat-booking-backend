@@ -22,3 +22,10 @@ class SubscriptionConfig:
         "standard": {"messages": 300, "price": 24990},
         "pro":      {"messages": 600, "price": 39990},
     }
+
+    # SMS Prepaid Packages (CLP) — SMS is ~10× costlier than WhatsApp per message
+    SMS_PACKAGES = {
+        "starter":  {"messages": 50,  "price": 9990},
+        "standard": {"messages": 150, "price": 24990},
+        "pro":      {"messages": 300, "price": 39990},
+    }

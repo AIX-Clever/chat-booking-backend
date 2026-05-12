@@ -7,20 +7,23 @@ Tests are organized by layer:
   - Handler: record parsing, BookingEvent construction
 """
 import json
+import os
 import unittest
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 
 import pytest
+
+os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
+os.environ.setdefault("AWS_ACCESS_KEY_ID", "testing")
+os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 
 from backend.whatsapp_scheduler.domain.models import (
     NotificationRule, BookingEvent, TriggerType,
     INotificationPublisher, INotificationScheduler,
 )
 from backend.whatsapp_scheduler.domain.message_builder import build_message, _hours_label
-from backend.whatsapp_scheduler.application.schedule_notifications import (
-    ScheduleNotificationsUseCase, DEFAULT_RULES,
-)
+from backend.whatsapp_scheduler.application.schedule_notifications import ScheduleNotificationsUseCase
 from backend.whatsapp_scheduler.handler import _parse_record, _to_booking_event
 
 
@@ -234,6 +237,12 @@ class TestParseRecord(unittest.TestCase):
         result = _parse_record(record)
         self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
 
+    def test_sns_direct_invocation(self):
+        payload = {"event_type": "BOOKING_CONFIRMED", "tenant_id": "t1"}
+        record = {"Sns": {"Message": json.dumps(payload)}, "EventSource": "aws:sns"}
+        result = _parse_record(record)
+        self.assertEqual(result["event_type"], "BOOKING_CONFIRMED")
+
     def test_invalid_json_returns_none(self):
         self.assertIsNone(_parse_record({"body": "NOT_JSON"}))
 
@@ -267,6 +276,62 @@ class TestToBookingEvent(unittest.TestCase):
         ev = _to_booking_event(self._payload(booking_start_time="2025-06-15T14:00:00Z"))
         self.assertIsNotNone(ev)
         self.assertEqual(ev.booking_start_time.tzinfo, timezone.utc)
+
+
+class TestMessageBuilderCustomTemplates(unittest.TestCase):
+    def test_custom_template_on_booking_used(self):
+        b = _booking()
+        # rule.id must match the template key
+        r = NotificationRule("on_booking", "Confirmación", TriggerType.ON_BOOKING, True, None)
+        custom = {"on_booking": "Hola {nombre}, tu cita de {servicio} está lista para el {fecha}."}
+        msg = build_message(r, b, custom_templates=custom)
+        self.assertIn("Ana", msg)
+        self.assertIn("Masaje", msg)
+        self.assertIn("lista para el", msg)
+        self.assertNotIn("confirmada", msg)
+
+    def test_custom_template_hours_before_used(self):
+        b = _booking()
+        r = NotificationRule("remind_24h", "24h", TriggerType.HOURS_BEFORE, True, 24)
+        custom = {"remind_24h": "Recordatorio: {servicio} mañana a las {hora}. {nombre}, ¡te esperamos!"}
+        msg = build_message(r, b, custom_templates=custom)
+        self.assertIn("Masaje", msg)
+        self.assertIn("¡te esperamos!", msg)
+        self.assertNotIn("te recordamos", msg)
+
+    def test_missing_key_falls_back_to_default(self):
+        b = _booking()
+        # rule.id="on_booking" but template dict only has "remind_24h" → fallback
+        r = NotificationRule("on_booking", "Confirmación", TriggerType.ON_BOOKING, True, None)
+        custom = {"remind_24h": "Solo para 24h"}
+        msg = build_message(r, b, custom_templates=custom)
+        self.assertIn("confirmada", msg)
+
+    def test_none_templates_uses_default(self):
+        b = _booking()
+        r = NotificationRule("on_booking", "Confirmación", TriggerType.ON_BOOKING, True, None)
+        msg = build_message(r, b, custom_templates=None)
+        self.assertIn("confirmada", msg)
+
+    def test_custom_template_applied_in_use_case(self):
+        """custom_templates from tenant.settings.whatsapp_notifications are passed to build_message."""
+        rules = [{"id": "on_booking", "name": "N", "trigger": "on_booking", "active": True, "hours_before": None}]
+        custom_tmpl = {"on_booking": "Hola {nombre}, reserva lista!"}
+        repo = MagicMock()
+        tenant = MagicMock()
+        tenant.settings = {
+            "notification_rules": rules,
+            "whatsapp_notifications": {"templates": custom_tmpl},
+        }
+        repo.get_by_id.return_value = tenant
+        publisher = MagicMock(spec=INotificationPublisher)
+        sched = MagicMock(spec=INotificationScheduler)
+        uc = ScheduleNotificationsUseCase(repo, publisher, sched)
+        uc.execute(_booking())
+        publisher.publish.assert_called_once()
+        call_kwargs = publisher.publish.call_args
+        msg = call_kwargs.kwargs.get("message_body") or call_kwargs[1].get("message_body") or call_kwargs[0][3]
+        self.assertIn("reserva lista", msg)
 
 
 if __name__ == "__main__":

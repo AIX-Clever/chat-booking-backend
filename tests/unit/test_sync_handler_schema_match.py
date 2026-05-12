@@ -48,6 +48,3 @@ class TestSyncHandlerSchema(unittest.TestCase):
         self.assertEqual(customer_info['firstName'], 'Test')
         self.assertEqual(customer_info['lastName'], 'User')
         self.assertEqual(customer_info['phone'], '+1234567890')
-
-if __name__ == '__main__':
-    unittest.main()

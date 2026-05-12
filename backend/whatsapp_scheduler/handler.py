@@ -79,8 +79,12 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 def _parse_record(record: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Parse SNS-wrapped or raw SQS body into a dict."""
+    """Parse SNS direct invocation or SQS-wrapped SNS record into a dict."""
     try:
+        # SNS → Lambda direct invocation: record["Sns"]["Message"]
+        if "Sns" in record:
+            return json.loads(record["Sns"]["Message"])
+        # SQS format (may contain SNS envelope with "Message" key)
         body = json.loads(record.get("body", "{}"))
         if "Message" in body:
             return json.loads(body["Message"])
