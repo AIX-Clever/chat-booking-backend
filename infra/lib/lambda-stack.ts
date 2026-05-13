@@ -170,16 +170,16 @@ export class LambdaStack extends cdk.Stack {
       },
     };
 
-    // SES Configuration Set (required for email tracking — bounce/complaint events)
-    new cdk.aws_ses.CfnConfigurationSet(this, 'SesConfigurationSet', {
-      name: `ChatBooking-${props.envName}`,
-    });
-
-    // SES Email Identity — prod usa subdominio de envío, dev/qa usan email de prueba
-    const sesIdentity = props.envName === 'prod' ? 'mail.holalucia.cl' : 'holalucia.ai@gmail.com';
-    new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
-      emailIdentity: sesIdentity,
-    });
+    // SES Configuration Set y Email Identity — solo dev/qa
+    // En prod ambos recursos existen y fueron verificados manualmente; CDK no los gestiona
+    if (props.envName !== 'prod') {
+      new cdk.aws_ses.CfnConfigurationSet(this, 'SesConfigurationSet', {
+        name: `ChatBooking-${props.envName}`,
+      });
+      new cdk.aws_ses.CfnEmailIdentity(this, 'SesEmailIdentity', {
+        emailIdentity: 'holalucia.ai@gmail.com',
+      });
+    }
 
     // Lambda Layer for shared code
     // Imported from SSM Parameter (updated by chat-booking-layers stack)
