@@ -47,6 +47,9 @@ def lambda_handler(event, context):
         if field == 'getClient':
             return get_client(tenant_id, input_data.get('clientId'))
         elif field == 'listClients':
+            # Legacy: retorna array plano sin paginación
+            return list_clients(tenant_id, limit=1000)['items']
+        elif field == 'listClientsPaginated':
             return list_clients(
                 tenant_id,
                 limit=int(input_data.get('limit', 50)),

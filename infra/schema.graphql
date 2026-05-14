@@ -764,7 +764,8 @@ type Query {
 
   # Client Management (Client File)
   getClient(clientId: ID!): Client @aws_cognito_user_pools
-  listClients(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
+  listClients: [Client!]! @aws_cognito_user_pools
+  listClientsPaginated(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
   listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! @aws_cognito_user_pools
 }
 
