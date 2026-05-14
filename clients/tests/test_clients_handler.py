@@ -141,6 +141,10 @@ def test_list_clients_paginacion():
     assert len(page2["items"]) == 2
     assert page2["nextToken"] is None
 
+    # listClients y listClientsPaginated usan el mismo handler
+    all_clients = handler.list_clients("tenant-pag", limit=10)
+    assert len(all_clients["items"]) == 5
+
 
 @mock_aws
 def test_update_client_registra_changed_by():
