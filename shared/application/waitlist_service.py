@@ -87,7 +87,7 @@ class WaitlistService:
                 )
 
             # 3. Validate provider has availability configured
-            availability = self.availability_repo.get_weekly_schedule(
+            availability = self.availability_repo.get_provider_availability(
                 tenant_id, provider_id
             )
             if not availability:
@@ -163,7 +163,7 @@ class WaitlistService:
                 return None
 
             # Check provider still has availability
-            availability = self.availability_repo.get_weekly_schedule(
+            availability = self.availability_repo.get_provider_availability(
                 tenant_id, provider_id
             )
             if not availability:

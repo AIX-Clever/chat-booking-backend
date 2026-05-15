@@ -66,6 +66,7 @@ class ChatAgentService:
         metrics_service: Optional[MetricsService] = None,
         availability_service=None,
         booking_service=None,
+        waitlist_service=None,
     ):
         self._conversation_repo = conversation_repo
         self._service_repo = service_repo
@@ -88,6 +89,7 @@ class ChatAgentService:
             booking_repo,
             availability_service=availability_service,
             booking_service=booking_service,
+            waitlist_service=waitlist_service,
         )
 
         # Initialize AI Handler if infrastructure is available

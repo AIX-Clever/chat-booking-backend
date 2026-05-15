@@ -134,6 +134,7 @@ const lambdaStack = new LambdaStack(app, `${stackPrefix}-Backend`, {
   whatsappSchedulerRoleArn: whatsappStack.schedulerRole.roleArn,
   whatsappSchedulerGroupName: whatsappStack.schedulerGroup.name,
   waitingListTable: databaseStack.waitingListTable,
+  waitlistPendingTable: databaseStack.waitlistPendingTable,
 });
 lambdaStack.addDependency(databaseStack);
 lambdaStack.addDependency(authStack);

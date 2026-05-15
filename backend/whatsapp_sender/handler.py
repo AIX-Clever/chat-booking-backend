@@ -22,7 +22,9 @@ metrics_service = MetricsService()
 limit_service = TenantLimitService(tenant_repo, metrics_service)
 
 WHATSAPP_MESSAGES_TABLE = os.environ.get("WHATSAPP_MESSAGES_TABLE", "ChatBooking-WhatsappMessages")
+WAITLIST_PENDING_TABLE = os.environ.get("WAITLIST_PENDING_TABLE", "ChatBooking-WaitlistPending")
 whatsapp_table = dynamodb_resource.Table(WHATSAPP_MESSAGES_TABLE)
+waitlist_pending_table = dynamodb_resource.Table(WAITLIST_PENDING_TABLE)
 
 TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN")
@@ -96,6 +98,29 @@ def save_message_record(tenant_id: str, message_id: str, to: str, provider: str,
         logger.error("Failed to save whatsapp message record", error=str(e), tenant_id=tenant_id)
 
 
+def save_waitlist_pending_context(
+    client_phone: str,
+    tenant_id: str,
+    waiting_list_id: str,
+    booking_id: str,
+    service_id: str,
+    ttl_seconds: int = 900,  # 15 min
+) -> None:
+    """Save phone→waitlist correlation so the webhook can process the reply."""
+    import time
+    try:
+        waitlist_pending_table.put_item(Item={
+            "clientPhone": client_phone,
+            "tenantId": tenant_id,
+            "waitingListId": waiting_list_id,
+            "bookingId": booking_id,
+            "serviceId": service_id,
+            "ttl": int(time.time()) + ttl_seconds,
+        })
+    except Exception as e:
+        logger.error("Failed to save waitlist pending context", error=str(e))
+
+
 def lambda_handler(event, context):
     """
     SQS Event Handler for sending WhatsApp messages.
@@ -132,6 +157,16 @@ def lambda_handler(event, context):
                 # We do not raise an exception, so it's not retried
                 metrics_service.increment_error(tenant_id_str, "whatsapp_quota_exceeded")
                 continue
+
+            # If this is a waitlist notification, save the reply correlation BEFORE sending
+            if body.get("type") == "waitlist_notification":
+                save_waitlist_pending_context(
+                    client_phone=to_number,
+                    tenant_id=tenant_id_str,
+                    waiting_list_id=body.get("waitingListId", ""),
+                    booking_id=body.get("bookingId", ""),
+                    service_id=body.get("serviceId", ""),
+                )
 
             # 2. Send Message via Twilio
             logger.info("Sending WhatsApp message", tenant_id=tenant_id_str, to=to_number)

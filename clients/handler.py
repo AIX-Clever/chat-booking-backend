@@ -10,6 +10,7 @@ from boto3.dynamodb.conditions import Key
 from validation import validate_id
 from shared.utils import (
     extract_appsync_event,
+    extract_user_id,
     error_response,
     to_iso_string,
     enforce_not_readonly
@@ -36,6 +37,7 @@ def lambda_handler(event, context):
 
     try:
         field, tenant_id, input_data = extract_appsync_event(event)
+        user_id = extract_user_id(event) or 'unknown'
 
         # Enforce RBAC for mutations
         if field in ['createClient', 'updateClient']:
@@ -44,12 +46,16 @@ def lambda_handler(event, context):
         # Route based on field name
         if field == 'getClient':
             return get_client(tenant_id, input_data.get('clientId'))
-        elif field == 'listClients':
-            return list_clients(tenant_id)
+        elif field in ('listClients', 'listClientsPaginated'):
+            return list_clients(
+                tenant_id,
+                limit=int(input_data.get('limit') or 50),
+                next_token=input_data.get('nextToken')
+            )
         elif field == 'createClient':
-            return create_client(tenant_id, input_data)
+            return create_client(tenant_id, input_data, user_id)
         elif field == 'updateClient':
-            return update_client(tenant_id, input_data)
+            return update_client(tenant_id, input_data, user_id)
         elif field == 'listClientAuditLogs':
             return list_client_audit_logs(tenant_id, input_data.get('clientId'))
         else:
@@ -85,20 +91,38 @@ def get_client(tenant_id: str, client_id: str) -> Dict[str, Any]:
     return _format_client(item)
 
 
-def list_clients(tenant_id: str) -> List[Dict[str, Any]]:
-    """List all clients for a tenant"""
-    # Note: In production this should be paginated
-    response = clients_table.query(
-        KeyConditionExpression=Key('tenantId').eq(tenant_id)
-    )
+def list_clients(tenant_id: str, limit: int = 50, next_token: str = None) -> Dict[str, Any]:
+    """List clients for a tenant with pagination"""
+    import json, base64
 
-    items = response.get('Items', [])
-    result = [_format_client(item) for item in items]
-    return result
+    query_kwargs = {
+        'KeyConditionExpression': Key('tenantId').eq(tenant_id),
+        'Limit': limit
+    }
+
+    if next_token:
+        try:
+            query_kwargs['ExclusiveStartKey'] = json.loads(
+                base64.b64decode(next_token).decode('utf-8')
+            )
+        except Exception:
+            raise ValueError("nextToken inválido")
+
+    response = clients_table.query(**query_kwargs)
+
+    items = [_format_client(item) for item in response.get('Items', [])]
+
+    new_token = None
+    if 'LastEvaluatedKey' in response:
+        new_token = base64.b64encode(
+            json.dumps(response['LastEvaluatedKey']).encode('utf-8')
+        ).decode('utf-8')
+
+    return {'items': items, 'nextToken': new_token}
 
 
 def create_client(
-    tenant_id: str, input_data: Dict[str, Any]
+    tenant_id: str, input_data: Dict[str, Any], user_id: str = 'unknown'
 ) -> Dict[str, Any]:
     """Create a new client"""
 
@@ -108,41 +132,47 @@ def create_client(
             "Unauthorized: Cannot create client for another tenant"
         )
 
-    # 1. Validate Identifiers (Tax ID Check)
+    # 1. Validate Identifiers
     identifiers = input_data.get('identifiers', [])
-    
-    # Optional: we allow creation without identifiers for now? 
-    # But schema says it is a list.
+
+    UNIQUE_ID_TYPES = {'TAX_ID', 'RUT', 'CPF', 'DNI'}
+
     for ident in identifiers:
-        if ident['type'] == 'TAX_ID':
-            # Check duplicates via GSI
+        id_type = ident['type']
+        id_value = ident['value']
+
+        # Validate format
+        if not validate_id(id_type, id_value):
+            raise ValueError(f"Identificador inválido ({id_type}): {id_value}")
+
+        # Dedup via GSI for uniquely-constrained types
+        if id_type in UNIQUE_ID_TYPES:
             existing = clients_table.query(
                 IndexName='tax-id-index',
                 KeyConditionExpression=Key('tenantId').eq(tenant_id) &
-                Key('identifierValue').eq(ident['value'])
+                Key('identifierValue').eq(id_value)
             )
             if existing.get('Count', 0) > 0:
                 raise ValueError(
-                    f"Client with ID {ident['value']} already exists"
+                    f"Ya existe un cliente con el identificador {id_value}"
                 )
-
-            # Basic validation
-            if not validate_id(ident['type'], ident['value'], 'CL'):
-                raise ValueError(f"Invalid identifier: {ident['value']}")
 
     client_id = str(uuid.uuid4())
     timestamp = to_iso_string(datetime.utcnow())
 
+    contact_info = input_data.get('contactInfo', [])
     item = {
         'tenantId': tenant_id,
         'id': client_id,
         'createdAt': timestamp,
         'updatedAt': timestamp,
         **input_data,  # Spread the rest: names, contactInfo, etc.
-        'email': input_data.get('email') or (
-            input_data.get('contactInfo', [{}])[0].get('value') 
-            if input_data.get('contactInfo') else None
+        'email': input_data.get('email') or next(
+            (c['value'] for c in contact_info if c.get('system') == 'email'), None
         ),
+        'phone': next(
+            (c['value'] for c in contact_info if c.get('system') == 'phone'), None
+        ),  # For phone-index GSI
         'identifierValue': (
             identifiers[0]['value'] if identifiers else 'UNKNOWN'
         ),  # For GSI
@@ -151,13 +181,13 @@ def create_client(
     clients_table.put_item(Item=item)
     
     # Audit log (Manuel creation)
-    _record_audit(tenant_id, client_id, 'ALL', None, 'CREATED', 'ADMIN_PANEL', 'ui', timestamp)
+    _record_audit(tenant_id, client_id, 'ALL', None, 'CREATED', 'ADMIN_PANEL', 'ui', timestamp, user_id)
 
     return _format_client(item)
 
 
 def update_client(
-    tenant_id: str, input_data: Dict[str, Any]
+    tenant_id: str, input_data: Dict[str, Any], user_id: str = 'unknown'
 ) -> Dict[str, Any]:
     """Update existing client"""
     client_id = input_data.get('id')
@@ -189,15 +219,20 @@ def update_client(
     if 'identifiers' in input_data and input_data['identifiers']:
         new_item['identifierValue'] = input_data['identifiers'][0]['value']
         
-    # Ensure top-level email is synced
+    # Ensure top-level email and phone are synced (for GSIs)
     if 'email' in input_data:
         new_item['email'] = input_data['email']
+    if 'contactInfo' in input_data:
+        new_item['phone'] = next(
+            (c['value'] for c in input_data['contactInfo'] if c.get('system') == 'phone'),
+            new_item.get('phone'),
+        )
 
     clients_table.put_item(Item=new_item)
     
     # Record audits
     for field, old, new in changes:
-        _record_audit(tenant_id, client_id, field, old, new, 'ADMIN_PANEL', 'ui', timestamp)
+        _record_audit(tenant_id, client_id, field, old, new, 'ADMIN_PANEL', 'ui', timestamp, user_id)
 
     return _format_client(new_item)
 
@@ -216,7 +251,7 @@ def list_client_audit_logs(tenant_id: str, client_id: str) -> List[Dict[str, Any
     return response.get('Items', [])
 
 
-def _record_audit(tenant_id, client_id, field, old, new, source, source_id, timestamp):
+def _record_audit(tenant_id, client_id, field, old, new, source, source_id, timestamp, changed_by='unknown'):
     audit_item = {
         'tenantId': tenant_id,
         'clientIdAndTimestamp': f"{client_id}#{timestamp}#{str(uuid.uuid4())[:8]}",
@@ -226,7 +261,7 @@ def _record_audit(tenant_id, client_id, field, old, new, source, source_id, time
         'newValue': new,
         'source': source,
         'sourceId': source_id,
-        'changedBy': 'system', # Could be user ID from auth context later
+        'changedBy': changed_by,
         'timestamp': timestamp
     }
     audit_table.put_item(Item=audit_item)
