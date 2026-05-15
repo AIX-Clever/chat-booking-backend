@@ -583,7 +583,8 @@ class DynamoDBBookingRepository(IBookingRepository):
             "roomId": booking.room_id,
             # GSI Attributes
             "tenantId_providerId": f"{str(booking.tenant_id)}_{booking.provider_id}",
-            "startTime": sk,
+            "start": sk,      # sort key del GSI providerId-start-index
+            "startTime": sk,  # camelCase para consistencia con endTime
             "endTime": booking.end_time.isoformat(),
             "status": booking.status.value,
             "paymentStatus": booking.payment_status.value,
