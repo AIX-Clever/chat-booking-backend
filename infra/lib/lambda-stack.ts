@@ -1293,6 +1293,7 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions
     props.waitingListTable.grantReadWriteData(this.waitlistTriggerFunction);
+    props.bookingsTable.grantReadWriteData(this.waitlistTriggerFunction);
     props.tenantsTable.grantReadData(this.waitlistTriggerFunction);
     props.providersTable.grantReadData(this.waitlistTriggerFunction);
     props.availabilityTable.grantReadData(this.waitlistTriggerFunction);
