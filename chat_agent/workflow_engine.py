@@ -29,6 +29,7 @@ class WorkflowEngine:
         booking_repo,
         availability_service=None,
         booking_service=None,
+        waitlist_service=None,
     ):
         self.service_repo = service_repo
         self.provider_repo = provider_repo
@@ -37,6 +38,7 @@ class WorkflowEngine:
         self.booking_repo = booking_repo
         self.availability_service = availability_service
         self.booking_service = booking_service
+        self.waitlist_service = waitlist_service
 
     def process_step(
         self,
@@ -710,44 +712,35 @@ class WorkflowEngine:
 
                 # Check if it's a waitlist flow
                 if ctx.get("isWaitlistFlow"):
-                    required = ["serviceId", "providerId", "clientFirstName", "clientLastName", "clientEmail"]
+                    if not self.waitlist_service:
+                        return ResponseBuilder.error_message(
+                            "Lista de espera no disponible en este momento"
+                        )
+
+                    required = ["serviceId", "clientEmail"]
                     missing = [f for f in required if not ctx.get(f)]
                     if missing:
-                        return ResponseBuilder.error_message(f"Faltan datos para la lista de espera: {', '.join(missing)}")
-                    
-                    import boto3
-                    import os
-                    import uuid
-                    from zoneinfo import ZoneInfo
-                    
-                    dynamodb = boto3.resource("dynamodb")
-                    table = dynamodb.Table(os.environ.get("WAITING_LIST_TABLE", "waitlist"))
-                    
-                    # Store as Chile time (fallback to UTC if needed, though mostly standard backend stores UTC. We'll use UTC for sorting)
-                    now = datetime.now(UTC).isoformat()
-                    item = {
-                        "pk": f"TENANT#{conversation.tenant_id.value}",
-                        "sk": f"SERVICE#{ctx['serviceId']}#CREATED#{now}#ENTRY#{uuid.uuid4().hex[:8]}",
-                        "tenantId": conversation.tenant_id.value,
-                        "serviceId": ctx['serviceId'],
-                        "providerId": ctx['providerId'],
-                        "clientFirstName": ctx['clientFirstName'],
-                        "clientLastName": ctx['clientLastName'],
-                        "clientEmail": ctx['clientEmail'],
-                        "clientPhone": ctx.get('clientPhone', ''),
-                        "status": "PENDING",
-                        "requestedDay": "ANY",
-                        "createdAt": now,
-                        "updatedAt": now
-                    }
-                    table.put_item(Item=item)
-                    
+                        return ResponseBuilder.error_message(
+                            f"Faltan datos para la lista de espera: {', '.join(missing)}"
+                        )
+
+                    from shared.domain.exceptions import ValidationError as _VE
+                    try:
+                        entry = self.waitlist_service.add_to_waitlist(
+                            tenant_id=conversation.tenant_id,
+                            service_id=ctx["serviceId"],
+                            client_id=ctx["clientEmail"],
+                            provider_id=ctx.get("providerId") or None,
+                        )
+                    except _VE as e:
+                        return ResponseBuilder.error_message(str(e))
+
                     conversation.context.pop("isWaitlistFlow", None)
-                    
+                    first_name = ctx.get("clientFirstName", "")
                     return {
                         "type": "success",
-                        "text": f"¡Listo {ctx['clientFirstName']}! Te hemos anotado en la lista de espera. Te avisaremos apenas se libere un cupo.",
-                        "payload": item
+                        "text": f"¡Listo {first_name}! Te hemos anotado en la lista de espera. Te avisaremos apenas se libere un cupo.",
+                        "payload": {"waitingListId": entry.waiting_list_id},
                     }
 
                 # Validate required fields

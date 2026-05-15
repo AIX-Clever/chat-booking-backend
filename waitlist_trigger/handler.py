@@ -14,6 +14,7 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBWaitingListRepository,
     DynamoDBTenantRepository,
     DynamoDBProviderRepository,
+    DynamoDBBookingRepository,
 )
 from shared.infrastructure.availability_repository import (
     DynamoDBAvailabilityRepository,
@@ -29,6 +30,7 @@ waitlist_repo = DynamoDBWaitingListRepository()
 tenant_repo = DynamoDBTenantRepository()
 provider_repo = DynamoDBProviderRepository()
 availability_repo = DynamoDBAvailabilityRepository()
+booking_repo = DynamoDBBookingRepository()
 
 waitlist_service = WaitlistService(
     waitlist_repo=waitlist_repo,
@@ -76,6 +78,9 @@ def handler(event, context):
             provider_id = _extract_string(
                 new_image.get("providerId", {})
             )
+            booking_id = _extract_string(
+                new_image.get("bookingId", {})
+            )
 
             if not tenant_id_str or not service_id:
                 logger.warning(
@@ -98,6 +103,10 @@ def handler(event, context):
             )
 
             if candidate:
+                # Soft-lock the slot for 15 min so no one else takes it
+                if booking_id:
+                    booking_repo.soft_lock(tenant_id, booking_id)
+
                 # Mark as contacted
                 waitlist_service.mark_contacted(
                     tenant_id, candidate.waiting_list_id
@@ -109,6 +118,7 @@ def handler(event, context):
                     client_id=candidate.client_id,
                     service_id=service_id,
                     waiting_list_id=candidate.waiting_list_id,
+                    booking_id=booking_id,
                 )
                 processed += 1
                 logger.info(
@@ -152,6 +162,7 @@ def _send_whatsapp_notification(
     client_id: str,
     service_id: str,
     waiting_list_id: str,
+    booking_id: str = "",
 ) -> None:
     """Send a WhatsApp notification to the waitlist candidate."""
     if not WHATSAPP_QUEUE_URL:
@@ -167,6 +178,7 @@ def _send_whatsapp_notification(
         "clientId": client_id,
         "serviceId": service_id,
         "waitingListId": waiting_list_id,
+        "bookingId": booking_id,
         "message": (
             "¡Buenas noticias! Se ha liberado una hora para "
             "el servicio que solicitaste. ¿Te gustaría tomarla?"

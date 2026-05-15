@@ -15,7 +15,9 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBTenantRepository,
     DynamoDBRoomRepository,
     DynamoDBProviderIntegrationRepository,
+    DynamoDBWaitingListRepository,
 )
+from shared.application.waitlist_service import WaitlistService
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.domain.entities import TenantId
 from shared.domain.exceptions import EntityNotFoundError, ValidationError
@@ -45,6 +47,7 @@ workflow_repo = DynamoDBWorkflowRepository()
 tenant_repo = DynamoDBTenantRepository()
 room_repo = DynamoDBRoomRepository()
 provider_integration_repo = DynamoDBProviderIntegrationRepository()
+waitlist_repo = DynamoDBWaitingListRepository()
 metrics_service = MetricsService()
 email_service = EmailService(region_name=os.environ.get("AWS_REGION", "us-east-1"))
 
@@ -60,6 +63,13 @@ availability_service = AvailabilityService(
     service_repo,
     provider_repo,
     provider_integration_repo
+)
+
+waitlist_service = WaitlistService(
+    waitlist_repo=waitlist_repo,
+    tenant_repo=tenant_repo,
+    provider_repo=provider_repo,
+    availability_repo=availability_repo,
 )
 
 booking_service = BookingService(
@@ -87,7 +97,8 @@ chat_agent_service = ChatAgentService(
     limit_service=limit_service,
     metrics_service=metrics_service,
     availability_service=availability_service,
-    booking_service=booking_service
+    booking_service=booking_service,
+    waitlist_service=waitlist_service,
 )
 
 logger = Logger()

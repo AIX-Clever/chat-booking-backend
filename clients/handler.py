@@ -49,7 +49,7 @@ def lambda_handler(event, context):
         elif field in ('listClients', 'listClientsPaginated'):
             return list_clients(
                 tenant_id,
-                limit=int(input_data.get('limit', 50)),
+                limit=int(input_data.get('limit') or 50),
                 next_token=input_data.get('nextToken')
             )
         elif field == 'createClient':
@@ -160,16 +160,19 @@ def create_client(
     client_id = str(uuid.uuid4())
     timestamp = to_iso_string(datetime.utcnow())
 
+    contact_info = input_data.get('contactInfo', [])
     item = {
         'tenantId': tenant_id,
         'id': client_id,
         'createdAt': timestamp,
         'updatedAt': timestamp,
         **input_data,  # Spread the rest: names, contactInfo, etc.
-        'email': input_data.get('email') or (
-            input_data.get('contactInfo', [{}])[0].get('value') 
-            if input_data.get('contactInfo') else None
+        'email': input_data.get('email') or next(
+            (c['value'] for c in contact_info if c.get('system') == 'email'), None
         ),
+        'phone': next(
+            (c['value'] for c in contact_info if c.get('system') == 'phone'), None
+        ),  # For phone-index GSI
         'identifierValue': (
             identifiers[0]['value'] if identifiers else 'UNKNOWN'
         ),  # For GSI
@@ -216,9 +219,14 @@ def update_client(
     if 'identifiers' in input_data and input_data['identifiers']:
         new_item['identifierValue'] = input_data['identifiers'][0]['value']
         
-    # Ensure top-level email is synced
+    # Ensure top-level email and phone are synced (for GSIs)
     if 'email' in input_data:
         new_item['email'] = input_data['email']
+    if 'contactInfo' in input_data:
+        new_item['phone'] = next(
+            (c['value'] for c in input_data['contactInfo'] if c.get('system') == 'phone'),
+            new_item.get('phone'),
+        )
 
     clients_table.put_item(Item=new_item)
     

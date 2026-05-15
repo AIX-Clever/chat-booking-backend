@@ -8,7 +8,7 @@ import boto3
 import os
 import hashlib
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from boto3.dynamodb.conditions import Key, Attr
 from botocore.exceptions import ClientError
 
@@ -36,6 +36,7 @@ from ..domain.entities import (
     RoomAssignment,
     WaitingListEntry,
     WaitingListStatus,
+    ClientInfo,
 )
 from ..domain.repositories import (
     ITenantRepository,
@@ -50,6 +51,7 @@ from ..domain.repositories import (
     IBookingRepository,
     IAvailabilityRepository,
     IWaitingListRepository,
+    IClientRepository,
 )
 
 from ..domain.exceptions import EntityNotFoundError, ConflictError
@@ -624,6 +626,31 @@ class DynamoDBBookingRepository(IBookingRepository):
                 raise ConflictError(f"Slot at {booking.start_time} is already booked")
             raise
 
+    def soft_lock(
+        self, tenant_id: TenantId, booking_id: str, ttl_minutes: int = 15
+    ) -> None:
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=ttl_minutes)
+        try:
+            self.table.update_item(
+                Key={"tenantId": str(tenant_id), "bookingId": booking_id},
+                UpdateExpression=(
+                    "SET #status = :locked, softLockExpiresAt = :expires"
+                ),
+                ConditionExpression=(
+                    Attr("status").eq(BookingStatus.CANCELLED.value)
+                    | Attr("status").eq(BookingStatus.SOFT_LOCKED.value)
+                ),
+                ExpressionAttributeNames={"#status": "status"},
+                ExpressionAttributeValues={
+                    ":locked": BookingStatus.SOFT_LOCKED.value,
+                    ":expires": expires_at.isoformat(),
+                },
+            )
+        except ClientError as e:
+            if e.response["Error"]["Code"] == "ConditionalCheckFailedException":
+                return  # Booking already re-taken — no-op
+            raise
+
     def update(self, booking: Booking) -> None:
         """Update existing booking (no conditional check)"""
         update_expr = "SET #status = :status, paymentStatus = :payment_status"
@@ -688,6 +715,11 @@ class DynamoDBBookingRepository(IBookingRepository):
             ),
             dte_folio=item.get("dteFolio"),
             dte_pdf_url=item.get("dtePdfUrl"),
+            soft_lock_expires_at=(
+                datetime.fromisoformat(item["softLockExpiresAt"])
+                if item.get("softLockExpiresAt")
+                else None
+            ),
             created_at=datetime.fromisoformat(item["createdAt"]),
         )
 
@@ -1181,20 +1213,23 @@ class DynamoDBWaitingListRepository(IWaitingListRepository):
             return None
 
     def list_by_service(
-        self, tenant_id: TenantId, service_id: str
+        self,
+        tenant_id: TenantId,
+        service_id: str,
+        statuses=None,
     ) -> list:
+        if statuses is None:
+            statuses = [WaitingListStatus.PENDING.value]
         try:
             composite_key = f"{tenant_id}_{service_id}"
-            response = self.table.query(
-                IndexName="serviceId-createdAt-index",
-                KeyConditionExpression=Key(
-                    "tenantId_serviceId"
-                ).eq(composite_key),
-                FilterExpression=Attr("contactStatus").eq(
-                    WaitingListStatus.PENDING.value
-                ),
-                ScanIndexForward=True,  # ASC by createdAt (FIFO)
-            )
+            query_kwargs = {
+                "IndexName": "serviceId-createdAt-index",
+                "KeyConditionExpression": Key("tenantId_serviceId").eq(composite_key),
+                "ScanIndexForward": True,  # ASC by createdAt (FIFO)
+            }
+            if statuses:
+                query_kwargs["FilterExpression"] = Attr("contactStatus").is_in(statuses)
+            response = self.table.query(**query_kwargs)
             return [
                 self._item_to_entity(item)
                 for item in response.get("Items", [])
@@ -1267,3 +1302,57 @@ class DynamoDBWaitingListRepository(IWaitingListRepository):
             ttl=item.get("ttl"),
         )
 
+
+class DynamoDBClientRepository(IClientRepository):
+    """Read-only client lookup for internal use (e.g. waitlist booking creation)."""
+
+    def __init__(self):
+        dynamodb = boto3.resource("dynamodb")
+        table_name = os.environ.get("CLIENTS_TABLE", "ChatBooking-Clients")
+        self.table = dynamodb.Table(table_name)
+
+    def find_by_phone(self, tenant_id, phone: str) -> Optional[ClientInfo]:
+        try:
+            response = self.table.query(
+                IndexName="phone-index",
+                KeyConditionExpression=Key("tenantId").eq(str(tenant_id))
+                & Key("phone").eq(phone),
+                Limit=1,
+            )
+            items = response.get("Items", [])
+            return self._item_to_client_info(items[0]) if items else None
+        except ClientError as e:
+            print(f"Error finding client by phone: {e}")
+            return None
+
+    def find_by_email(self, tenant_id, email: str) -> Optional[ClientInfo]:
+        try:
+            response = self.table.query(
+                IndexName="email-index",
+                KeyConditionExpression=Key("tenantId").eq(str(tenant_id))
+                & Key("email").eq(email),
+                Limit=1,
+            )
+            items = response.get("Items", [])
+            return self._item_to_client_info(items[0]) if items else None
+        except ClientError as e:
+            print(f"Error finding client by email: {e}")
+            return None
+
+    @staticmethod
+    def _item_to_client_info(item: dict) -> ClientInfo:
+        names = item.get("names", {})
+        given = names.get("given", "")
+        if isinstance(given, list):
+            given = " ".join(given)
+        contact = item.get("contactInfo", [])
+        phone = next((c["value"] for c in contact if c.get("system") == "phone"), None)
+        email = item.get("email") or next(
+            (c["value"] for c in contact if c.get("system") == "email"), ""
+        )
+        return ClientInfo(
+            first_name=given,
+            last_name=names.get("family", ""),
+            email=email,
+            phone=phone,
+        )

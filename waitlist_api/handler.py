@@ -22,36 +22,21 @@ from shared.infrastructure.dynamodb_repositories import (
     DynamoDBWaitingListRepository,
     DynamoDBTenantRepository,
     DynamoDBProviderRepository,
-    DynamoDBServiceRepository,
-    DynamoDBBookingRepository,
-    DynamoDBProviderIntegrationRepository
 )
 from shared.infrastructure.availability_repository import DynamoDBAvailabilityRepository
 from shared.application.waitlist_service import WaitlistService
-from shared.application.availability_service import AvailabilityService
 
 # Initialize dependencies
 waitlist_repo = DynamoDBWaitingListRepository()
 tenant_repo = DynamoDBTenantRepository()
 provider_repo = DynamoDBProviderRepository()
 availability_repo = DynamoDBAvailabilityRepository()
-service_repo = DynamoDBServiceRepository()
-booking_repo = DynamoDBBookingRepository()
-provider_integration_repo = DynamoDBProviderIntegrationRepository()
-
-availability_service = AvailabilityService(
-    availability_repo,
-    booking_repo,
-    service_repo,
-    provider_repo,
-    provider_integration_repo
-)
 
 waitlist_service = WaitlistService(
     waitlist_repo,
     tenant_repo,
     provider_repo,
-    availability_service
+    availability_repo,
 )
 
 logger = Logger()
@@ -75,13 +60,11 @@ def lambda_handler(event: dict, context) -> dict:
             if not service_id:
                 raise ValidationError("serviceId missing")
 
-            entries = waitlist_repo.list_by_service(tenant_id, service_id)
-            # Convert to dict for AppSync
+            entries = waitlist_repo.list_by_service(tenant_id, service_id, statuses=[])
             result = [entry.to_dict() for entry in entries]
             return success_response(result)
 
         elif field == "addToWaitingList":
-            # For public widget (API key) or Chat Agent
             service_id = input_data.get("serviceId")
             client_id = input_data.get("clientId")
             provider_id = input_data.get("providerId")
@@ -99,7 +82,7 @@ def lambda_handler(event: dict, context) -> dict:
                 provider_id=provider_id,
                 client_id=client_id,
                 preferred_days=preferred_days,
-                requested_dates=requested_dates
+                requested_dates=requested_dates,
             )
             return success_response(entry.to_dict())
 

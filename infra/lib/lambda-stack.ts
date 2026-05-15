@@ -56,6 +56,7 @@ interface LambdaStackProps extends cdk.StackProps {
   whatsappSchedulerRoleArn?: string;
   whatsappSchedulerGroupName?: string;
   waitingListTable: dynamodb.ITable;
+  waitlistPendingTable: dynamodb.ITable;
 }
 
 export class LambdaStack extends cdk.Stack {
@@ -159,6 +160,7 @@ export class LambdaStack extends cdk.Stack {
         ROOMS_TABLE: props.roomsTable.tableName,
         ROOM_ASSIGNMENTS_TABLE: props.roomAssignmentsTable.tableName,
         WAITING_LIST_TABLE: props.waitingListTable.tableName,
+        WAITLIST_PENDING_TABLE: props.waitlistPendingTable.tableName,
         MICROSOFT_CLIENT_ID: process.env.MICROSOFT_CLIENT_ID || '',
         MICROSOFT_CLIENT_SECRET: process.env.MICROSOFT_CLIENT_SECRET || '',
         SHARED_HASH: sharedHash,
@@ -1060,6 +1062,7 @@ export class LambdaStack extends cdk.Stack {
     props.tenantsTable.grantReadWriteData(this.whatsappSenderFunction); // To read plan and update used quota
     props.whatsappMessagesTable.grantReadWriteData(this.whatsappSenderFunction);
     props.tenantUsageTable.grantWriteData(this.whatsappSenderFunction); // For quota exhaustion metrics
+    props.waitlistPendingTable.grantReadWriteData(this.whatsappSenderFunction);
 
     // Explicitly grant KMS decrypt if SQS is encrypted with AWS managed key
     props.whatsappSenderQueue.grantConsumeMessages(this.whatsappSenderFunction);
@@ -1075,11 +1078,21 @@ export class LambdaStack extends cdk.Stack {
         ...commonProps.environment,
         WHATSAPP_MESSAGES_TABLE: props.whatsappMessagesTable.tableName,
         TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN || '',
+        WHATSAPP_SENDER_QUEUE_URL: props.whatsappSenderQueue.queueUrl,
+        CLIENTS_TABLE: props.clientsTable.tableName,
       }
     });
 
     // Grant permissions to Webhook
     props.whatsappMessagesTable.grantReadWriteData(this.whatsappWebhookFunction);
+    props.waitlistPendingTable.grantReadWriteData(this.whatsappWebhookFunction);
+    props.waitingListTable.grantReadWriteData(this.whatsappWebhookFunction);
+    props.bookingsTable.grantReadWriteData(this.whatsappWebhookFunction);
+    props.tenantsTable.grantReadData(this.whatsappWebhookFunction);
+    props.providersTable.grantReadData(this.whatsappWebhookFunction);
+    props.availabilityTable.grantReadData(this.whatsappWebhookFunction);
+    props.clientsTable.grantReadData(this.whatsappWebhookFunction);
+    props.whatsappSenderQueue.grantSendMessages(this.whatsappWebhookFunction);
 
     // Add Function URL for webhook
     const whatsappWebhookUrl = this.whatsappWebhookFunction.addFunctionUrl({
