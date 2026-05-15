@@ -583,7 +583,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             "roomId": booking.room_id,
             # GSI Attributes
             "tenantId_providerId": f"{str(booking.tenant_id)}_{booking.provider_id}",
-            "start": sk,
+            "startTime": sk,
             "endTime": booking.end_time.isoformat(),
             "status": booking.status.value,
             "paymentStatus": booking.payment_status.value,
@@ -704,7 +704,7 @@ class DynamoDBBookingRepository(IBookingRepository):
             provider_id=item["providerId"],
             room_id=item.get("roomId"),
             customer_info=customer_info,
-            start_time=datetime.fromisoformat(item.get("start") or item["SK"]),
+            start_time=datetime.fromisoformat(item.get("startTime") or item.get("start") or item["SK"]),
             end_time=datetime.fromisoformat(item["endTime"]),
             status=BookingStatus(item["status"]),
             payment_status=PaymentStatus(item.get("paymentStatus", "NONE")),
