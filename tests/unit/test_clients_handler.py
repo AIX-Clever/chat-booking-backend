@@ -1,7 +1,6 @@
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-from decimal import Decimal
+from unittest.mock import Mock, patch
 import os
 import sys
 
@@ -65,22 +64,77 @@ class TestClientsHandler(unittest.TestCase):
         self.assertIn("Unauthorized", str(context.exception))
 
     def test_create_client_invalid_id(self):
-        # Arrange
         input_data = {
             "names": {"given": "Juan", "family": "Perez"},
             "identifiers": [{"type": "TAX_ID", "value": "BAD-ID"}]
         }
-        
-        # Mock query needed for duplicate check which runs before validation
         self.mock_table.query.return_value = {"Items": [], "Count": 0}
 
-        # Mock validation failure
         with patch('clients.handler.validate_id', return_value=False):
-            # Act & Assert
             with self.assertRaises(ValueError) as context:
                 handler.create_client(self.tenant_id, input_data)
-            
-            self.assertIn("Invalid identifier", str(context.exception))
+            self.assertIn("Identificador inválido", str(context.exception))
+
+    def test_create_client_extracts_phone_and_email(self):
+        input_data = {
+            "names": {"given": "Ana", "family": "Torres"},
+            "contactInfo": [
+                {"system": "phone", "value": "+56911111111"},
+                {"system": "email", "value": "ana@example.com"},
+            ],
+            "identifiers": [],
+        }
+        with patch('clients.handler.validate_id', return_value=True):
+            result = handler.create_client(self.tenant_id, input_data)
+
+        self.assertEqual(result["phone"], "+56911111111")
+        self.assertEqual(result["email"], "ana@example.com")
+
+    def test_list_clients_null_limit_uses_default(self):
+        self.mock_table.query.return_value = {"Items": []}
+        event = {
+            "info": {"fieldName": "listClients"},
+            "identity": {"claims": {"custom:tenantId": self.tenant_id}},
+            "arguments": {"limit": None, "nextToken": None},
+        }
+        handler.lambda_handler(event, None)
+        call_kwargs = self.mock_table.query.call_args.kwargs
+        self.assertEqual(call_kwargs["Limit"], 50)
+
+    def test_list_clients_with_pagination_token(self):
+        import json, base64
+        start_key = {"tenantId": self.tenant_id, "id": "last-seen"}
+        token = base64.b64encode(json.dumps(start_key).encode()).decode()
+        self.mock_table.query.return_value = {"Items": []}
+        handler.list_clients(self.tenant_id, next_token=token)
+        call_kwargs = self.mock_table.query.call_args.kwargs
+        self.assertEqual(call_kwargs["ExclusiveStartKey"], start_key)
+
+    def test_list_clients_invalid_token_raises(self):
+        with self.assertRaises(ValueError):
+            handler.list_clients(self.tenant_id, next_token="not-base64!!")
+
+    def test_update_client_not_found_raises(self):
+        self.mock_table.get_item.return_value = {}
+        with self.assertRaises(ValueError) as ctx:
+            handler.update_client(self.tenant_id, {"id": "ghost"})
+        self.assertIn("not found", str(ctx.exception))
+
+    def test_update_client_syncs_phone_from_contact_info(self):
+        existing = {"id": self.client_id, "tenantId": self.tenant_id, "names": {"given": "X"}}
+        self.mock_table.get_item.return_value = {"Item": existing}
+        handler.update_client(self.tenant_id, {
+            "id": self.client_id,
+            "contactInfo": [{"system": "phone", "value": "+56922222222"}],
+        })
+        saved = self.mock_table.put_item.call_args.kwargs["Item"]
+        self.assertEqual(saved["phone"], "+56922222222")
+
+    def test_list_client_audit_logs(self):
+        self.mock_audit_table.query.return_value = {"Items": [{"field": "names"}]}
+        result = handler.list_client_audit_logs(self.tenant_id, self.client_id)
+        self.assertEqual(len(result), 1)
+        self.mock_audit_table.query.assert_called_once()
 
     def test_get_client_success(self):
         # Arrange
