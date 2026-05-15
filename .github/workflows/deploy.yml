@@ -57,21 +57,13 @@ jobs:
 
       - name: Validate GraphQL Schema (Retrocompatibility)
         run: |
-          npm install -g @graphql-inspector/cli graphql
           git show HEAD~1:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
-          
+
           if [ -s infra/schema_old.graphql ]; then
-            cat infra/schema.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean.graphql
-            cat infra/schema_old.graphql | sed 's/@[a-zA-Z0-9_]*//g' > schema_clean_old.graphql
-            
-            mv schema_clean.graphql schema_clean.gql
-            mv schema_clean_old.graphql schema_clean_old.gql
-            
-            npx graphql-inspector diff schema_clean_old.gql schema_clean.gql || {
+            python3 scripts/validate_schema_diff.py infra/schema_old.graphql infra/schema.graphql || {
               echo "::error::GraphQL Schema introduced BREAKING CHANGES."
               exit 1
             }
-            echo "GraphQL Schema is retrocompatible! ✅"
           else
             echo "Skipping check: Could not find previous schema version."
           fi
