@@ -15,6 +15,7 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   NO_SHOW
+  SOFT_LOCKED
 }
 
 enum PaymentStatus {
