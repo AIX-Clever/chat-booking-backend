@@ -1,8 +1,10 @@
 import json
 import os
+import re
 import boto3
 import logging
 import time
+import html as _html
 from boto3.dynamodb.conditions import Key, Attr
 
 # Configure logging
@@ -13,19 +15,25 @@ s3 = boto3.client('s3')
 cloudfront = boto3.client('cloudfront')
 dynamodb = boto3.resource('dynamodb')
 
-# Environment variables
-LINK_BUCKET = os.environ.get('LINK_BUCKET')
-DISTRIBUTION_ID = os.environ.get('DISTRIBUTION_ID')
-TENANTS_TABLE = os.environ.get('TENANTS_TABLE')
-SERVICES_TABLE_NAME = os.environ.get('SERVICES_TABLE') # Passed via standard env vars in commonProps?
-PROVIDERS_TABLE_NAME = os.environ.get('PROVIDERS_TABLE')
-PUBLIC_LINK_BASE_URL = os.environ.get('PUBLIC_LINK_BASE_URL')
 
-# We need the table names. lambda-stack.ts commonProps passes them as SERVICES_TABLE, PROVIDERS_TABLE.
-# Let's verify if they are available in os.environ. Only TENANTS_TABLE was explicit in `profileBakerFunction` env, 
-# but `commonProps` usually adds them.
-# Checking lambda-stack: `const commonProps = { ... environment: { SERVICES_TABLE: ... } }`
-# Yes, they should be there.
+def _require_env(name: str) -> str:
+    value = os.environ.get(name)
+    if not value:
+        raise EnvironmentError(f"[profile_baker] Variable de entorno requerida '{name}' no está definida.")
+    return value
+
+
+def escape_html(value: str) -> str:
+    return _html.escape(str(value), quote=True)
+
+
+# Environment variables — fail hard si faltan (regla de oro)
+LINK_BUCKET = _require_env('LINK_BUCKET')
+DISTRIBUTION_ID = _require_env('DISTRIBUTION_ID')
+TENANTS_TABLE = _require_env('TENANTS_TABLE')
+SERVICES_TABLE_NAME = _require_env('SERVICES_TABLE')
+PROVIDERS_TABLE_NAME = _require_env('PROVIDERS_TABLE')
+PUBLIC_LINK_BASE_URL = _require_env('PUBLIC_LINK_BASE_URL')
 
 def lambda_handler(event, context):
     logger.info(f"Received event: {json.dumps(event)}")
@@ -67,17 +75,18 @@ def process_tenant_record(new_image, services_table, providers_table, context):
     photo_url = profile.get('logoUrl') or new_image.get('photoUrl', {}).get('S', '')
     theme_color = settings.get('widgetConfig', {}).get('primaryColor') or new_image.get('themeColor', {}).get('S', '#3b82f6')
     profession = profile.get('profession') or new_image.get('profession', {}).get('S', 'Especialista')
-    
+    tenant_plan = new_image.get('plan', {}).get('S', 'FREE')
+
     full_address = construct_address(profile, new_image)
     operating_hours = profile.get('operatingHours') or new_image.get('operatingHours', {}).get('S', '')
     specializations = extract_specializations(profile, new_image)
 
     logger.info(f"Processing bake for tenant {tenant_id} with slug {slug}")
-    
+
     try:
         services = fetch_services(services_table, tenant_id)
         providers = fetch_providers(providers_table, tenant_id)
-        
+
         profile_data = {
             "tenantId": tenant_id,
             "slug": slug,
@@ -90,7 +99,8 @@ def process_tenant_record(new_image, services_table, providers_table, context):
             "fullAddress": full_address,
             "operatingHours": operating_hours,
             "services": services,
-            "providers": providers
+            "providers": providers,
+            "tenantPlan": tenant_plan,
         }
         
         bake_profile(slug, profile_data, context)
@@ -160,6 +170,8 @@ def process_provider_record_from_item(provider_item, tenant_item, services_table
             "profession": provider_item.get('profession'),
         }
         
+        tenant_plan = tenant_item.get('plan', {}).get('S', 'FREE') if isinstance(tenant_item.get('plan'), dict) else tenant_item.get('plan', 'FREE')
+
         profile_data = {
             "tenantId": tenant_id,
             "slug": slug,
@@ -173,9 +185,10 @@ def process_provider_record_from_item(provider_item, tenant_item, services_table
             "operatingHours": operating_hours,
             "services": services,
             "providers": [this_provider],
-            "preselectedProviderId": provider_id
+            "preselectedProviderId": provider_id,
+            "tenantPlan": tenant_plan,
         }
-        
+
         bake_profile(slug, profile_data, context)
     except Exception as e:
         logger.error(f"Error during manual provider bake for {slug}: {str(e)}")
@@ -210,7 +223,8 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
         
         # Tenant branding & info
         theme_color = settings.get('widgetConfig', {}).get('primaryColor') or '#3b82f6'
-        
+        tenant_plan = tenant_item.get('plan', 'FREE')
+
         # Address & Hours inherited from Tenant
         full_address = tenant_item.get('fullAddress', '')
         if settings_profile.get('address'):
@@ -221,9 +235,9 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
                 settings_profile['address'].get('country')
             ]
             full_address = ", ".join([p for p in addr_parts if p])
-            
+
         operating_hours = settings_profile.get('operatingHours', '')
-        
+
         # Metadata / Profession from provider if available, else generic
         specializations = []
         try:
@@ -237,10 +251,6 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             profession = "Especialista"
 
         services = fetch_services(services_table, tenant_id)
-        # For professional landing, we only include this provider in the 'providers' list
-        # OR we could include all but pre-select this one. 
-        # But if we show all providers on a professional's page, it might be confusing.
-        # Let's keep ONLY this provider for the personal page.
         this_provider = {
             "providerId": provider_id,
             "name": name,
@@ -249,7 +259,7 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "services": [s['S'] for s in new_image.get('services', {}).get('L', [])],
             "profession": new_image.get('profession', {}).get('S'),
         }
-        
+
         profile_data = {
             "tenantId": tenant_id,
             "slug": slug,
@@ -263,7 +273,8 @@ def process_provider_record(new_image, tenants_table, services_table, providers_
             "operatingHours": operating_hours,
             "services": services,
             "providers": [this_provider],
-            "preselectedProviderId": provider_id
+            "preselectedProviderId": provider_id,
+            "tenantPlan": tenant_plan,
         }
         
         bake_profile(slug, profile_data, context)
@@ -296,8 +307,8 @@ def process_tenant_record_from_item(item, services_table, providers_table, conte
     photo_url = profile.get('logoUrl') or item.get('photoUrl', '')
     theme_color = settings.get('widgetConfig', {}).get('primaryColor') or item.get('themeColor', '#3b82f6')
     profession = profile.get('profession', 'Especialista')
-    
-    # Handle address and other things easily from raw item
+    tenant_plan = item.get('plan', 'FREE')
+
     full_address = item.get('fullAddress', '')
     operating_hours = profile.get('operatingHours', '')
     specializations = item.get('specializations', [])
@@ -305,7 +316,7 @@ def process_tenant_record_from_item(item, services_table, providers_table, conte
     try:
         services = fetch_services(services_table, tenant_id)
         providers = fetch_providers(providers_table, tenant_id)
-        
+
         profile_data = {
             "tenantId": tenant_id,
             "slug": slug,
@@ -318,7 +329,8 @@ def process_tenant_record_from_item(item, services_table, providers_table, conte
             "fullAddress": full_address,
             "operatingHours": operating_hours,
             "services": services,
-            "providers": providers
+            "providers": providers,
+            "tenantPlan": tenant_plan,
         }
         
         bake_profile(slug, profile_data, context)
@@ -379,18 +391,16 @@ def extract_specializations(profile, new_image):
     return []
 
 def fetch_services(table, tenant_id):
-    # Query GSI by tenantId if possible, or Scan with filter (Services table usually has tenantId as PK or GSI)
-    # Check infrastructure definitions. Usually `Services` has PK=serviceId, but we need by tenant.
-    # We should have a GSI `byTenant`. If not, we scan (inefficient but OK for bake).
-    # Assuming GSI `byTenant` exists or we use Scan for now.
-    # Let's try Query if index name known, else Scan.
-    # Based on previous context, we might scan. 
     try:
-        response = table.scan(
-            FilterExpression=Attr('tenantId').eq(tenant_id) & Attr('active').eq(True)
-        )
-        items = response.get('Items', [])
-        # Transform to frontend expected format
+        items = []
+        kwargs = {"FilterExpression": Attr('tenantId').eq(tenant_id) & Attr('active').eq(True)}
+        while True:
+            response = table.scan(**kwargs)
+            items.extend(response.get('Items', []))
+            last = response.get('LastEvaluatedKey')
+            if not last:
+                break
+            kwargs['ExclusiveStartKey'] = last
         return [
             {
                 "serviceId": i['serviceId'],
@@ -407,10 +417,15 @@ def fetch_services(table, tenant_id):
 
 def fetch_providers(table, tenant_id):
     try:
-        response = table.scan(
-            FilterExpression=Attr('tenantId').eq(tenant_id) & Attr('active').eq(True)
-        )
-        items = response.get('Items', [])
+        items = []
+        kwargs = {"FilterExpression": Attr('tenantId').eq(tenant_id) & Attr('active').eq(True)}
+        while True:
+            response = table.scan(**kwargs)
+            items.extend(response.get('Items', []))
+            last = response.get('LastEvaluatedKey')
+            if not last:
+                break
+            kwargs['ExclusiveStartKey'] = last
         return [
             {
                 "providerId": i['providerId'],
@@ -418,7 +433,7 @@ def fetch_providers(table, tenant_id):
                 "photoUrl": i.get('photoUrl', ''),
                 "bio": i.get('bio', ''),
                 "services": i.get('services', []),
-                "profession": i.get('profession'),  # Individual provider profession
+                "profession": i.get('profession'),
             }
             for i in items
         ]
@@ -436,22 +451,21 @@ def bake_profile(slug, profile_data, context=None):
         raise e
 
     # 2. SEO Tags
-    name = profile_data['name']
-    bio = profile_data['bio']
-    photo_url = profile_data['photoUrl']
-    profession = profile_data.get('profession', '')
-    
-    # Build title: "Nombre — Profesión | Lucia" for professionals, "Nombre | Lucia" for centers
+    name = escape_html(profile_data['name'])
+    bio = escape_html(profile_data.get('bio', ''))
+    photo_url = escape_html(profile_data.get('photoUrl', ''))
+    profession = escape_html(profile_data.get('profession', ''))
+
     if profession:
         title = f"{name} — {profession} | Lucia"
     else:
         title = f"Reserva con {name} | Lucia"
-    description = bio[:160] if bio else f"Agenda tu cita con {name}{' — ' + profession if profession else ''} de forma fácil y rápida."
-    
+    raw_bio = profile_data.get('bio', '')
+    description = escape_html(raw_bio[:160] if raw_bio else f"Agenda tu cita con {profile_data['name']}{' — ' + profile_data.get('profession', '') if profile_data.get('profession') else ''} de forma fácil y rápida.")
+
     slug = profile_data['slug']
-    base_url = PUBLIC_LINK_BASE_URL
-    canonical_url = f"{base_url}/{slug}"
-    
+    canonical_url = f"{PUBLIC_LINK_BASE_URL}/{slug}"
+
     meta_tags = f"""
     <!-- SEO Injected by Baker -->
     <title>{title}</title>
@@ -473,13 +487,15 @@ def bake_profile(slug, profile_data, context=None):
     <meta name="twitter:image" content="{photo_url}">
     """
 
-    # 2.1 SEO Body Text (For indexability without JS)
-    specialties_text = ", ".join(profile_data.get('specializations', []))
-    services_text = ", ".join([s['name'] for s in profile_data.get('services', [])])
-    
-    address_html = f"<h2>Ubicación</h2><p>{profile_data.get('fullAddress', '')}</p>" if profile_data.get('fullAddress') else ""
-    hours_html = f"<h2>Horarios</h2><p>{profile_data.get('operatingHours', '')}</p>" if profile_data.get('operatingHours') else ""
-    
+    # 2.1 SEO Body Text (para indexabilidad sin JS)
+    specialties_text = escape_html(", ".join(profile_data.get('specializations', [])))
+    services_text = escape_html(", ".join([s['name'] for s in profile_data.get('services', [])]))
+    full_address = escape_html(profile_data.get('fullAddress', ''))
+    operating_hours = escape_html(profile_data.get('operatingHours', ''))
+
+    address_html = f"<h2>Ubicación</h2><p>{full_address}</p>" if full_address else ""
+    hours_html = f"<h2>Horarios</h2><p>{operating_hours}</p>" if operating_hours else ""
+
     seo_body = f"""
     <div style="display:none;" id="seo-content" aria-hidden="true">
         <h1>{name}</h1>
@@ -492,20 +508,17 @@ def bake_profile(slug, profile_data, context=None):
         <p>{services_text}</p>
     </div>
     """
-    
-    # 3. Data Injection (The Full Bake)
-    # Serialize profile_data to JSON and inject as window.__INITIAL_DATA__
-    json_data = json.dumps(profile_data)
+
+    # 3. Data Injection — escapar </script> para evitar script injection
+    json_data = json.dumps(profile_data).replace("</", "<\\/")
     script_injection = f"""
     <script>
         window.__INITIAL_DATA__ = {json_data};
     </script>
     """
-    
+
     # 4. Modify HTML
-    # Replace/Inject SEO
     if "<title>" in template_html and "</title>" in template_html:
-        import re
         template_html = re.sub(r'<title>.*?</title>', '', template_html)
     
     if "<head>" in template_html:

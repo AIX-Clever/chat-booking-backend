@@ -2,6 +2,13 @@ import json
 import os
 
 os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+# Vars requeridas al importar el módulo (fail-hard en producción)
+os.environ.setdefault("LINK_BUCKET", "test-bucket")
+os.environ.setdefault("DISTRIBUTION_ID", "TEST_DIST_ID")
+os.environ.setdefault("TENANTS_TABLE", "Tenants")
+os.environ.setdefault("SERVICES_TABLE", "Services")
+os.environ.setdefault("PROVIDERS_TABLE", "Providers")
+os.environ.setdefault("PUBLIC_LINK_BASE_URL", "https://test.example.com")
 import pytest
 from unittest.mock import MagicMock, patch
 from profile_baker.handler import lambda_handler
@@ -146,7 +153,7 @@ def test_profile_baker_tenant_event():
     mock_dynamodb = MagicMock()
 
     mock_s3.get_object.return_value = {
-        "Body": MagicMock(read=lambda: b"<html><body>{profile_data}</body></html>")
+        "Body": MagicMock(read=lambda: b"<html><head><title>Original</title></head><body></body></html>")
     }
 
     mock_table = MagicMock()
@@ -184,9 +191,13 @@ def test_profile_baker_tenant_event():
         # Verify
         assert response["status"] == "success"
         assert mock_s3.put_object.called, "put_object was not called"
-        assert (
-            mock_cloudfront.create_invalidation.called
-        ), "create_invalidation was not called"
+        assert mock_cloudfront.create_invalidation.called, "create_invalidation was not called"
+
+        _, kwargs = mock_s3.put_object.call_args
+        uploaded_html = kwargs["Body"].decode("utf-8")
+        assert "window.__INITIAL_DATA__" in uploaded_html
+        assert '"tenantId": "t1"' in uploaded_html
+        assert "clinica-acme" in uploaded_html
 
 
 def test_profile_baker_skip_no_slug_or_id():
