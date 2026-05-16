@@ -26,6 +26,7 @@ from .entities import (
     Room,
     RoomAssignment,
     WaitingListEntry,
+    ClientInfo,
 )
 
 
@@ -230,6 +231,14 @@ class IBookingRepository(ABC):
         """Update existing booking"""
         pass
 
+    @abstractmethod
+    def soft_lock(
+        self, tenant_id: TenantId, booking_id: str, ttl_minutes: int = 15
+    ) -> None:
+        """Mark slot as SOFT_LOCKED for ttl_minutes to reserve it for a waitlist candidate.
+        No-op if the booking no longer exists or is already re-taken."""
+        pass
+
 
 class IConversationRepository(ABC):
     """Port for Conversation state operations"""
@@ -390,9 +399,13 @@ class IWaitingListRepository(ABC):
 
     @abstractmethod
     def list_by_service(
-        self, tenant_id: TenantId, service_id: str
+        self,
+        tenant_id: TenantId,
+        service_id: str,
+        statuses: Optional[List[str]] = None,
     ) -> List[WaitingListEntry]:
-        """List pending entries for a service, ordered by createdAt ASC"""
+        """List entries for a service ordered by createdAt ASC.
+        statuses=None returns all; defaults to [PENDING] when not provided."""
         pass
 
     @abstractmethod
@@ -412,4 +425,22 @@ class IWaitingListRepository(ABC):
     @abstractmethod
     def delete(self, tenant_id: TenantId, waiting_list_id: str) -> None:
         """Remove entry from waiting list"""
+        pass
+
+
+class IClientRepository(ABC):
+    """Port for Client lookup (read-only projection for booking creation)"""
+
+    @abstractmethod
+    def find_by_phone(
+        self, tenant_id: TenantId, phone: str
+    ) -> Optional[ClientInfo]:
+        """Find a client by phone number using phone-index GSI."""
+        pass
+
+    @abstractmethod
+    def find_by_email(
+        self, tenant_id: TenantId, email: str
+    ) -> Optional[ClientInfo]:
+        """Find a client by email using email-index GSI."""
         pass

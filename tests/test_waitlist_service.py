@@ -10,8 +10,7 @@ Tests cover:
 """
 
 import pytest
-from unittest.mock import MagicMock, patch
-from datetime import datetime, timezone
+from unittest.mock import MagicMock
 
 from shared.application.waitlist_service import WaitlistService
 from shared.domain.entities import (
@@ -86,7 +85,7 @@ class TestAddToWaitlist:
         mock_repos["provider_repo"].get_by_id.return_value = MagicMock(
             status="ACTIVE"
         )
-        mock_repos["availability_repo"].get_weekly_schedule.return_value = [
+        mock_repos["availability_repo"].get_provider_availability.return_value = [
             {"dayOfWeek": "MONDAY", "timeRanges": []}
         ]
         mock_repos["waitlist_repo"].find_pending_by_client.return_value = (
@@ -147,7 +146,7 @@ class TestAddToWaitlist:
         mock_repos["provider_repo"].get_by_id.return_value = MagicMock(
             status="ACTIVE"
         )
-        mock_repos["availability_repo"].get_weekly_schedule.return_value = (
+        mock_repos["availability_repo"].get_provider_availability.return_value = (
             []
         )
 
@@ -169,7 +168,7 @@ class TestAddToWaitlist:
         mock_repos["provider_repo"].get_by_id.return_value = MagicMock(
             status="ACTIVE"
         )
-        mock_repos["availability_repo"].get_weekly_schedule.return_value = [
+        mock_repos["availability_repo"].get_provider_availability.return_value = [
             {"dayOfWeek": "MONDAY"}
         ]
         mock_repos["waitlist_repo"].find_pending_by_client.return_value = (
@@ -209,7 +208,7 @@ class TestProcessCancellation:
         mock_repos["provider_repo"].get_by_id.return_value = MagicMock(
             status="ACTIVE"
         )
-        mock_repos["availability_repo"].get_weekly_schedule.return_value = [
+        mock_repos["availability_repo"].get_provider_availability.return_value = [
             {"dayOfWeek": "MONDAY"}
         ]
 
@@ -240,7 +239,7 @@ class TestProcessCancellation:
         mock_repos["provider_repo"].get_by_id.return_value = MagicMock(
             status="ACTIVE"
         )
-        mock_repos["availability_repo"].get_weekly_schedule.return_value = [
+        mock_repos["availability_repo"].get_provider_availability.return_value = [
             {"dayOfWeek": "MONDAY"}
         ]
         mock_repos["waitlist_repo"].list_by_service.return_value = []

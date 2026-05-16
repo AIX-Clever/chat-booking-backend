@@ -83,18 +83,17 @@ def validate_cpf(cpf: str) -> bool:
 
 def validate_id(id_type: str, value: str, country_code: str = 'CL') -> bool:
     """
-    Validates ID based on type and country.
+    Validates ID based on explicit type sent from the frontend (RUT, CPF, DNI, PASSPORT, OTHER).
+    Legacy TAX_ID is also handled for backwards compatibility.
     """
-    if id_type == 'TAX_ID':
-        if country_code == 'CL':
-            return validate_rut(value)
-        elif country_code == 'BR':
-            return validate_cpf(value)
-        # Default strict validation could go here, or lenient
-        return True  # Lenient for unknown countries
+    if id_type == 'RUT' or (id_type == 'TAX_ID' and country_code == 'CL'):
+        return validate_rut(value)
+
+    if id_type == 'CPF' or (id_type == 'TAX_ID' and country_code == 'BR'):
+        return validate_cpf(value)
 
     if id_type == 'PASSPORT':
-        # Basic alphanumeric check
         return bool(re.match(r'^[A-Z0-9]{5,20}$', value.upper()))
 
+    # DNI, OTHER, unknown TAX_ID country: lenient
     return True

@@ -42,6 +42,7 @@ export class DatabaseStack extends cdk.Stack {
   public readonly dteFoliosTable: dynamodb.Table;
   public readonly whatsappMessagesTable: dynamodb.Table;
   public readonly waitingListTable: dynamodb.Table;
+  public readonly waitlistPendingTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props?: DatabaseStackProps) {
     super(scope, id, props);
@@ -554,6 +555,20 @@ export class DatabaseStack extends cdk.Stack {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    // GSI: phone-index for client lookup by phone (used by waitlist booking creation)
+    this.clientsTable.addGlobalSecondaryIndex({
+      indexName: 'phone-index',
+      partitionKey: {
+        name: 'tenantId',
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: 'phone',
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     // GSI: tax-id-index for client lookup by identifier (RUT/CPF/Passport)
     this.clientsTable.addGlobalSecondaryIndex({
       indexName: 'tax-id-index',
@@ -716,6 +731,18 @@ export class DatabaseStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'WaitingListTableName', {
       value: this.waitingListTable.tableName,
       description: 'Waiting List table name',
+    });
+
+    // WaitlistPending Table — ephemeral phone→waitingListId correlation for WhatsApp responses
+    this.waitlistPendingTable = new dynamodb.Table(this, 'WaitlistPendingTable', {
+      tableName: 'ChatBooking-WaitlistPending',
+      partitionKey: {
+        name: 'clientPhone',
+        type: dynamodb.AttributeType.STRING,
+      },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      timeToLiveAttribute: 'ttl',
     });
 
     if (props?.envName) {

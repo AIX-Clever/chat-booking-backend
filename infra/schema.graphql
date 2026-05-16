@@ -15,6 +15,7 @@ enum BookingStatus {
   CONFIRMED
   CANCELLED
   NO_SHOW
+  SOFT_LOCKED
 }
 
 enum PaymentStatus {
@@ -764,7 +765,8 @@ type Query {
 
   # Client Management (Client File)
   getClient(clientId: ID!): Client @aws_cognito_user_pools
-  listClients: [Client!]! @aws_cognito_user_pools
+  listClients(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
+  listClientsPaginated(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
   listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! @aws_cognito_user_pools
 }
 
@@ -872,11 +874,11 @@ type Mutation {
   getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
 
   # Bookings
-  createBooking(input: CreateBookingInput!): Booking! @aws_api_key @aws_cognito_user_pools @aws_lambda
-  confirmBooking(input: ConfirmBookingInput!): Booking! @aws_cognito_user_pools
-  cancelBooking(input: CancelBookingInput!): Booking! @aws_cognito_user_pools
-  markAsNoShow(bookingId: ID!): Booking! @aws_cognito_user_pools
-  updateBookingStatus(bookingId: ID!, status: String!): Booking! @aws_cognito_user_pools
+  createBooking(input: CreateBookingInput!): Booking @aws_api_key @aws_cognito_user_pools @aws_lambda
+  confirmBooking(input: ConfirmBookingInput!): Booking @aws_cognito_user_pools
+  cancelBooking(input: CancelBookingInput!): Booking @aws_cognito_user_pools
+  markAsNoShow(bookingId: ID!): Booking @aws_cognito_user_pools
+  updateBookingStatus(bookingId: ID!, status: String!): Booking @aws_cognito_user_pools
   
   # User Management (Admin)
   inviteUser(input: InviteUserInput!): TenantUser! @aws_cognito_user_pools
@@ -987,6 +989,11 @@ type Client @aws_cognito_user_pools {
   providerIds: [ID!]
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
+}
+
+type ClientsPage @aws_cognito_user_pools {
+  items: [Client!]!
+  nextToken: String
 }
 
 type ClientAuditLog @aws_cognito_user_pools {

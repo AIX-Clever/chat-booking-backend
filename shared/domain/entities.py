@@ -8,7 +8,7 @@ Following Hexagonal Architecture principles:
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Dict, Any
 from enum import Enum
 
@@ -20,6 +20,7 @@ class BookingStatus(Enum):
     CONFIRMED = "CONFIRMED"
     CANCELLED = "CANCELLED"
     NO_SHOW = "NO_SHOW"
+    SOFT_LOCKED = "SOFT_LOCKED"
 
 
 class PaymentStatus(Enum):
@@ -339,6 +340,7 @@ class Booking:
     total_amount: Optional[float] = None
     dte_folio: Optional[str] = None
     dte_pdf_url: Optional[str] = None
+    soft_lock_expires_at: Optional[datetime] = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -366,7 +368,11 @@ class Booking:
             )
 
     def is_active(self) -> bool:
-        """Check if booking is active"""
+        """Check if booking is active (blocks the slot)"""
+        if self.status == BookingStatus.SOFT_LOCKED:
+            if self.soft_lock_expires_at is None:
+                return True
+            return datetime.now(timezone.utc) < self.soft_lock_expires_at
         return self.status in [BookingStatus.PENDING, BookingStatus.CONFIRMED]
 
     def overlaps_with(self, other: "Booking") -> bool:
@@ -629,3 +635,12 @@ class WaitingListEntry:
         if self.ttl is not None:
             result["ttl"] = self.ttl
         return result
+
+
+@dataclass
+class ClientInfo:
+    """Minimal client projection used to create a booking from the waitlist."""
+    first_name: str
+    last_name: str
+    email: str
+    phone: Optional[str] = None

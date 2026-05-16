@@ -325,6 +325,13 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
     });
 
+    clientsDataSource.createResolver('ListClientsPaginatedResolver', {
+      typeName: 'Query',
+      fieldName: 'listClientsPaginated',
+      requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
+      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+    });
+
     clientsDataSource.createResolver('ListClientAuditLogsResolver', {
       typeName: 'Query',
       fieldName: 'listClientAuditLogs',
