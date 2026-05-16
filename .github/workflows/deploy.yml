@@ -30,7 +30,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,7 +57,17 @@ jobs:
 
       - name: Validate GraphQL Schema (Retrocompatibility)
         run: |
-          git show HEAD~1:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
+          # Para merge commits, comparar contra el ancestro común (merge-base)
+          # Para commits normales, comparar contra HEAD~1
+          if git rev-parse HEAD^2 > /dev/null 2>&1; then
+            COMPARE_REF=$(git merge-base HEAD^1 HEAD^2)
+            echo "Merge commit detectado — comparando contra merge-base: $COMPARE_REF"
+          else
+            COMPARE_REF=HEAD~1
+            echo "Commit normal — comparando contra HEAD~1"
+          fi
+
+          git show $COMPARE_REF:infra/schema.graphql > infra/schema_old.graphql || echo "" > infra/schema_old.graphql
 
           if [ -s infra/schema_old.graphql ]; then
             python3 scripts/validate_schema_diff.py infra/schema_old.graphql infra/schema.graphql || {
