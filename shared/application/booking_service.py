@@ -183,7 +183,7 @@ class BookingService:
         if not service:
             raise EntityNotFoundError("Service", service_id)
         if not service.is_available():
-            raise ServiceNotAvailableError(f"Service {service_id} is not available")
+            raise ServiceNotAvailableError("SERVICE_NOT_AVAILABLE")
 
         # Validate provider
         provider = self._provider_repo.get_by_id(tenant_id, provider_id)
@@ -215,10 +215,10 @@ class BookingService:
         if not ignore_availability:
             if self._availability_service:
                 if not self._availability_service.is_slot_available(tenant_id, service_id, provider_id, start, end):
-                    raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available or outside working hours")
+                    raise SlotNotAvailableError("SLOT_OUTSIDE_WORKING_HOURS")
             else:
                 if not self._is_slot_available(tenant_id, provider_id, start, end):
-                    raise SlotNotAvailableError(f"Time slot {start.isoformat()} - {end.isoformat()} is not available")
+                    raise SlotNotAvailableError("SLOT_NOT_AVAILABLE")
 
         # Create booking entity
         booking_id = generate_id("bkg")
@@ -262,7 +262,7 @@ class BookingService:
         try:
             self._booking_repo.save(booking)
         except ConflictError:
-            raise SlotNotAvailableError(f"Time slot {start.isoformat()} was just booked")
+            raise SlotNotAvailableError("SLOT_NOT_AVAILABLE")
 
         # Syncs
         full_name = f"{client_first_name} {client_last_name}".strip()
