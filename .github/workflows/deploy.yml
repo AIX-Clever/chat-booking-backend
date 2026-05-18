@@ -212,7 +212,7 @@ jobs:
           DIST_ID=$(aws cloudfront list-distributions \
             --region "$CLOUDFRONT_REGION" \
             --query "DistributionList.Items[?DomainName=='${DIST_DOMAIN}'].Id" \
-            --output text 2>/dev/null)
+            --output text 2>/dev/null || true)
 
           if [ -z "$DIST_ID" ]; then
             echo "Could not find CloudFront distribution. Skipping."
