@@ -41,29 +41,29 @@ class UnauthorizedError(DomainException):
 class TenantNotActiveError(DomainException):
     """Tenant account is not active"""
 
-    def __init__(self, tenant_id: str):
-        super().__init__(f"Tenant {tenant_id} is not active")
+    def __init__(self, code: str = "TENANT_NOT_ACTIVE"):
+        super().__init__(code)
 
 
 class ServiceNotAvailableError(DomainException):
     """Service cannot be booked"""
 
-    def __init__(self, service_id: str):
-        super().__init__(f"Service {service_id} is not available")
+    def __init__(self, code: str = "SERVICE_NOT_AVAILABLE"):
+        super().__init__(code)
 
 
 class ProviderNotAvailableError(DomainException):
     """Provider cannot provide service"""
 
-    def __init__(self, provider_id: str, service_id: str):
-        super().__init__(f"Provider {provider_id} cannot provide service {service_id}")
+    def __init__(self, code: str = "PROVIDER_NOT_AVAILABLE"):
+        super().__init__(code)
 
 
 class SlotNotAvailableError(DomainException):
     """Time slot is already taken"""
 
-    def __init__(self, start_time: str):
-        super().__init__(f"Time slot starting at {start_time} is not available")
+    def __init__(self, code: str = "SLOT_NOT_AVAILABLE"):
+        super().__init__(code)
 
 
 class InvalidApiKeyError(UnauthorizedError):
