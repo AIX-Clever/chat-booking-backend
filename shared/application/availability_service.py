@@ -78,6 +78,7 @@ class AvailabilityService:
         provider_id: str,
         from_date: datetime,
         to_date: datetime,
+        reference_time: Optional[datetime] = None,
     ) -> List[TimeSlot]:
         """
         Main logic for calculating available slots for a provider and service.
@@ -154,7 +155,11 @@ class AvailabilityService:
             if slot_key not in unique_slots:
                 unique_slots[slot_key] = slot
         
-        return sorted(unique_slots.values(), key=lambda x: x.start)
+        now = reference_time if reference_time is not None else datetime.now(UTC)
+        return sorted(
+            (s for s in unique_slots.values() if s.start > now),
+            key=lambda x: x.start,
+        )
 
     def is_slot_available(
         self,

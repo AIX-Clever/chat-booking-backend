@@ -1,5 +1,9 @@
 import unittest
-from datetime import datetime, time
+from datetime import datetime, time, timezone
+
+# Fecha de referencia fija: justo antes de 2026-03-23 (el día usado en todos los tests)
+# Permite que get_available_slots no filtre los slots del día de test como "pasados"
+REF_TIME = datetime(2026, 3, 22, 23, 59, tzinfo=timezone.utc)
 from unittest.mock import Mock, MagicMock
 from shared.domain.entities import (
     TenantId,
@@ -83,7 +87,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # Expect 09:00, 10:00, 11:00 (3 slots)
@@ -115,7 +120,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # Expect 0 slots (Blocked)
@@ -148,7 +154,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # Standard would be 8 slots (9-17)
@@ -181,7 +188,8 @@ class TestAvailabilityService(unittest.TestCase):
         # Note: timezone_str arg is not exposed in public get_available_slots,
         # it comes from provider entity inside the service.
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # 09:00 Santiago = 12:00 UTC
@@ -213,7 +221,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # Check for uniqueness
@@ -242,7 +251,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         slot_hours = [s.start.hour for s in slots]
@@ -274,7 +284,8 @@ class TestAvailabilityService(unittest.TestCase):
         to_date = datetime(2026, 3, 23, 23, 59)
 
         slots = self.service.get_available_slots(
-            self.tenant_id, self.service_id, self.provider_id, from_date, to_date
+            self.tenant_id, self.service_id, self.provider_id, from_date, to_date,
+            reference_time=REF_TIME,
         )
 
         # 09:00 Santiago = 12:00 UTC  → available
