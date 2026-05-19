@@ -513,6 +513,7 @@ export class LambdaStack extends cdk.Stack {
 
     // Grant permissions - read/write for metrics, read for related data
     props.tenantUsageTable.grantReadWriteData(this.metricsFunction);
+    props.userPool.grant(this.metricsFunction, 'cognito-idp:AdminGetUser');
 
     // 10. Workflow Manager Lambda
     this.workflowManagerFunction = new lambda.Function(this, 'WorkflowManagerFunction', {

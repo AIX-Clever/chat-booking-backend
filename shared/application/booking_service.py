@@ -12,10 +12,9 @@ except ImportError:
 import hashlib
 import os
 import json
-from typing import Optional, List
+from typing import Optional
 from shared.domain.entities import (
     TenantId,
-    Service,
     Booking,
     BookingStatus,
     PaymentStatus,
@@ -72,6 +71,21 @@ _WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
 def _day_of_week(dt: datetime) -> str:
     return _WEEKDAYS[dt.weekday()]
+
+
+def _derive_period_split(operating_hours: Optional[list], day: str) -> Optional[str]:
+    """Derive split time from a room's operating hours for a given day.
+
+    If a day has 2+ time blocks, the split is the end of the first block.
+    Single block → None (all bookings classified as FULL).
+    """
+    if not operating_hours:
+        return None
+    day_blocks = sorted(
+        [h for h in operating_hours if h.get("day") == day],
+        key=lambda h: h["start"],
+    )
+    return day_blocks[0]["end"] if len(day_blocks) >= 2 else None
 
 
 def _booking_period(start: datetime, end: datetime, period_split: Optional[str]) -> str:
@@ -171,12 +185,12 @@ class BookingService:
             raise EntityNotFoundError("Tenant", tenant_id.value)
 
         if not tenant.can_create_booking():
-            raise TenantNotActiveError(f"Tenant {tenant_id.value} cannot create bookings.")
+            raise TenantNotActiveError("TENANT_NOT_ACTIVE")
 
         # Check Limits
         if self._limit_service:
             if not self._limit_service.check_can_create_booking(tenant_id):
-                raise ValidationError("Has excedido el límite de reservas de tu plan actual.")
+                raise ValidationError("BOOKING_LIMIT_EXCEEDED")
 
         # Validate service
         service = self._service_repo.get_by_id(tenant_id, service_id)
@@ -190,23 +204,21 @@ class BookingService:
         if not provider:
             raise EntityNotFoundError("Provider", provider_id)
         if not provider.can_provide_service(service_id):
-            raise ProviderNotAvailableError(provider_id, service_id)
+            raise ProviderNotAvailableError("PROVIDER_NOT_AVAILABLE")
 
         # Validate duration
         booking_duration = int((end - start).total_seconds() / 60)
         if booking_duration != service.duration_minutes:
-            raise ValidationError(f"Booking duration ({booking_duration} min) must match service duration ({service.duration_minutes} min)")
+            raise ValidationError("BOOKING_DURATION_MISMATCH")
 
         # Validate past date
         if start < datetime.now(UTC):
-            raise ValidationError("No se pueden crear reservas en el pasado")
+            raise ValidationError("BOOKING_IN_PAST")
 
         # Validate max advance booking window (default 180 days, configurable per-env)
         max_advance_days = int(os.environ.get("MAX_BOOKING_ADVANCE_DAYS", "180"))
         if start > datetime.now(UTC) + timedelta(days=max_advance_days):
-            raise ValidationError(
-                f"No se pueden crear reservas con más de {max_advance_days} días de anticipación"
-            )
+            raise ValidationError("BOOKING_TOO_FAR_ADVANCE")
 
         # Check Room
         assigned_room_id = self._check_and_assign_room(tenant_id, service, start, end, provider_id)
@@ -327,7 +339,7 @@ class BookingService:
                 room = self._room_repo.get_by_id(tenant_id, assignment.room_id)
                 if not room:
                     continue
-                booking_period = _booking_period(start, end, room.period_split)
+                booking_period = _booking_period(start, end, _derive_period_split(room.operating_hours, day))
                 if _periods_overlap(booking_period, period_for_day):
                     return assignment.room_id
 
@@ -340,7 +352,7 @@ class BookingService:
             if not room:
                 continue
             if self._room_assignment_repo and provider_id:
-                booking_period = _booking_period(start, end, room.period_split)
+                booking_period = _booking_period(start, end, _derive_period_split(room.operating_hours, day))
                 if self._is_room_blocked(tenant_id, room_id, provider_id, day, booking_period):
                     continue
             return room_id

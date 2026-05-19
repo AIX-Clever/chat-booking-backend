@@ -5,7 +5,7 @@ Use Case: Resolve tenant from API Key and validate authorization
 Following Clean Architecture / Hexagonal Architecture
 """
 
-from shared.domain.entities import TenantId, ApiKey
+from shared.domain.entities import TenantId
 from shared.domain.repositories import IApiKeyRepository, ITenantRepository
 from shared.domain.exceptions import (
     InvalidApiKeyError,
@@ -101,7 +101,7 @@ class AuthenticationService:
                 tenant_id=str(tenant.tenant_id),
                 status=tenant.status.value
             )
-            raise TenantNotActiveError(str(tenant.tenant_id))
+            raise TenantNotActiveError("TENANT_NOT_ACTIVE")
 
         # Update last used timestamp (fire and forget)
         from datetime import datetime, timezone

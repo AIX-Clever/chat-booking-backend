@@ -1,7 +1,7 @@
 import unittest
 import os
 from datetime import datetime, timedelta, UTC
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 
 # Prevent boto3/botocore NoRegionError during unit test imports
 os.environ.setdefault("AWS_DEFAULT_REGION", "us-east-1")
@@ -10,10 +10,8 @@ os.environ.setdefault("AWS_SECRET_ACCESS_KEY", "testing")
 
 from shared.domain.entities import (
     TenantId,
-    Booking,
     BookingStatus,
     PaymentStatus,
-    CustomerInfo,
     Service,
 )
 from shared.application.booking_service import BookingService
@@ -150,7 +148,7 @@ class TestBookingService(unittest.TestCase):
                     client_last_name="Client",
                     client_email="test@example.com"
                 )
-        self.assertIn("180", str(ctx.exception))
+        self.assertEqual("BOOKING_TOO_FAR_ADVANCE", str(ctx.exception))
         self.mock_booking_repo.save.assert_not_called()
 
     def test_max_advance_booking_allowed(self):
