@@ -368,16 +368,6 @@ class TestRoom:
         )
         assert room.status == "ACTIVE"
         assert room.is_virtual is False
-        assert room.period_split is None
-
-    def test_room_with_period_split(self):
-        room = Room(
-            room_id="rm-1",
-            tenant_id=TenantId("test123"),
-            name="Sala Alma",
-            period_split="13:00",
-        )
-        assert room.period_split == "13:00"
 
 
 class TestRoomAssignment:

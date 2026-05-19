@@ -73,6 +73,21 @@ def _day_of_week(dt: datetime) -> str:
     return _WEEKDAYS[dt.weekday()]
 
 
+def _derive_period_split(operating_hours: Optional[list], day: str) -> Optional[str]:
+    """Derive split time from a room's operating hours for a given day.
+
+    If a day has 2+ time blocks, the split is the end of the first block.
+    Single block → None (all bookings classified as FULL).
+    """
+    if not operating_hours:
+        return None
+    day_blocks = sorted(
+        [h for h in operating_hours if h.get("day") == day],
+        key=lambda h: h["start"],
+    )
+    return day_blocks[0]["end"] if len(day_blocks) >= 2 else None
+
+
 def _booking_period(start: datetime, end: datetime, period_split: Optional[str]) -> str:
     """Derive MORNING / AFTERNOON / FULL from a time slot vs the room's split time."""
     if not period_split:
@@ -324,7 +339,7 @@ class BookingService:
                 room = self._room_repo.get_by_id(tenant_id, assignment.room_id)
                 if not room:
                     continue
-                booking_period = _booking_period(start, end, room.period_split)
+                booking_period = _booking_period(start, end, _derive_period_split(room.operating_hours, day))
                 if _periods_overlap(booking_period, period_for_day):
                     return assignment.room_id
 
@@ -337,7 +352,7 @@ class BookingService:
             if not room:
                 continue
             if self._room_assignment_repo and provider_id:
-                booking_period = _booking_period(start, end, room.period_split)
+                booking_period = _booking_period(start, end, _derive_period_split(room.operating_hours, day))
                 if self._is_room_blocked(tenant_id, room_id, provider_id, day, booking_period):
                     continue
             return room_id

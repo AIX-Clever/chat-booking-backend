@@ -540,7 +540,6 @@ class Room:
     min_duration: Optional[int] = None
     max_duration: Optional[int] = None
     operating_hours: Optional[List[Dict[str, Any]]] = None
-    period_split: Optional[str] = None  # "13:00" — divides MORNING / AFTERNOON
     metadata: Dict[str, Any] = field(default_factory=dict)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
