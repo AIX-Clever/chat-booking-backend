@@ -706,7 +706,7 @@ input SupportIssueInput {
 # Queries
 type Query {
   # Catalog
-  listCategories(activeOnly: Boolean): [Category!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
+  listCategories(activeOnly: Boolean): [Category!] @aws_api_key @aws_cognito_user_pools @aws_lambda
   searchServices(text: String, availableOnly: Boolean): [Service!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
   getService(serviceId: ID!): Service @aws_api_key @aws_cognito_user_pools @aws_lambda
   listProviders: [Provider!]! @aws_api_key @aws_cognito_user_pools @aws_lambda
@@ -765,9 +765,9 @@ type Query {
 
   # Client Management (Client File)
   getClient(clientId: ID!): Client @aws_cognito_user_pools
-  listClients(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
-  listClientsPaginated(limit: Int, nextToken: String): ClientsPage! @aws_cognito_user_pools
-  listClientAuditLogs(clientId: ID!): [ClientAuditLog!]! @aws_cognito_user_pools
+  listClients(limit: Int, nextToken: String): ClientsPage @aws_cognito_user_pools
+  listClientsPaginated(limit: Int, nextToken: String): ClientsPage @aws_cognito_user_pools
+  listClientAuditLogs(clientId: ID!): [ClientAuditLog!] @aws_cognito_user_pools
 }
 
 type PaymentStatusResponse @aws_cognito_user_pools {
@@ -832,18 +832,18 @@ type Mutation {
   updateTenant(input: UpdateTenantInput!): Tenant! @aws_cognito_user_pools
 
   # Catalog (Admin)
-  createCategory(input: CreateCategoryInput!): Category! @aws_cognito_user_pools
-  updateCategory(input: UpdateCategoryInput!): Category! @aws_cognito_user_pools
-  deleteCategory(categoryId: ID!): Category! @aws_cognito_user_pools
+  createCategory(input: CreateCategoryInput!): Category @aws_cognito_user_pools
+  updateCategory(input: UpdateCategoryInput!): Category @aws_cognito_user_pools
+  deleteCategory(categoryId: ID!): Category @aws_cognito_user_pools
 
-  generatePresignedUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+  generatePresignedUrl(fileName: String!, contentType: String!): String @aws_cognito_user_pools
 
   createService(input: CreateServiceInput!): Service! @aws_cognito_user_pools
   updateService(input: UpdateServiceInput!): Service! @aws_cognito_user_pools
   deleteService(serviceId: ID!): Service! @aws_cognito_user_pools
   
-  createProvider(input: CreateProviderInput!): Provider! @aws_cognito_user_pools
-  updateProvider(input: UpdateProviderInput!): Provider! @aws_cognito_user_pools
+  createProvider(input: CreateProviderInput!): Provider @aws_cognito_user_pools
+  updateProvider(input: UpdateProviderInput!): Provider @aws_cognito_user_pools
   deleteProvider(providerId: ID!): Provider! @aws_cognito_user_pools
 
   createRoom(input: CreateRoomInput!): Room! @aws_cognito_user_pools
@@ -871,7 +871,7 @@ type Mutation {
   removeWaitingListEntry(tenantId: ID, waitingListId: ID!): Boolean! @aws_cognito_user_pools
 
   # Documents (Knowledge Base)
-  getUploadUrl(fileName: String!, contentType: String!): String! @aws_cognito_user_pools
+  getUploadUrl(fileName: String!, contentType: String!): String @aws_cognito_user_pools
 
   # Bookings
   createBooking(input: CreateBookingInput!): Booking @aws_api_key @aws_cognito_user_pools @aws_lambda
@@ -913,11 +913,11 @@ type Mutation {
   createSupportIssue(input: SupportIssueInput!): Boolean! @aws_cognito_user_pools
 
   # Public Link Status (Admin)
-  setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse! @aws_cognito_user_pools
+  setPublicLinkStatus(isPublished: Boolean!): PublicLinkStatusResponse @aws_cognito_user_pools
 
   # Client Management
-  createClient(input: CreateClientInput!): Client! @aws_cognito_user_pools
-  updateClient(input: UpdateClientInput!): Client! @aws_cognito_user_pools
+  createClient(input: CreateClientInput!): Client @aws_cognito_user_pools
+  updateClient(input: UpdateClientInput!): Client @aws_cognito_user_pools
 
   # Folio Management (CAF)
   uploadCaf(base64Xml: String!, tipoDte: Int!): CafUploadResponse! @aws_cognito_user_pools
