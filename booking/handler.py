@@ -107,7 +107,7 @@ def lambda_handler(event: dict, context) -> dict:
 
         # Enforce RBAC for mutations
         mutations = [
-            "createBooking", "confirmBooking", "cancelBooking", 
+            "createBooking", "confirmBooking", "cancelBooking",
             "markAsNoShow", "updateBookingStatus"
         ]
         if field in mutations:
@@ -115,7 +115,7 @@ def lambda_handler(event: dict, context) -> dict:
 
         # Route to appropriate handler
         if field == "createBooking":
-            is_cognito = bool(event.get("identity", {}).get("claims", {}).get("custom:tenantId"))
+            is_cognito = bool((event.get("identity") or {}).get("claims", {}).get("custom:tenantId"))
             return handle_create_booking(tenant_id, input_data, skip_recaptcha=is_cognito)
 
         elif field == "confirmBooking":
@@ -360,8 +360,6 @@ def handle_list_by_provider(tenant_id: TenantId, input_data: dict) -> dict:
         )
 
     try:
-        start_date = parse_iso_datetime(start_str)
-        end_date = parse_iso_datetime(end_str)
         bookings = booking_query_service.list_by_provider(
             tenant_id,
             provider_id,

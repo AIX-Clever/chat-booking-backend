@@ -80,8 +80,8 @@ def lambda_handler(event: dict, context) -> dict:
             logger.info(f"Checking IP {source_ip} against whitelist")
 
             if source_ip and source_ip not in allowed_list:
-                logger.warning(f"IP {source_ip} not in allowed list")
-                return unauthorized_response("IP not allowed")
+                logger.warning("Auth denied: IP not in whitelist", source_ip=source_ip)
+                return unauthorized_response()
 
         # Extract origin from headers
         headers = event.get('headers', {})
@@ -94,14 +94,14 @@ def lambda_handler(event: dict, context) -> dict:
         # Fail-open: if DynamoDB unavailable, traffic is not blocked
         if not _check_rate_limit(api_key):
             logger.warning("Rate limit exceeded", api_key_prefix=api_key[:8])
-            return unauthorized_response("Rate limit exceeded. Please try again in 1 minute.")
+            return unauthorized_response()
 
         # Return authorized response
         return authorized_response(str(tenant_id))
 
     except (InvalidApiKeyError, OriginNotAllowedError, TenantNotActiveError) as e:
         logger.warning("Authentication failed", error=str(e))
-        return unauthorized_response(str(e))
+        return unauthorized_response()
 
     except EntityNotFoundError as e:
         logger.error("Entity not found during authentication", error=str(e))

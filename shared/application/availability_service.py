@@ -14,24 +14,22 @@ try:
 except ImportError:
     from datetime import timezone
     UTC = timezone.utc
-from typing import List, Optional, Dict
+from typing import List, Optional
 from shared.domain.entities import (
     TenantId,
     ProviderAvailability,
     TimeRange,
     ExceptionRule,
     TimeSlot,
-    Provider,
 )
 from shared.domain.repositories import (
-    ITenantRepository,
     IAvailabilityRepository,
     IBookingRepository,
     IServiceRepository,
     IProviderRepository,
     IProviderIntegrationRepository,
 )
-from shared.domain.exceptions import EntityNotFoundError, ValidationError
+from shared.domain.exceptions import EntityNotFoundError
 from shared.infrastructure.google_auth_service import GoogleAuthService
 from shared.infrastructure.microsoft_auth_service import MicrosoftAuthService
 import os
@@ -78,6 +76,7 @@ class AvailabilityService:
         provider_id: str,
         from_date: datetime,
         to_date: datetime,
+        reference_time: Optional[datetime] = None,
     ) -> List[TimeSlot]:
         """
         Main logic for calculating available slots for a provider and service.
@@ -101,10 +100,10 @@ class AvailabilityService:
 
         # 1. Get Base Availability (Working Hours)
         availability_rules = self._availability_repo.get_provider_availability(tenant_id, provider_id)
-        
+
         # 2. Get Exceptions
         exceptions_data = self._availability_repo.get_provider_exceptions(tenant_id, provider_id)
-        
+
         # Convert dicts from repo to ExceptionRule entities if they are dicts
         exceptions = []
         for ex in exceptions_data:
@@ -117,10 +116,10 @@ class AvailabilityService:
                 exceptions.append(ExceptionRule(date=ex.get("date"), time_ranges=time_ranges))
             else:
                 exceptions.append(ex)
-        
+
         # 3. Get Existing Bookings
         bookings = self._booking_repo.list_by_provider(tenant_id, provider_id, from_date, to_date)
-        
+
         # 4. Get External Calendar Busy Slots (if integrated)
         external_busy_slots = []
         if self._provider_integration_repo:
@@ -153,8 +152,12 @@ class AvailabilityService:
             slot_key = slot.start.isoformat()
             if slot_key not in unique_slots:
                 unique_slots[slot_key] = slot
-        
-        return sorted(unique_slots.values(), key=lambda x: x.start)
+
+        now = reference_time if reference_time is not None else datetime.now(UTC)
+        return sorted(
+            (s for s in unique_slots.values() if s.start > now),
+            key=lambda x: x.start,
+        )
 
     def is_slot_available(
         self,
@@ -305,19 +308,29 @@ class AvailabilityService:
                     resp = g_service.freebusy().query(body=body).execute()
                     for cal in resp.get("calendars", {}).values():
                         for b in cal.get("busy", []):
-                            busy_slots.append({"start": datetime.fromisoformat(b["start"].replace("Z", "+00:00")), "end": datetime.fromisoformat(b["end"].replace("Z", "+00:00"))})
-            except Exception as e: print(f"Google freebusy error: {e}")
-            
+                            busy_slots.append({
+                                "start": datetime.fromisoformat(b["start"].replace("Z", "+00:00")),
+                                "end": datetime.fromisoformat(b["end"].replace("Z", "+00:00")),
+                            })
+            except Exception as e:
+                print(f"Google freebusy error: {e}")
+
         # Microsoft
         if self.microsoft_auth_service:
             try:
                 creds = self._provider_integration_repo.get_microsoft_creds(tenant_id, provider_id)
                 if creds:
-                    ms_busy = self.microsoft_auth_service.get_free_busy(creds.get("access_token"), start.isoformat(), end.isoformat())
+                    ms_busy = self.microsoft_auth_service.get_free_busy(
+                        creds.get("access_token"), start.isoformat(), end.isoformat()
+                    )
                     for b in ms_busy:
-                        busy_slots.append({"start": datetime.fromisoformat(b["start"]), "end": datetime.fromisoformat(b["end"])})
-            except Exception as e: print(f"Microsoft freebusy error: {e}")
-            
+                        busy_slots.append({
+                            "start": datetime.fromisoformat(b["start"]),
+                            "end": datetime.fromisoformat(b["end"]),
+                        })
+            except Exception as e:
+                print(f"Microsoft freebusy error: {e}")
+
         return busy_slots
 
 
@@ -328,7 +341,7 @@ class AvailabilityManagementService:
     def set_provider_availability(self, tenant_id, provider_id, day_of_week, time_ranges, breaks, exceptions=None):
         time_ranges_obj = [TimeRange(tr["startTime"], tr["endTime"]) for tr in time_ranges]
         breaks_obj = [TimeRange(br["startTime"], br["endTime"]) for br in breaks]
-        
+
         availability = ProviderAvailability(
             tenant_id=tenant_id,
             provider_id=provider_id,

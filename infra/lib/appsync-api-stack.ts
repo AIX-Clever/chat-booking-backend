@@ -411,7 +411,12 @@ export class AppSyncApiStack extends cdk.Stack {
       }
     }`);
 
-    const responseTemplate = appsync.MappingTemplate.lambdaResult();
+    const responseTemplate = appsync.MappingTemplate.fromString(`
+      #if ($ctx.error)
+        $util.appendError($ctx.error.message, $ctx.error.type)
+      #end
+      $util.toJson($ctx.result)
+    `);
 
     // User Management Resolvers
     userManagementDataSource.createResolver('ListTenantUsersResolver', {
