@@ -127,9 +127,10 @@ class AvailabilityService:
 
         # 5. Calculation Logic
         provider_tz = provider.timezone if provider else "UTC"
+        tz = ZoneInfo(provider_tz)
         available_slots = []
-        current_date = from_date.date()
-        end_date = to_date.date()
+        current_date = from_date.astimezone(tz).date()
+        end_date = to_date.astimezone(tz).date()
 
         while current_date <= end_date:
             day_slots = self._calculate_day_slots(
