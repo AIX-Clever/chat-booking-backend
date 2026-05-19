@@ -110,7 +110,6 @@ type Room @aws_api_key @aws_cognito_user_pools @aws_lambda {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
-  periodSplit: String
   metadata: AWSJSON
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -537,7 +536,6 @@ input CreateRoomInput {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
-  periodSplit: String
   metadata: AWSJSON
 }
 
@@ -551,7 +549,6 @@ input UpdateRoomInput {
   minDuration: Int
   maxDuration: Int
   operatingHours: AWSJSON
-  periodSplit: String
   metadata: AWSJSON
 }
 

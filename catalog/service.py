@@ -718,7 +718,6 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
-        period_split: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Create new room"""
@@ -735,7 +734,6 @@ class RoomManagementService:
             min_duration=min_duration,
             max_duration=max_duration,
             operating_hours=operating_hours,
-            period_split=period_split,
             metadata=metadata or {},
         )
         self.room_repo.save(room)
@@ -753,7 +751,6 @@ class RoomManagementService:
         min_duration: Optional[int] = None,
         max_duration: Optional[int] = None,
         operating_hours: Optional[List[Dict[str, Any]]] = None,
-        period_split: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> Room:
         """Update existing room"""
@@ -779,8 +776,6 @@ class RoomManagementService:
             room.max_duration = max_duration
         if operating_hours is not None:
             room.operating_hours = operating_hours
-        if period_split is not None:
-            room.period_split = period_split
         if metadata is not None:
             room.metadata = metadata
 

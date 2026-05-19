@@ -531,7 +531,6 @@ def room_to_dict(room) -> dict:
         "minDuration": room.min_duration,
         "maxDuration": room.max_duration,
         "operatingHours": room.operating_hours,
-        "periodSplit": room.period_split,
         "metadata": room.metadata,
         "createdAt": room.created_at.isoformat(),
         "updatedAt": room.updated_at.isoformat(),
@@ -592,7 +591,6 @@ def handle_create_room(tenant_id: TenantId, input_data: dict) -> dict:
         min_duration=input_data.get("minDuration"),
         max_duration=input_data.get("maxDuration"),
         operating_hours=op_hours,
-        period_split=input_data.get("periodSplit"),
         metadata=meta,
     )
     return success_response(room_to_dict(room))
@@ -620,7 +618,6 @@ def handle_update_room(tenant_id: TenantId, input_data: dict) -> dict:
         min_duration=input_data.get("minDuration"),
         max_duration=input_data.get("maxDuration"),
         operating_hours=op_hours,
-        period_split=input_data.get("periodSplit"),
         metadata=meta,
     )
     return success_response(room_to_dict(room))
