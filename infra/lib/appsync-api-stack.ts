@@ -996,7 +996,7 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: responseTemplate,
     });
 
-    chatAgentDataSource.createResolver('GetPlanUsageResolver', {
+    metricsDataSource.createResolver('GetPlanUsageResolver', {
       typeName: 'Query',
       fieldName: 'getPlanUsage',
       requestMappingTemplate: requestTemplate,
