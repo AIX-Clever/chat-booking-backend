@@ -282,14 +282,24 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'getPublicLinkStatus',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     publicLinkStatusDataSource.createResolver('SetPublicLinkStatusResolver', {
       typeName: 'Mutation',
       fieldName: 'setPublicLinkStatus',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     // Check Payment Status Data Source
@@ -302,7 +312,12 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'checkPaymentStatus',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     // Clients Data Source (Client File)
@@ -315,42 +330,72 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'getClient',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     clientsDataSource.createResolver('ListClientsResolver', {
       typeName: 'Query',
       fieldName: 'listClients',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     clientsDataSource.createResolver('ListClientsPaginatedResolver', {
       typeName: 'Query',
       fieldName: 'listClientsPaginated',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     clientsDataSource.createResolver('ListClientAuditLogsResolver', {
       typeName: 'Query',
       fieldName: 'listClientAuditLogs',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     clientsDataSource.createResolver('CreateClientResolver', {
       typeName: 'Mutation',
       fieldName: 'createClient',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     clientsDataSource.createResolver('UpdateClientResolver', {
       typeName: 'Mutation',
       fieldName: 'updateClient',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
 
@@ -648,21 +693,36 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Query',
       fieldName: 'listCategories',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     catalogDataSource.createResolver('CreateCategoryResolver', {
       typeName: 'Mutation',
       fieldName: 'createCategory',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     catalogDataSource.createResolver('UpdateCategoryResolver', {
       typeName: 'Mutation',
       fieldName: 'updateCategory',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     // Documents Resolver
@@ -670,14 +730,24 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Mutation',
       fieldName: 'getUploadUrl',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     presignDataSource.createResolver('GeneratePresignedUrlResolver', {
       typeName: 'Mutation',
       fieldName: 'generatePresignedUrl',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     presignDataSource.createResolver('GetInvoiceDownloadUrlResolver', {
@@ -690,21 +760,36 @@ export class AppSyncApiStack extends cdk.Stack {
       typeName: 'Mutation',
       fieldName: 'deleteCategory',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     catalogDataSource.createResolver('CreateProviderResolver', {
       typeName: 'Mutation',
       fieldName: 'createProvider',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     catalogDataSource.createResolver('UpdateProviderResolver', {
       typeName: 'Mutation',
       fieldName: 'updateProvider',
       requestMappingTemplate: appsync.MappingTemplate.lambdaRequest(),
-      responseMappingTemplate: appsync.MappingTemplate.lambdaResult(),
+      responseMappingTemplate: appsync.MappingTemplate.fromString(`
+        #if ($ctx.error)
+          $util.appendError($ctx.error.message, $ctx.error.type)
+        #end
+        $util.toJson($ctx.result)
+      `),
     });
 
     catalogDataSource.createResolver('DeleteProviderResolver', {
@@ -911,7 +996,7 @@ export class AppSyncApiStack extends cdk.Stack {
       responseMappingTemplate: responseTemplate,
     });
 
-    chatAgentDataSource.createResolver('GetPlanUsageResolver', {
+    metricsDataSource.createResolver('GetPlanUsageResolver', {
       typeName: 'Query',
       fieldName: 'getPlanUsage',
       requestMappingTemplate: requestTemplate,
